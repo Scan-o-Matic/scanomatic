@@ -5,6 +5,7 @@ import numpy as np
 from enum import Enum
 from scipy import signal
 from scipy.ndimage import label, generic_filter
+from scanomatic.models.phases_models import SegmentationModel
 
 
 class CurvePhases(Enum):
@@ -125,7 +126,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
-def segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, thresholds=None):
+def segment(segmentation_model, thresholds=None):
     """Iteratively segments a curve into its component CurvePhases
 
     Proposed future segmentation structure:
@@ -148,48 +149,25 @@ def segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, th
                 mark undefined
 
     Args:
-        times:
-            The sample times vector
-        curve:
-            The smooth growth curve
-        dydt:
-            The first derivative
-        dydt_signs_flat:
-            The signs of first derivative with area around 0
-            considered 0.
-        ddydt_signs:
-            The signs of the second derivative with area around 0
-            considered 0.
-        phases:
-            The phase classification vector (should be all 0)
-        offset:
-            An int for offset between curve and derivative
+        segmentation_model:
+            A data model with information
         thresholds:
             The thresholds dictionary to be used.
     """
-    curve = np.ma.masked_invalid(np.log2(curve))
+    curve = np.ma.masked_invalid(np.log2(segmentation_model.curve))
 
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
     # Mark all flats
-    _set_flat_segments(dydt_signs_flat,
-                       thresholds[Thresholds.PhaseMinimumLength],
-                       phases)
+    _set_flat_segments(segmentation_model, thresholds)
 
     yield None
 
-    while (phases == CurvePhases.UndeterminedNonFlat.value).any():
+    while (segmentation_model.phases == CurvePhases.UndeterminedNonFlat.value).any():
 
         # Mark linear slope
-        flanking = _set_nonflat_linear_segment(
-            times,
-            curve,
-            dydt,
-            dydt_signs_flat,
-            thresholds[Thresholds.LinearModelExtension],
-            thresholds[Thresholds.NonFlatLinearMinimumLength],
-            offset, phases)
+        flanking = _set_nonflat_linear_segment(segmentation_model, thresholds)
 
         yield None
 
@@ -204,19 +182,13 @@ def segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, th
                     PhaseEdge.Left
 
                 # Mark flanking non-linear phase
-                phase = _set_nonlinear_phase_type(
-                    dydt, dydt_signs_flat, ddydt_signs, filt,
-                    direction,
-                    thresholds[Thresholds.UniformityTestMinSize],
-                    thresholds[Thresholds.UniformityThreshold],
-                    thresholds[Thresholds.PhaseMinimumLength],
-                    offset, phases)
+                phase = _set_nonlinear_phase_type(segmentation_model, thresholds, filt, direction)
 
                 if phase is CurvePhases.Undetermined:
                     # If no curved segment found, it is not safe to look for more
                     # non-flat linear phases because could merge two that should
                     # not be merged.
-                    phases[filt] = CurvePhases.UndeterminedNonLinear.value
+                    segmentation_model.phases[filt] = CurvePhases.UndeterminedNonLinear.value
 
                 # Only look for the first non-linear segment rest is up for grabs for
                 # Next iteration of finding impulses or collapses
@@ -225,37 +197,48 @@ def segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, th
                 yield None
 
     # Try to classify remaining positions as non linear phases
-    for filt in _get_candidate_segment(phases, test_value=CurvePhases.UndeterminedNonLinear.value):
+    for filt in _get_candidate_segment(segmentation_model.phases, test_value=CurvePhases.UndeterminedNonLinear.value):
 
-        phase = _set_nonlinear_phase_type(
-            dydt, dydt_signs_flat, ddydt_signs, filt,
-            PhaseEdge.Intelligent,
-            thresholds[Thresholds.UniformityTestMinSize],
-            thresholds[Thresholds.UniformityThreshold],
-            thresholds[Thresholds.PhaseMinimumLength],
-            offset, phases)
+        phase = _set_nonlinear_phase_type(segmentation_model, thresholds, filt, PhaseEdge.Intelligent)
 
         yield None
 
         # If currently considered segment had no phase then it is undetermined
         if phase is CurvePhases.Undetermined:
 
-            phases[filt] = phase.value
+            segmentation_model.phases[filt] = phase.value
             yield None
 
     # If there's an offset assume phase carries to edge
-    if offset:
-        phases[:offset] = phases[offset]
-        phases[-offset:] = phases[-offset - 1]
+    if segmentation_model.offset:
+        segmentation_model.phases[:segmentation_model.offset] = \
+            segmentation_model.phases[segmentation_model.offset]
+        segmentation_model.phases[-segmentation_model.offset:] = \
+            segmentation_model.phases[-segmentation_model.offset - 1]
         yield None
 
     # Bridge neighbouring segments of same type if gap is one
-    _bridge_gaps(phases)
+    _bridge_gaps(segmentation_model.phases)
 
 
-def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds):
+def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, model=None):
+    """
 
-    curve = phenotyper_object.smooth_growth_data[plate][pos]
+    :param phenotyper_object:
+    :param plate:
+    :param pos:
+    :param thresholds:
+    :param model:
+     :type model: scanomatic.models.settings_models.SegmentationModel
+    :return: Data as a SegmentationModel
+    :rtype: scanomatic.models.settings_models.SegmentationModel
+    """
+
+    if model is None:
+        model = SegmentationModel()
+
+    model.curve = phenotyper_object.smooth_growth_data[plate][pos]
+    model.times = phenotyper_object.times
 
     # Smoothing kernel for derivatives
     gauss = signal.gaussian(7, 3)
@@ -264,30 +247,32 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds):
     # Some center weighted smoothing of derivative, we only care for general shape
     dydt = signal.convolve(phenotyper_object.get_derivative(plate, pos), gauss, mode='valid')
     d_offset = (phenotyper_object.times.size - dydt.size) / 2
-    dydt = np.hstack(([dydt[0] for _ in range(d_offset)], dydt, [dydt[-1] for _ in range(d_offset)]))
+    model.dydt = np.hstack(([dydt[0] for _ in range(d_offset)], dydt, [dydt[-1] for _ in range(d_offset)]))
 
-    dydt_ranks = np.abs(dydt).argsort().argsort()
-    offset = (phenotyper_object.times.shape[0] - dydt.shape[0]) / 2
+    model.dydt_ranks = np.abs(dydt).argsort().argsort()
+    model.offset = (phenotyper_object.times.shape[0] - dydt.shape[0]) / 2
 
     # Smoothing in kernel shape because only want reliable trends
-    ddydt = signal.convolve(dydt, [1, 0, -1], mode='valid')
-    ddydt = signal.convolve(ddydt, gauss, mode='valid')
+    d2yd2t = signal.convolve(dydt, [1, 0, -1], mode='valid')
+    d2yd2t = signal.convolve(d2yd2t, gauss, mode='valid')
 
-    dd_offset = (dydt.size - ddydt.size) / 2
-    ddydt = np.hstack(([ddydt[0] for _ in range(dd_offset)], ddydt, [ddydt[-1] for _ in range(dd_offset)]))
-    phases = np.ones_like(curve).astype(np.int) * CurvePhases.Undetermined.value
+    dd_offset = (dydt.size - d2yd2t.size) / 2
+    model.d2yd2t = np.hstack(([d2yd2t[0] for _ in range(dd_offset)], d2yd2t, [d2yd2t[-1] for _ in range(dd_offset)]))
+
+    model.phases = np.ones_like(model.curve).astype(np.int) * CurvePhases.Undetermined.value
     """:type : numpy.ndarray"""
 
     # Determine second derviative signs
-    ddydt_signs = np.sign(ddydt)
-    ddydt_signs[
-        np.abs(ddydt) < thresholds[Thresholds.SecondDerivativeSigmaAsNotZero] * ddydt[np.isfinite(ddydt)].std()] = 0
+    model.d2yd2t_signs = np.sign(model.d2yd2t)
+    model.d2yd2t_signs = model.d2yd2t[
+        np.abs(model.d2yd2t) < thresholds[Thresholds.SecondDerivativeSigmaAsNotZero] *
+        model.d2yd2t[np.isfinite(model.d2yd2t)].std()] = 0
 
-    # Determine first derivative signs for flattness questions
-    dydt_signs_flat = np.sign(dydt)
-    dydt_signs_flat[np.abs(dydt) < thresholds[Thresholds.FlatlineSlopRequirement]] = 0
+    # Determine first derivative signs for flatness questions
+    model.dydt_signs = np.sign(model.dydt)
+    model.dydt_signs[np.abs(model.dydt) < thresholds[Thresholds.FlatlineSlopRequirement]] = 0
 
-    return dydt, dydt_ranks, dydt_signs_flat, ddydt, ddydt_signs, phases, offset, curve
+    return model
 
 
 def _bridge_gaps(phases):
@@ -317,13 +302,13 @@ def _bridge_gaps(phases):
             phases[loc] = phases[loc + 1]
 
 
-def _set_flat_segments(dydt_signs, minimum_segmentlength, phases):
+def _set_flat_segments(model, thresholds):
 
-    phases[...] = CurvePhases.UndeterminedNonFlat.value
-    flats = _bridge_canditates(dydt_signs == 0)
+    model.phases[...] = CurvePhases.UndeterminedNonFlat.value
+    flats = _bridge_canditates(model.dydt_signs == 0)
     for length, left, right in izip(*_get_candidate_lengths_and_edges(flats)):
-        if length >= minimum_segmentlength:
-            phases[left: right] = CurvePhases.Flat.value
+        if length >= thresholds[Thresholds.PhaseMinimumLength]:
+            model.phases[left: right] = CurvePhases.Flat.value
 
 
 def _get_candidate_segment(complex_segment, test_value=True):
@@ -343,36 +328,34 @@ def _get_candidate_segment(complex_segment, test_value=True):
             break
 
 
-def _set_nonflat_linear_segment(times, curve, dydt, dydt_signs, extension_threshold,
-                                minimum_length_threshold, offset, phases):
+def _set_nonflat_linear_segment(model, thresholds):
 
     # All positions with sufficient slope
-    filt = phases == CurvePhases.UndeterminedNonFlat.value
+    filt = model.phases == CurvePhases.UndeterminedNonFlat.value
 
     # In case there are small regions left
     if not filt.any():
 
-        phases[phases == CurvePhases.UndeterminedNonFlat.value] = CurvePhases.UndeterminedNonLinear.value
         # Since no segment was detected there are no bordering segments
         return np.array([])
 
     # Determine value and position of steepest slope
-    loc_slope = np.abs(dydt[filt]).max()
-    loc = np.where((np.abs(dydt) == loc_slope) & filt)[0][0]
+    loc_slope = np.abs(model.dydt[filt]).max()
+    loc = np.where((np.abs(model.dydt) == loc_slope) & filt)[0][0]
 
     # Getting back the sign and values for linear model
-    loc_slope = dydt[loc]
-    loc_value = curve[loc]
-    loc_time = times[loc]
+    loc_slope = model.dydt[loc]
+    loc_value = model.curve[loc]
+    loc_time = model.times[loc]
 
     # Tangent at max
-    tangent = (times - loc_time) * loc_slope + loc_value
+    tangent = (model.times - loc_time) * loc_slope + loc_value
 
     # Determine comparison operator for first derivative
     phase = CurvePhases.Collapse if loc_slope < 0 else CurvePhases.Impulse
 
     # Find all candidates
-    candidates = (np.abs(curve - tangent) < extension_threshold * loc_value).filled(False)
+    candidates = (np.abs(model.curve - tangent) < thresholds[Thresholds.LinearModelExtension] * loc_value).filled(False)
     candidates &= filt
     candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
@@ -380,7 +363,7 @@ def _set_nonflat_linear_segment(times, curve, dydt, dydt_signs, extension_thresh
     # Verify that there's actually still a candidate at the peak value
     if n_found == 0:
 
-        phases[filt] = CurvePhases.UndeterminedNonLinear.value
+        model.phases[filt] = CurvePhases.UndeterminedNonLinear.value
 
         # Since no segment was detected there are no bordering segments
         return np.array([])
@@ -389,28 +372,28 @@ def _set_nonflat_linear_segment(times, curve, dydt, dydt_signs, extension_thresh
     elected = candidates == candidates[loc]
 
     # Verify that the elected phase fulfills length threshold
-    if elected.sum() < minimum_length_threshold:
+    if elected.sum() < thresholds[Thresholds.PhaseMinimumLength]:
 
-        phases[elected] = CurvePhases.UndeterminedNonLinear.value
+        model.phases[elected] = CurvePhases.UndeterminedNonLinear.value
         # Since no segment was detected there are no bordering segments
         return np.array([])
 
     # Update filt for border detection below before updating elected!
-    filt = (phases == CurvePhases.Undetermined.value) | \
-           (phases == CurvePhases.UndeterminedNonLinear.value) | \
-           (phases == CurvePhases.UndeterminedNonFlat.value)
+    filt = (model.phases == CurvePhases.Undetermined.value) | \
+           (model.phases == CurvePhases.UndeterminedNonLinear.value) | \
+           (model.phases == CurvePhases.UndeterminedNonFlat.value)
 
     # Only consider flanking those that have valid sign.
     # TODO: Note that it can cause an issue if curve is very wack, could merge two segments that shouldn't be
     # Probably extremely unlikely
     op1 = operator.le if phase is CurvePhases.Collapse else operator.ge
-    filt &= op1(dydt_signs, 0)
+    filt &= op1(model.dydt_signs, 0)
 
     # Set the detected phase
-    if offset:
-        phases[offset: -offset][elected] = phase.value
+    if model.offset:
+        model.phases[model.offset: -model.offset][elected] = phase.value
     else:
-        phases[elected] = phase.value
+        model.phases[elected] = phase.value
 
     # Locate flanking segments
     border_candidates, _ = label(filt)
@@ -437,8 +420,7 @@ def _bridge_canditates(candidates, window_size=5):
     return candidates
 
 
-def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge, test_min_length,
-                              uniformity_threshold, min_length, offset, phases):
+def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
     """ Determines type of non-linear phase.
 
     Function filters the first and second derivatives, only looking
@@ -481,24 +463,21 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge, te
 
         # This takes a rough estimate of which side is more interesting
         # based on the location of the steepest slope
-
-        phase = _classify_non_linear_segment(dydt_signs, ddydt_signs, uniformity_threshold)
-        if phase == CurvePhases.Undetermined:
-            steepest_loc = np.abs(dydt[filt]).argmax()
-            test_edge = PhaseEdge.Left if steepest_loc / float(filt.sum()) < 0.5 else PhaseEdge.Right
+        steepest_loc = np.abs(model.dydt[filt]).argmax()
+        test_edge = PhaseEdge.Left if steepest_loc / float(filt.sum()) < 0.5 else PhaseEdge.Right
 
     if test_edge is PhaseEdge.Left:
-        for test_length in range(test_min_length, dydt.size, 4):
-            ddydt_section = ddydt_signs[filt][:test_length]
-            dydt_section = dydt_signs[filt][:test_length]
-            phase = _classify_non_linear_segment(dydt_section, ddydt_section, uniformity_threshold)
+        for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
+            ddydt_section = model.ddydt_signs[filt][:test_length]
+            dydt_section = model.dydt_signs[filt][:test_length]
+            phase = _classify_non_linear_segment(dydt_section, ddydt_section, thresholds)
             if phase != CurvePhases.Undetermined:
                 break
     elif test_edge is PhaseEdge.Right:
-        for test_length in range(test_min_length, dydt.size, 4):
-            ddydt_section = ddydt_signs[filt][-test_length:]
-            dydt_section = dydt_signs[filt][-test_length:]
-            phase = _classify_non_linear_segment(dydt_section, ddydt_section, uniformity_threshold)
+        for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
+            ddydt_section = model.ddydt_signs[filt][-test_length:]
+            dydt_section = model.dydt_signs[filt][-test_length:]
+            phase = _classify_non_linear_segment(dydt_section, ddydt_section, thresholds)
             if phase != CurvePhases.Undetermined:
                 break
 
@@ -516,7 +495,7 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge, te
     else:
         op2 = operator.le
 
-    candidates = filt & op1(dydt_signs, 0) & op2(ddydt_signs, 0)
+    candidates = filt & op1(model.dydt_signs, 0) & op2(model.ddydt_signs, 0)
     candidates = generic_filter(candidates, _custom_filt, size=9, mode='nearest')
     candidates, label_count = label(candidates)
 
@@ -524,13 +503,13 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge, te
 
         candidates = candidates == (1 if test_edge is PhaseEdge.Left else label_count)
 
-        if candidates.sum() < min_length:
+        if candidates.sum() < thresholds[Thresholds.PhaseMinimumLength]:
             return CurvePhases.Undetermined
 
-        if offset:
-            phases[offset: -offset][candidates] = phase.value
+        if model.offset:
+            model.phases[model.offset: -model.offset][candidates] = phase.value
         else:
-            phases[candidates] = phase.value
+            model.phases[candidates] = phase.value
 
         return phase
 
@@ -539,45 +518,45 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge, te
         return CurvePhases.Undetermined
 
 
-def _classify_non_linear_segment(dydt, ddydt, uniformity_threshold):
+def _classify_non_linear_segment(dydt_section, d2yd2t_section, thresholds):
     """Classifies non linear segment
 
     Args:
-        dydt: First derivative signs
-        ddydt: Second derivative signs
-        uniformity_threshold:
+        dydt_section: First derivative signs
+        d2yd2t_section: Second derivative signs
+        thresholds:
 
     Returns: CurvePhase
 
     """
 
-    if ddydt.size == 0 or ddydt.sum() == 0 or dydt.sum() == 0:
+    if d2yd2t_section.size == 0 or d2yd2t_section.sum() == 0 or dydt_section.sum() == 0:
         return CurvePhases.Undetermined
 
     # Classify as acceleration or retardation
-    sign = np.sign(ddydt.mean())
+    sign = np.sign(d2yd2t_section.mean())
     if sign == 0:
         return CurvePhases.Undetermined
     op = operator.le if sign < 0 else operator.ge
-    value = op(ddydt, 0).mean() * sign
+    value = op(d2yd2t_section, 0).mean() * sign
 
-    if value > uniformity_threshold:
+    if value > thresholds[Thresholds.UniformityThreshold]:
         candidate_phase_types = (CurvePhases.GrowthAcceleration, CurvePhases.CollapseRetardation)
-    elif value < -uniformity_threshold:
+    elif value < -thresholds[Thresholds.UniformityThreshold]:
         candidate_phase_types = (CurvePhases.GrowthRetardation, CurvePhases.CollapseAcceleration)
     else:
         return CurvePhases.Undetermined
 
     # Classify as acceleration or retardation
-    sign = np.sign(dydt.mean())
+    sign = np.sign(dydt_section.mean())
     if sign == 0:
         return CurvePhases.Undetermined
     op = operator.le if sign < 0 else operator.ge
-    value = op(dydt, 0).mean() * sign
+    value = op(dydt_section, 0).mean() * sign
 
-    if value > uniformity_threshold:
+    if value > thresholds[Thresholds.UniformityThreshold]:
         return candidate_phase_types[0]
-    elif value < -uniformity_threshold:
+    elif value < -thresholds[Thresholds.UniformityThreshold]:
         return candidate_phase_types[1]
     else:
         return CurvePhases.Undetermined

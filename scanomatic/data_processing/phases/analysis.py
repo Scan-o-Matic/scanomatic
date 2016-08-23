@@ -129,15 +129,9 @@ def get_phase_analysis(phenotyper_object, plate, pos, thresholds=None, experimen
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
-    dydt, dydt_ranks, dydt_signs_flat, _, ddydt_signs, phases, offset, curve = \
-        get_data_needed_for_segmentation(
-            phenotyper_object, plate, pos,
-            thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
-            thresholds[Thresholds.FlatlineSlopRequirement])
+    model = get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds)
 
-    for _ in segment(
-            phenotyper_object.times, curve, dydt, dydt_signs_flat,
-            ddydt_signs, phases, offset, thresholds):
+    for _ in segment(model, thresholds):
 
         pass
 

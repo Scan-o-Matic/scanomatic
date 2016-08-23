@@ -9,8 +9,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.ndimage import label
 
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
-from scanomatic.data_processing.phases.features import get_data_needed_for_segmentation, \
-    DEFAULT_THRESHOLDS, Thresholds
 from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS, \
     get_data_needed_for_segmentation
 from scanomatic.data_processing.phenotyper import Phenotyper
@@ -169,39 +167,32 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
     curve = np.log2(phenotyper_object.smooth_growth_data[plate][pos])
     times = phenotyper_object.times
 
-    dydt, _, _, ddydt, _, _, _, _ = \
-        get_data_needed_for_segmentation(
-            phenotyper_object, plate, pos,
-            thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
-            thresholds[Thresholds.FlatlineSlopRequirement])
+    model = get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds)
 
     f = plt.figure()
 
     ax = f.gca()
-    ax.plot(times, ddydt, color='g')
+    ax.plot(times, model.d2yd2t, color='g')
     ax.set_ylabel("d2y/dt2 ", color='g')
-    ax.fill_between(times, ddydt, 0, color='g', alpha=0.7)
+    ax.fill_between(times, model.d2yd2t, 0, color='g', alpha=0.7)
 
     if show_thresholds:
 
-        t1 = ddydt.std() * thresholds[Thresholds.SecondDerivativeSigmaAsNotZero]
+        t1 = model.d2yd2t.std() * thresholds[Thresholds.SecondDerivativeSigmaAsNotZero]
         ax.axhline(-t1, linestyle='--', color='g', lw=thresholds_width)
         ax.axhline(t1, linestyle='--', color='g', lw=thresholds_width)
 
     ax2 = ax.twinx()
-    ax2.plot(times, dydt, color='r')
-    ax2.fill_between(times, dydt, 0, color='r', alpha=0.7)
+    ax2.plot(times, model.dydt, color='r')
+    ax2.fill_between(times, model.dydt, 0, color='r', alpha=0.7)
     ax2.set_ylabel("dy/dt", color='r')
 
     if show_thresholds:
 
         t1 = thresholds[Thresholds.FlatlineSlopRequirement]
-        # t2 = thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement]
 
         ax2.axhline(t1, linestyle='--', color='r', lw=thresholds_width)
-        # ax2.axhline(t2, linestyle='-.', color='r', lw=thresholds_width)
         ax2.axhline(-t1, linestyle='--', color='r', lw=thresholds_width)
-        # ax2.axhline(-t2, linestyle='-.', color='r', lw=thresholds_width)
 
     ax3 = ax.twinx()
     ax3.plot(times, curve, color='k', lw=2)
