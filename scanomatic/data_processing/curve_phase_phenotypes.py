@@ -876,7 +876,7 @@ def _get_phase_id(plate, *phases):
 def _phase_finder(phase_vector, phase):
 
     if phase_vector:
-        return tuple(i for i, p in phase_vector if p[0] == phase)
+        return tuple(i for i, (p_type, p_data) in enumerate(phase_vector) if p_type == phase)
     return tuple()
 
 
