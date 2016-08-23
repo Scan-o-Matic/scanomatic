@@ -9,8 +9,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.ndimage import label
 
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
-from scanomatic.data_processing.phases.curve_phase_phenotypes import CurvePhases, _get_data_needed_for_segments, \
+from scanomatic.data_processing.phases.curve_phase_phenotypes import _get_data_needed_for_segments, \
     DEFAULT_THRESHOLDS, Thresholds
+from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS
 from scanomatic.data_processing.phenotyper import Phenotyper
 from scanomatic.io.logger import Logger
 from scanomatic.io.movie_writer import MovieWriter
