@@ -154,7 +154,6 @@ def segment(segmentation_model, thresholds=None):
         thresholds:
             The thresholds dictionary to be used.
     """
-    curve = np.ma.masked_invalid(np.log2(segmentation_model.curve))
 
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
@@ -237,7 +236,7 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
     if model is None:
         model = SegmentationModel()
 
-    model.curve = phenotyper_object.smooth_growth_data[plate][pos]
+    model.curve = np.ma.masked_invalid(np.log2(phenotyper_object.smooth_growth_data[plate][pos]))
     model.times = phenotyper_object.times
 
     # Smoothing kernel for derivatives
