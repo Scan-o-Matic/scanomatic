@@ -1,22 +1,19 @@
-from scipy.ndimage import label
-
-from scanomatic.data_processing.curve_phase_phenotypes import CurvePhases, _get_data_needed_for_segments, \
-    DEFAULT_THRESHOLDS, Thresholds
-
-from scanomatic.io.movie_writer import MovieWriter
-import matplotlib
-
-import numpy as np
-from types import StringTypes
 import pandas as pd
 from functools import wraps
+from types import StringTypes
+
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.ndimage import label
 
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
-from scanomatic.io.logger import Logger
+from scanomatic.data_processing.phases.curve_phase_phenotypes import CurvePhases, _get_data_needed_for_segments, \
+    DEFAULT_THRESHOLDS, Thresholds
 from scanomatic.data_processing.phenotyper import Phenotyper
-
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scanomatic.io.logger import Logger
+from scanomatic.io.movie_writer import MovieWriter
 
 _logger = Logger("Phenotype Results QC")
 

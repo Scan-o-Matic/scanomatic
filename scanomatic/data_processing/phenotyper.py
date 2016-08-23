@@ -1,14 +1,15 @@
-import numpy as np
-import os
 import csv
-from scipy.ndimage import median_filter
-from collections import deque
-import pickle
-from enum import Enum
-from types import StringTypes
 import glob
-from scipy.stats import norm
+import os
+import pickle
+from collections import deque
 from itertools import izip, chain
+from types import StringTypes
+
+import numpy as np
+from enum import Enum
+from scipy.ndimage import median_filter
+from scipy.stats import norm
 
 #
 #   INTERNAL DEPENDENCIES
@@ -21,7 +22,7 @@ import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes, \
     get_derivative
-from scanomatic.data_processing.curve_phase_phenotypes import phase_phenotypes, filter_plate, \
+from scanomatic.data_processing.phases.curve_phase_phenotypes import phase_phenotypes, filter_plate, \
     CurvePhaseMetaPhenotypes, VectorPhenotypes
 from scanomatic.data_processing.phenotypes import PhenotypeDataType
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
