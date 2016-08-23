@@ -217,7 +217,7 @@ def segment(segmentation_model, thresholds=None):
         yield None
 
     # Bridge neighbouring segments of same type if gap is one
-    _bridge_gaps(segmentation_model.phases)
+    _fill_undefined_gaps(segmentation_model.phases)
 
 
 def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, model=None):
@@ -274,7 +274,7 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
     return model
 
 
-def _bridge_gaps(phases):
+def _fill_undefined_gaps(phases):
     """Fills in undefined gaps if same phase on each side
 
     Maximum gap size is 1
