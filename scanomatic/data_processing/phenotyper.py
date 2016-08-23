@@ -22,8 +22,9 @@ import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes, \
     get_derivative
-from scanomatic.data_processing.phases.curve_phase_phenotypes import phase_phenotypes, filter_plate, \
+from scanomatic.data_processing.phases.features import extract_phenotypes, \
     CurvePhaseMetaPhenotypes, VectorPhenotypes
+from scanomatic.data_processing.phases.analysis import get_phase_analysis
 from scanomatic.data_processing.phenotypes import PhenotypeDataType
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData2 as MetaData
@@ -831,7 +832,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 if phenotypes_inclusion(VectorPhenotypes):
 
-                    phases, phases_phenotypes = phase_phenotypes(
+                    phases, phases_phenotypes = get_phase_analysis(
                         self, id_plate, (id0, id1),
                         experiment_doublings=position_phenotypes[Phenotypes.ExperimentPopulationDoublings.value])
 
@@ -855,7 +856,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                         phenotype, VectorPhenotypes.PhasesPhenotypes))
                     continue
 
-                vector_meta_phenotypes[phenotype] = filter_plate(
+                vector_meta_phenotypes[phenotype] = extract_phenotypes(
                     vector_phenotypes[VectorPhenotypes.PhasesPhenotypes], phenotype, phenotypes).astype(np.float)
 
             self._logger.info("Plate {0} Done".format(id_plate + 1))

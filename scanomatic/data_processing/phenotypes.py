@@ -1,7 +1,7 @@
 from enum import Enum
 
 from growth_phenotypes import Phenotypes
-from scanomatic.data_processing.phases.curve_phase_phenotypes import VectorPhenotypes, CurvePhaseMetaPhenotypes
+from scanomatic.data_processing.phases.features import VectorPhenotypes, CurvePhaseMetaPhenotypes
 
 
 class PhenotypeDataType(Enum):

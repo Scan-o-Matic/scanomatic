@@ -125,7 +125,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
-def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, thresholds=None):
+def segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, thresholds=None):
     """Iteratively segments a curve into its component CurvePhases
 
     Proposed future segmentation structure:
@@ -555,3 +555,39 @@ def _custom_filt(v, max_gap=3, min_length=3):
     padded = np.hstack([(0,), filted, (0,)]).astype(int)
     diff = np.diff(padded)
     return (np.where(diff < 0)[0] - np.where(diff > 0)[0]).max() >= min_length
+
+
+def get_data_needed_for_segmentation(phenotyper_object, plate, pos, threshold_for_sign, threshold_flatline):
+
+    curve = phenotyper_object.smooth_growth_data[plate][pos]
+
+    # Smoothing kernel for derivatives
+    gauss = signal.gaussian(7, 3)
+    gauss /= gauss.sum()
+
+    # Some center weighted smoothing of derivative, we only care for general shape
+    dydt = signal.convolve(phenotyper_object.get_derivative(plate, pos), gauss, mode='valid')
+    d_offset = (phenotyper_object.times.size - dydt.size) / 2
+    dydt = np.hstack(([dydt[0] for _ in range(d_offset)], dydt, [dydt[-1] for _ in range(d_offset)]))
+
+    dydt_ranks = np.abs(dydt).argsort().argsort()
+    offset = (phenotyper_object.times.shape[0] - dydt.shape[0]) / 2
+
+    # Smoothing in kernel shape because only want reliable trends
+    ddydt = signal.convolve(dydt, [1, 0, -1], mode='valid')
+    ddydt = signal.convolve(ddydt, gauss, mode='valid')
+
+    dd_offset = (dydt.size - ddydt.size) / 2
+    ddydt = np.hstack(([ddydt[0] for _ in range(dd_offset)], ddydt, [ddydt[-1] for _ in range(dd_offset)]))
+    phases = np.ones_like(curve).astype(np.int) * CurvePhases.Undetermined.value
+    """:type : numpy.ndarray"""
+
+    # Determine second derviative signs
+    ddydt_signs = np.sign(ddydt)
+    ddydt_signs[np.abs(ddydt) < threshold_for_sign * ddydt[np.isfinite(ddydt)].std()] = 0
+
+    # Determine first derivative signs for flattness questions
+    dydt_signs_flat = np.sign(dydt)
+    dydt_signs_flat[np.abs(dydt) < threshold_flatline] = 0
+
+    return dydt, dydt_ranks, dydt_signs_flat, ddydt, ddydt_signs, phases, offset, curve

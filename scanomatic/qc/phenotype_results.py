@@ -9,9 +9,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.ndimage import label
 
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
-from scanomatic.data_processing.phases.curve_phase_phenotypes import _get_data_needed_for_segments, \
+from scanomatic.data_processing.phases.features import get_data_needed_for_segmentation, \
     DEFAULT_THRESHOLDS, Thresholds
-from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS
+from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS, \
+    get_data_needed_for_segmentation
 from scanomatic.data_processing.phenotyper import Phenotyper
 from scanomatic.io.logger import Logger
 from scanomatic.io.movie_writer import MovieWriter
@@ -169,7 +170,7 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
     times = phenotyper_object.times
 
     dydt, _, _, ddydt, _, _, _, _ = \
-        _get_data_needed_for_segments(
+        get_data_needed_for_segmentation(
             phenotyper_object, plate, pos,
             thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
             thresholds[Thresholds.FlatlineSlopRequirement])
