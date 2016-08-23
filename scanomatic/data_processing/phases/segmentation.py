@@ -301,15 +301,6 @@ def _fill_undefined_gaps(phases):
             phases[loc] = phases[loc + 1]
 
 
-def _set_flat_segments(model, thresholds):
-
-    model.phases[...] = CurvePhases.UndeterminedNonFlat.value
-    flats = _bridge_canditates(model.dydt_signs == 0)
-    for length, left, right in izip(*_get_candidate_lengths_and_edges(flats)):
-        if length >= thresholds[Thresholds.PhaseMinimumLength]:
-            model.phases[left: right] = CurvePhases.Flat.value
-
-
 def _get_candidate_segment(complex_segment, test_value=True):
     """While complex_segment contains any test_value the first
     segment of such will be returned as a boolean array
@@ -327,16 +318,21 @@ def _get_candidate_segment(complex_segment, test_value=True):
             break
 
 
-def _set_nonflat_linear_segment(model, thresholds):
+def classifier_flat(model, thresholds, filt):
 
-    # All positions with sufficient slope
-    filt = model.phases == CurvePhases.UndeterminedNonFlat.value
+    return _bridge_canditates(CurvePhases.Flat, model.dydt_signs == 0)
 
-    # In case there are small regions left
-    if not filt.any():
 
-        # Since no segment was detected there are no bordering segments
-        return np.array([])
+def _set_flat_segments(model, thresholds):
+
+    model.phases[...] = CurvePhases.UndeterminedNonFlat.value
+    _, flats = classifier_flat(model, thresholds, None)
+    for length, left, right in izip(*_get_candidate_lengths_and_edges(flats)):
+        if length >= thresholds[Thresholds.PhaseMinimumLength]:
+            model.phases[left: right] = CurvePhases.Flat.value
+
+
+def classifier_nonflat_linear(model, thresholds, filt):
 
     # Determine value and position of steepest slope
     loc_slope = np.abs(model.dydt[filt]).max()
@@ -356,6 +352,7 @@ def _set_nonflat_linear_segment(model, thresholds):
     # Find all candidates
     candidates = (np.abs(model.curve - tangent) < thresholds[Thresholds.LinearModelExtension] * loc_value).filled(False)
     candidates &= filt
+
     candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
 
@@ -368,7 +365,21 @@ def _set_nonflat_linear_segment(model, thresholds):
         return np.array([])
 
     # Get the true phase positions from the candidates
-    elected = candidates == candidates[loc]
+    return phase, candidates == candidates[loc]
+
+
+def _set_nonflat_linear_segment(model, thresholds):
+
+    # All positions with sufficient slope
+    filt = model.phases == CurvePhases.UndeterminedNonFlat.value
+
+    # In case there are small regions left
+    if not filt.any():
+
+        # Since no segment was detected there are no bordering segments
+        return np.array([])
+
+    phase, elected = classifier_nonflat_linear(model, thresholds, filt)
 
     # Verify that the elected phase fulfills length threshold
     if elected.sum() < thresholds[Thresholds.PhaseMinimumLength]:
@@ -395,6 +406,7 @@ def _set_nonflat_linear_segment(model, thresholds):
         model.phases[elected] = phase.value
 
     # Locate flanking segments
+    loc = np.where(elected)[0][0]
     border_candidates, _ = label(filt)
     loc_label = border_candidates[loc]
     return (border_candidates == loc_label) - elected
@@ -455,6 +467,7 @@ def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
         CurvePhases.CollapseRetardation
 
     """
+    # TODO: Need same classifier structure here too
     phase = CurvePhases.Undetermined
 
     # Define type at one of the edges
@@ -469,14 +482,14 @@ def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
         for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
             ddydt_section = model.ddydt_signs[filt][:test_length]
             dydt_section = model.dydt_signs[filt][:test_length]
-            phase = _classify_non_linear_segment(dydt_section, ddydt_section, thresholds)
+            phase = _classify_non_linear_segment_type(dydt_section, ddydt_section, thresholds)
             if phase != CurvePhases.Undetermined:
                 break
     elif test_edge is PhaseEdge.Right:
         for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
             ddydt_section = model.ddydt_signs[filt][-test_length:]
             dydt_section = model.dydt_signs[filt][-test_length:]
-            phase = _classify_non_linear_segment(dydt_section, ddydt_section, thresholds)
+            phase = _classify_non_linear_segment_type(dydt_section, ddydt_section, thresholds)
             if phase != CurvePhases.Undetermined:
                 break
 
@@ -517,7 +530,7 @@ def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
         return CurvePhases.Undetermined
 
 
-def _classify_non_linear_segment(dydt_section, d2yd2t_section, thresholds):
+def _classify_non_linear_segment_type(dydt_section, d2yd2t_section, thresholds):
     """Classifies non linear segment
 
     Args:
