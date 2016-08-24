@@ -372,7 +372,9 @@ def classifier_nonflat_linear(model, thresholds, filt):
     phase = CurvePhases.Collapse if loc_slope < 0 else CurvePhases.Impulse
 
     # Find all candidates
-    candidates = (np.abs(model.curve - tangent) < thresholds[Thresholds.LinearModelExtension] * loc_value).filled(False)
+    candidates = (np.abs(model.curve - tangent) <
+                  np.abs(thresholds[Thresholds.LinearModelExtension] * loc_value)).filled(False)
+
     candidates &= filt
 
     candidates = _bridge_canditates(candidates)
