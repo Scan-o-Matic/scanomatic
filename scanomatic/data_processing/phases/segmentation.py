@@ -253,9 +253,9 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
     # Some center weighted smoothing of derivative, we only care for general shape
     dydt = signal.convolve(phenotyper_object.get_derivative(plate, pos), gauss, mode='valid')
     d_offset = (model.times.size - dydt.size) / 2
-    model.dydt = np.hstack(([dydt[0] for _ in range(d_offset)], dydt, [dydt[-1] for _ in range(d_offset)]))
+    model.dydt = np.ma.masked_invalid(np.hstack(([dydt[0] for _ in range(d_offset)], dydt, [dydt[-1] for _ in range(d_offset)])))
 
-    model.dydt_ranks = np.abs(dydt).argsort().argsort()
+    # model.dydt_ranks = np.abs(dydt).filled(model.dydt.min() - 1).argsort().argsort()
 
     # Because of hstacking there will never be offsets
     model.offset = 0
@@ -265,19 +265,20 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
     d2yd2t = signal.convolve(d2yd2t, gauss, mode='valid')
 
     d2_offset = (model.times.size - d2yd2t.size) / 2
-    model.d2yd2t = np.hstack(([d2yd2t[0] for _ in range(d2_offset)], d2yd2t, [d2yd2t[-1] for _ in range(d2_offset)]))
+    model.d2yd2t = np.ma.masked_invalid(np.hstack(([d2yd2t[0] for _ in range(d2_offset)], d2yd2t, [d2yd2t[-1] for _ in range(d2_offset)])))
 
     model.phases = np.ones_like(model.curve).astype(np.int) * CurvePhases.Undetermined.value
     """:type : numpy.ndarray"""
 
     # Determine second derivative signs
-    model.d2yd2t_signs = np.sign(model.d2yd2t)
-    model.d2yd2t_signs[
-        np.abs(model.d2yd2t) < thresholds[Thresholds.SecondDerivativeSigmaAsNotZero] *
-        model.d2yd2t[np.isfinite(model.d2yd2t)].std()] = 0
+    model.d2yd2t_signs = np.sign(model.d2yd2t.filled(0))
+    if not model.d2yd2t.mask.all():
+        model.d2yd2t_signs[
+            np.abs(model.d2yd2t) < thresholds[Thresholds.SecondDerivativeSigmaAsNotZero] *
+            model.d2yd2t.std()] = 0
 
     # Determine first derivative signs for flatness questions
-    model.dydt_signs = np.sign(model.dydt)
+    model.dydt_signs = np.sign(model.dydt.filled(0))
     model.dydt_signs[np.abs(model.dydt) < thresholds[Thresholds.FlatlineSlopRequirement]] = 0
 
     return model
@@ -356,6 +357,15 @@ def classifier_nonflat_linear(model, thresholds, filt):
     Returns:
 
     """
+
+    # Verify that there's data
+    if model.dydt[filt].any() in (np.ma.masked, False):
+
+        model.phases[filt] = CurvePhases.UndeterminedNonLinear.value
+
+        # Since no segment was detected there are no bordering segments
+        return CurvePhases.Undetermined, np.zeros_like(filt).astype(bool)
+
     # Determine value and position of steepest slope
     loc_slope = np.abs(model.dydt[filt]).max()
     loc = np.where((np.abs(model.dydt) == loc_slope) & filt)[0][0]
@@ -515,7 +525,9 @@ def classify_non_linear_segment_type(model, thresholds, filt, test_edge):
     """
     phase = CurvePhases.Undetermined
 
-    if filt.sum() < thresholds[Thresholds.PhaseMinimumLength]:
+    if any((v < thresholds[Thresholds.PhaseMinimumLength] for v in
+            (filt.sum(), (~model.dydt[filt].mask).sum(), (~model.d2yd2t[filt].mask).sum()))):
+
         return CurvePhases.Undetermined
 
     # Define type at one of the edges
