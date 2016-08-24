@@ -141,6 +141,7 @@ setup(
         "scanomatic.server",
         "scanomatic.image_analysis",
         "scanomatic.data_processing",
+        "scanomatic.data_processing.phases",
         "scanomatic.util",
         "scanomatic.ui_server"],
 
