@@ -1733,7 +1733,62 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._logger.info("State saved to '{0}'".format(dir_path))
 
     def call(self, extra_keyword_args=tuple(), *funcs):
+        """For each curve, the supplied functions are called.
 
+        Each function must have the following initial argument order:
+
+            phenotyper_object, plate, position_tuple
+
+        After those, the rest of the arguments should have default values
+        and/or have their needed information supplied in the
+        ```extra_keyword_args``` parameter.
+
+        Args:
+            extra_keyword_args (tuple or dict):
+                Tuple of dicts or a single dict used as extra keyword
+                arguments sent to the functions. Either specific for
+                each function or the same for all.
+            *funcs:
+                A list of functions to be called for each position.
+
+        Returns:
+            A generator to loop through the calling on the
+            positions.
+
+        Examples:
+
+            Interactive plotting of the phase-classification of all
+            curves:
+
+            ```
+            from matplotlib as plt
+            from scanomatic.qc import phenotype_results
+
+            def outer(i):
+                for _ in i:
+                    f.show()
+                    yield
+                    for ax in f.axes:
+                        if ax is not ax1 and ax is not ax2:
+                            f.delaxes(ax)
+                        else:
+                            ax.cla()
+
+            f = plt.figure()
+            ax1 = f.add_subplot(2, 1, 1,)
+            ax2 = f.add_subplot(2, 1, 2)
+
+            i = P.call(
+                ({'ax': ax1}, {'ax': ax2}),
+                phenotype_results.plot_phases,
+                phenotype_results.plot_curve_and_derivatives)
+
+            o = outer(i)
+            ```
+
+            Then ```next(o)``` can be used to step through the
+            generator.
+        """
         if not isinstance(extra_keyword_args, tuple):
             extra_keyword_args = tuple(extra_keyword_args for _ in range(len(self)))
 
