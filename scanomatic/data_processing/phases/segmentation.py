@@ -417,7 +417,7 @@ def _set_nonflat_linear_segment(model, thresholds):
     phase, elected = classifier_nonflat_linear(model, thresholds, filt)
 
     # Verify that the elected phase fulfills length threshold
-    if elected.sum() < thresholds[Thresholds.PhaseMinimumLength]:
+    if phase is CurvePhases.Undetermined or elected.sum() < thresholds[Thresholds.PhaseMinimumLength]:
 
         model.phases[elected] = CurvePhases.UndeterminedNonLinear.value
         # Since no segment was detected there are no bordering segments
@@ -576,7 +576,7 @@ def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
 
     phase, candidates = classifier_nonlinear(model, thresholds, filt, test_edge)
 
-    if candidates.sum() < thresholds[Thresholds.PhaseMinimumLength]:
+    if phase is CurvePhases.Undetermined or candidates.sum() < thresholds[Thresholds.PhaseMinimumLength]:
         return CurvePhases.Undetermined
 
     if model.offset:
