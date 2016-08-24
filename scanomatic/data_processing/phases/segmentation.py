@@ -528,16 +528,16 @@ def classify_non_linear_segment_type(model, thresholds, filt, test_edge):
 
     if test_edge is PhaseEdge.Left:
         for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
-            ddydt_section = model.d2yd2t_signs[filt][:test_length]
+            d2yd2t_section = model.d2yd2t_signs[filt][:test_length]
             dydt_section = model.dydt_signs[filt][:test_length]
-            phase = _classify_non_linear_segment_type(dydt_section, ddydt_section, thresholds)
+            phase = _classify_non_linear_segment_type(dydt_section, d2yd2t_section, thresholds)
             if phase != CurvePhases.Undetermined:
                 break
     elif test_edge is PhaseEdge.Right:
         for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
-            ddydt_section = model.d2yd2t_signs[filt][-test_length:]
+            d2yd2t_section = model.d2yd2t_signs[filt][-test_length:]
             dydt_section = model.dydt_signs[filt][-test_length:]
-            phase = _classify_non_linear_segment_type(dydt_section, ddydt_section, thresholds)
+            phase = _classify_non_linear_segment_type(dydt_section, d2yd2t_section, thresholds)
             if phase != CurvePhases.Undetermined:
                 break
 
