@@ -56,6 +56,28 @@ def _validate_input(f):
     return _wrapped
 
 
+@wraps
+def _setup_figure(f):
+
+    def _wrapped(*args, **kwargs):
+
+        def _isdefault(val):
+
+            return val not in kwargs or kwargs[val] is None
+
+        if _isdefault('f') and _isdefault('ax'):
+            kwargs['f'] = plt.figure()
+            kwargs['ax'] = kwargs['f'].gca()
+        elif _isdefault('f'):
+            kwargs['f'] = kwargs['ax'].figure
+        elif _isdefault('ax'):
+            kwargs['ax'] = kwargs['f'].gca()
+
+        return f(*args, **kwargs)
+
+    return _wrapped
+
+
 @_validate_input
 def get_position_phenotypes(phenotypes, plate, position_selection=None):
 
@@ -148,7 +170,9 @@ def plot_plate_heatmap(
 
 
 @_validate_input
-def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT_THRESHOLDS, show_thresholds=True):
+@_setup_figure
+def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT_THRESHOLDS, show_thresholds=True,
+                               ax=None, f=None):
     """Plots a curve and both its derivatives as calculated and
     smoothed by scanomatic during the phase sectioning.
 
@@ -158,6 +182,8 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
         pos: the position tuple on the plate
         thresholds: A thresholds dictionary
         show_thresholds: If include horizontal lines for applicable thresholds
+        ax: Figure axes to plot in
+        f: Figure (used if not ax supplied)
 
     Returns: A matplotlib figure
 
@@ -165,16 +191,15 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
 
     model = get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds)
 
-    return plot_curve_and_derivatives_from_model(model, thresholds, show_thresholds)
+    return plot_curve_and_derivatives_from_model(model, thresholds, show_thresholds, ax=ax)
 
 
-def plot_curve_and_derivatives_from_model(model, thresholds=DEFAULT_THRESHOLDS, show_thresholds=False):
+@_setup_figure
+def plot_curve_and_derivatives_from_model(model, thresholds=DEFAULT_THRESHOLDS, show_thresholds=False, f=None, ax=None):
     thresholds_width = 1.5
 
-    f = plt.figure()
     times = model.times
 
-    ax = f.gca()
     ax.plot(times, model.d2yd2t, color='g')
     ax.set_ylabel("d2y/dt2 ", color='g')
     ax.fill_between(times, model.d2yd2t, 0, color='g', alpha=0.7)
@@ -278,18 +303,14 @@ def animate_plate_over_time(save_target, plate, truncate_value_encoding=False, i
     return _animation()
 
 
-def plot_phases(save_target, phenotypes, position, segment_alpha=0.3, f=None, colors=None):
+@_setup_figure
+def plot_phases(save_target, phenotypes, position, segment_alpha=0.3, f=None, ax=None, colors=None):
 
     if not isinstance(phenotypes, Phenotyper):
         phenotypes = Phenotyper.LoadFromState(phenotypes)
 
     model = get_data_needed_for_segmentation(phenotypes, position[0], (position[1], position[2]), DEFAULT_THRESHOLDS)
     model.phases = phenotypes.get_curve_phases(*position)
-
-    if f is None:
-        f = plt.figure()
-
-    ax = f.gca()
 
     plot_phases_from_model(model, ax=ax, colors=colors, segment_alpha=segment_alpha)
 
@@ -301,15 +322,8 @@ def plot_phases(save_target, phenotypes, position, segment_alpha=0.3, f=None, co
     return f
 
 
+@_setup_figure
 def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=0.3):
-
-    if f is not None and ax is None:
-        ax = f.gca()
-    elif ax is not None:
-        f = ax.figure
-    else:
-        f = plt.figure()
-        ax = f.gca()
 
     if colors is None:
         colors = PHASE_PLOTTING_COLORS
