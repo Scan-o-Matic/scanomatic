@@ -1777,6 +1777,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             f = plt.figure()
             ax1 = f.add_subplot(2, 1, 1,)
             ax2 = f.add_subplot(2, 1, 2)
+            plt.ion()
 
             i = P.call(
                 ({'ax': ax1}, {'ax': ax2}),
