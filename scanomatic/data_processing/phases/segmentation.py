@@ -221,21 +221,28 @@ def segment(segmentation_model, thresholds=None):
 
 
 def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, model=None):
-    """
+    """Builds a segmentation model
 
-    :param phenotyper_object:
-    :param plate:
-    :param pos:
-    :param thresholds:
-    :param model:
-     :type model: scanomatic.models.settings_models.SegmentationModel
-    :return: Data as a SegmentationModel
-    :rtype: scanomatic.models.settings_models.SegmentationModel
+    Args:
+        phenotyper_object (scanomatic.data_processing.Phenotyper):
+            The projects phenotyer
+        plate (int):
+            Plate index, zero-based
+        pos (Tuple[int]):
+            Row and column of position considered
+        thresholds (dict):
+            Set of thresholds to be used.
+        model(scanomatic.models.settings_models.SegmentationModel):
+            If a model should be reused, else it is created.
+    Returns (scanomatic.models.settings_models.SegmentationModel):
+        Data container with information needed for segmentation
     """
 
     if model is None:
         model = SegmentationModel()
 
+    model.plate = plate
+    model.pos = tuple(pos)
     model.curve = np.ma.masked_invalid(np.log2(phenotyper_object.smooth_growth_data[plate][pos]))
     model.times = phenotyper_object.times
 
