@@ -330,7 +330,7 @@ def _get_candidate_segment(complex_segment, test_value=True):
 
 def classifier_flat(model):
 
-    return _bridge_canditates(CurvePhases.Flat, model.dydt_signs == 0)
+    return CurvePhases.Flat, _bridge_canditates(model.dydt_signs == 0)
 
 
 def _set_flat_segments(model, thresholds):
