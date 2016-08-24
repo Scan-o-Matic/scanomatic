@@ -3,7 +3,7 @@ import glob
 import os
 import pickle
 from collections import deque
-from itertools import izip, chain
+from itertools import izip, chain, product
 from types import StringTypes
 
 import numpy as np
@@ -1731,3 +1731,20 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                  None if self._phenotypes_inclusion is None else self._phenotypes_inclusion.name])
 
         self._logger.info("State saved to '{0}'".format(dir_path))
+
+    def call(self, extra_keyword_args=tuple(), *funcs):
+
+        if not isinstance(extra_keyword_args, tuple):
+            extra_keyword_args = tuple(extra_keyword_args for _ in range(len(self)))
+
+        for plate, shape in enumerate(self.plate_shapes):
+
+            if not shape:
+                continue
+
+            for pos in product(*(range(s) for s in shape)):
+
+                for idf, f in enumerate(funcs):
+                    f(self, plate, pos, **extra_keyword_args[idf])
+
+                yield plate, pos
