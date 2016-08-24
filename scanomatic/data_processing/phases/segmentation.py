@@ -455,6 +455,81 @@ def _bridge_canditates(candidates, window_size=5):
     return candidates
 
 
+def classifier_nonlinear(model, thresholds, filt, test_edge):
+
+    phase = classify_non_linear_segment_type(model, thresholds, filt, test_edge)
+    if phase is CurvePhases.Undetermined:
+        return phase
+
+    # Determine which operators to be used for first (op1) and second (op2) derivative signs
+    if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.GrowthRetardation:
+        op1 = operator.ge
+    else:
+        op1 = operator.le
+
+    if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.CollapseRetardation:
+        op2 = operator.ge
+    else:
+        op2 = operator.le
+
+    candidates = filt & op1(model.dydt_signs, 0) & op2(model.d2yd2t_signs, 0)
+    candidates = generic_filter(candidates, _custom_filt, size=9, mode='nearest')
+    candidates, label_count = label(candidates)
+
+    if label_count:
+
+        candidates = candidates == (1 if test_edge is PhaseEdge.Left else label_count)
+        """:type : numpy.ndarray"""
+
+        return phase, candidates
+
+    return CurvePhases.Undetermined, np.zeros_like(candidates).astype(bool)
+
+
+def classify_non_linear_segment_type(model, thresholds, filt, test_edge):
+    """Classifies the primary non-linear phase in a segment
+
+    Args:
+        model (scanomatic.models.phases_models.SegmentationModel):
+            Data container for the curve
+        thresholds (dict):
+            Set of thresholds used
+        filt (numpy.ndarrya):
+            Boolean array defining the segment of interest
+        test_edge:
+            Which side of the segment is of most concern
+
+    Returns (CurvePhases):
+        The type of phase most likely present.
+    """
+    phase = CurvePhases.Undetermined
+
+    # Define type at one of the edges
+    if test_edge is PhaseEdge.Intelligent:
+
+        # This takes a rough estimate of which side is more interesting
+        # based on the location of the steepest slope
+        steepest_loc = np.abs(model.dydt[filt]).argmax()
+        test_edge = PhaseEdge.Left if steepest_loc / float(filt.sum()) < 0.5 else PhaseEdge.Right
+
+    if test_edge is PhaseEdge.Left:
+        for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
+            ddydt_section = model.d2yd2t_signs[filt][:test_length]
+            dydt_section = model.dydt_signs[filt][:test_length]
+            phase = _classify_non_linear_segment_type(dydt_section, ddydt_section, thresholds)
+            if phase != CurvePhases.Undetermined:
+                break
+    elif test_edge is PhaseEdge.Right:
+        for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
+            ddydt_section = model.d2yd2t_signs[filt][-test_length:]
+            dydt_section = model.dydt_signs[filt][-test_length:]
+            phase = _classify_non_linear_segment_type(dydt_section, ddydt_section, thresholds)
+            if phase != CurvePhases.Undetermined:
+                break
+
+    return phase
+
+
 def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
     """ Determines type of non-linear phase.
 
@@ -487,68 +562,18 @@ def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
         CurvePhases.CollapseRetardation
 
     """
-    # TODO: Need same classifier structure here too
-    phase = CurvePhases.Undetermined
 
-    # Define type at one of the edges
-    if test_edge is PhaseEdge.Intelligent:
+    phase, candidates = classifier_nonlinear(model, thresholds, filt, test_edge)
 
-        # This takes a rough estimate of which side is more interesting
-        # based on the location of the steepest slope
-        steepest_loc = np.abs(model.dydt[filt]).argmax()
-        test_edge = PhaseEdge.Left if steepest_loc / float(filt.sum()) < 0.5 else PhaseEdge.Right
-
-    if test_edge is PhaseEdge.Left:
-        for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
-            ddydt_section = model.d2yd2t_signs[filt][:test_length]
-            dydt_section = model.dydt_signs[filt][:test_length]
-            phase = _classify_non_linear_segment_type(dydt_section, ddydt_section, thresholds)
-            if phase != CurvePhases.Undetermined:
-                break
-    elif test_edge is PhaseEdge.Right:
-        for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
-            ddydt_section = model.d2yd2t_signs[filt][-test_length:]
-            dydt_section = model.dydt_signs[filt][-test_length:]
-            phase = _classify_non_linear_segment_type(dydt_section, ddydt_section, thresholds)
-            if phase != CurvePhases.Undetermined:
-                break
-
-    elif phase == CurvePhases.Undetermined:
+    if candidates.sum() < thresholds[Thresholds.PhaseMinimumLength]:
         return CurvePhases.Undetermined
 
-    # Determine which operators to be used for first (op1) and second (op2) derivative signs
-    if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.GrowthRetardation:
-        op1 = operator.ge
+    if model.offset:
+        model.phases[model.offset: -model.offset][candidates] = phase.value
     else:
-        op1 = operator.le
+        model.phases[candidates] = phase.value
 
-    if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.CollapseRetardation:
-        op2 = operator.ge
-    else:
-        op2 = operator.le
-
-    candidates = filt & op1(model.dydt_signs, 0) & op2(model.d2yd2t_signs, 0)
-    candidates = generic_filter(candidates, _custom_filt, size=9, mode='nearest')
-    candidates, label_count = label(candidates)
-
-    if label_count:
-
-        candidates = candidates == (1 if test_edge is PhaseEdge.Left else label_count)
-        """:type : numpy.ndarray"""
-
-        if candidates.sum() < thresholds[Thresholds.PhaseMinimumLength]:
-            return CurvePhases.Undetermined
-
-        if model.offset:
-            model.phases[model.offset: -model.offset][candidates] = phase.value
-        else:
-            model.phases[candidates] = phase.value
-
-        return phase
-
-    else:
-
-        return CurvePhases.Undetermined
+    return phase
 
 
 def _classify_non_linear_segment_type(dydt_section, d2yd2t_section, thresholds):
