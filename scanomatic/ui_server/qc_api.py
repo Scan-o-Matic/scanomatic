@@ -737,7 +737,7 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
-        segmentations = state.get_curve_segments(plate, d1_row, d2_col)
+        segmentations = state.get_curve_phases(plate, d1_row, d2_col)
         if segmentations is not None:
             segmentations = segmentations.tolist()
 
