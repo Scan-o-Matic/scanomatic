@@ -470,7 +470,7 @@ def classifier_nonlinear(model, thresholds, filt, test_edge):
 
     phase = classify_non_linear_segment_type(model, thresholds, filt, test_edge)
     if phase is CurvePhases.Undetermined:
-        return phase
+        return phase, np.zeros_like(filt).astype(bool)
 
     # Determine which operators to be used for first (op1) and second (op2) derivative signs
     if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.GrowthRetardation:
