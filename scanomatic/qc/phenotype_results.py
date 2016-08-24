@@ -56,7 +56,6 @@ def _validate_input(f):
     return _wrapped
 
 
-@wraps
 def _setup_figure(f):
 
     def _wrapped(*args, **kwargs):
@@ -304,17 +303,17 @@ def animate_plate_over_time(save_target, plate, truncate_value_encoding=False, i
 
 
 @_setup_figure
-def plot_phases(save_target, phenotypes, position, segment_alpha=0.3, f=None, ax=None, colors=None):
+def plot_phases(phenotypes, plate, position, segment_alpha=0.3, f=None, ax=None, colors=None, save_target=None):
 
     if not isinstance(phenotypes, Phenotyper):
         phenotypes = Phenotyper.LoadFromState(phenotypes)
 
-    model = get_data_needed_for_segmentation(phenotypes, position[0], (position[1], position[2]), DEFAULT_THRESHOLDS)
-    model.phases = phenotypes.get_curve_phases(*position)
+    model = get_data_needed_for_segmentation(phenotypes, plate, position, DEFAULT_THRESHOLDS)
+    model.phases = phenotypes.get_curve_phases(plate, position[0], position[1])
 
     plot_phases_from_model(model, ax=ax, colors=colors, segment_alpha=segment_alpha)
 
-    ax.set_title("Curve phases for plate {0}, position ({1}, {2})".format(*position))
+    ax.set_title("Curve phases for plate {0}, position ({1}, {2})".format(plate, *position))
 
     if save_target:
         f.savefig(save_target)
