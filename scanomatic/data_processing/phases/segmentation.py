@@ -262,15 +262,15 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
     d2yd2t = signal.convolve(dydt, [1, 0, -1], mode='valid')
     d2yd2t = signal.convolve(d2yd2t, gauss, mode='valid')
 
-    d2_offset = (dydt.size - d2yd2t.size) / 2
+    d2_offset = (model.times.size - d2yd2t.size) / 2
     model.d2yd2t = np.hstack(([d2yd2t[0] for _ in range(d2_offset)], d2yd2t, [d2yd2t[-1] for _ in range(d2_offset)]))
 
     model.phases = np.ones_like(model.curve).astype(np.int) * CurvePhases.Undetermined.value
     """:type : numpy.ndarray"""
 
-    # Determine second derviative signs
+    # Determine second derivative signs
     model.d2yd2t_signs = np.sign(model.d2yd2t)
-    model.d2yd2t_signs = model.d2yd2t[
+    model.d2yd2t_signs[
         np.abs(model.d2yd2t) < thresholds[Thresholds.SecondDerivativeSigmaAsNotZero] *
         model.d2yd2t[np.isfinite(model.d2yd2t)].std()] = 0
 
