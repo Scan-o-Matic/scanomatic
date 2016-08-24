@@ -927,7 +927,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         """
         self._normalizable_phenotypes.remove(phenotype)
 
-    def get_curve_segments(self, plate, outer, inner):
+    def get_curve_phases(self, plate, outer, inner):
 
         try:
             return self._vector_phenotypes[plate][VectorPhenotypes.PhasesClassifications][outer, inner]
