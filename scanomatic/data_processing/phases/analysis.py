@@ -5,7 +5,7 @@ from scipy.stats import linregress
 
 from scanomatic.data_processing import growth_phenotypes
 
-from scanomatic.data_processing.phases.segmentation import CurvePhases, DEFAULT_THRESHOLDS, Thresholds, segment, \
+from scanomatic.data_processing.phases.segmentation import CurvePhases, DEFAULT_THRESHOLDS, segment, \
     get_data_needed_for_segmentation
 
 
@@ -46,15 +46,14 @@ class CurvePhasePhenotypes(Enum):
     """type: CurvePhasePhenotypes"""
 
 
-def _phenotype_phases(curve, derivative, phases, times, doublings):
+def _phenotype_phases(model, doublings):
 
-    derivative_offset = (times.shape[0] - derivative.shape[0]) / 2
     phenotypes = []
 
     # noinspection PyTypeChecker
     for phase in CurvePhases:
 
-        labels, label_count = label(phases == phase.value)
+        labels, label_count = label(model.phases == phase.value)
         for id_label in range(1, label_count + 1):
 
             if phase == CurvePhases.Undetermined or phase == CurvePhases.Multiple:
@@ -63,8 +62,8 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
 
             filt = labels == id_label
             left, right = _locate_segment(filt)
-            time_right = times[right - 1]
-            time_left = times[left]
+            time_right = model.times[right - 1]
+            time_left = model.times[left]
             current_phase_phenotypes = {}
 
             if phase == CurvePhases.GrowthAcceleration or phase == CurvePhases.GrowthRetardation:
@@ -72,10 +71,10 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
 
                 # TODO: Resloved worst problem, might still be lurking, angles are surprisingly close to PI
 
-                k1 = derivative[max(0, left - derivative_offset)]
-                k2 = derivative[right - 1 - derivative_offset]
-                m1 = np.log2(curve[left]) - k1 * time_left
-                m2 = np.log2(curve[right - 1]) - k2 * time_right
+                k1 = model.dydt[max(0, left - model.offset)]
+                k2 = model.dydt[right - 1 - model.offset]
+                m1 = np.log2(model.curve[left]) - k1 * time_left
+                m2 = np.log2(model.curve[right - 1]) - k2 * time_right
                 i_x = (m2 - m1) / (k1 - k2)
                 current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = \
                     (i_x - time_left) / (time_right - time_left)
@@ -84,7 +83,7 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
 
             else:
                 # B. For linear phases get the doubling time
-                slope, intercept, _, _, _ = linregress(times[filt], np.log2(curve[filt]))
+                slope, intercept, _, _, _ = linregress(model.times[filt], np.log2(model.curve[filt]))
                 current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
                 current_phase_phenotypes[CurvePhasePhenotypes.LinearModelSlope] = slope
                 current_phase_phenotypes[CurvePhasePhenotypes.LinearModelIntercept] = intercept
@@ -94,7 +93,7 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
 
             # D. Get fraction of doublings
             current_phase_phenotypes[CurvePhasePhenotypes.FractionYield] = \
-                (np.log2(curve[right - 1]) - np.log2(curve[left])) / doublings
+                (np.log2(model.curve[right - 1]) - np.log2(model.curve[left])) / doublings
 
             # E. Get start of phase
             current_phase_phenotypes[CurvePhasePhenotypes.Start] = time_left
@@ -136,10 +135,9 @@ def get_phase_analysis(phenotyper_object, plate, pos, thresholds=None, experimen
         pass
 
     if experiment_doublings is None:
-        experiment_doublings = (np.log2(phenotyper_object.get_phenotype(
-            growth_phenotypes.Phenotypes.ExperimentEndAverage)[plate][pos]) -
-                                np.log2(phenotyper_object.get_phenotype(
-                                    growth_phenotypes.Phenotypes.ExperimentBaseLine)[plate][pos]))
+
+        experiment_doublings = np.log2(phenotyper_object.get_phenotype(
+            growth_phenotypes.Phenotypes.ExperimentPopulationDoublings)[plate][pos])
 
     # TODO: ensure it isn't unintentionally smoothed dydt that is uses for values, good for location though
-    return phases, _phenotype_phases(curve, dydt, phases, phenotyper_object.times, experiment_doublings)
+    return model, _phenotype_phases(model, experiment_doublings)
