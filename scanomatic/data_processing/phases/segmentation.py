@@ -252,11 +252,13 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
 
     # Some center weighted smoothing of derivative, we only care for general shape
     dydt = signal.convolve(phenotyper_object.get_derivative(plate, pos), gauss, mode='valid')
-    d_offset = (phenotyper_object.times.size - dydt.size) / 2
+    d_offset = (model.times.size - dydt.size) / 2
     model.dydt = np.hstack(([dydt[0] for _ in range(d_offset)], dydt, [dydt[-1] for _ in range(d_offset)]))
 
     model.dydt_ranks = np.abs(dydt).argsort().argsort()
-    model.offset = (phenotyper_object.times.shape[0] - dydt.shape[0]) / 2
+
+    # Because of hstacking there will never be offsets
+    model.offset = 0
 
     # Smoothing in kernel shape because only want reliable trends
     d2yd2t = signal.convolve(dydt, [1, 0, -1], mode='valid')
