@@ -149,7 +149,7 @@ def segment(segmentation_model, thresholds=None):
                 mark undefined
 
     Args:
-        segmentation_model:
+        segmentation_model (scanomatic.models.phases_models.SegmentationModel):
             A data model with information
         thresholds:
             The thresholds dictionary to be used.
@@ -307,7 +307,8 @@ def _get_candidate_segment(complex_segment, test_value=True):
 
     :param complex_segment: an array
     :param test_value: the value to look for
-    :return: generator
+
+    :rtype : numpy.ndarray
     """
     while True:
         labels, n_labels = label(complex_segment == test_value)
@@ -318,7 +319,7 @@ def _get_candidate_segment(complex_segment, test_value=True):
             break
 
 
-def classifier_flat(model, thresholds, filt):
+def classifier_flat(model):
 
     return _bridge_canditates(CurvePhases.Flat, model.dydt_signs == 0)
 
@@ -326,14 +327,26 @@ def classifier_flat(model, thresholds, filt):
 def _set_flat_segments(model, thresholds):
 
     model.phases[...] = CurvePhases.UndeterminedNonFlat.value
-    _, flats = classifier_flat(model, thresholds, None)
+    _, flats = classifier_flat(model)
     for length, left, right in izip(*_get_candidate_lengths_and_edges(flats)):
         if length >= thresholds[Thresholds.PhaseMinimumLength]:
             model.phases[left: right] = CurvePhases.Flat.value
 
 
 def classifier_nonflat_linear(model, thresholds, filt):
+    """
 
+    Args:
+        model (scanomatic.models.phases_models.SegmentationModel):
+            Data container for the curve.
+        thresholds (dict):
+            Set of thresholds to use
+        filt (numpy.ndarray):
+            Boolean arrays of what positions to consider
+
+    Returns:
+
+    """
     # Determine value and position of steepest slope
     loc_slope = np.abs(model.dydt[filt]).max()
     loc = np.where((np.abs(model.dydt) == loc_slope) & filt)[0][0]
@@ -369,9 +382,20 @@ def classifier_nonflat_linear(model, thresholds, filt):
 
 
 def _set_nonflat_linear_segment(model, thresholds):
+    """
 
+    Args:
+        model (scanomatic.models.phases_models.SegmentationModel):
+            Data container for the curve
+        thresholds (dict):
+            Set of thresholds used.
+
+    Returns:
+
+    """
     # All positions with sufficient slope
     filt = model.phases == CurvePhases.UndeterminedNonFlat.value
+    """:type : numpy.ndarray"""
 
     # In case there are small regions left
     if not filt.any():
@@ -444,20 +468,16 @@ def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
         considered to have a sign.
 
     Args:
-        dydt: The slope values
-        dydt_signs: The sing of the first derivative
-        ddydt_signs: The sign of the second derivative
-        filt: Boolean array of positions considered
-        test_edge: At which edge (left or right) of the filt the
+        model (scanomatic.models.phases_models.SegmentationModel) :
+            Data container for the curve analysed.
+        thresholds (dict):
+            A collection of thresholds to use
+        filt (numpy.ndarray):
+            Boolean array of positions considered
+        test_edge (PhaseEdge):
+            At which edge (left or right) of the filt the
             test should be performed
-        uniformity_threshold: The degree of conformity in sign needed
-            I.e. the fraction of ddydt_signs in the test that must
-            point in the same direction. Or the fraction of
-            dydt_signs that have to do the same.
-        test_min_length: How many points should be tested as a minimum
-        min_length: Minimum length to be considered a detected phase
-        offset: Offset of first derivative values to curve
-        phases: The phase-classification array
+
 
     Returns: The phase type, any of the following
         CurvePhases.Undetermined (failed detection),
@@ -480,14 +500,14 @@ def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
 
     if test_edge is PhaseEdge.Left:
         for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
-            ddydt_section = model.ddydt_signs[filt][:test_length]
+            ddydt_section = model.d2yd2t_signs[filt][:test_length]
             dydt_section = model.dydt_signs[filt][:test_length]
             phase = _classify_non_linear_segment_type(dydt_section, ddydt_section, thresholds)
             if phase != CurvePhases.Undetermined:
                 break
     elif test_edge is PhaseEdge.Right:
         for test_length in range(thresholds[Thresholds.PhaseMinimumLength], model.dydt.size, 4):
-            ddydt_section = model.ddydt_signs[filt][-test_length:]
+            ddydt_section = model.d2yd2t_signs[filt][-test_length:]
             dydt_section = model.dydt_signs[filt][-test_length:]
             phase = _classify_non_linear_segment_type(dydt_section, ddydt_section, thresholds)
             if phase != CurvePhases.Undetermined:
@@ -507,13 +527,14 @@ def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
     else:
         op2 = operator.le
 
-    candidates = filt & op1(model.dydt_signs, 0) & op2(model.ddydt_signs, 0)
+    candidates = filt & op1(model.dydt_signs, 0) & op2(model.d2yd2t_signs, 0)
     candidates = generic_filter(candidates, _custom_filt, size=9, mode='nearest')
     candidates, label_count = label(candidates)
 
     if label_count:
 
         candidates = candidates == (1 if test_edge is PhaseEdge.Left else label_count)
+        """:type : numpy.ndarray"""
 
         if candidates.sum() < thresholds[Thresholds.PhaseMinimumLength]:
             return CurvePhases.Undetermined

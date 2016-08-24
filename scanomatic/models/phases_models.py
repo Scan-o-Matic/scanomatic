@@ -7,17 +7,27 @@ class SegmentationModel(model.Model):
                  d2yd2t_signs=None, phases=None, offset=0, curve=None, times=None):
 
         self.curve = curve
+        """:type : numpy.ndarray"""
+
         self.times = times
+        """:type : numpy.ndarray"""
 
         self.dydt = dydt
+        """:type : numpy.ndarray"""
         self.dydt_ranks = dydt_ranks
+        """:type : numpy.ndarray"""
         self.dydt_signs = dydt_signs
+        """:type : numpy.ndarray"""
 
         self.d2yd2t = d2yd2t
+        """:type : numpy.ndarray"""
         self.d2yd2t_signs = d2yd2t_signs
+        """:type : numpy.ndarray"""
 
         self.offset = offset
+        """:type : int"""
 
         self.phases = phases
+        """:type : numpy.ndarray"""
 
-        super(VersionChangesModel, self).__init__()
+        super(SegmentationModel, self).__init__()
