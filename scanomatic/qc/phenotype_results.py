@@ -162,14 +162,17 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
     Returns: A matplotlib figure
 
     """
-    thresholds_width = 1.5
-
-    curve = np.log2(phenotyper_object.smooth_growth_data[plate][pos])
-    times = phenotyper_object.times
 
     model = get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds)
 
+    return plot_curve_and_derivatives_from_model(model, thresholds, show_thresholds)
+
+
+def plot_curve_and_derivatives_from_model(model, thresholds=DEFAULT_THRESHOLDS, show_thresholds=False):
+    thresholds_width = 1.5
+
     f = plt.figure()
+    times = model.times
 
     ax = f.gca()
     ax.plot(times, model.d2yd2t, color='g')
@@ -195,7 +198,7 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
         ax2.axhline(-t1, linestyle='--', color='r', lw=thresholds_width)
 
     ax3 = ax.twinx()
-    ax3.plot(times, curve, color='k', lw=2)
+    ax3.plot(times, model.curve, color='k', lw=2)
     ax3.yaxis.labelpad = -40
     ax3.set_ylabel("Log2 cells")
     ax3.set_yticks(ax3.get_yticks()[1:-1])
@@ -205,7 +208,7 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
         tick.label2.set_horizontalalignment('right')
 
     ax.set_xlabel("Hours")
-    ax.set_title("Curve {0} and its derviatives".format((plate, pos)))
+    ax.set_title("Curve {0} and its derviatives".format((model.plate, model.pos)))
     legend = ax.legend(
         [ax3.lines[0], ax2.lines[0], ax.lines[0]],
         ['growth', 'dy/dt', 'ddy/dt'],
@@ -275,22 +278,20 @@ def animate_plate_over_time(save_target, plate, truncate_value_encoding=False, i
     return _animation()
 
 
-def plot_segments(save_target, phenotypes, position, segment_alpha=0.3, f=None, colors=None):
+def plot_phases(save_target, phenotypes, position, segment_alpha=0.3, f=None, colors=None):
 
     if not isinstance(phenotypes, Phenotyper):
         phenotypes = Phenotyper.LoadFromState(phenotypes)
 
-    times = phenotypes.times
-    curve_smooth = phenotypes.smooth_growth_data[position[0]][position[1], position[2]]
-    curve_raw = phenotypes.raw_growth_data[position[0]][position[1], position[2]]
-    phases = phenotypes.get_curve_segments(*position)
+    model = get_data_needed_for_segmentation(phenotypes, position[0], (position[1], position[2]), DEFAULT_THRESHOLDS)
+    model.phases = phenotypes.get_curve_phases(*position)
 
     if f is None:
         f = plt.figure()
 
     ax = f.gca()
 
-    plot_phases(ax, curve_raw, curve_smooth, times, phases, colors=colors, segment_alpha=segment_alpha)
+    plot_phases_from_model(model, ax=ax, colors=colors, segment_alpha=segment_alpha)
 
     ax.set_title("Curve phases for plate {0}, position ({1}, {2})".format(*position))
 
@@ -300,12 +301,24 @@ def plot_segments(save_target, phenotypes, position, segment_alpha=0.3, f=None, 
     return f
 
 
-def plot_phases(ax, curve_raw, curve_smooth, times, phases, colors=None, segment_alpha=0.3):
+def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=0.3):
+
+    if f is not None and ax is None:
+        ax = f.gca()
+    elif ax is not None:
+        f = ax.figure
+    else:
+        f = plt.figure()
+        ax = f.gca()
 
     if colors is None:
         colors = PHASE_PLOTTING_COLORS
 
     legend = {}
+
+    times = model.times
+    phases = model.phases
+    curve = model.curve
 
     # noinspection PyTypeChecker
     for phase in CurvePhases:
@@ -319,16 +332,17 @@ def plot_phases(ax, curve_raw, curve_smooth, times, phases, colors=None, segment
             left = positions[0]
             right = positions[-1]
             left = np.linspace(times[max(left - 1, 0)], times[left], 3)[1]
-            right = np.linspace(times[min(curve_raw.size - 1, right + 1)], times[right], 3)[1]
+            right = np.linspace(times[min(curve.size - 1, right + 1)], times[right], 3)[1]
             span = ax.axvspan(left, right, color=colors[phase], alpha=segment_alpha, label=phase.name)
             if phase not in legend:
                 legend[phase] = span
 
-    ax.semilogy(times, curve_raw, "+", basey=2, color=colors["raw"], ms=6)
-    ax.semilogy(times, curve_smooth, "-", basey=2, color=colors["smooth"], lw=2)
+    ax.plot(times, curve, "-", color=colors["smooth"], lw=2)
 
     ax.set_xlim(xmin=times[0], xmax=times[-1])
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Population Size [cells]")
 
     ax.legend(loc="lower right", handles=list(legend.values()))
+
+    return f
