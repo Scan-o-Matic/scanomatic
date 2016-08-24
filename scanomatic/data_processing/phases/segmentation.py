@@ -386,7 +386,7 @@ def classifier_nonflat_linear(model, thresholds, filt):
         model.phases[filt] = CurvePhases.UndeterminedNonLinear.value
 
         # Since no segment was detected there are no bordering segments
-        return np.array([])
+        return CurvePhases.Undetermined, np.zeros_like(candidates).astype(bool)
 
     # Get the true phase positions from the candidates
     return phase, candidates == candidates[loc]
