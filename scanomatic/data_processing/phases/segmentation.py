@@ -515,6 +515,9 @@ def classify_non_linear_segment_type(model, thresholds, filt, test_edge):
     """
     phase = CurvePhases.Undetermined
 
+    if filt.sum() < thresholds[Thresholds.PhaseMinimumLength]:
+        return CurvePhases.Undetermined
+
     # Define type at one of the edges
     if test_edge is PhaseEdge.Intelligent:
 
