@@ -1732,7 +1732,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._logger.info("State saved to '{0}'".format(dir_path))
 
-    def call(self, extra_keyword_args=tuple(), *funcs):
+    def for_each_call(self, extra_keyword_args=tuple(), start_plate=None, start_pos=None, funcs=tuple()):
         """For each curve, the supplied functions are called.
 
         Each function must have the following initial argument order:
@@ -1748,7 +1748,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 Tuple of dicts or a single dict used as extra keyword
                 arguments sent to the functions. Either specific for
                 each function or the same for all.
-            *funcs:
+            start_plate (int): Starting plate to iterate from
+            start_pos ((int, int)): Starting position on plate to iterate from
+            funcs (tuple[function]):
                 A list of functions to be called for each position.
 
         Returns:
@@ -1779,7 +1781,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             ax2 = f.add_subplot(2, 1, 2)
             plt.ion()
 
-            i = P.call(
+            i = P.for_each_call(
                 ({'ax': ax1}, {'ax': ax2}),
                 phenotype_results.plot_phases,
                 phenotype_results.plot_curve_and_derivatives)
@@ -1793,12 +1795,20 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if not isinstance(extra_keyword_args, tuple):
             extra_keyword_args = tuple(extra_keyword_args for _ in range(len(self)))
 
+        skip = False if start_pos is None else True
+
         for plate, shape in enumerate(self.plate_shapes):
 
-            if not shape:
+            if not shape or start_plate is not None and plate < start_plate:
                 continue
 
             for pos in product(*(range(s) for s in shape)):
+
+                if skip:
+                    if pos == start_pos:
+                        skip = False
+                    else:
+                        continue
 
                 for idf, f in enumerate(funcs):
                     f(self, plate, pos, **extra_keyword_args[idf])
