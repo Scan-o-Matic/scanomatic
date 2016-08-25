@@ -477,6 +477,24 @@ def _bridge_canditates(candidates, window_size=5):
 
 
 def classifier_nonlinear(model, thresholds, filt, test_edge):
+    """ Classifies non-linear segments
+
+    Args:
+        model (scanomatic.models.phases_models.SegmentationModel):
+            Data container for the curve
+        thresholds (dict):
+            The set of thresholds used
+        filt (numpy.ndarray):
+            A boolean vector for what positions are considered
+        test_edge:
+            Which edge to test of the filted segment.
+
+    Returns:
+
+    """
+
+    # TODO: In particluar d2yd2t_signs may all be zero though there's a
+    # consensus on sign due to the area around 0 being set to zero.
 
     phase = classify_non_linear_segment_type(model, thresholds, filt, test_edge)
     if phase is CurvePhases.Undetermined:
