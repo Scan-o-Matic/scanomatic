@@ -238,6 +238,8 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
         Data container with information needed for segmentation
     """
 
+    # TODO: It looks in images as there may be a slight offset between d and d2
+
     if model is None:
         model = SegmentationModel()
 
@@ -414,6 +416,8 @@ def _set_nonflat_linear_segment(model, thresholds):
     Returns:
 
     """
+    # TODO: Require height delta over phase to be substantial maybe
+
     # All positions with sufficient slope
     filt = model.phases == CurvePhases.UndeterminedNonFlat.value
     """:type : numpy.ndarray"""
