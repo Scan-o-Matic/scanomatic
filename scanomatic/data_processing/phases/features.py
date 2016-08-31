@@ -6,6 +6,11 @@ from scanomatic.data_processing import growth_phenotypes
 from scanomatic.data_processing.phases.analysis import CurvePhasePhenotypes
 from scanomatic.data_processing.phases.segmentation import CurvePhases
 
+# TODO: CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry could consider
+# flanking flats too, calculating impulse angle to flat.
+
+# TODO: Consider using cached pre calculations and using one time np.frompyfunc
+
 
 class CurvePhaseMetaPhenotypes(Enum):
     """Phenotypes of an entire growth-curve based on the phase segmentation.
@@ -15,16 +20,23 @@ class CurvePhaseMetaPhenotypes(Enum):
             The fraction of the total yield (in population doublings) that the
             `CurvePhases.Impulse` that contribute most to the total yield is
             responsible for (`CurvePhasePhenotypes.FractionYield`).
+
         CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution:
             As with `CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution`
             but for the second most important `CurvePhases.Impulse`
+
         CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime:
             The `CurvePhases.Impulse` that contribute most to the
             total yield, its average population doubling time
             (`CurvePhasePhenotypes.PopulationDoublingTime`).
+
         CurvePhaseMetaPhenotypes.FirstMinorImpulseAveragePopulationDoublingTime:
             The average population doubling time of
             the second most contributing `CurvePhases.Impulse`
+
+        CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry:
+            The `CurvePhasePhenotypes.AsymptoteAngle` ratio of the right
+            to left flanking non-linear phase.
 
         CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle:
             The `CurvePhasePhenotypes.AsymptoteAngle` of the first `CurvePhases.Acceleration`
@@ -56,6 +68,7 @@ class CurvePhaseMetaPhenotypes(Enum):
     FirstMinorImpulseYieldContribution = 1
     MajorImpulseAveragePopulationDoublingTime = 5
     FirstMinorImpulseAveragePopulationDoublingTime = 6
+    MajorImpulseFlankAsymmetry = 8
 
     InitialAccelerationAsymptoteAngle = 10
     FinalRetardationAsymptoteAngle = 11
@@ -172,6 +185,24 @@ def _collapse_counter(phase_vector):
     if phase_vector:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Collapse)
     return -np.inf
+
+
+def _get_major_impulse_indices(phases):
+
+    # TODO: Continue here perhaps
+    sort_order = np.argsort(tuple(
+        phase[CurvePhasePhenotypes.FractionYield] if
+        phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))
+
+    impulses = tuple(i for i in  sort_order if
+                     phases[i][VectorPhenotypes.PhasesClassifications.value] == CurvePhases.Impulse)
+
+    def imp_vector(v):
+        if len(v):
+            return v[-1]
+        return -1
+
+    return np.ma.masked_less(np.frompyfunc(imp_vector, 1, 1)(impulses), 0)
 
 
 def extract_phenotypes(plate, meta_phenotype, phenotypes):
@@ -325,6 +356,10 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
     elif meta_phenotype == CurvePhaseMetaPhenotypes.Collapses:
 
         return np.ma.masked_invalid(np.frompyfunc(_collapse_counter, 1, 1)(plate).astype(np.float))
+
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry:
+
+        major_impulse_indices =
 
     else:
 
