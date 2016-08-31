@@ -69,7 +69,7 @@ def _phenotype_phases(model, doublings):
             if phase == CurvePhases.GrowthAcceleration or phase == CurvePhases.GrowthRetardation:
                 # A. For non-linear phases use the X^2 coefficient as curvature measure
 
-                # TODO: Resloved worst problem, might still be lurking, angles are surprisingly close to PI
+                # TODO: Verify that values fall within the defined range of 0.5pi and pi
 
                 k1 = model.dydt[max(0, left - model.offset)]
                 k2 = model.dydt[right - 1 - model.offset]
