@@ -79,7 +79,7 @@ def _phenotype_phases(model, doublings):
                 current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = \
                     (i_x - time_left) / (time_right - time_left)
                 current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
-                    np.pi + np.arctan2(k1, 1) - np.arctan2(k2, 1)
+                    np.pi - np.abs(np.arctan2(k1, 1) - np.arctan2(k2, 1))
 
             else:
                 # B. For linear phases get the doubling time
