@@ -11,8 +11,6 @@ _l = Logger("Curve Phase Meta Phenotyping")
 # TODO: CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry could consider
 # flanking flats too, calculating impulse angle to flat.
 
-# TODO: Consider using cached pre calculations and using one time np.frompyfunc
-
 
 class CurvePhaseMetaPhenotypes(Enum):
     """Phenotypes of an entire growth-curve based on the phase segmentation.
