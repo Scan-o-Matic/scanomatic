@@ -433,19 +433,20 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.Modalities:
 
-        return np.ma.masked_invalid(_np_impulse_counter(plate).astype(np.float))
+        return _np_ma_impulse_counter(plate)
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.ModalitiesAlternativeModel:
 
-        return np.ma.masked_invalid(np.frompyfunc(_np_inner_impulse_counter(plate)).astype(np.float))
+        return _np_ma_inner_impulse_counter(plate)
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.Collapses:
 
-        return np.ma.masked_invalid(_np_collapse_counter(plate)).astype(np.float)
+        return _np_ma_collapse_counter(plate)
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry:
 
-        return _np_get_flanking_angle_relation(plate, _np_ma_get_major_impulse_indices(plate))
+        return np.ma.masked_invalid(
+            _np_get_flanking_angle_relation(plate, _np_ma_get_major_impulse_indices(plate)).astype(np.float))
 
     else:
 
