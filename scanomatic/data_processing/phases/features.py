@@ -4,7 +4,7 @@ from enum import Enum
 from scanomatic.data_processing import growth_phenotypes
 
 from scanomatic.data_processing.phases.analysis import CurvePhasePhenotypes
-from scanomatic.data_processing.phases.segmentation import CurvePhases
+from scanomatic.data_processing.phases.segmentation import CurvePhases, is_detected_non_linear
 
 # TODO: CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry could consider
 # flanking flats too, calculating impulse angle to flat.

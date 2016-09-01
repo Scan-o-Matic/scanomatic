@@ -6,7 +6,7 @@ from scipy.stats import linregress
 from scanomatic.data_processing import growth_phenotypes
 
 from scanomatic.data_processing.phases.segmentation import CurvePhases, DEFAULT_THRESHOLDS, segment, \
-    get_data_needed_for_segmentation
+    get_data_needed_for_segmentation, is_detected_non_linear, is_detected_linear, is_undetermined
 
 
 class CurvePhasePhenotypes(Enum):
@@ -56,7 +56,7 @@ def _phenotype_phases(model, doublings):
         labels, label_count = label(model.phases == phase.value)
         for id_label in range(1, label_count + 1):
 
-            if phase == CurvePhases.Undetermined or phase == CurvePhases.Multiple:
+            if is_undetermined(phase):
                 phenotypes.append((phase, None))
                 continue
 
@@ -66,7 +66,7 @@ def _phenotype_phases(model, doublings):
             time_left = model.times[left]
             current_phase_phenotypes = {}
 
-            if phase == CurvePhases.GrowthAcceleration or phase == CurvePhases.GrowthRetardation:
+            if is_detected_non_linear(phase):
                 # A. For non-linear phases use the X^2 coefficient as curvature measure
 
                 # TODO: Verify that values fall within the defined range of 0.5pi and pi
@@ -81,7 +81,7 @@ def _phenotype_phases(model, doublings):
                 current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
                     np.pi - np.abs(np.arctan2(k1, 1) - np.arctan2(k2, 1))
 
-            else:
+            elif is_detected_linear(phase):
                 # B. For linear phases get the doubling time
                 slope, intercept, _, _, _ = linregress(model.times[filt], np.log2(model.curve[filt]))
                 current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
