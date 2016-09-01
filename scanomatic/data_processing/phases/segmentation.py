@@ -126,6 +126,23 @@ DEFAULT_THRESHOLDS = {
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
+def is_detected_non_linear(phase_type):
+
+    return phase_type in (CurvePhases.GrowthAcceleration, CurvePhases.GrowthRetardation,
+                          CurvePhases.CollapseAcceleration, CurvePhases.CollapseRetardation)
+
+
+def is_detected_linear(phase_type):
+
+    return phase_type in (CurvePhases.Flat, CurvePhases.Collapse, CurvePhases.Impulse)
+
+
+def is_undetermined(phase_type):
+
+    return phase_type in (CurvePhases.Undetermined, CurvePhases.UndeterminedNonFlat, CurvePhases.UndeterminedNonLinear,
+                          CurvePhases.Multiple)
+
+
 def segment(segmentation_model, thresholds=None):
     """Iteratively segments a curve into its component CurvePhases
 
