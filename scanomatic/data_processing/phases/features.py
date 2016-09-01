@@ -236,8 +236,44 @@ def _np_ma_get_major_impulse_indices(phases):
 
     return np.ma.masked_less(_np_get_major_impulse_for_plate(phases), 0)
 
-
 # END REGION: Major pulse index
+
+
+def _py_get_flanking_angle_relation(phases, major_impulse_index):
+
+    def _flank_angle(flank, impulse):
+
+        if flank is None:
+
+            return np.arctan(impulse[VectorPhenotypes.PhasesPhenotypes][CurvePhasePhenotypes.LinearModelSlope])
+
+        elif flank[VectorPhenotypes.PhasesClassifications] is CurvePhases.Flat:
+
+            return np.pi - np.abs(
+                np.arctan2(1, impulse[VectorPhenotypes.PhasesPhenotypes][CurvePhasePhenotypes.LinearModelSlope]) -
+                np.arctan2(1, flank[VectorPhenotypes.PhasesPhenotypes][CurvePhasePhenotypes.LinearModelSlope]))
+
+        elif flank[VectorPhenotypes.PhasesClassifications] in (
+                CurvePhases.CollapseAcceleration, CurvePhases.GrowthAcceleration,
+                CurvePhases.CollapseRetardation, CurvePhases.GrowthRetardation):
+
+            return flank[VectorPhenotypes.PhasesPhenotypes][CurvePhasePhenotypes.AsymptoteAngle]
+
+        else:
+            return np.inf
+
+    if not major_impulse_index:
+        return np.inf
+
+    a1 = _flank_angle(phases[major_impulse_index - 1] if major_impulse_index > 0 else None,
+                      phases[major_impulse_index])
+
+    a2 = _flank_angle(phases[major_impulse_index + 1] if major_impulse_index < len(phases) - 1 else None,
+                      phases[major_impulse_index])
+
+    return a2 / a1
+
+_np_get_flanking_angle_relation = np.frompyfunc(_py_get_flanking_angle_relation, 2, 1)
 
 
 def extract_phenotypes(plate, meta_phenotype, phenotypes):
@@ -394,7 +430,7 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry:
 
-        major_impulse_indices =
+        return _np_get_flanking_angle_relation(plate, _np_ma_get_major_impulse_indices(plate))
 
     else:
 
