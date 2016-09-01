@@ -166,9 +166,14 @@ def _phase_finder(phase_vector, phase):
 def _py_impulse_counter(phase_vector):
     if phase_vector:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Impulse)
-    return -np.inf
+    return -1
 
 _np_impulse_counter = np.frompyfunc(_py_impulse_counter, 1, 1)
+
+
+def _np_ma_impulse_counter(phases):
+
+    return np.ma.masked_less(_np_impulse_counter(phases), 0)
 
 
 def _py_inner_impulse_counter(phase_vector):
@@ -176,23 +181,33 @@ def _py_inner_impulse_counter(phase_vector):
     if phase_vector:
         acc = _phase_finder(phase_vector, CurvePhases.GrowthAcceleration)
         if not acc:
-            return -np.inf
+            return -1
         ret = _phase_finder(phase_vector, CurvePhases.GrowthRetardation)
         if not ret:
-            return -np.inf
+            return -1
         return _py_impulse_counter(phase_vector[acc[0]: ret[-1]])
 
-    return -np.inf
+    return -1
 
 _np_inner_impulse_counter = np.frompyfunc(_py_inner_impulse_counter, 1, 1)
+
+
+def _np_ma_inner_impulse_counter(phases):
+
+    return np.ma.masked_less(_np_inner_impulse_counter(phases), 0)
 
 
 def _py_collapse_counter(phase_vector):
     if phase_vector:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Collapse)
-    return -np.inf
+    return -1
 
 _np_collapse_counter = np.frompyfunc(_py_collapse_counter, 1, 1)
+
+
+def _np_ma_collapse_counter(phases):
+
+    return np.ma.masked_less(_np_collapse_counter(phases), 0)
 
 # END REGION: Phase counters
 
