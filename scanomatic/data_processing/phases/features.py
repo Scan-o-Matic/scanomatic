@@ -160,14 +160,18 @@ def _phase_finder(phase_vector, phase):
         return tuple(i for i, (p_type, p_data) in enumerate(phase_vector) if p_type == phase)
     return tuple()
 
+# REGION: Phase counters
 
-def _impulse_counter(phase_vector):
+
+def _py_impulse_counter(phase_vector):
     if phase_vector:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Impulse)
     return -np.inf
 
+_np_impulse_counter = np.frompyfunc(_py_impulse_counter, 1, 1)
 
-def _inner_impulse_counter(phase_vector):
+
+def _py_inner_impulse_counter(phase_vector):
 
     if phase_vector:
         acc = _phase_finder(phase_vector, CurvePhases.GrowthAcceleration)
@@ -176,15 +180,21 @@ def _inner_impulse_counter(phase_vector):
         ret = _phase_finder(phase_vector, CurvePhases.GrowthRetardation)
         if not ret:
             return -np.inf
-        return _impulse_counter(phase_vector[acc[0]: ret[-1]])
+        return _py_impulse_counter(phase_vector[acc[0]: ret[-1]])
 
     return -np.inf
 
+_np_inner_impulse_counter = np.frompyfunc(_py_inner_impulse_counter, 1, 1)
 
-def _collapse_counter(phase_vector):
+
+def _py_collapse_counter(phase_vector):
     if phase_vector:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Collapse)
     return -np.inf
+
+_np_collapse_counter = np.frompyfunc(_py_collapse_counter, 1, 1)
+
+# END REGION: Phase counters
 
 
 def _get_major_impulse_indices(phases):
@@ -347,15 +357,15 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.Modalities:
 
-        return np.ma.masked_invalid(np.frompyfunc(_impulse_counter, 1, 1)(plate).astype(np.float))
+        return np.ma.masked_invalid(_np_impulse_counter(plate).astype(np.float))
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.ModalitiesAlternativeModel:
 
-        return np.ma.masked_invalid(np.frompyfunc(_inner_impulse_counter, 1, 1)(plate).astype(np.float))
+        return np.ma.masked_invalid(np.frompyfunc(_np_inner_impulse_counter(plate)).astype(np.float))
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.Collapses:
 
-        return np.ma.masked_invalid(np.frompyfunc(_collapse_counter, 1, 1)(plate).astype(np.float))
+        return np.ma.masked_invalid(_np_collapse_counter(plate)).astype(np.float)
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry:
 
