@@ -8,9 +8,6 @@ from scanomatic.data_processing.phases.segmentation import CurvePhases, is_detec
 
 _l = Logger("Curve Phase Meta Phenotyping")
 
-# TODO: CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry could consider
-# flanking flats too, calculating impulse angle to flat.
-
 
 class CurvePhaseMetaPhenotypes(Enum):
     """Phenotypes of an entire growth-curve based on the phase segmentation.
