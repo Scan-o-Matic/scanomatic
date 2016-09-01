@@ -2,9 +2,11 @@ import numpy as np
 from enum import Enum
 
 from scanomatic.data_processing import growth_phenotypes
-
+from scanomatic.io.logger import Logger
 from scanomatic.data_processing.phases.analysis import CurvePhasePhenotypes
 from scanomatic.data_processing.phases.segmentation import CurvePhases, is_detected_non_linear
+
+_l = Logger("Curve Phase Meta Phenotyping")
 
 # TODO: CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry could consider
 # flanking flats too, calculating impulse angle to flat.
@@ -254,7 +256,7 @@ def _np_ma_get_major_impulse_indices(phases):
 # END REGION: Major pulse index
 
 
-def _py_get_flanking_angle_relation(phases, major_impulse_index):
+def _py_get_flanking_angle_relation(phases, major_impulse_index, masked):
 
     def _flank_angle(flank, impulse):
 
@@ -276,8 +278,14 @@ def _py_get_flanking_angle_relation(phases, major_impulse_index):
         else:
             return np.inf
 
-    if major_impulse_index is np.ma.masked or \
+    if masked or \
             phases[major_impulse_index][VectorPhenotypes.PhasesPhenotypes.value] is None:
+        return np.inf
+    if phases[major_impulse_index][VectorPhenotypes.PhasesClassifications.value] is not CurvePhases.Impulse:
+        _l.error("Got index {0} as Impulse but is {1} in {2}".format(
+            major_impulse_index,
+            phases[major_impulse_index][VectorPhenotypes.PhasesClassifications.value],
+            phases))
         return np.inf
 
     a1 = _flank_angle(phases[major_impulse_index - 1] if major_impulse_index > 0 else None,
@@ -288,7 +296,7 @@ def _py_get_flanking_angle_relation(phases, major_impulse_index):
 
     return a2 / a1
 
-_np_get_flanking_angle_relation = np.frompyfunc(_py_get_flanking_angle_relation, 2, 1)
+_np_get_flanking_angle_relation = np.frompyfunc(_py_get_flanking_angle_relation, 3, 1)
 
 
 def extract_phenotypes(plate, meta_phenotype, phenotypes):
@@ -445,8 +453,9 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry:
 
+        indices = _np_ma_get_major_impulse_indices(plate)
         return np.ma.masked_invalid(
-            _np_get_flanking_angle_relation(plate, _np_ma_get_major_impulse_indices(plate)).astype(np.float))
+            _np_get_flanking_angle_relation(plate, indices.data, indices.mask).astype(np.float))
 
     else:
 
