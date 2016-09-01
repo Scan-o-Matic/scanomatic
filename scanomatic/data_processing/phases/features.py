@@ -196,23 +196,48 @@ _np_collapse_counter = np.frompyfunc(_py_collapse_counter, 1, 1)
 
 # END REGION: Phase counters
 
+# REGION: Major pulse index
 
-def _get_major_impulse_indices(phases):
 
-    # TODO: Continue here perhaps
+def _py_get_major_impulse_for_plate(phases):
+    """Locates major impulses
+
+    First the phases sort order based on yield is constructed
+
+    The indices and sort order of those that are impulses are
+    collected.
+
+    Then the original index of the phase with the highest
+    sort order is returned.
+
+    Args:
+        phases: Plate of phase data
+
+    Returns: 2D numpy.ma.masked_array with indices of the major
+        growth impulses in the vectors.
+    """
+
     sort_order = np.argsort(tuple(
-        phase[CurvePhasePhenotypes.FractionYield] if
-        phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))
+        p_data[CurvePhasePhenotypes.FractionYield] if
+        p_data[CurvePhasePhenotypes.FractionYield] else -np.inf for p_type, p_data in phases))
 
-    impulses = tuple(i for i in  sort_order if
-                     phases[i][VectorPhenotypes.PhasesClassifications.value] == CurvePhases.Impulse)
+    impulses = np.array(tuple(
+        (i, v) for i, v in enumerate(sort_order) if
+        phases[i][VectorPhenotypes.PhasesClassifications.value] == CurvePhases.Impulse))
 
-    def imp_vector(v):
-        if len(v):
-            return v[-1]
-        return -1
+    if impulses.any():
+        return impulses[np.argmax(impulses[:, -1])][0]
+    return -1
 
-    return np.ma.masked_less(np.frompyfunc(imp_vector, 1, 1)(impulses), 0)
+_np_get_major_impulse_for_plate = np.frompyfunc(_py_get_major_impulse_for_plate, 1, 1)
+
+
+def _np_ma_get_major_impulse_indices(phases):
+
+    return np.ma.masked_less(_np_get_major_impulse_for_plate(phases), 0)
+
+
+# END REGION: Major pulse index
 
 
 def extract_phenotypes(plate, meta_phenotype, phenotypes):
