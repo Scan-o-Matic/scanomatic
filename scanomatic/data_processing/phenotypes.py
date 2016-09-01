@@ -89,6 +89,7 @@ class PhenotypeDataType(Enum):
                               CurvePhaseMetaPhenotypes.Collapses,
                               CurvePhaseMetaPhenotypes.ExperimentDoublings,
                               CurvePhaseMetaPhenotypes.ResidualGrowth,
+                              CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry,
                               VectorPhenotypes.PhasesPhenotypes,
                               VectorPhenotypes.PhasesClassifications,
                               VectorPhenotypes)
