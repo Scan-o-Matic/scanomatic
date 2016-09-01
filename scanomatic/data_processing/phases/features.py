@@ -260,24 +260,24 @@ def _py_get_flanking_angle_relation(phases, major_impulse_index):
 
         if flank is None:
 
-            return np.arctan(impulse[VectorPhenotypes.PhasesPhenotypes][CurvePhasePhenotypes.LinearModelSlope])
+            return np.arctan2(1,
+                              impulse[VectorPhenotypes.PhasesPhenotypes.value][CurvePhasePhenotypes.LinearModelSlope])
 
-        elif flank[VectorPhenotypes.PhasesClassifications] is CurvePhases.Flat:
+        elif flank[VectorPhenotypes.PhasesClassifications.value] is CurvePhases.Flat:
 
             return np.pi - np.abs(
-                np.arctan2(1, impulse[VectorPhenotypes.PhasesPhenotypes][CurvePhasePhenotypes.LinearModelSlope]) -
-                np.arctan2(1, flank[VectorPhenotypes.PhasesPhenotypes][CurvePhasePhenotypes.LinearModelSlope]))
+                np.arctan2(1, impulse[VectorPhenotypes.PhasesPhenotypes.value][CurvePhasePhenotypes.LinearModelSlope]) -
+                np.arctan2(1, flank[VectorPhenotypes.PhasesPhenotypes.value][CurvePhasePhenotypes.LinearModelSlope]))
 
-        elif flank[VectorPhenotypes.PhasesClassifications] in (
-                CurvePhases.CollapseAcceleration, CurvePhases.GrowthAcceleration,
-                CurvePhases.CollapseRetardation, CurvePhases.GrowthRetardation):
+        elif is_detected_non_linear(flank[VectorPhenotypes.PhasesClassifications.value]):
 
-            return flank[VectorPhenotypes.PhasesPhenotypes][CurvePhasePhenotypes.AsymptoteAngle]
+            return flank[VectorPhenotypes.PhasesPhenotypes.value][CurvePhasePhenotypes.AsymptoteAngle]
 
         else:
             return np.inf
 
-    if not major_impulse_index:
+    if major_impulse_index is np.ma.masked or \
+            phases[major_impulse_index][VectorPhenotypes.PhasesPhenotypes.value] is None:
         return np.inf
 
     a1 = _flank_angle(phases[major_impulse_index - 1] if major_impulse_index > 0 else None,
