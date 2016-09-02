@@ -462,7 +462,7 @@ function SaveFixture() {
         success: function(data) {
             if (data.success) {
                 $(selected_fixture_div_id).hide();
-                Dialog('Fixture', 'Fixture "' + fixture_name + '" saved', '','?');
+                Dialogue('Fixture', 'Fixture "' + fixture_name + '" saved', '','?');
             } else {
                 if (data.reason)
                     context_warning = "Save refused: " + data.reason;
@@ -503,7 +503,7 @@ function RemoveFixture() {
                                     success: function(data) {
                                         if (data.success) {
                                             $(selected_fixture_div_id).hide();
-                                            Dialog('Fixture', 'Fixture "' + fixture_name + '" has been removed',
+                                            Dialogue('Fixture', 'Fixture "' + fixture_name + '" has been removed',
                                                 '(A backup is always stored in the fixture config folder)', '?');
 
                                         } else {
