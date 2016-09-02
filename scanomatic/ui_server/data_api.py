@@ -176,7 +176,16 @@ def add_routes(app, rpc_client, is_debug_mode):
         Returns: json-object with key 'garyscales' having an array of strings.
 
         """
-        return jsonify(success=True, grayscales=getGrayscales())
+        grayscales = getGrayscales()
+
+        # TODO: This should be part of app_config really
+        if 'SilverFast' in grayscales:
+            default = 'SilverFast'
+        else:
+            default = None
+
+        return jsonify(success=True, grayscales=grayscales, default=default)
+
 
     @app.route("/api/data/grayscale/image/<grayscale_name>", methods=['POST'])
     def _gs_get_from_image(grayscale_name):

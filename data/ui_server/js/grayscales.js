@@ -6,7 +6,11 @@ function get_grayscales(options) {
     $.get("/api/data/grayscales", function(data, status) {
         if (data.grayscales) {
             for (var i=0; i<data.grayscales.length; i++)
-                options.append($("<option />").val(data.grayscales[i]).text(data.grayscales[i]));
+                options.append(
+                    $("<option></option>")
+                        .val(data.grayscales[i])
+                        .text(data.grayscales[i])
+                        .prop('selected', data.grayscales[i] == data.default));
         }
     });
 
