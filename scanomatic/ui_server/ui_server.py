@@ -274,17 +274,28 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             fixture_is_local = bool(int(request.values.get('local')))
             fixture = request.values.get("fixture")
             chain_steps = bool(request.values.get('chain', default=1, type=int))
-            _logger.info("Attempting to compile on path {0}, as {1} fixture{2} (Chaining: {3})".format(
+            images = request.values.getlist('images[]')
+
+            _logger.info("Attempting to compile on path {0}, as {1} fixture{2} (Chaining: {3}), images {4}".format(
                 path,
                 'local' if fixture_is_local else 'global',
                 fixture_is_local and "." or " (Fixture {0}).".format(fixture),
-                chain_steps))
+                chain_steps, images))
 
-            job_id = rpc_client.create_compile_project_job(
-                CompileProjectFactory.dict_from_path_and_fixture(
-                    path, fixture=fixture, is_local=fixture_is_local,
-                    compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if chain_steps else
-                    COMPILE_ACTION.Initiate))
+            dict_model = CompileProjectFactory.dict_from_path_and_fixture(
+                path, fixture=fixture, is_local=fixture_is_local,
+                compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if chain_steps else
+                COMPILE_ACTION.Initiate)
+
+            if images:
+                dict_model['images'] = [p for p in dict_model['images'] if os.path.basename(p['path']) in images]
+                if len(dict_model['images']) != len(images):
+                    return jsonify(
+                        success=False,
+                        reason="The manually set list of images could not be satisfied"
+                        "with the images in the specified folder")
+
+            job_id = rpc_client.create_compile_project_job(dict_model)
 
             return jsonify(success=True if job_id else False, reason="" if job_id else "Invalid parameters")
 

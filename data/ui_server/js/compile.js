@@ -46,7 +46,7 @@ function setImageSuggestions(path) {
                 image_data = data.images[i];
                 options.append(
                     "<div class='" + row_class + "'>" + String('00' + image_data.index).slice(-3) + ": " +
-                    "<input type='checkbox' id='image-data-" + image_data.index + "' checked='checked'>"+
+                    "<input type='checkbox' id='image-data-" + image_data.index + "' checked='checked' value='" + image_data.file + "'>" +
                     "<label class='image-list-label' for='image-data-" + image_data.index + "'>" + image_data.file + "</label></div>");
             }
 
@@ -93,12 +93,24 @@ function Compile(button) {
 
     InputEnabled($(button), false);
 
+    images = null;
+    if (image_list_div.find("#manual-selection").prop("checked")) {
+        images = [];
+        image_list_div.find("#options").children().each(function() {
+            imp = $(this).find(":input");
+            if (imp.prop("checked") == true) {
+                images.push(imp.val());
+            }
+        });
+    }
+
     $.ajax({
         url: "?run=1",
         method: "POST",
         data: {local: localFixture ? 1 : 0, 'fixture': $(current_fixture_id).val(),
                path: path,
                chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
+               images: images
                },
         success: function (data) {
             if (data.success) {
