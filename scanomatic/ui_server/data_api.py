@@ -355,7 +355,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         Returns: image
 
         """
-        image = os.path.extsep.join(name, "png")
+        image = os.path.extsep.join((name, "png"))
         _logger.info("Sending fixture image {0}".format(image))
         return send_from_directory(Paths().fixtures, image)
 

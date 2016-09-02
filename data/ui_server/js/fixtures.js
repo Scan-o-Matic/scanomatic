@@ -427,7 +427,7 @@ function load_fixture_image(image_name) {
             fixture_image = img;
             draw_fixture();
         }
-        img.src = "?rnd=" + Math.random() + "&image=" + image_name;
+        img.src = "/api/data/fixture/image/get/" + image_name + "?rnd=" + Math.random();
 
     } else {
         fixture_image = null;
