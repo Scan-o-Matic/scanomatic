@@ -45,6 +45,16 @@
                     <div class="indented"><em>The project directory is the directory that contains the images that were scanned.</em></div>
 
                 </div>
+                <div class="section" id="manual-selection-div">
+                    <input type="checkbox" id="manual-selection" onclick="toggleManualSelectionBtn(this);" />
+                    <label for="manual-selection">Manual Selection</label>
+                    <input type="hidden" id="hidden-path" value="">
+                    <div class="large" id="list-buttons" css="hidden: hidden">
+                        <input type="button" id="manual-select-all" value="Select All" onclick="setOnAllImages(true);">
+                        <input type="button" id="manual-select-none" value="Select None" onclick="setOnAllImages(false);">
+                    </div>
+                    <div id="options" css="hidden: hidden"></div>
+                </div>
                 <div class="section">
                     <div class="onoffswitch chain">
                             <input type="checkbox" name="chain" class="onoffswitch-checkbox chain" id="chain-analysis-request">
@@ -61,6 +71,10 @@
         </form>
     </div>
     <script>
+        image_list_div = $('#manual-selection-div');
+        manual_btn = $('#manual-selection');
+        InputEnabled(manual_btn, false);
+        toggleManualSelectionBtn(manual_btn);
         get_fixtures();
         toggleLocalFixture("#local-fixture");
         InputEnabled($("#submit-button"), false);

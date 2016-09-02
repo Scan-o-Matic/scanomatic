@@ -22,7 +22,6 @@ def add_routes(app):
     :return:
     """
 
-
     @app.route("/api/calibration/compress")
     def calibration_compress():
         """Get compressed calibration entry
