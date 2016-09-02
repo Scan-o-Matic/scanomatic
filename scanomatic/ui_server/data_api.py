@@ -431,7 +431,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         FixtureFactory.serializer.dump(fixture_model, fixture_model.path)
         return jsonify(success=True)
 
-    @app.route("/api/data/markers/detect/<fixture_name>")
+    @app.route("/api/data/markers/detect/<fixture_name>", methods=['POST'])
     def _markers_detect(fixture_name):
 
         markers = request.values.get('markers', default=3, type=int)
