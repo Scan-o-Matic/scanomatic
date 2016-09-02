@@ -498,8 +498,7 @@ function RemoveFixture() {
 
                                 $.ajax({
                                     url: "/api/data/fixture/remove/" + fixture_name,
-                                    data: payload,
-                                    method: "POST",
+                                    method: "GET",
                                     success: function(data) {
                                         if (data.success) {
                                             $(selected_fixture_div_id).hide();
