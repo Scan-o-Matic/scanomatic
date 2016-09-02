@@ -3,7 +3,13 @@ function get_path_suggestions(input, isDirectory, suffix, callback) {
     if (suffix == undefined)
         suffix = "";
 
-    $.get("/api/tools/path/" + $(input).val() + "?suffix=" + suffix + "&isDirectory=" + (isDirectory ? 1 : 0), function(data, status) {
+    if ($(input).val() == "") {
+        url = "/api/tools/path";
+    } else {
+        url = "/api/tools/path/" +  $(input).val();
+    }
+
+    $.get(url + "?suffix=" + suffix + "&isDirectory=" + (isDirectory ? 1 : 0), function(data, status) {
         var val = $(input).val();
         $(input).autocomplete({source: data.suggestions});
         if (val == "" || (data.path == "root/" && val.length < data.path.length))
