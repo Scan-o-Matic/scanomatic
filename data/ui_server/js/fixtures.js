@@ -293,9 +293,10 @@ function testAsGrayScale(plate) {
     }
 }
 
-function OnEnterFixtureName() {
-    var fix_name = $(new_fixture_name);
-    fix_name.val(get_fixture_as_name(fix_name.val()));
+function OnEnterFixtureName(button) {
+    button = $(button);
+    fixture_name = get_fixture_from_name(button.val());
+    button.text(get_fixture_as_name(fixture_name));
     SetAllowDetect();
 }
 
@@ -452,7 +453,7 @@ function SaveFixture() {
         grayscale_name: GetSelectedGrayscale(),
         areas: areas};
     $.ajax({
-        url:"/api/data/fixture/set/" + fix_name,
+        url:"/api/data/fixture/set/" + fixture_name,
         data: JSON.stringify(payload, null, '\t'),
         contentType: 'application/json;charset=UTF-8',
         dataType: "json",
