@@ -2,6 +2,7 @@
 var localFixture = false;
 var path = '';
 var project_path_valid = false;
+var image_list_div = null;
 
 function set_project_directory(input) {
 
@@ -12,9 +13,75 @@ function set_project_directory(input) {
         function(data, status) {
             path = $(input).val();
             project_path_valid = data.valid_parent && data.exists;
+
+            if (project_path_valid) {
+                setImageSuggestions(path);
+                InputEnabled(image_list_div.find("#manual-selection"), true);
+            } else {
+                toggleManualSelection(false);
+                InputEnabled(image_list_div.find("#manual-selection"), false);
+            }
+
             InputEnabled($("#submit-button"), project_path_valid);
     });
 }
+
+function setImageSuggestions(path) {
+
+    //Only do stuff if path changed
+    if (image_list_div.find("#hidden-path").val() != path)
+    {
+        image_list_div.find("#hidden-path").val(path);
+
+        image_list_div.find("#manual-selection").prop("checked", false);
+
+        options = image_list_div.find("#options");
+        options.empty();
+
+        $.get("/api/compile/image_list/" + path, function(data, status)
+        {
+            for (var i=0; i<data.images.length; i++)
+            {
+                row_class = i % 2 == 0 ? 'list-entry-even' : 'list-entry-odd';
+                image_data = data.images[i];
+                options.append(
+                    "<div class='" + row_class + "'>" + String('00' + image_data.index).slice(-3) + ": " +
+                    "<input type='checkbox' id='image-data-" + image_data.index + "' checked='checked'>"+
+                    "<label class='image-list-label' for='image-data-" + image_data.index + "'>" + image_data.file + "</label></div>");
+            }
+
+        });
+
+    }
+    else
+    {
+        toggleManualSelectionBtn(image_list_div.find("#manual-selection"));
+    }
+}
+
+function toggleManualSelectionBtn(button) {
+    toggleManualSelection($(button).prop("checked"));
+}
+
+function toggleManualSelection(is_manual) {
+    if (is_manual)
+    {
+        image_list_div.find("#options").show();
+        image_list_div.find("#list-buttons").show();
+    }
+    else
+    {
+        image_list_div.find("#options").hide();
+        image_list_div.find("#list-buttons").hide();
+    }
+}
+
+function setOnAllImages(included) {
+    image_list_div.find("#options").children().each(function () {
+        $(this).find(":input").prop("checked", included);
+    });
+}
+
 
 function toggleLocalFixture(caller) {
     localFixture = $(caller).prop("checked");

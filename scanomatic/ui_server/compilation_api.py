@@ -86,3 +86,13 @@ def add_routes(app):
                     compile_instructions=compile_instructions,
                     scan_instructions=scan_instructions,
                     **get_search_results(path, base_url))))
+
+    @app.route("/api/compile/image_list/<location>/<path:project>")
+    def get_compile_image_list(location='root', project=None):
+
+        if location != 'root':
+            return jsonify(success=False, reason='Illegal location');
+
+        path = convert_url_to_path(project)
+        model = CompileProjectFactory.dict_from_path_and_fixture(path)
+        return jsonify(images=[{"index": m['index'], 'file': os.path.basename(m['path'])} for m in model['images']])
