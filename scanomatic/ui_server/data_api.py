@@ -368,7 +368,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         _logger.info("Sending fixture image {0}".format(image))
         return send_from_directory(Paths().fixtures, image)
 
-    @app.route("/api/data/fixture/set/<name>")
+    @app.route("/api/data/fixture/set/<name>", methods=["POST"])
     def _fixture_set(name):
 
         if not rpc_client.online:
