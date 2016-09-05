@@ -37,7 +37,7 @@ function set_project_directory(input) {
         function(data, status) {
             path = $(input).val();
             project_path_valid = data.valid_parent && data.exists;
-            $("#manual-regridding-source-folder").prop("disabled", !project_path_valid);
+
             if (project_path_valid) {
                 setImageSuggestions(path);
                 InputEnabled(image_list_div.find("#manual-selection"), true);

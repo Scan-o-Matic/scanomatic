@@ -102,7 +102,7 @@ function get_regridding_setting(i) {
 }
 
 function set_regridding_source_directory(input) {
-
+    path = $("#compilation").val().replace(/\/[^\/]*$/,"");
     get_path_suggestions(
         input,
         true,
@@ -143,10 +143,6 @@ function set_analysis_directory(input, validate) {
                 InputEnabled($("#submit-button2"), data.valid_parent && data.exists);
             }
 
-            if (localFixture) {
-                set_fixture_plate_listing();
-            }
-
     });
 }
 
@@ -157,7 +153,16 @@ function set_file_path(input, suffix) {
         false,
         suffix,
         function(data, status) {
-    });
+
+            if (suffix == ".project.compilation") {
+                $("#manual-regridding-source-folder").prop("disabled", !data.exists);
+            }
+
+            if (localFixture) {
+                set_fixture_plate_listing();
+            }
+        }
+    );
 }
 
 function Analyse(button) {
