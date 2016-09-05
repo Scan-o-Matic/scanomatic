@@ -12,3 +12,26 @@
 .onoffswitch-switch.one_time_positioning {
     position: absolute; top: 0; bottom: 0; right: 316px;
 }
+
+.plate-offset {
+    width: 40px;
+    margin-right: 6px;
+}
+
+.grid_icon {
+    display: block;
+    float: right;
+    margin: 3px;
+}
+
+.plate-regridding {
+    margin: 2px;
+    padding: 3px;
+    background: #e7d2b7;
+    color: #541f0f;
+    display: inline-block;
+}
+
+.plate-regridding legend {
+    display: inline-block;
+}
