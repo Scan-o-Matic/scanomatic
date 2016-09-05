@@ -4,6 +4,7 @@ import numpy as np
 import os
 import shutil
 from enum import Enum
+from ConfigParser import Error as ConfigError
 
 from scanomatic.data_processing import phenotyper
 from scanomatic.image_analysis.grayscale import getGrayscales, getGrayscale
@@ -21,7 +22,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFacto
 
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
     get_area_too_large_for_grayscale, get_grayscale_is_valid, usable_plates, image_is_allowed, \
-    get_fixture_image
+    get_fixture_image, convert_url_to_path
 
 
 _logger = Logger("Data API")
@@ -294,6 +295,26 @@ def add_routes(app, rpc_client, is_debug_mode):
             return jsonify(fixtures=rpc_client.get_fixtures(), success=True)
         else:
             return jsonify(fixtures=[], success=False, reason="Scan-o-Matic server offline")
+
+    @app.route("/api/data/fixture/local/<path:project>")
+    def _fixture_local_data(project):
+
+        path = os.path.join(convert_url_to_path(project), Paths().experiment_local_fixturename)
+
+        try:
+            fixture = FixtureFactory.serializer.load_first(path)
+            if fixture is None:
+                return jsonify(
+                    success=False,
+                    reason="File is missing")
+            return jsonify(
+                success=True, grayscale=dict(**fixture.grayscale),
+                plates=[dict(**plate) for plate in fixture.plates],
+                markers=zip(fixture.orientation_marks_x, fixture.orientation_marks_y))
+        except IndexError:
+            return jsonify(success=False, reason="Fixture without data")
+        except ConfigError:
+            return jsonify(success=False, reason="Fixture data corrupted")
 
     @app.route("/api/data/fixture/get/<name>")
     def _fixture_data(name=None):
