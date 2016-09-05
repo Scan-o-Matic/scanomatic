@@ -338,12 +338,19 @@ def add_routes(app, rpc_client, is_debug_mode):
             path = Paths().get_fixture_path(name)
             try:
                 fixture = FixtureFactory.serializer.load_first(path)
+                if fixture is None:
+                    return jsonify(
+                        success=False,
+                        reason="File is missing"
+                    )
                 return jsonify(
                     success=True, grayscale=dict(**fixture.grayscale),
                     plates=[dict(**plate) for plate in fixture.plates],
                     markers=zip(fixture.orientation_marks_x, fixture.orientation_marks_y))
             except IndexError:
                 return jsonify(success=False, reason="Fixture without data")
+            except ConfigError:
+                return jsonify(success=False, reason="Fixture data corrupted")
         else:
             return jsonify(success=False, reason="Unknown fixture")
 
