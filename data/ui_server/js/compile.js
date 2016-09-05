@@ -3,6 +3,7 @@ var localFixture = false;
 var path = '';
 var project_path_valid = false;
 var image_list_div = null;
+var gridplates = null;
 
 function set_project_directory(input) {
 
@@ -13,7 +14,7 @@ function set_project_directory(input) {
         function(data, status) {
             path = $(input).val();
             project_path_valid = data.valid_parent && data.exists;
-
+            $("#manual-regridding-source-folder").prop("disabled", !project_path_valid);
             if (project_path_valid) {
                 setImageSuggestions(path);
                 InputEnabled(image_list_div.find("#manual-selection"), true);
@@ -24,6 +25,36 @@ function set_project_directory(input) {
 
             InputEnabled($("#submit-button"), project_path_valid);
     });
+}
+
+function set_regridding_source_directory(input) {
+
+    get_path_suggestions(
+        input,
+        true,
+        "",
+        function(data, status) {
+
+            //TODO: For some reason popup don't appear...
+
+            regrid_chkbox = $("#manual-regridding");
+            regrid_chkbox
+                .prop("disabled", data.has_analysis ? false : true)
+                .prop("checked", data.has_analysis ? true : false);
+
+            toggleManualRegridding(regrid_chkbox);
+        },
+        path,
+        true);
+}
+
+function toggleManualRegridding(chkbox) {
+    is_active = $(chkbox).prop("checked");
+    if (is_active) {
+        $("#manual-regridding-settings").show();
+    } else {
+        $("#manual-regridding-settings").hide();
+    }
 }
 
 function setImageSuggestions(path) {

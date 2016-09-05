@@ -6,6 +6,7 @@ import glob
 from scanomatic.ui_server.general import safe_directory_name
 from scanomatic.io.app_config import Config
 from scanomatic.io.logger import Logger
+from scanomatic.data_processing.phenotyper import path_has_saved_project_state
 
 _logger = Logger("Tools API")
 
@@ -124,6 +125,10 @@ def add_routes(app):
             is_directory = bool(request.values.get('isDirectory', type=int, default=True))
         except ValueError:
             is_directory = True
+        try:
+            check_has_analysis = bool(request.values.get('checkHasAnalysis', type=int, default=False))
+        except ValueError:
+            check_has_analysis = False
 
         if not all(safe_directory_name(name) for name in sub_path[:None if is_directory else -1]):
 
@@ -173,8 +178,14 @@ def add_routes(app):
 
             _logger.info("{0}: {1}".format(path, glob.glob(path + "*")))
 
+            if check_has_analysis:
+                has_analysis = path_has_saved_project_state(path)
+            else:
+                has_analysis = None
+
             return jsonify(path="/".join(chain([command], sub_path)), valid_parent=valid_parent_directory,
-                           reason=reason, suggestions=suggestions, prefix=prefix, exists=exists)
+                           reason=reason, suggestions=suggestions, prefix=prefix, exists=exists,
+                           has_analysis=has_analysis)
 
         return jsonify(path='/', valid_parent=False, reason="Path not allowed")
 

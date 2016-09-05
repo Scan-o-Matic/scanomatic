@@ -63,13 +63,16 @@
 
                     <label for="manual-regridding-source-folder">Previous gridding folder (local)</label>
                     <input id="manual-regridding-source-folder"
+                           title="This only has affect if manual gridding is activated."
                            onchange="set_regridding_source_directory(this);"
                            onfocus="set_regridding_source_directory(this);"
                            onkeyup="set_regridding_source_directory(this);" disabled>
 
                     <br>
 
-                    <input type="checkbox" id="manual-regridding" onclick="toggleManualRegridding(this)" disabled>
+                    <input type="checkbox" id="manual-regridding"
+                           title="This can only be activated if a proper analysis folder has been selected above."
+                           onclick="toggleManualRegridding(this)" disabled>
                     <label for="manual-regridding">Activate manual regridding</label>
 
                     <div id="manual-regridding-settings">

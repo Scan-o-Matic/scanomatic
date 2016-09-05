@@ -1,21 +1,37 @@
-function get_path_suggestions(input, isDirectory, suffix, callback) {
+function get_path_suggestions(input, isDirectory, suffix, callback, prefix, checkHasAnalysis) {
 
     if (suffix == undefined)
         suffix = "";
 
-    if ($(input).val() == "") {
-        url = "/api/tools/path";
+    if (prefix != undefined) {
+        url = prefix.replace(/^\/?|\/?$/, "") + "/" + $(input).val().replace(/^\/?|\/?$/, "");
     } else {
-        url = "/api/tools/path/" +  $(input).val();
+        url = $(input).val().replace(/^\/?|\/?$/, "");
     }
 
-    $.get(url + "?suffix=" + suffix + "&isDirectory=" + (isDirectory ? 1 : 0), function(data, status) {
-        var val = $(input).val();
-        $(input).autocomplete({source: data.suggestions});
-        if (val == "" || (data.path == "root/" && val.length < data.path.length))
-            $(input).val(data.path);
+    if (url == "" || url == undefined) {
+        url = "/api/tools/path";
+    } else {
+        url = "/api/tools/path/" +  url;
+    }
 
-        callback(data, status);
+    $.get(url + "?suffix=" + suffix +
+        "&isDirectory=" + (isDirectory ? 1 : 0) +
+        "&checkHasAnalysis=" + (checkHasAnalysis ? 1 : 0),
+        function(data, status) {
+            var val = $(input).val();
+            if (prefix) {
+                start_index = ("root/" + prefix.replace(/^\/?|\/?$/, "")).length;
+                for(i=0;i<data.suggestions.length;i++){
+                    data.suggestions[i] = data.suggestions[i].substring(start_index, data.suggestions[i].length);
+                }
+            }
+            $(input).autocomplete({source: data.suggestions});
+            if (prefix == undefined && (val == "" || (data.path == "root/" && val.length < data.path.length))) {
+                $(input).val(data.path);
+            }
+
+            callback(data, status);
     });
 }
 
