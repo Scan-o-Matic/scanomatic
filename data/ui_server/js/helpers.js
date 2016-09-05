@@ -103,3 +103,11 @@ function Dialogue(title, body_header, body, redirect, reactivate_button ) {
         });
 
 }
+
+function Map(arr, lambda_func) {
+    new_arr = [];
+    for (i=0; i<arr.length; i++) {
+        new_arr[i] = lambda_func(arr[i]);
+    }
+    return new_arr;
+}

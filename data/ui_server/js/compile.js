@@ -23,6 +23,10 @@ function set_project_directory(input) {
                 InputEnabled(image_list_div.find("#manual-selection"), false);
             }
 
+            if (localFixture) {
+                set_fixture_plate_listing();
+            }
+
             InputEnabled($("#submit-button"), project_path_valid);
     });
 }
@@ -43,6 +47,7 @@ function set_regridding_source_directory(input) {
                 .prop("checked", data.has_analysis ? true : false);
 
             toggleManualRegridding(regrid_chkbox);
+
         },
         path,
         true);
@@ -50,7 +55,7 @@ function set_regridding_source_directory(input) {
 
 function toggleManualRegridding(chkbox) {
     is_active = $(chkbox).prop("checked");
-    if (is_active) {
+    if (is_active && can_set_regridding()) {
         $("#manual-regridding-settings").show();
     } else {
         $("#manual-regridding-settings").hide();
@@ -117,8 +122,69 @@ function setOnAllImages(included) {
 function toggleLocalFixture(caller) {
     localFixture = $(caller).prop("checked");
     InputEnabled($(current_fixture_id), !localFixture);
+    set_fixture_plate_listing();
 }
 
+function set_fixture_plate_listing() {
+    callback = function(data, status) {
+        if (!data.success) {
+            $("#fixture-error-message").html("<em>" + data.reason + "</em>").show();
+            $("#manual-regridding-settings").hide();
+         } else {
+            $("#fixture-error-message").hide();
+            gridplates = Map(data.plates, function (e) {return e.index;});
+            if ($("#manual-regridding").prop("checked")) {
+                $("#manual-regridding-settings").show();
+            } else {
+                $("#manual-regridding-settings").hide();
+            }
+            parent = $("#manual-regridding-plates");
+            parent.empty();
+            Map(gridplates, function(e) {append_regridding_ui(parent, e);});
+         }
+    };
+
+    error_callback = function() {
+        $("#fixture-error-message").html("<em>Fixture file missing</em>").show();
+    }
+
+    if (localFixture) {
+        $.get("/api/data/fixture/local/" + path.substring(5, path.length), callback).fail(error_callback);
+    } else {
+        fixt = $(current_fixture_id).val();
+        if (fixt) {
+            $.get("/api/data/fixture/get/" + fixt, callback).fail(error_callback);
+        } else {
+            $("#fixture-error-message").hide();
+        }
+    }
+}
+
+function append_regridding_ui(parent, plate_index) {
+    parent.append(
+        "<div class='plate-regridding' id='plate-regridding-" + plate_index + "'>" +
+            "<fieldset>" +
+            "<img class='grid_icon' src='/images/grid_icon.png' onmouseenter='loadgridimage(" + plate_index + ");' onmouseexit='hidegridimage();'>" +
+            "<legend>Plate " +  plate_index + "</legend>" +
+
+            "<input type='radio' id='plate-regridding-keep" + plate_index + "' value='Keep' name='Keep' checked='checked'>" +
+            "<label id='plate-regridding-keep" + plate_index + "'>Keep previous</label><br>" +
+
+            "<input type='radio' id='plate-regridding-offset" + plate_index + "' value='Offset' name='Offset'>" +
+            "<label id='plate-regridding-offset" + plate_index + "'>Offset</label>" +
+            "<input type='number' class='plate-offset' id='plate-regridding-offset-d1-" + plate_index + "' value='0' name='Offset-d1'>" +
+            "<input type='number' class='plate-offset' id='plate-regridding-offset-d2-" + plate_index + "' value='0' name='Offset-d2'><br>" +
+
+            "<input type='radio' id='plate-regridding-new" + plate_index + "' value='New' name='New'>" +
+            "<label id='plate-regridding-new" + plate_index + "'>New grid from scratch</label><br>" +
+            "</fieldset>" +
+        "</div>"
+    );
+}
+
+function can_set_regridding() {
+    return gridplates != null && gridplates.length > 0;
+}
 
 function Compile(button) {
 
