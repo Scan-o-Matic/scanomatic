@@ -45,6 +45,8 @@
                     <div class="indented"><em>The project directory is the directory that contains the images that were scanned.</em></div>
 
                 </div>
+
+                <h3>Manual selection of images</h3>
                 <div class="section" id="manual-selection-div">
                     <input type="checkbox" id="manual-selection" onclick="toggleManualSelectionBtn(this);" />
                     <label for="manual-selection">Manual Selection</label>
@@ -55,7 +57,30 @@
                     </div>
                     <div id="options" css="hidden: hidden"></div>
                 </div>
-                <div class="section">
+
+                <h3>Manual regridding of previously analysed project</h3>
+                <div class="section" id="manual-regridding-div">
+
+                    <label for="manual-regridding-source-folder">Previous gridding folder (local)</label>
+                    <input id="manual-regridding-source-folder"
+                           onchange="set_regridding_source_directory(this);"
+                           onfocus="set_regridding_source_directory(this);"
+                           onkeyup="set_regridding_source_directory(this);" disabled>
+
+                    <br>
+
+                    <input type="checkbox" id="manual-regridding" onclick="toggleManualRegridding(this)" disabled>
+                    <label for="manual-regridding">Activate manual regridding</label>
+
+                    <div id="manual-regridding-settings">
+                        <div id="manual-regridding-plates" style="hidden:hidden"></div>
+                        <div class="indented"><em></em></div>
+                        <div id="manual-regridding-image" style="hidden:hidden"></div>
+                    </div>
+                </div>
+
+                <h3>Chaining</h3>
+                <div class="section" id="chaining-div">
                     <div class="onoffswitch chain">
                             <input type="checkbox" name="chain" class="onoffswitch-checkbox chain" id="chain-analysis-request">
                             <label class="onoffswitch-label chain" for="chain-analysis-request">

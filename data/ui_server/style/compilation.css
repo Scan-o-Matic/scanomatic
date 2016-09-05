@@ -34,5 +34,15 @@ label.image-list-label {
     padding-top: 6px;
 }
 
+#manual-regridding-div {
+    padding: 5px;
+    background: #541f0f !important;
+}
+
+#chaining-div {
+    padding: 5px;
+    background: #541f0f !important;
+}
+
 
 
