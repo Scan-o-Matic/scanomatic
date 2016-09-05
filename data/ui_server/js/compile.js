@@ -167,15 +167,15 @@ function append_regridding_ui(parent, plate_index) {
             "<img class='grid_icon' src='/images/grid_icon.png' onmouseenter='loadgridimage(" + plate_index + ");' onmouseexit='hidegridimage();'>" +
             "<legend>Plate " +  plate_index + "</legend>" +
 
-            "<input type='radio' id='plate-regridding-keep" + plate_index + "' value='Keep' name='Keep' checked='checked'>" +
+            "<input type='radio' name='plate-regridding-radio-" + plate_index + "' value='Keep' checked='checked'>" +
             "<label id='plate-regridding-keep" + plate_index + "'>Keep previous</label><br>" +
 
-            "<input type='radio' id='plate-regridding-offset" + plate_index + "' value='Offset' name='Offset'>" +
+            "<input type='radio' name='plate-regridding-radio-" + plate_index + "' value='Offset'>" +
             "<label id='plate-regridding-offset" + plate_index + "'>Offset</label>" +
             "<input type='number' class='plate-offset' id='plate-regridding-offset-d1-" + plate_index + "' value='0' name='Offset-d1'>" +
             "<input type='number' class='plate-offset' id='plate-regridding-offset-d2-" + plate_index + "' value='0' name='Offset-d2'><br>" +
 
-            "<input type='radio' id='plate-regridding-new" + plate_index + "' value='New' name='New'>" +
+            "<input type='radio' name='plate-regridding-radio-" + plate_index + "' value='New'>" +
             "<label id='plate-regridding-new" + plate_index + "'>New grid from scratch</label><br>" +
             "</fieldset>" +
         "</div>"
@@ -184,6 +184,38 @@ function append_regridding_ui(parent, plate_index) {
 
 function can_set_regridding() {
     return gridplates != null && gridplates.length > 0;
+}
+
+function regridding_settings_data() {
+    max = Math.max.apply(Math, gridplates);
+    plates = [];
+    for (i=1;i<=max; i++) {
+        plates.push(get_regridding_setting(i));
+    }
+    return plates;
+}
+
+function get_regridding_setting(i) {
+
+    e = $("#plate-regridding-" + i);
+    if (e.length != 0) {
+        switch (e.find("input[name=plate-regridding-radio-" + i + "]:checked").val()) {
+            case "Keep":
+                return [0, 0];
+            case "Offset":
+                return [
+                    parseInt(e.find("#plate-regridding-offset-d1-" + i).val()),
+                    parseInt(e.find("#plate-regridding-offset-d2-" + i).val()),
+                ];
+
+            case "New":
+                return null;
+            default:
+                return null;
+        };
+    } else {
+        return null;
+    }
 }
 
 function Compile(button) {
@@ -201,14 +233,20 @@ function Compile(button) {
         });
     }
 
-    $.ajax({
-        url: "?run=1",
-        method: "POST",
-        data: {local: localFixture ? 1 : 0, 'fixture': $(current_fixture_id).val(),
+    data = {local: localFixture ? 1 : 0, 'fixture': $(current_fixture_id).val(),
                path: path,
                chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
                images: images
-               },
+            };
+
+    if ($("#manual-regridding").prop("checked")) {
+        data['']
+    }
+
+    $.ajax({
+        url: "?run=1",
+        method: "POST",
+        data: data,
         success: function (data) {
             if (data.success) {
                 Dialogue("Compile", "Compilation enqueued", "", '/status');
