@@ -328,7 +328,7 @@ def add_routes(app, rpc_client, is_debug_mode):
                 included plates specs
             "grayscale" is a key-value array of its specs
             "markers" is a 2D array of the marker centra
-            "succses" if the fixture was found and valid else
+            "success" if the fixture was found and valid else
             "reason" to explain why not.
 
         """
