@@ -181,6 +181,13 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     one_time_positioning=bool(request.values.get('one_time_positioning', default=1, type=int)),
                     chain=bool(request.values.get('chain', default=1, type=int)))
 
+                regridding_folder = request.values.get("reference_grid_folder", default=None)
+                if regridding_folder:
+                    grid_list = tuple(request.values.getlist("gridding_offsets[{0}][]".format(i)) for i in range(4))
+                    grid_list = tuple(tuple(map(int, l)) if l else None for l in grid_list)
+                    model.grid_model.reference_grid_folder = regridding_folder
+                    model.grid_model.gridding_offsets = grid_list
+
                 success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(
                     AnalysisModelFactory.to_dict(model))
 

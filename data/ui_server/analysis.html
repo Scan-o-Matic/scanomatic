@@ -10,8 +10,7 @@
     <script src="/js/fixtures.js"></script>
     <script src="/js/analysis.js"></script>
     <script>
-
-
+        current_fixture_id = "#current-fixture";
     </script>
 	<title>Scan-o-Matic</title>
 </head>
@@ -89,15 +88,15 @@
                         <label for="current-fixture"></label>
                         <select name="current-fixtures" id="current-fixture" onchange="set_fixture_plate_listing()"></select>
                         <br>
-                        <div class="error-message" id="fixture-error-message"></div>
-
+                        <div class="error-message" id="fixture-error-message">No fixture selected ^^</div>
+                        <br>
                         <div id="manual-regridding-plates"></div>
                         <div class="indented"><em>
                             Positive offsetting implies moving towards the grid origin (circled position)
                             along first the short axis then long axis.
                             REGRIDDING WITHOUT USING IDENTICAL FIXTURE SETTINGS AS ORIGINAL MAKES NO SENSE.
                         </em></div>
-                        <div id="manual-regridding-image" style="visibility: hidden"></div>
+                        <div id="manual-regridding-image"></div>
                     </div>
                 </div>
 
@@ -134,9 +133,10 @@
 
     </div>
     <script>
-        toggleManualRegridding($("#manual-regridding"));
         get_fixtures();
         InputEnabled($("#submit-button2"), false);
+        toggleManualRegridding($("#manual-regridding"));
+
     </script>
 </body>
 </html>

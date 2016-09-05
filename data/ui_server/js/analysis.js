@@ -11,7 +11,6 @@ function set_fixture_plate_listing() {
     callback = function(data, status) {
         if (!data.success) {
             $("#fixture-error-message").html("<em>" + data.reason + "</em>").show();
-            $("#manual-regridding-settings").hide();
          } else {
             $("#fixture-error-message").hide();
             gridplates = Map(data.plates, function (e) {return e.index;});
@@ -46,7 +45,7 @@ function append_regridding_ui(parent, plate_index) {
     parent.append(
         "<div class='plate-regridding' id='plate-regridding-" + plate_index + "'>" +
             "<fieldset>" +
-            "<img class='grid_icon' src='/images/grid_icon.png' onmouseenter='loadgridimage(" + plate_index + ");' onmouseexit='hidegridimage();'>" +
+            "<img class='grid_icon' src='/images/grid_icon.png' onmouseenter='loadgridimage(" + plate_index + ");' onmouseleave='hidegridimage();'>" +
             "<legend>Plate " +  plate_index + "</legend>" +
 
             "<input type='radio' name='plate-regridding-radio-" + plate_index + "' value='Keep' checked='checked'>" +
@@ -64,9 +63,42 @@ function append_regridding_ui(parent, plate_index) {
     );
 }
 
+show_gridimage = false;
+
+function hidegridimage() {
+    show_gridimage = false;
+    $("#manual-regridding-image").hide();
+}
+
+function loadgridimage(i) {
+
+    show_gridimage = true;
+    curDir = get_dir();
+    $.get(
+        "/api/results/gridding/" + i + curDir.substring(4, curDir.length) + "/" + $("#manual-regridding-source-folder").val(),
+        function (data) {
+            //var oParser = new DOMParser();
+            //var oDOM = oParser.parseFromString(data, "image/svg+xml");
+
+            //$("#manual-regridding-image").html(new SVGDocument(data));
+
+            svg = document.importNode(data, true);
+            $("#manual-regridding-image").html(svg);
+        }
+    ).fail(function() {
+        $("#manual-regridding-image").html("<h3>Could not find the grid image! Maybe gridding failed last time?</h3>");
+    }).always(function() {
+        if (show_gridimage) {
+            $("#manual-regridding-image").show();
+        } else {
+            $("#manual-regridding-image").hide();
+        }
+    });
+}
+
+
 function can_set_regridding() {
     return true;
-    //    return gridplates != null && gridplates.length > 0;
 }
 
 function regridding_settings_data() {
@@ -101,8 +133,11 @@ function get_regridding_setting(i) {
     }
 }
 
+function get_dir() {
+    return $("#compilation").val().replace(/\/[^\/]*$/,"");
+}
 function set_regridding_source_directory(input) {
-    path = $("#compilation").val().replace(/\/[^\/]*$/,"");
+    path = get_dir();
     get_path_suggestions(
         input,
         true,
@@ -178,9 +213,11 @@ function Analyse(button) {
     };
 
     if ($("#manual-regridding").prop("checked")) {
-        data['killl']
+        data['reference_grid_folder'] = $("#manual-regridding-source-folder").val();
+        data['gridding_offsets'] = regridding_settings_data();
     }
 
+    console.log(data);
 
     $.ajax({
         url: '?action=analysis',
@@ -198,6 +235,7 @@ function Analyse(button) {
         }
 
     });
+
 }
 
 function Extract(button) {
