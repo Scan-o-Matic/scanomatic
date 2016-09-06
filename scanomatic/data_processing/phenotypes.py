@@ -1,4 +1,5 @@
 from enum import Enum
+from itertools import chain
 
 from growth_phenotypes import Phenotypes
 from scanomatic.data_processing.phases.features import VectorPhenotypes, CurvePhaseMetaPhenotypes
@@ -46,7 +47,6 @@ class PhenotypeDataType(Enum):
     """:type : PhenotypeDataType"""
     Other = 12
     """:type : PhenotypeDataType"""
-
     All = 100
     """:type : PhenotypeDataType"""
 
@@ -137,9 +137,14 @@ class PhenotypeDataType(Enum):
         elif self is PhenotypeDataType.All:
 
             if phenotype is None:
-                return tuple(p for p in Phenotypes)
+                return tuple(p for p in chain(Phenotypes, VectorPhenotypes, CurvePhaseMetaPhenotypes)
 
-            return True
+            for pheno_type in (Phenotypes, VectorPhenotypes, CurvePhaseMetaPhenotypes):
+                try:
+                    if phenotype in pheno_type or pheno_type[phenotype]:
+                        return True
+                except KeyError:
+                    pass
 
     @classmethod
     def classify(cls, phenotype):

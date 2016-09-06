@@ -415,9 +415,41 @@ def add_routes(app):
                  project_name=name,
                  **_get_json_lock_response(lock_key))))
 
+    @app.route("/api/results/phenotype_normalizable/add")
+    @app.route("/api/results/phenotype_normalizable/add/<phenotype>/<path:project>")
+    def add_normalizeable_phenotype(project=None, phenotype):
+
+        path = convert_url_to_path(project)
+        base_url = "/api/results/phenotype_normalizable/add"
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(
+                ["urls"], dict(jsonify(is_project=False, **get_search_results(path, base_url)))))
+
+        locked, lock_key, lock_ip = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
+        name = get_project_name(path)
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+
+        # Validate lock, without lock nothing will happen
+        if locked and not lock_key:
+            return jsonify(success=False, reason="Failed to acquire lock on project (owned by {0})".format(lock_ip),
+                           is_endpoint=True, **response)
+        elif not locked:
+            return jsonify(success=False, is_project=True, is_endpoint=True,
+                           reason="Failed to acquire lock though no one was working on project. Please Report")
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+
+        if phenotype is None:
+
+            return jsonify(**json_response(
+                ["urls"], dict(jsonify(is_project=True, **get_search_results(path, base_url)))))
+
+
     @app.route("/api/results/phenotype_normalizable/names")
     @app.route("/api/results/phenotype_normalizable/names/<path:project>")
-    def get_phenotype_names(project=None):
+    def get_normalizeable_phenotype_names(project=None):
 
         path = convert_url_to_path(project)
         base_url = "/api/results/phenotype_normalizable/names"
@@ -476,7 +508,7 @@ def add_routes(app):
     @app.route("/api/results/normalized_phenotype/<phenotype>/<int:plate>/<path:project>")
     @app.route("/api/results/normalized_phenotype/<int:plate>/<path:project>")
     @app.route("/api/results/normalized_phenotype/<phenotype>/<path:project>")
-    def get_normalize_phenotype_data(phenotype=None, project=None, plate=None):
+    def get_normalized_phenotype_data(phenotype=None, project=None, plate=None):
 
         base_url = "/api/results/normalized_phenotype"
         path = convert_url_to_path(project)
