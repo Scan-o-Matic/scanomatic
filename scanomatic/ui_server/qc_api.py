@@ -853,6 +853,7 @@ def add_routes(app):
         response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
 
         state.set_control_surface_offsets(offset, plate)
+        state.save_state(path, ask_if_overwrite=False)
 
         return jsonify(success=True, **response)
 
