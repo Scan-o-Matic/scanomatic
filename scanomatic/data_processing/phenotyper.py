@@ -959,6 +959,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         else:
             self._reference_surface_positions[plate] = offset()
 
+    def get_control_surface_offset(self, plate):
+
+        try:
+            return self._reference_surface_positions[plate]
+        except IndexError:
+            return 0
+
     def normalize_phenotypes(self):
         """Normalize phenotypes.
 

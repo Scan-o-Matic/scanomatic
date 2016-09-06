@@ -849,5 +849,32 @@ def add_routes(app):
 
         return jsonify(success=True, **response)
 
+    @app.route("/api/results/normalize/reference/get/<plate>/<path:project>")
+    def _get_normalization_offset(project, plate):
+        """Sets a normalization offset
+
+        Arga:
+
+            project: str, url-formatted path to the project.
+            plate: The plate in question
+
+        """
+        url_root = "/api/results/normalize/reference/get"
+
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
+
+        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+        name = get_project_name(path)
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        offset = state.get_control_surface_offset(plate)
+
+        return jsonify(success=True, offset_name=offset.name, offset_value=offset.value, **response)
+
     # End of UI extension with qc-functionality
     return True
