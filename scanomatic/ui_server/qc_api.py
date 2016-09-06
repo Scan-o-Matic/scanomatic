@@ -415,6 +415,35 @@ def add_routes(app):
                  project_name=name,
                  **_get_json_lock_response(lock_key))))
 
+    @app.route("/api/results/phenotype_normalizable/names")
+    @app.route("/api/results/phenotype_normalizable/names/<path:project>")
+    def get_phenotype_names(project=None):
+
+        path = convert_url_to_path(project)
+        base_url = "/api/results/phenotype_normalizable/names"
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(
+                ["urls"], dict(jsonify(is_project=False, **get_search_results(path, base_url)))))
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
+        name = get_project_name(path)
+        urls = ["/api/results/normalized_phenotype/{0}/{1}".format(phenotype, project)
+                for phenotype in state.phenotype_names()]
+
+        sort_order = [get_sort_order(p) for p in state.get_normalizable_phenotypes()]
+
+        return jsonify(**json_response(
+            ["phenotype_urls"],
+            dict(phenotypes=state.phenotype_names(),
+                 phenotype_sort_orders=sort_order,
+                 is_project=True,
+                 phenotype_urls=urls,
+                 project_name=name,
+                 **_get_json_lock_response(lock_key))))
+
     @app.route("/api/results/quality_index")
     @app.route("/api/results/quality_index/<int:plate>/<path:project>")
     @app.route("/api/results/quality_index/<path:project>")
