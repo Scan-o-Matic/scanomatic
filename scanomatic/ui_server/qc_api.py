@@ -809,6 +809,13 @@ def add_routes(app):
         else:
             return jsonify(success=False, reason="Error while producing film")
 
+    @app.route("/api/results/normalize/reference/offsets")
+    def _get_offset_names():
+
+        names = [o.name for o in phenotyper.Offsets]
+        values = [o.value for o in phenotyper.Offsets]
+        return jsonify(success=True, offset_names=names, offset_values=values)
+
     @app.route("/api/results/normalize/reference/set/<plate>/<offset>/<path:project>")
     @app.route("/api/results/normalize/reference/set/<offset>/<path:project>")
     def _set_normalization_offset(project, offset, plate=None):
@@ -851,7 +858,7 @@ def add_routes(app):
 
     @app.route("/api/results/normalize/reference/get/<plate>/<path:project>")
     def _get_normalization_offset(project, plate):
-        """Sets a normalization offset
+        """Gets the normalization offset of a plate
 
         Arga:
 
