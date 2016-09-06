@@ -443,6 +443,68 @@ def add_routes(app):
         rows, cols = state.get_quality_index(plate)
         return jsonify(success=True, is_endpoint=True, dim1_rows=rows.tolist(), dim2_cols=cols.tolist(), **response)
 
+    @app.route("/api/results/normalized_phenotype")
+    @app.route("/api/results/normalized_phenotype/<phenotype>/<int:plate>/<path:project>")
+    @app.route("/api/results/normalized_phenotype/<int:plate>/<path:project>")
+    @app.route("/api/results/normalized_phenotype/<phenotype>/<path:project>")
+    def get_normalize_phenotype_data(phenotype=None, project=None, plate=None):
+
+        base_url = "/api/results/normalized_phenotype"
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(
+                ["urls"], dict(is_project=False, **get_search_results(path, base_url + "/_NONE_"))))
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
+        name = get_project_name(path)
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+
+        if phenotype is None:
+
+            phenotypes = state.phenotype_names()
+
+            if plate is None:
+
+                urls = [base_url + "/{0}/{1}/{2}".format(phenotype, plate, project)
+                        for phenotype, plate in product(phenotypes, state.enumerate_plates)]
+            else:
+
+                urls = [base_url + "/{0}/{1}/{2}".format(phenotype, plate, project)
+                        for phenotype in phenotypes]
+
+            return jsonify(**json_response(["urls"], dict(phenotypes=phenotypes, urls=urls, **response)))
+
+        phenotype_enum = phenotyper.get_phenotype(phenotype)
+        is_segmentation_based = state.is_segmentation_based_phenotype(phenotype_enum)
+
+        if plate is None:
+
+            urls = []
+            plate_indices = []
+            for plate, shape in enumerate(state.plate_shapes):
+                if shape is not None:
+                    urls.append(base_url + "/{0}/{1}/{2}".format(phenotype, plate, project))
+                    plate_indices.append(plate)
+
+            return jsonify(**json_response(
+                ["urls"],
+                dict(
+                    urls=urls, plate_indices=plate_indices, is_segmentation_based=is_segmentation_based, **response)))
+
+        plate_data = state.get_phenotype(phenotype_enum, normalized=True)[plate]
+
+        return jsonify(
+            success=True, data=plate_data.tojson(), plate=plate, phenotype=phenotype, is_endpoint=True,
+            is_segmentation_based=is_segmentation_based,
+            **merge_dicts(
+                {filt.name: tuple(v.tolist() for v in plate_data.where_mask_layer(filt))
+                 for filt in Filter if filt != Filter.OK},
+                response))
+
+
     @app.route("/api/results/phenotype")
     @app.route("/api/results/phenotype/<phenotype>/<int:plate>/<path:project>")
     @app.route("/api/results/phenotype/<int:plate>/<path:project>")
