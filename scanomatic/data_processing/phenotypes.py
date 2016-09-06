@@ -137,7 +137,7 @@ class PhenotypeDataType(Enum):
         elif self is PhenotypeDataType.All:
 
             if phenotype is None:
-                return tuple(p for p in chain(Phenotypes, VectorPhenotypes, CurvePhaseMetaPhenotypes)
+                return tuple(p for p in chain(Phenotypes, VectorPhenotypes, CurvePhaseMetaPhenotypes))
 
             for pheno_type in (Phenotypes, VectorPhenotypes, CurvePhaseMetaPhenotypes):
                 try:
