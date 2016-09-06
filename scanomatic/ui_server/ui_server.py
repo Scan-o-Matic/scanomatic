@@ -28,6 +28,7 @@ from . import scan_api
 from . import management_api
 from . import tools_api
 from . import data_api
+from .general import get_2d_list
 
 _url = None
 _logger = Logger("UI-server")
@@ -183,7 +184,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
                 regridding_folder = request.values.get("reference_grid_folder", default=None)
                 if regridding_folder:
-                    grid_list = tuple(request.values.getlist("gridding_offsets[{0}][]".format(i)) for i in range(4))
+                    grid_list = get_2d_list(request.values, "gridding_offsets")
                     grid_list = tuple(tuple(map(int, l)) if l else None for l in grid_list)
                     model.grid_model.reference_grid_folder = regridding_folder
                     model.grid_model.gridding_offsets = grid_list

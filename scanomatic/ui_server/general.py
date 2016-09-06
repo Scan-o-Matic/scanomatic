@@ -33,6 +33,28 @@ def image_is_allowed(ext):
     return ext.lower() in _ALLOWED_EXTENSIONS
 
 
+def get_2d_list(data, key, **kwargs):
+    """
+
+    :param data: Example a request.values
+    :param key: The key used without list marks
+    :return: Nested tuples.
+    """
+
+    def _list_enumerater():
+        i = 0
+        while True:
+            tmp = key.format(i)
+            if i in data:
+                yield tmp
+            else:
+                break
+
+    key = key + "[{0}][]"
+
+    return tuple(values.getlist(k, **kwargs) for k in  _list_getter())
+
+
 def get_area_too_large_for_grayscale(grayscale_area_model):
     global _TOO_LARGE_GRAYSCALE_AREA
     area_size = (grayscale_area_model.x2 - grayscale_area_model.x1) * \
