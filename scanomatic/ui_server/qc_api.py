@@ -809,5 +809,45 @@ def add_routes(app):
         else:
             return jsonify(success=False, reason="Error while producing film")
 
+    @app.route("/api/results/normalize/reference/set/<plate>/<offset>/<path:project>")
+    @app.route("/api/results/normalize/reference/set/<offset>/<path:project>")
+    def _set_normalization_offset(project, offset, plate=None):
+        """Sets a normalization offset
+
+        Arga:
+
+            project: str, url-formatted path to the project.
+            offset: One of the four offset names
+            plate: Optional, if supplied only apply to a
+                specific plate, else apply to all plates.
+
+        """
+        url_root = "/api/results/normalize/reference/set"
+
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
+
+        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
+
+        # Validate lock, without lock nothing will happen
+        if locked and not lock_key:
+            return jsonify(success=False, reason="Failed to acquire lock on project (owned by {0})".format(lock_ip),
+                           is_endpoint=True, **response)
+        elif not locked:
+            return jsonify(success=False, is_project=True, is_endpoint=True,
+                           reason="Failed to acquire lock though no one was working on project. Please Report",
+                           **response)
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+        name = get_project_name(path)
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+
+        state.set_control_surface_offsets(offset, plate)
+
+        return jsonify(success=True, **response)
+
     # End of UI extension with qc-functionality
     return True
