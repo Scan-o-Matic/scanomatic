@@ -140,6 +140,7 @@ class PhenotypeDataType(Enum):
                 return tuple(p for p in chain(Phenotypes, VectorPhenotypes, CurvePhaseMetaPhenotypes))
 
             for pheno_type in (Phenotypes, VectorPhenotypes, CurvePhaseMetaPhenotypes):
+
                 try:
                     if phenotype in pheno_type or pheno_type[phenotype]:
                         return True
