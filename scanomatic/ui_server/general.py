@@ -41,18 +41,19 @@ def get_2d_list(data, key, **kwargs):
     :return: Nested tuples.
     """
 
-    def _list_enumerater():
+    key += "[{0}][]"
+
+    def _list_enumerator():
         i = 0
         while True:
             tmp = key.format(i)
-            if i in data:
+            if tmp in data:
                 yield tmp
+                i += 1
             else:
                 break
 
-    key = key + "[{0}][]"
-
-    return tuple(values.getlist(k, **kwargs) for k in  _list_getter())
+    return tuple(data.getlist(k, **kwargs) for k in _list_enumerator())
 
 
 def get_area_too_large_for_grayscale(grayscale_area_model):

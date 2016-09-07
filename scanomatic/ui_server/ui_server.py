@@ -186,6 +186,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 if regridding_folder:
                     grid_list = get_2d_list(request.values, "gridding_offsets")
                     grid_list = tuple(tuple(map(int, l)) if l else None for l in grid_list)
+
                     model.grid_model.reference_grid_folder = regridding_folder
                     model.grid_model.gridding_offsets = grid_list
 
