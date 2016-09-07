@@ -43,9 +43,9 @@ function set_fixture_plate_listing() {
 
 function append_regridding_ui(parent, plate_index) {
     parent.append(
-        "<div class='plate-regridding' id='plate-regridding-" + plate_index + "'>" +
+        "<div class='plate-regridding' id='plate-regridding-" + plate_index + "' onmouseleave='hidegridimage();'>" +
             "<fieldset>" +
-            "<img class='grid_icon' src='/images/grid_icon.png' onmouseenter='loadgridimage(" + plate_index + ");' onmouseleave='hidegridimage();'>" +
+            "<img class='grid_icon' src='/images/grid_icon.png' onmouseenter='loadgridimage(" + (plate_index - 1) + ");'>" +
             "<legend>Plate " +  plate_index + "</legend>" +
 
             "<input type='radio' name='plate-regridding-radio-" + plate_index + "' value='Keep' checked='checked'>" +
@@ -66,27 +66,24 @@ function append_regridding_ui(parent, plate_index) {
 show_gridimage = false;
 
 function hidegridimage() {
+
     show_gridimage = false;
     $("#manual-regridding-image").hide();
+
 }
 
 function loadgridimage(i) {
 
     show_gridimage = true;
     curDir = get_dir();
+    $("#manual-regridding-image").empty();
     $.get(
         "/api/results/gridding/" + i + curDir.substring(4, curDir.length) + "/" + $("#manual-regridding-source-folder").val(),
         function (data) {
-            //var oParser = new DOMParser();
-            //var oDOM = oParser.parseFromString(data, "image/svg+xml");
-
-            //$("#manual-regridding-image").html(new SVGDocument(data));
-
-            svg = document.importNode(data, true);
-            $("#manual-regridding-image").html(svg);
+            $("#manual-regridding-image").append(data.documentElement);
         }
     ).fail(function() {
-        $("#manual-regridding-image").html("<h3>Could not find the grid image! Maybe gridding failed last time?</h3>");
+        $("#manual-regridding-image").append("<p class='error-message'>Could not find the grid image! Maybe gridding failed last time?</p>");
     }).always(function() {
         if (show_gridimage) {
             $("#manual-regridding-image").show();
