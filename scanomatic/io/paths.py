@@ -136,6 +136,7 @@ class Paths(SingeltonOneInit):
         self.vector_meta_phenotypes_raw = "phenotypes_meta_vector_raw.npy"
         self.normalized_phenotypes = "normalized_phenotypes.npy"
         self.phenotypes_filter = "phenotypes_filter.npy"
+        self.phenotypes_reference_offsets = "phenotypes_reference_offsets.npy"
         self.phenotypes_filter_undo = "phenotypes_filter.undo.pickle"
         self.phenotypes_meta_data = "meta_data.pickle"
         self.phenotypes_meta_data_original_file_patern = "meta_data_{0}.{1}"
