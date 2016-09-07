@@ -10,6 +10,7 @@ from enum import Enum
 
 from scanomatic.data_processing import phenotyper
 from scanomatic.data_processing.phenotypes import get_sort_order, PhenotypeDataType
+from scanomatic.data_processing.norm import infer_offset, Offsets
 from scanomatic.generics.phenotype_filter import Filter
 from scanomatic.io.paths import Paths
 from scanomatic.io.app_config import Config
@@ -463,6 +464,52 @@ def add_routes(app):
                  phenotype_urls=urls,
                  project_name=name,
                  **_get_json_lock_response(lock_key))))
+
+    @app.route("/api/results/phenotype_normalizable/remove")
+    @app.route("/api/results/phenotype_normalizable/remove/<phenotype>/<path:project>")
+    def remove_normalizeable_phenotype(project=None, phenotype=""):
+
+        path = convert_url_to_path(project)
+        base_url = "/api/results/phenotype_normalizable/remove"
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(
+                ["urls"], dict(is_project=False, **get_search_results(path, base_url))))
+
+        name = get_project_name(path)
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(
+            path, lock_key, request.remote_addr, require_claim=True)
+        response['name'] = name
+        if not owns_lock(lock_state):
+            return jsonify(**response)
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+
+        pheno = PhenotypeDataType.All(phenotype)
+        norm_phenos = state.get_normalizable_phenotypes()
+        if pheno is None or pheno not in norm_phenos:
+
+            did_supply_phenotype = phenotype == ""
+            urls = [base_url + "/{0}/{1}".format(p.name, project) for p in norm_phenos]
+
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+
+            return jsonify(**json_response(
+                ["urls"],
+                {"urls": urls,
+                 "reason": "Phenotype not included" if pheno else "Unknown phenotype"},
+                success=did_supply_phenotype))
+
+        state.remove_phenotype_from_normalization(pheno)
+        state.save_phenotypes(path, ask_if_overwrite=False)
+
+        if lock_state is LockState.LockedByMeTemporary:
+            _remove_lock(path)
+
+        return jsonify(success=True, **_get_json_lock_response(lock_key))
 
     @app.route("/api/results/phenotype_normalizable/add")
     @app.route("/api/results/phenotype_normalizable/add/<phenotype>/<path:project>")
@@ -1080,7 +1127,7 @@ def add_routes(app):
         values = [o.value for o in phenotyper.Offsets]
         return jsonify(success=True, offset_names=names, offset_values=values)
 
-    @app.route("/api/results/normalize/reference/set/<plate>/<offset>/<path:project>")
+    @app.route("/api/results/normalize/reference/set/<int:plate>/<offset>/<path:project>")
     @app.route("/api/results/normalize/reference/set/<offset>/<path:project>")
     def _set_normalization_offset(project, offset, plate=None):
         """Sets a normalization offset
@@ -1110,6 +1157,23 @@ def add_routes(app):
 
         state = phenotyper.Phenotyper.LoadFromState(path)
 
+        if plate is None:
+
+            urls = ["{0}/{1}/{2}".format(url_root, plate, project)
+                    for plate in state.enumerate_plates]
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
+
+        try:
+            offset = Offsets[offset]
+        except ValueError:
+            urls = [url_root + "/{0}/{1}/{2}/{3}".format(url_root, plate, off.name, project) for off in Offsets]
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(success=False, reason="Bad offset name {0}".format(offset),
+                           **json_response(["urls"], dict(urls=urls, **response)))
+
         state.set_control_surface_offsets(offset, plate)
         state.save_state(path, ask_if_overwrite=False)
 
@@ -1118,7 +1182,7 @@ def add_routes(app):
 
         return jsonify(success=True, **response)
 
-    @app.route("/api/results/normalize/reference/get/<plate>/<path:project>")
+    @app.route("/api/results/normalize/reference/get/<int:plate>/<path:project>")
     def _get_normalization_offset(project, plate):
         """Gets the normalization offset of a plate
 
@@ -1143,8 +1207,13 @@ def add_routes(app):
         name = get_project_name(path)
         response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
         offset = state.get_control_surface_offset(plate)
+        try:
+            offset = infer_offset(offset)
+        except ValueError:
+            return jsonify(success=False, reason="Non standard offset used by someone hacking the project", **response)
 
-        return jsonify(success=True, offset_name=offset.name, offset_value=offset.value, **response)
+        return jsonify(success=True, offset_name=offset.name, offset_value=offset.value,
+                       offset_pattern=offset().tolist(), **response)
 
     # End of UI extension with qc-functionality
     return True
