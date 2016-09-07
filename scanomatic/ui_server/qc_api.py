@@ -1148,9 +1148,10 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
 
+        lock_key = request.values.get("lock_key")
         name = get_project_name(path)
         lock_state, response = _validate_lock_key(
-            path, request.values.get("lock_key"), request.remote_addr, require_claim=True)
+            path, lock_key, request.remote_addr, require_claim=True)
         response['name'] = name
         if not owns_lock(lock_state):
             return jsonify(**response)
@@ -1180,7 +1181,7 @@ def add_routes(app):
         if lock_state is LockState.LockedByMeTemporary:
             _remove_lock(path)
 
-        return jsonify(success=True, **response)
+        return jsonify(success=True, **_get_json_lock_response(lock_key))
 
     @app.route("/api/results/normalize/reference/get/<int:plate>/<path:project>")
     def _get_normalization_offset(project, plate):
@@ -1207,13 +1208,14 @@ def add_routes(app):
         name = get_project_name(path)
         response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
         offset = state.get_control_surface_offset(plate)
+
         try:
             offset = infer_offset(offset)
         except ValueError:
             return jsonify(success=False, reason="Non standard offset used by someone hacking the project", **response)
 
         return jsonify(success=True, offset_name=offset.name, offset_value=offset.value,
-                       offset_pattern=offset().tolist(), **response)
+                       offset_pattern=offset().tolist(), **_get_json_lock_response(lock_key))
 
     # End of UI extension with qc-functionality
     return True
