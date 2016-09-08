@@ -9,7 +9,7 @@ import uuid
 from enum import Enum
 
 from scanomatic.data_processing import phenotyper
-from scanomatic.data_processing.phenotypes import get_sort_order, PhenotypeDataType
+from scanomatic.data_processing.phenotypes import get_sort_order, PhenotypeDataType, infer_phenotype_from_name
 from scanomatic.data_processing.norm import infer_offset, Offsets
 from scanomatic.generics.phenotype_filter import Filter
 from scanomatic.io.paths import Paths
@@ -44,6 +44,7 @@ def _get_state_update_response(path, response, success=None):
 
     state = phenotyper.Phenotyper.LoadFromState(path)
     name = get_project_name(path)
+    print("Loaded state '{0}' from: {1}".format(name, path))
 
     response.update({'is_endpoint': True, 'is_project': True, 'project_name': name})
 
@@ -55,8 +56,8 @@ def _get_state_update_response(path, response, success=None):
 
 def _make_film(film_type, save_target=None, pos=None, path=None):
     code = FILM_TYPES[film_type].format(save_target=save_target, pos=pos, path=path)
-    retcode = call(['python', '-c', 'from scanomatic.qc import analysis_results;analysis_results.{0}'.format(code)])
-    return retcode == 0
+    return_code = call(['python', '-c', 'from scanomatic.qc import analysis_results;analysis_results.{0}'.format(code)])
+    return return_code == 0
 
 
 def _get_key():
@@ -115,7 +116,7 @@ def _read_lock_file(path):
     return time_stamp, current_key, ip
 
 
-def _get_lockstate(lock_time, lock_key, alt_key):
+def _get_lock_state(lock_time, lock_key, alt_key):
 
     if not lock_key:
         return LockState.Unlocked
@@ -133,7 +134,7 @@ def _validate_lock_key(path, key="", ip="", require_claim=True):
         key = ""
 
     time_stamp, current_key, lock_ip = _read_lock_file(path)
-    lock_state = _get_lockstate(time_stamp, current_key, key)
+    lock_state = _get_lock_state(time_stamp, current_key, key)
 
     if lock_state is LockState.Unlocked and (require_claim or key):
         if not key:
@@ -845,7 +846,7 @@ def add_routes(app):
     @app.route("/api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
     @app.route("/api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<path:project>", methods=["POST", "GET"])
     @app.route("/api/results/curve_mark/set/<path:project>")
-    def set_curve_mark(plate=None, d1_row=None, d2_col=None, phenotype=None, mark=None, project=None):
+    def set_curve_mark( mark=None, phenotype=None, plate=None, d1_row=None, d2_col=None, project=None):
         """Sets a curve filter mark for a position or list of positions
 
         If several positions should be marked at once the `d1_row` and
@@ -972,16 +973,20 @@ def add_routes(app):
                 **response)
 
         # Validate that the phenotype is understood and exists
-        if phenotype is not None and phenotype not in state:
+        if phenotype is not None:
 
-            if lock_state is LockState.LockedByMeTemporary:
-                _remove_lock(path)
+            phenotype = infer_phenotype_from_name(phenotype)
+            if phenotype not in state:
 
-            response['success'] = False
+                if lock_state is LockState.LockedByMeTemporary:
+                    _remove_lock(path)
 
-            return jsonify(
-                reason="Phenotype '{0}' not included in extraction".format(mark, tuple(f for f in phenotyper.Filter)),
-                **response)
+                response['success'] = False
+
+                return jsonify(
+                    reason="Phenotype '{0}' not included in extraction".format(phenotype,
+                                                                               tuple(f for f in phenotyper.Filter)),
+                    **response)
 
         state.add_position_mark(plate, (outer, inner), phenotype, mark)
         state.save_state(path, ask_if_overwrite=False)

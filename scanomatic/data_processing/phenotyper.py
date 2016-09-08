@@ -25,7 +25,7 @@ from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preproc
 from scanomatic.data_processing.phases.features import extract_phenotypes, \
     CurvePhaseMetaPhenotypes, VectorPhenotypes
 from scanomatic.data_processing.phases.analysis import get_phase_analysis
-from scanomatic.data_processing.phenotypes import PhenotypeDataType
+from scanomatic.data_processing.phenotypes import PhenotypeDataType, infer_phenotype_from_name
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.data_processing.strain_selector import StrainSelector
@@ -307,14 +307,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
          :type phenotype: [enum.Enum OR str]
         :return: bool
         """
-        if isinstance(phenotype, str):
+        if isinstance(phenotype, StringTypes):
             try:
-                phenotype = Phenotypes[phenotype]
-            except KeyError:
-                try:
-                    phenotype = CurvePhaseMetaPhenotypes[phenotype]
-                except KeyError:
-                    return False
+                phenotype = infer_phenotype_from_name(phenotype)
+            except ValueError:
+                return False
 
         if isinstance(phenotype, Phenotypes) and self._phenotypes is not None:
             return self._phenotypes is not None and phenotype.value < self._phenotypes.shape[-1]

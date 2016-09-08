@@ -153,6 +153,18 @@ class PhenotypeDataType(Enum):
         return tuple(t for t in cls if t(phenotype))
 
 
+def infer_phenotype_from_name(name):
+
+    for phenotype_class in (Phenotypes, CurvePhaseMetaPhenotypes, VectorPhenotypes):
+
+        try:
+            return phenotype_class[name]
+        except KeyError:
+            pass
+
+    raise ValueError("Supplied name '{0}' not a known phenotype".format(name))
+
+
 def get_sort_order(phenotype):
     """
 
