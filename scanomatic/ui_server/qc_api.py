@@ -248,6 +248,9 @@ def add_routes(app):
 
         name = get_project_name(path)
         lock_key = request.values.get("lock_key")
+        if not lock_key:
+            lock_key = _get_key()
+
         lock_state, response = _validate_lock_key(
             path, lock_key, request.remote_addr, require_claim=True)
         response['name'] = name
