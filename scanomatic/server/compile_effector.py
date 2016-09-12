@@ -83,6 +83,13 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
         if self._compile_job.fixture_type is FIXTURE.Global:
             self._fixture_settings = Fixtures()[self._compile_job.fixture_name]
+            if self._fixture_settings and \
+                    self._compile_job.compile_action in (COMPILE_ACTION.Initiate,
+                                                         COMPILE_ACTION.InitiateAndSpawnAnalysis):
+
+                self._fixture_settings.update_path_to_local_copy(os.path.dirname(self._compile_job.path))
+                self._fixture_settings.save()
+
         else:
             dir_path = os.path.dirname(self._compile_job.path)
             self._logger.info("Attempting to load local fixture copy in directory {0}".format(dir_path))
