@@ -43,6 +43,16 @@ class Offsets(Enum):
         return np.array([[self is Offsets.UpperLeft, self is Offsets.UpperRight],
                          [self is Offsets.LowerLeft, self is Offsets.LowerRight]], dtype=np.bool)
 
+
+def infer_offset(arr):
+
+    for offset in Offsets:
+
+        if (offset() == arr).all():
+            return offset
+
+    raise ValueError("Supplied pattern {0} not a known offset".format(arr.tolist()))
+
 #
 #   METHODS: Normalisation methods
 #

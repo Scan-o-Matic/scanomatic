@@ -25,7 +25,7 @@ from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preproc
 from scanomatic.data_processing.phases.features import extract_phenotypes, \
     CurvePhaseMetaPhenotypes, VectorPhenotypes
 from scanomatic.data_processing.phases.analysis import get_phase_analysis
-from scanomatic.data_processing.phenotypes import PhenotypeDataType
+from scanomatic.data_processing.phenotypes import PhenotypeDataType, infer_phenotype_from_name
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.data_processing.strain_selector import StrainSelector
@@ -180,7 +180,7 @@ def get_project_dates(directory_path):
     for path in (_p.phenotypes_input_data, _p.phenotype_times, _p.phenotypes_input_smooth,
                  _p.phenotypes_extraction_params, _p.phenotypes_filter, _p.phenotypes_filter_undo,
                  _p.phenotypes_meta_data, _p.normalized_phenotypes, _p.vector_phenotypes_raw,
-                 _p.vector_meta_phenotypes_raw):
+                 _p.vector_meta_phenotypes_raw, _p.phenotypes_reference_offsets):
 
         try:
             state_date = max(state_date, most_recent(os.stat(os.path.join(directory_path, path))))
@@ -307,14 +307,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
          :type phenotype: [enum.Enum OR str]
         :return: bool
         """
-        if isinstance(phenotype, str):
+        if isinstance(phenotype, StringTypes):
             try:
-                phenotype = Phenotypes[phenotype]
-            except KeyError:
-                try:
-                    phenotype = CurvePhaseMetaPhenotypes[phenotype]
-                except KeyError:
-                    return False
+                phenotype = infer_phenotype_from_name(phenotype)
+            except ValueError:
+                return False
 
         if isinstance(phenotype, Phenotypes) and self._phenotypes is not None:
             return self._phenotypes is not None and phenotype.value < self._phenotypes.shape[-1]
@@ -450,6 +447,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if os.path.isfile(filter_path):
             phenotyper._logger.info("Loading previous filter {0}".format(filter_path))
             phenotyper.set("phenotype_filter", np.load(filter_path))
+
+        offsets_path = os.path.join(directory_path, _p.phenotypes_reference_offsets)
+        if os.path.isfile(offsets_path):
+            phenotyper.set("reference_offsets", np.load(offsets_path))
 
         normalized_phenotypes = os.path.join(directory_path, _p.normalized_phenotypes)
         if os.path.isfile(normalized_phenotypes):
@@ -1214,6 +1215,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             self._init_remove_filter_and_undo_actions()
             self._init_default_offsets()
 
+        elif data_type == 'reference_offsets':
+
+            self._reference_surface_positions = data
+
         elif data_type == 'normalized_phenotypes':
 
             if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
@@ -1716,6 +1721,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         p = os.path.join(dir_path, self._paths.phenotypes_filter)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._phenotype_filter)
+
+        p = os.path.join(dir_path, self._paths.phenotypes_reference_offsets)
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
+            np.save(p, self._reference_surface_positions)
 
         p = os.path.join(dir_path, self._paths.phenotypes_filter_undo)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):

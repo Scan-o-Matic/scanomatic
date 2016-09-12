@@ -6,9 +6,11 @@ from flask import request, Flask, jsonify, send_from_directory
 from itertools import chain, product
 from subprocess import call
 import uuid
+from enum import Enum
 
 from scanomatic.data_processing import phenotyper
-from scanomatic.data_processing.phenotypes import get_sort_order
+from scanomatic.data_processing.phenotypes import get_sort_order, PhenotypeDataType, infer_phenotype_from_name
+from scanomatic.data_processing.norm import infer_offset, Offsets
 from scanomatic.generics.phenotype_filter import Filter
 from scanomatic.io.paths import Paths
 from scanomatic.io.app_config import Config
@@ -21,10 +23,41 @@ FILM_TYPES = {'colony': 'animate_colony_growth("{save_target}", {pos}, "{path}")
               '3d': 'animate_3d_colony("{save_target}", {pos}, "{path}")'}
 
 
+class LockState(Enum):
+
+    Unlocked = 0
+    """:type: LockState"""
+    LockedByOther = 1
+    """:type: LockState"""
+    LockedByMe = 2
+    """:type: LockState"""
+    LockedByMeTemporary = 3
+    """:type: LockState"""
+
+
+def owns_lock(lock_state):
+
+    return lock_state is LockState.LockedByMe or lock_state is LockState.LockedByMeTemporary
+
+
+def _get_state_update_response(path, response, success=None):
+
+    state = phenotyper.Phenotyper.LoadFromState(path)
+    name = get_project_name(path)
+    print("Loaded state '{0}' from: {1}".format(name, path))
+
+    response.update({'is_endpoint': True, 'is_project': True, 'project_name': name})
+
+    if success is not None:
+        response['success'] = success
+
+    return state, name
+
+
 def _make_film(film_type, save_target=None, pos=None, path=None):
     code = FILM_TYPES[film_type].format(save_target=save_target, pos=pos, path=path)
-    retcode = call(['python', '-c', 'from scanomatic.qc import analysis_results;analysis_results.{0}'.format(code)])
-    return retcode == 0
+    return_code = call(['python', '-c', 'from scanomatic.qc import analysis_results;analysis_results.{0}'.format(code)])
+    return return_code == 0
 
 
 def _get_key():
@@ -48,32 +81,33 @@ def _remove_lock(path):
     return True
 
 
-def _read_lock_file(path):
+def _parse_lock_file(data):
 
-    def parse(data):
-
+    try:
+        time_stamp, current_key, ip = data.split("|")
+    except ValueError:
         try:
-            time_stamp, current_key, ip = data.split("|")
-        except ValueError:
-            try:
-                time_stamp, current_key = data.split("|")
-                ip = ""
-            except ValueError:
-                time_stamp = 0
-                current_key = ""
-                ip = ""
-
-        try:
-            time_stamp = float(time_stamp)
+            time_stamp, current_key = data.split("|")
+            ip = ""
         except ValueError:
             time_stamp = 0
+            current_key = ""
+            ip = ""
 
-        return time_stamp, current_key, ip
+    try:
+        time_stamp = float(time_stamp)
+    except ValueError:
+        time_stamp = 0
+
+    return time_stamp, current_key, ip
+
+
+def _read_lock_file(path):
 
     lock_file_path = os.path.join(path, Paths().ui_server_phenotype_state_lock)
     try:
         with open(lock_file_path, 'r') as fh:
-            time_stamp, current_key, ip = parse(fh.readline())
+            time_stamp, current_key, ip = _parse_lock_file(fh.readline())
     except IOError:
         time_stamp = 0
         ip = ""
@@ -82,29 +116,48 @@ def _read_lock_file(path):
     return time_stamp, current_key, ip
 
 
-def _validate_lock_key(path, key="", ip=""):
+def _get_lock_state(lock_time, lock_key, alt_key):
+
+    if not lock_key:
+        return LockState.Unlocked
+    elif time.time() - lock_time > RESERVATION_TIME:
+        return LockState.Unlocked
+    elif lock_key == alt_key:
+        return LockState.LockedByMe
+    else:
+        return LockState.LockedByOther
+
+
+def _validate_lock_key(path, key="", ip="", require_claim=True):
 
     if not key:
         key = ""
 
     time_stamp, current_key, lock_ip = _read_lock_file(path)
-    locked_by_other = False
-    if not(key == current_key or key == Config().ui_server.master_key or not current_key or
-           time.time() - time_stamp > RESERVATION_TIME):
-        locked_by_other = True
-    else:
-        current_key = ""
-        lock_ip = ""
+    lock_state = _get_lock_state(time_stamp, current_key, key)
 
-    if locked_by_other:
-        return locked_by_other, "", lock_ip
+    if lock_state is LockState.Unlocked and (require_claim or key):
+        if not key:
+            key = _get_key()
+            lock_state = LockState.LockedByMeTemporary
+        else:
+            lock_state = LockState.LockedByMe
+    elif not owns_lock(lock_state) and key == Config().ui_server.master_key:
+        lock_state = LockState.LockedByMeTemporary
 
-    if key:
+    if owns_lock(lock_state):
         lock_file_path = os.path.join(path, Paths().ui_server_phenotype_state_lock)
-        locked_by_me = _update_lock(lock_file_path, key, ip)
-        return locked_by_me, key, ip
-    else:
-        return locked_by_other, current_key, lock_ip
+        _update_lock(lock_file_path, key, ip)
+    elif lock_state is LockState.LockedByOther:
+        return lock_state, dict(
+            success=False, is_project=True, is_endpoint=True,
+            reason="Someone else is working with these results ({0})".format(lock_ip))
+    elif require_claim and lock_state is LockState.Unlocked:
+        return lock_state, dict(
+            success=False, is_project=True, is_endpoint=True,
+            reason="Failed to acquire lock though no one was working on project. Please Report")
+
+    return lock_state, dict(is_project=True, **_get_json_lock_response(key, lock_state))
 
 
 def _discover_projects(path):
@@ -124,14 +177,12 @@ def _get_new_metadata_file_name(project_path, suffix):
             return path
 
 
-def _get_json_lock_response(lock_key, data=None):
+def _get_json_lock_response(lock_key, lock_state):
 
-    if data is None:
-        data = dict()
-
-    data["read_only"] = not lock_key
-    data["lock_key"] = lock_key
-    return data
+    if lock_state is LockState.LockedByMeTemporary:
+        return {"success": True, "lock_state": lock_state.name}
+    else:
+        return {"success": owns_lock(lock_state), "lock_state": lock_state.name, "lock_key": lock_key}
 
 
 def merge_dicts(*dicts):
@@ -209,37 +260,38 @@ def add_routes(app):
         path = convert_url_to_path(project)
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=False, reason="Not a project")
-        locked, key, ip = _validate_lock_key(path, _get_key(), request.remote_addr)
-        name = get_project_name(path)
 
-        if key and locked:
-            return jsonify(success=True, is_project=True, is_endpoint=True, lock_key=key, project_name=name)
-        elif locked:
-            return jsonify(success=False, is_project=True, is_endpoint=True, project_name=name,
-                           reason="Someone else ({0}) is working with these results".format(ip))
-        else:
-            return jsonify(success=False, is_project=True, is_endpoint=True, project_name=name,
-                           reason="No one is working on it but locking was refused, should not happen. Please report")
+        name = get_project_name(path)
+        lock_key = request.values.get("lock_key")
+        if not lock_key:
+            lock_key = _get_key()
+
+        lock_state, response = _validate_lock_key(
+            path, lock_key, request.remote_addr, require_claim=True)
+
+        response.update({'is_endpoint': True, 'is_project': True, 'project_name': name})
+
+        return jsonify(**response)
 
     @app.route("/api/results/lock/remove/<path:project>")
     def unlock_project(project=""):
 
         path = convert_url_to_path(project)
 
-        locked, key, ip = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=False, is_project=False, is_endpoint=True, reason="Not a project")
 
-        if locked and not key:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           reason="Invalid key, locked by {0}".format(ip))
-        elif not locked:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           reason="Failed to acquire lock though no one was working on project. Please Report")
-
-        _remove_lock(path)
         name = get_project_name(path)
-        return jsonify(success=True, is_project=True, is_endpoint=True, project_name=name)
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(
+            path, lock_key, request.remote_addr, require_claim=True)
+        if not owns_lock(lock_state):
+            return jsonify(**response)
+
+        response.update({'is_endpoint': True, 'is_project': True, 'project_name': name})
+        _remove_lock(path)
+
+        return jsonify(**response)
 
     @app.route("/api/results/meta_data/add/<path:project>", methods=["POST"])
     def add_meta_data(project=None):
@@ -251,42 +303,49 @@ def add_routes(app):
             return jsonify(**json_response(
                 ["urls"], dict(is_project=False, **get_search_results(path, "/api/results/meta_data/add"))))
 
-        name = get_project_name(path)
-        locked, lock_key, lock_ip = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        if locked and not lock_key:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           project_name=name,
-                           reason="Someone else is working with these results ({0})".format(lock_ip))
-        elif not locked:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           reason="Failed to acquire lock though no one was working on project. Please Report")
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(
+            path, lock_key, request.remote_addr, require_claim=True)
+        if not owns_lock(lock_state):
+            return jsonify(**response)
+
+        state, _ = _get_state_update_response(path, response)
 
         meta_data_stream = request.files.get('meta_data')
         if not meta_data_stream:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           project_name=name,
-                           reason="No file was sent with name/id 'meta_data'")
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            response["success"] = False
+            return jsonify(reason="No file was sent with name/id 'meta_data'", **response)
 
         file_sufix = request.values.get("file_suffix")
         if not file_sufix:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           project_name=name,
-                           reason="The ending of the file (xls, xlsx, ods) was not specified in 'file_suffix'")
+
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            response["success"] = False
+            return jsonify(
+                reason="The ending of the file (xls, xlsx, ods) was not specified in 'file_suffix'",
+                **response)
 
         meta_data_path = _get_new_metadata_file_name(path, file_sufix)
+
         try:
             with open(meta_data_path, 'wb') as fh:
                 fh.write(meta_data_stream)
         except IOError:
-            return jsonify(success=False, reason="Failed to save file, contact server admin.",
-                           is_endpoint=True, is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            response["success"] = False
+            return jsonify(reason="Failed to save file, contact server admin.", **response)
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
         state.load_meta_data(meta_data_path)
         state.save_state(path, ask_if_overwrite=False)
 
-        return jsonify(success=True, is_project=True, is_endpoint=True, project_name=name,
-                       **_get_json_lock_response(lock_key))
+        if lock_state is LockState.LockedByMeTemporary:
+            _remove_lock(path)
+
+        return jsonify(**response)
 
     @app.route("/api/results/meta_data/column_names/<int:plate>/<path:project>")
     @app.route("/api/results/meta_data/column_names/<path:project>")
@@ -300,18 +359,19 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, base_url))))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        locked, lock_key, lock_ip = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+
+        state, name = _get_state_update_response(path, response, success=True)
+
         if plate is None:
 
             urls = ["{0}/{1}/{2}".format(base_url, plate, project)
                     for plate in state.enumerate_plates]
-
+            response['is_endpoint'] = False
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
-        return jsonify(success=True, is_endpoint=True, columns=state.meta_data_headers(plate), **response)
+        return jsonify(columns=state.meta_data_headers(plate), **response)
 
     @app.route("/api/results/meta_data/get/<int:plate>/<path:project>")
     @app.route("/api/results/meta_data/get/<path:project>")
@@ -325,21 +385,22 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, base_url))))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        locked, lock_key, lock_ip = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+        state, name = _get_state_update_response(path, response, success=True)
+
         if plate is None:
 
             urls = ["{0}/{1}/{2}".format(base_url, plate, project)
                     for plate in state.enumerate_plates]
-
+            response["is_endpoint"] = False
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
         if state.meta_data:
-            return jsonify(success=True, is_endpoint=True, meta_data=state.meta_data[plate].data, **response)
+            return jsonify(meta_data=state.meta_data[plate].data, **response)
         else:
-            return jsonify(success=False, reason="Project has no meta-data added", is_endpoint=True, **response)
+            response['success'] = False
+            return jsonify(reason="Project has no meta-data added", **response)
 
     @app.route("/api/results/pinning", defaults={'project': ""})
     @app.route("/api/results/pinning/<path:project>")
@@ -352,12 +413,12 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, base_url))))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+
+        state, _ = _get_state_update_response(path, response, success=True)
         pinnings = list(state.plate_shapes)
-        locked, lock_key, lock_ip = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        return jsonify(success=True, is_project=True, is_endpoint=True, project_name=get_project_name(path),
-                       pinnings=pinnings, plates=sum(1 for p in pinnings if p is not None),
-                       **_get_json_lock_response(lock_key))
+        return jsonify(pinnings=pinnings, plates=sum(1 for p in pinnings if p is not None), **response)
 
     @app.route("/api/results/gridding", defaults={'project': ""})
     @app.route("/api/results/gridding/<int:plate>", defaults={'project': ""})
@@ -372,17 +433,18 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, base_url))))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+        state, name = _get_state_update_response(path, response, success=True)
 
         if plate is None:
 
             urls = ["{0}/{1}/{2}".format(base_url, plate, project)
                     for plate, shape in enumerate(state.enumerate_plates) if shape is not None]
 
-            return jsonify(**json_response(
-                ["urls"], dict(is_project=True, urls=urls, project_name=name, **_get_json_lock_response(lock_key))))
+            response['is_endpoint'] = False
+
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
         return send_from_directory(path, Paths().experiment_grid_image_pattern.format(plate + 1))
 
@@ -398,9 +460,11 @@ def add_routes(app):
             return jsonify(**json_response(
                 ["urls"], dict(jsonify(is_project=False, **get_search_results(path, base_url)))))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+
+        state, name = _get_state_update_response(path, response, success=True)
+
         urls = ["/api/results/phenotype/{0}/{1}".format(phenotype, project)
                 for phenotype in state.phenotype_names()]
 
@@ -410,14 +474,60 @@ def add_routes(app):
             ["phenotype_urls"],
             dict(phenotypes=state.phenotype_names(),
                  phenotype_sort_orders=sort_order,
-                 is_project=True,
                  phenotype_urls=urls,
-                 project_name=name,
-                 **_get_json_lock_response(lock_key))))
+                 **response)))
+
+    @app.route("/api/results/phenotype_normalizable/remove")
+    @app.route("/api/results/phenotype_normalizable/remove/<phenotype>/<path:project>")
+    def remove_normalizeable_phenotype(project=None, phenotype=""):
+
+        path = convert_url_to_path(project)
+        base_url = "/api/results/phenotype_normalizable/remove"
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(
+                ["urls"], dict(is_project=False, **get_search_results(path, base_url))))
+
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(
+            path, lock_key, request.remote_addr, require_claim=True)
+
+        state, name = _get_state_update_response(path, response)
+
+        if not owns_lock(lock_state):
+            return jsonify(**response)
+
+        pheno = PhenotypeDataType.All(phenotype)
+        norm_phenos = state.get_normalizable_phenotypes()
+        if pheno is None or pheno not in norm_phenos:
+
+            did_supply_phenotype = phenotype == ""
+            urls = [base_url + "/{0}/{1}".format(p.name, project) for p in norm_phenos]
+
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+
+            response['is_endpoint'] = False
+            response['success'] = did_supply_phenotype
+
+            return jsonify(**json_response(
+                ["urls"],
+                {"urls": urls,
+                 "reason": "Phenotype not included" if pheno else "Unknown phenotype"},
+                **response))
+
+        state.remove_phenotype_from_normalization(pheno)
+        state.save_phenotypes(path, ask_if_overwrite=False)
+
+        if lock_state is LockState.LockedByMeTemporary:
+            _remove_lock(path)
+
+        return jsonify(**response)
 
     @app.route("/api/results/phenotype_normalizable/add")
     @app.route("/api/results/phenotype_normalizable/add/<phenotype>/<path:project>")
-    def add_normalizeable_phenotype(project=None, phenotype):
+    def add_normalizeable_phenotype(project=None, phenotype=""):
 
         path = convert_url_to_path(project)
         base_url = "/api/results/phenotype_normalizable/add"
@@ -425,27 +535,43 @@ def add_routes(app):
         if not phenotyper.path_has_saved_project_state(path):
 
             return jsonify(**json_response(
-                ["urls"], dict(jsonify(is_project=False, **get_search_results(path, base_url)))))
+                ["urls"], dict(is_project=False, **get_search_results(path, base_url))))
 
-        locked, lock_key, lock_ip = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(
+            path, lock_key, request.remote_addr, require_claim=True)
 
-        # Validate lock, without lock nothing will happen
-        if locked and not lock_key:
-            return jsonify(success=False, reason="Failed to acquire lock on project (owned by {0})".format(lock_ip),
-                           is_endpoint=True, **response)
-        elif not locked:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           reason="Failed to acquire lock though no one was working on project. Please Report")
+        state, name = _get_state_update_response(path, response)
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
+        if not owns_lock(lock_state):
+            return jsonify(**response)
 
-        if phenotype is None:
+        pheno = PhenotypeDataType.All(phenotype)
+        if pheno is None:
+            norm_phenos = state.get_normalizable_phenotypes()
+            did_supply_phenotype = phenotype == ""
+            urls = [base_url + "/{0}/{1}".format(p.name, project) for p in PhenotypeDataType.All()
+                    if p not in norm_phenos]
+
+            response['is_endpoint'] = False
+            response['success'] = did_supply_phenotype
+
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
 
             return jsonify(**json_response(
-                ["urls"], dict(jsonify(is_project=True, **get_search_results(path, base_url)))))
+                ["urls"],
+                {"urls": urls,
+                 "reason": "Unknown phenotype" if did_supply_phenotype else ""},
+                **response))
 
+        state.add_phenotype_to_normalization(pheno)
+        state.save_phenotypes(path, ask_if_overwrite=False)
+
+        if lock_state is LockState.LockedByMeTemporary:
+            _remove_lock(path)
+
+        return jsonify(**response)
 
     @app.route("/api/results/phenotype_normalizable/names")
     @app.route("/api/results/phenotype_normalizable/names/<path:project>")
@@ -457,24 +583,25 @@ def add_routes(app):
         if not phenotyper.path_has_saved_project_state(path):
 
             return jsonify(**json_response(
-                ["urls"], dict(jsonify(is_project=False, **get_search_results(path, base_url)))))
+                ["urls"], dict(is_project=False, **get_search_results(path, base_url))))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        urls = ["/api/results/normalized_phenotype/{0}/{1}".format(phenotype, project)
-                for phenotype in state.phenotype_names()]
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
 
-        sort_order = [get_sort_order(p) for p in state.get_normalizable_phenotypes()]
+        state, name = _get_state_update_response(path, response, success=True)
+
+        phenotypes = state.get_normalizable_phenotypes()
+
+        urls = ["/api/results/normalized_phenotype/{0}/{1}".format(phenotype.name, project)
+                for phenotype in phenotypes]
+        sort_order = [get_sort_order(p) for p in phenotypes]
 
         return jsonify(**json_response(
             ["phenotype_urls"],
-            dict(phenotypes=state.phenotype_names(),
+            dict(phenotypes=[p.name for p in phenotypes],
                  phenotype_sort_orders=sort_order,
-                 is_project=True,
                  phenotype_urls=urls,
-                 project_name=name,
-                 **_get_json_lock_response(lock_key))))
+                 **response)))
 
     @app.route("/api/results/quality_index")
     @app.route("/api/results/quality_index/<int:plate>/<path:project>")
@@ -490,19 +617,21 @@ def add_routes(app):
                            is_endpoint=False,
                            **get_search_results(path, "/api/results/quality_index"))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+
+        state, name = _get_state_update_response(path, response, success=True)
+
         if plate is None:
 
             urls = ["/api/results/quality_index/{0}/{1}".format(plate, project)
                     for plate, shape in enumerate(state.enumerate_plates) if shape is not None]
 
+            response['is_endpoint'] = False
             return jsonify(json_response(["urls"], dict(urls=urls, **response)))
 
         rows, cols = state.get_quality_index(plate)
-        return jsonify(success=True, is_endpoint=True, dim1_rows=rows.tolist(), dim2_cols=cols.tolist(), **response)
+        return jsonify(dim1_rows=rows.tolist(), dim2_cols=cols.tolist(), **response)
 
     @app.route("/api/results/normalized_phenotype")
     @app.route("/api/results/normalized_phenotype/<phenotype>/<int:plate>/<path:project>")
@@ -518,10 +647,10 @@ def add_routes(app):
             return jsonify(**json_response(
                 ["urls"], dict(is_project=False, **get_search_results(path, base_url + "/_NONE_"))))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+
+        state, name = _get_state_update_response(path, response, success=True)
 
         if phenotype is None:
 
@@ -536,6 +665,7 @@ def add_routes(app):
                 urls = [base_url + "/{0}/{1}/{2}".format(phenotype, plate, project)
                         for phenotype in phenotypes]
 
+            response['is_endpoint'] = False
             return jsonify(**json_response(["urls"], dict(phenotypes=phenotypes, urls=urls, **response)))
 
         phenotype_enum = phenotyper.get_phenotype(phenotype)
@@ -550,21 +680,24 @@ def add_routes(app):
                     urls.append(base_url + "/{0}/{1}/{2}".format(phenotype, plate, project))
                     plate_indices.append(plate)
 
+            response['is_endpoint'] = False
             return jsonify(**json_response(
                 ["urls"],
                 dict(
                     urls=urls, plate_indices=plate_indices, is_segmentation_based=is_segmentation_based, **response)))
 
         plate_data = state.get_phenotype(phenotype_enum, normalized=True)[plate]
+        if plate_data is None:
+            response['success'] = False
+            return jsonify(reason="Phenotype hasn't been normalized", plate=plate, phenotype=phenotype, **response)
 
         return jsonify(
-            success=True, data=plate_data.tojson(), plate=plate, phenotype=phenotype, is_endpoint=True,
+            data=plate_data.tojson(), plate=plate, phenotype=phenotype,
             is_segmentation_based=is_segmentation_based,
             **merge_dicts(
                 {filt.name: tuple(v.tolist() for v in plate_data.where_mask_layer(filt))
                  for filt in Filter if filt != Filter.OK},
                 response))
-
 
     @app.route("/api/results/phenotype")
     @app.route("/api/results/phenotype/<phenotype>/<int:plate>/<path:project>")
@@ -579,14 +712,15 @@ def add_routes(app):
             return jsonify(**json_response(
                 ["urls"], dict(is_project=False, **get_search_results(path, "/api/results/phenotype/_NONE_"))))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+
+        state, name = _get_state_update_response(path, response, success=True)
+
         if phenotype is None:
 
             phenotypes = state.phenotype_names()
-
+            response['is_endpoint'] = False
             if plate is None:
 
                 urls = ["/api/results/phenotype/{0}/{1}/{2}".format(phenotype, plate, project)
@@ -609,16 +743,21 @@ def add_routes(app):
                 if shape is not None:
                     urls.append("/api/results/phenotype/{0}/{1}/{2}".format(phenotype, plate, project))
                     plate_indices.append(plate)
-
+            response['is_endpoint'] = False
             return jsonify(**json_response(
                 ["urls"],
                 dict(
                     urls=urls, plate_indices=plate_indices, is_segmentation_based=is_segmentation_based, **response)))
 
         plate_data = state.get_phenotype(phenotype_enum)[plate]
+        if plate_data is None:
+            response['success'] = False
+            return jsonify(
+                reason="Phenotype hasn't been extracted",
+                plate=plate, phenotype=phenotype, **response)
 
         return jsonify(
-            success=True, data=plate_data.tojson(), plate=plate, phenotype=phenotype, is_endpoint=True,
+            data=plate_data.tojson(), plate=plate, phenotype=phenotype,
             is_segmentation_based=is_segmentation_based,
             **merge_dicts(
                 {filt.name: tuple(v.tolist() for v in plate_data.where_mask_layer(filt))
@@ -664,38 +803,41 @@ def add_routes(app):
                 False means there's no more undo.
 
         """
-        url_root = "/api/results/set_curve_mark/undo"
+        url_root = "/api/results/curve_mark/undo"
         path = convert_url_to_path(project)
         if not phenotyper.path_has_saved_project_state(path):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
 
-        locked, lock_key, lock_ip = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(
+            path, lock_key, request.remote_addr, require_claim=True)
 
-        # Validate lock, without lock nothing will happen
-        if locked and not lock_key:
-            return jsonify(success=False, reason="Failed to acquire lock on project (owned by {0})".format(lock_ip),
-                           is_endpoint=True, **response)
-        elif not locked:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           reason="Failed to acquire lock though no one was working on project. Please Report")
+        state, name = _get_state_update_response(path, response)
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
+        if not owns_lock(lock_state):
+            return jsonify(**response)
 
         # If plate not submitted give plate completing paths
         if plate is None:
 
+            response['is_endpoint'] = True
+
             urls = ["{0}/{1}/{2}".format(url_root, i, project)
                     for i, p in enumerate(state.plate_shapes) if p is not None]
+
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
 
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
         had_effect = state.undo(plate)
         state.save_state(path, ask_if_overwrite=False)
 
-        return jsonify(success=True, is_endpoint=True, had_effect=had_effect, **response)
+        if lock_state is LockState.LockedByMeTemporary:
+            _remove_lock(path)
+
+        return jsonify(had_effect=had_effect, **response)
 
     @app.route("/api/results/curve_mark/set")
     @app.route("/api/results/curve_mark/set/<mark>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>",
@@ -704,7 +846,7 @@ def add_routes(app):
     @app.route("/api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
     @app.route("/api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<path:project>", methods=["POST", "GET"])
     @app.route("/api/results/curve_mark/set/<path:project>")
-    def set_curve_mark(plate=None, d1_row=None, d2_col=None, phenotype=None, mark=None, project=None):
+    def set_curve_mark( mark=None, phenotype=None, plate=None, d1_row=None, d2_col=None, project=None):
         """Sets a curve filter mark for a position or list of positions
 
         If several positions should be marked at once the `d1_row` and
@@ -735,33 +877,37 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
 
-        locked, lock_key, lock_ip = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(
+            path, lock_key, request.remote_addr, require_claim=True)
 
-        # Validate lock, without lock nothing will happen
-        if locked and not lock_key:
-            return jsonify(success=False, reason="Failed to acquire lock on project (owned by {0})".format(lock_ip),
-                           is_endpoint=True, **response)
-        elif not locked:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           reason="Failed to acquire lock though no one was working on project. Please Report",
-                           **response)
+        state, _ = _get_state_update_response(path, response)
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
+        if not owns_lock(lock_state):
+            return jsonify(**response)
 
         # If mark is lacking create urls.
         if mark is None:
+
+            response['is_endpoint'] = False
 
             urls = ["{0}/{1}/{2}/{3}".format(url_root, m.name, i, project)
                     for (i, p), m in product(enumerate(state.plate_shapes), phenotyper.Filter) if p is not None and
                     m is not Filter.UndecidedProblem]
 
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
+
         elif mark == Filter.UndecidedProblem.name:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           reason="User not allowed to set mark {0}".format(mark),
-                           **response)
+
+            response['success'] = False
+
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+
+            return jsonify(reason="User not allowed to set mark {0}".format(mark), **response)
 
         # Update phenotype if submitted via POST
         data_object = request.get_json(silent=True, force=True)
@@ -776,6 +922,11 @@ def add_routes(app):
 
             urls = ["{0}/{1}/{2}/{3}".format(url_root, "/".join((mark, phenotype) if phenotype else mark), i, project)
                     for i, p in enumerate(state.plate_shapes) if p is not None]
+
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+
+            response['is_endpoint'] = False
 
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
@@ -797,31 +948,53 @@ def add_routes(app):
             inner = None
 
         if outer is None or inner is None:
+
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+
+            response['success'] = False
+
             return jsonify(
-                success=False, reason="Positional coordinates are not valid ({0}, {1})".format(outer, inner),
-                is_endpoint=True, **response)
+                reason="Positional coordinates are not valid ({0}, {1})".format(outer, inner),
+                **response)
 
         # Validate that the mark is understood
         try:
             mark = phenotyper.Filter[mark]
         except KeyError:
+
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+
+            response['success'] = False
+
             return jsonify(
-                success=False,
                 reason="Invalid position mark ({0}), supported {1}".format(mark, tuple(f for f in phenotyper.Filter)),
-                is_endpoint=True, **response)
+                **response)
 
         # Validate that the phenotype is understood and exists
-        if phenotype is not None and phenotype not in state:
-            return jsonify(
-                success=False,
-                reason="Phenotype '{0}' not included in extraction".format(mark, tuple(f for f in phenotyper.Filter)),
-                is_endpoint=True, **response
-            )
+        if phenotype is not None:
+
+            phenotype = infer_phenotype_from_name(phenotype)
+            if phenotype not in state:
+
+                if lock_state is LockState.LockedByMeTemporary:
+                    _remove_lock(path)
+
+                response['success'] = False
+
+                return jsonify(
+                    reason="Phenotype '{0}' not included in extraction".format(phenotype,
+                                                                               tuple(f for f in phenotyper.Filter)),
+                    **response)
 
         state.add_position_mark(plate, (outer, inner), phenotype, mark)
         state.save_state(path, ask_if_overwrite=False)
 
-        return jsonify(success=True, is_endpoint=True, **response)
+        if lock_state is LockState.LockedByMeTemporary:
+            _remove_lock(path)
+
+        return jsonify(**response)
 
     @app.route("/api/results/curves")
     @app.route("/api/results/curves/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
@@ -836,23 +1009,25 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        locked, lock_key, lock_ip = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+
+        state, name = _get_state_update_response(path, response, success=True)
 
         if plate is None:
 
             urls = ["{0}/{1}/{2}".format(url_root, i, project)
                     for i, p in enumerate(state.plate_shapes) if p is not None]
-
+            response['is_endpoint'] = False
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
         if d1_row is None or d2_col is None:
-
             shape = tuple(state.plate_shapes)[plate]
             if shape is None:
-                return jsonify(success=False, reason="Plate not included in project")
+                response['success'] = False
+                return jsonify(reason="Plate not included in project", **response)
+
+            response['is_endpoint'] = False
 
             urls = ["{0}/{1}/{2}/{3}/{4}".format(url_root, plate, d1, d2, project) for d1, d2 in
                     product(range(shape[0]) if d1_row is None else [d1_row],
@@ -894,15 +1069,16 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+        state, name = _get_state_update_response(path, response, success=True)
 
         if plate is None:
 
             urls = ["{0}/{1}/{2}".format(url_root, i, project)
                     for i, p in enumerate(state.plate_shapes) if p is not None]
+
+            response['is_endpoint'] = False
 
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
@@ -910,11 +1086,14 @@ def add_routes(app):
 
             shape = tuple(state.plate_shapes)[plate]
             if shape is None:
-                return jsonify(success=False, reason="Plate not included in project")
+                response['success'] = False
+                return jsonify(reason="Plate not included in project", **response)
 
             urls = ["{0}/{1}/{2}/{3}/{4}".format(url_root, plate, d1, d2, project) for d1, d2 in
                     product(range(shape[0]) if outer_dim is None else [outer_dim],
                             range(shape[1]) if inner_dim is None else [inner_dim])]
+
+            response['is_endpoint'] = False
 
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
@@ -923,6 +1102,8 @@ def add_routes(app):
             urls = ["{0}/{1}/{2}/{3}/{4}/{5}".format(url_root, f_type, plate, outer_dim, inner_dim, project) for
                     f_type in FILM_TYPES]
 
+            response['is_endpoint'] = False
+
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
         save_path = os.path.join(path, "qc_film_{0}_{1}_{2}.{3}.avi".format(plate, outer_dim, inner_dim, film_type))
@@ -930,19 +1111,17 @@ def add_routes(app):
 
             return send_from_directory(path, os.path.basename(save_path))
         else:
-            return jsonify(success=False, reason="Error while producing film")
+            response['success'] = False
+            return jsonify(reason="Error while producing film", **response)
 
     @app.route("/api/results/normalize")
     @app.route("/api/results/normalize/<path:project>")
-    def _set_normalization_offset(project, offset):
-        """Sets a normalization offset
+    def _do_normalize(project):
+        """Preform normalization
 
         Arga:
 
             project: str, url-formatted path to the project.
-            offset: One of the four offset names
-            plate: Optional, if supplied only apply to a
-                specific plate, else apply to all plates.
 
         """
 
@@ -953,24 +1132,24 @@ def add_routes(app):
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
 
-        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
-
-        # Validate lock, without lock nothing will happen
-        if locked and not lock_key:
-            return jsonify(success=False, reason="Failed to acquire lock on project (owned by {0})".format(lock_ip),
-                           is_endpoint=True, **response)
-        elif not locked:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           reason="Failed to acquire lock though no one was working on project. Please Report",
-                           **response)
-
-        state = phenotyper.Phenotyper.LoadFromState(path)
         name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        lock_state, response = _validate_lock_key(
+            path, request.values.get("lock_key"), request.remote_addr, require_claim=True)
+
+        response.update({'is_endpoint': True, 'is_project': True, 'project_name': name})
+
+        state, name = _get_state_update_response(path, response)
+
+        if not owns_lock(lock_state):
+            return jsonify(**response)
 
         state.normalize_phenotypes()
         state.save_state(path, ask_if_overwrite=False)
-        return jsonify(success=True, **response)
+
+        if lock_state is LockState.LockedByMeTemporary:
+            _remove_lock(path)
+
+        return jsonify(**response)
 
     @app.route("/api/results/normalize/reference/offsets")
     def _get_offset_names():
@@ -979,7 +1158,7 @@ def add_routes(app):
         values = [o.value for o in phenotyper.Offsets]
         return jsonify(success=True, offset_names=names, offset_values=values)
 
-    @app.route("/api/results/normalize/reference/set/<plate>/<offset>/<path:project>")
+    @app.route("/api/results/normalize/reference/set/<int:plate>/<offset>/<path:project>")
     @app.route("/api/results/normalize/reference/set/<offset>/<path:project>")
     def _set_normalization_offset(project, offset, plate=None):
         """Sets a normalization offset
@@ -1000,27 +1179,47 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
 
-        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(
+            path, lock_key, request.remote_addr, require_claim=True)
 
-        # Validate lock, without lock nothing will happen
-        if locked and not lock_key:
-            return jsonify(success=False, reason="Failed to acquire lock on project (owned by {0})".format(lock_ip),
-                           is_endpoint=True, **response)
-        elif not locked:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
-                           reason="Failed to acquire lock though no one was working on project. Please Report",
-                           **response)
+        state, _ = _get_state_update_response(path, response)
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        if not owns_lock(lock_state):
+            return jsonify(**response)
+
+        if plate is None:
+
+            urls = ["{0}/{1}/{2}".format(url_root, plate, project)
+                    for plate in state.enumerate_plates]
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+
+            response['is_endpoint'] = False
+
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
+
+        try:
+            offset = Offsets[offset]
+        except ValueError:
+            urls = [url_root + "/{0}/{1}/{2}/{3}".format(url_root, plate, off.name, project) for off in Offsets]
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+
+            response['success'] = False
+
+            return jsonify(reason="Bad offset name {0}".format(offset),
+                           **json_response(["urls"], dict(urls=urls, **response)))
 
         state.set_control_surface_offsets(offset, plate)
         state.save_state(path, ask_if_overwrite=False)
 
-        return jsonify(success=True, **response)
+        if lock_state is LockState.LockedByMeTemporary:
+            _remove_lock(path)
 
-    @app.route("/api/results/normalize/reference/get/<plate>/<path:project>")
+        return jsonify(**response)
+
+    @app.route("/api/results/normalize/reference/get/<int:plate>/<path:project>")
     def _get_normalization_offset(project, plate):
         """Gets the normalization offset of a plate
 
@@ -1038,14 +1237,21 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
 
-        _, lock_key, _ = _validate_lock_key(path, request.values.get("lock_key"), request.remote_addr)
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
 
-        state = phenotyper.Phenotyper.LoadFromState(path)
-        name = get_project_name(path)
-        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+        state, name = _get_state_update_response(path, response, success=True)
+
         offset = state.get_control_surface_offset(plate)
 
-        return jsonify(success=True, offset_name=offset.name, offset_value=offset.value, **response)
+        try:
+            offset = infer_offset(offset)
+        except ValueError:
+            response['success'] = False
+            return jsonify(reason="Non standard offset used by someone hacking the project", **response)
+
+        return jsonify(offset_name=offset.name, offset_value=offset.value,
+                       offset_pattern=offset().tolist(), **response)
 
     # End of UI extension with qc-functionality
     return True

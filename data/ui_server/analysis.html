@@ -46,7 +46,7 @@
                         <em>Local directory in folder containing compilation file to put analysis, defaults to <code>analysis</code></em></div>
                 </div>
 
-                <h3>Gridding (don't combine with regridding></h3>
+                <h3>Gridding (don't combine with regridding)</h3>
                 <div class="section">
                     <div class="onoffswitch one_time_positioning">
                             <input type="checkbox" name="one_time_positioning" class="onoffswitch-checkbox one_time_positioning" id="one_time_positioning">
@@ -92,8 +92,9 @@
                         <br>
                         <div id="manual-regridding-plates"></div>
                         <div class="indented"><em>
-                            Positive offsetting implies moving towards the grid origin (circled position)
-                            along first the short axis then long axis.
+                            Positive offsetting implies moving away from the grid origin (circled position)
+                            while negative moves grid towards the origin. First offset moves along the long axis.
+                            Second offset moves along the short axis.
                             REGRIDDING WITHOUT USING IDENTICAL FIXTURE SETTINGS AS ORIGINAL MAKES NO SENSE.
                         </em></div>
                         <div id="manual-regridding-image"></div>
