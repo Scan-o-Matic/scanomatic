@@ -18,6 +18,7 @@ import image_basics
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
+from scanomatic.data_processing.calibration import load_calibration
 #
 # EXCEPTIONS
 
@@ -100,32 +101,7 @@ def _create_grid_array_identifier(identifier):
 
 def get_calibration_polynomial_coeffs():
 
-    try:
-
-        fs = open(paths.Paths().analysis_polynomial, 'r')
-
-    except IOError:
-
-        return None
-
-    polynomial_coeffs = []
-
-    for l in fs:
-
-        l_data = eval(l.strip("\n"))
-
-        if isinstance(l_data, list):
-
-            polynomial_coeffs = l_data[-1]
-            break
-
-    fs.close()
-
-    if not polynomial_coeffs:
-
-        return None
-
-    return polynomial_coeffs
+    return load_calibration()
 
 
 def _get_grid_to_im_axis_mapping(pm, im):

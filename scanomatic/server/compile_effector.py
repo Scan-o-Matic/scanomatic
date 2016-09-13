@@ -59,9 +59,6 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         self._logger.info("Action {0}".format(self._compile_job.compile_action))
         self._compile_instructions_path = Paths().get_project_compile_instructions_path_from_compile_model(
             self._compile_job)
-        self._tweak_path()
-        self._load_fixture()
-        self._allow_start = True
         if self._compile_job.compile_action == COMPILE_ACTION.Initiate or \
                         self._compile_job.compile_action == COMPILE_ACTION.InitiateAndSpawnAnalysis:
 
@@ -71,11 +68,15 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
             except OSError:
                 pass
 
+            CompileProjectFactory.serializer.dump(self._compile_job, self._compile_instructions_path)
+
+        self._tweak_path()
+        self._load_fixture()
+        self._allow_start = True
+
         if self._fixture_settings is None:
             self._logger.critical("No fixture loaded, name probably not recognized or old fixture settings file")
             self._stopping = True
-        else:
-            CompileProjectFactory.serializer.dump(self._compile_job, self._compile_instructions_path)
 
         self._start_time = time.time()
 
@@ -83,6 +84,13 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
         if self._compile_job.fixture_type is FIXTURE.Global:
             self._fixture_settings = Fixtures()[self._compile_job.fixture_name]
+            if self._fixture_settings and \
+                    self._compile_job.compile_action in (COMPILE_ACTION.Initiate,
+                                                         COMPILE_ACTION.InitiateAndSpawnAnalysis):
+
+                self._fixture_settings.update_path_to_local_copy(os.path.dirname(self._compile_job.path))
+                self._fixture_settings.save()
+
         else:
             dir_path = os.path.dirname(self._compile_job.path)
             self._logger.info("Attempting to load local fixture copy in directory {0}".format(dir_path))

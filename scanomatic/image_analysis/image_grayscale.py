@@ -242,6 +242,10 @@ def detect_grayscale(im_trimmed, grayscale):
             frequency = np.diff(edges[where_fin_edges[0]: where_fin_edges[-1]], 1)
             frequency = frequency[np.isfinite(frequency)].mean()
 
+            if not np.isfinite(frequency):
+                _logger.critical("No frequency was detected, thus no grayscale")
+                return None, None
+
             edges = signal.extrapolate_edges(edges, frequency, para_signal_trimmed_im.size)
 
             if edges.size != grayscale['sections'] + 1:

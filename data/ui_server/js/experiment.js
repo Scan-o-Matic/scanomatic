@@ -78,7 +78,7 @@ function set_experiment_root(input) {
 function update_fixture(options) {
     var fixture = $(options).val();
 
-    $.get("/fixtures/" + fixture, function(data, status) {
+    $.get("/api/data/fixture/get/" + fixture, function(data, status) {
         if (data.success) {
             fixture_selected = true;
         } else {

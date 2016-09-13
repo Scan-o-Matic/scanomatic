@@ -8,9 +8,30 @@ __version__ = "0.9991"
 import os
 import sys
 from subprocess import Popen, PIPE, call
+import json
 
 #
-# INTERNAL DEPENDENCIES
+# Parsing and removing argument for accepting all questions as default
+#
+
+silent_install = any(arg.lower() == '--default' for arg in sys.argv)
+if silent_install:
+    sys.argv = [arg for arg in sys.argv if arg.lower() != '--default']
+
+#
+# Parsing and removing arguments for branch information
+#
+
+branch = None
+branch_info = tuple(i for i, arg in enumerate(sys.argv) if arg.lower() == '--branch')
+
+if branch_info:
+    branch_info = branch_info[0]
+    branch = sys.argv[branch_info + 1] if len(sys.argv) > branch_info + 1 else None
+    sys.argv = sys.argv[:branch_info] + sys.argv[branch_info + 2:]
+
+#
+# Python-setup
 #
 
 from setup_tools import MiniLogger, patch_bashrc_if_not_reachable, test_executable_is_reachable
@@ -73,9 +94,8 @@ data_files = []
 scripts = [
     os.path.join("scripts", p) for p in [
         "scan-o-matic",
+        'scan-o-matic_as_service_check',
         "scan-o-matic_server",
-        "scan-o-matic_qc",
-        "scan-o-matic_calibration",
         "scan-o-matic_experiment",
         "scan-o-matic_analysis",
         "scan-o-matic_analysis_move_plate",
@@ -121,6 +141,7 @@ setup(
         "scanomatic.server",
         "scanomatic.image_analysis",
         "scanomatic.data_processing",
+        "scanomatic.data_processing.phases",
         "scanomatic.util",
         "scanomatic.ui_server"],
 
@@ -154,9 +175,9 @@ _logger.info("Scan-o-Matic is setup on system")
 
 from setup_tools import install_data_files, install_launcher
 _logger.info("Copying data and configuration files")
-install_data_files()
+install_data_files(silent=silent_install)
 install_launcher()
-patch_bashrc_if_not_reachable()
+patch_bashrc_if_not_reachable(silent=silent_install)
 _logger.info("Post Setup Complete")
 
 if not test_executable_is_reachable():
@@ -192,6 +213,16 @@ if not test_executable_is_reachable():
     sispmctl is installed.
 
 """
+
+from scanomatic.io.paths import Paths
+
+try:
+    with open(Paths().source_location_file, mode='w') as fh:
+        directory = os.path.dirname(os.path.join(os.path.abspath(os.path.expanduser(os.path.curdir)), sys.argv[0]))
+        json.dump({'location': directory, 'branch': branch}, fh)
+
+except IOError:
+    _logger.warning("Could not write info for future upgrades. You should stick to manual upgrades")
 
 # postSetup.CheckDependencies(package_dependencies)
 

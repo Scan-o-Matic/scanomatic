@@ -3,6 +3,7 @@
 <head lang="en">
     <meta charset="UTF-8">
 	<link rel="stylesheet" type="text/css" href="style/main.css">
+	<link rel="stylesheet" type="text/css" href="style/compilation.css">
     <script src="/js/jquery-2.1.4.min.js"></script>
     <script src="/js/jquery-ui.min.js"></script>
     <script src="/js/helpers.js"></script>
@@ -10,8 +11,6 @@
     <script src="/js/compile.js"></script>
     <script>
         current_fixture_id = "#current-fixture";
-
-
     </script>
 	<title>Scan-o-Matic</title>
 </head>
@@ -32,8 +31,9 @@
                         </label>
                     </div>
                     <label for="current-fixture"></label>
-                    <select name="current-fixtures" id="current-fixture"></select>
-
+                    <select name="current-fixtures" id="current-fixture" onchange="set_fiture_status();"></select>
+                    <br>
+                    <div class="error-message" id="fixture-error-message"></div>
                 </div>
                 <div class="section">
                     <label for="project-directory">Project Directory</label>
@@ -44,7 +44,21 @@
                     <div class="indented"><em>The project directory is the directory that contains the images that were scanned.</em></div>
 
                 </div>
-                <div class="section">
+
+                <h3>Manual selection of images</h3>
+                <div class="section" id="manual-selection-div">
+                    <input type="checkbox" id="manual-selection" onclick="toggleManualSelectionBtn(this);" />
+                    <label for="manual-selection">Manual Selection</label>
+                    <input type="hidden" id="hidden-path" value="">
+                    <div class="large" id="list-buttons">
+                        <input type="button" id="manual-select-all" value="Select All" onclick="setOnAllImages(true);">
+                        <input type="button" id="manual-select-none" value="Select None" onclick="setOnAllImages(false);">
+                    </div>
+                    <div id="options"></div>
+                </div>
+
+                <h3>Chaining</h3>
+                <div class="section" id="chaining-div">
                     <div class="onoffswitch chain">
                             <input type="checkbox" name="chain" class="onoffswitch-checkbox chain" id="chain-analysis-request">
                             <label class="onoffswitch-label chain" for="chain-analysis-request">
@@ -60,9 +74,14 @@
         </form>
     </div>
     <script>
+        image_list_div = $('#manual-selection-div');
+        manual_btn = $('#manual-selection');
+        InputEnabled(manual_btn, false);
+        toggleManualSelectionBtn(manual_btn);
         get_fixtures();
         toggleLocalFixture("#local-fixture");
         InputEnabled($("#submit-button"), false);
+
     </script>
 </body>
 </html>

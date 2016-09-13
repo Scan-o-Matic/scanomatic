@@ -1,15 +1,37 @@
-function get_path_suggestions(input, isDirectory, suffix, callback) {
+function get_path_suggestions(input, isDirectory, suffix, callback, prefix, checkHasAnalysis) {
 
     if (suffix == undefined)
         suffix = "";
 
-    $.get("/data/" + $(input).val() + "?suffix=" + suffix + "&isDirectory=" + (isDirectory ? 1 : 0), function(data, status) {
-        var val = $(input).val();
-        $(input).autocomplete({source: data.suggestions});
-        if (val == "" || (data.path == "root/" && val.length < data.path.length))
-            $(input).val(data.path);
+    if (prefix != undefined) {
+        url = prefix.replace(/^\/?|\/?$/, "") + "/" + $(input).val().replace(/^\/?|\/?$/, "");
+    } else {
+        url = $(input).val().replace(/^\/?|\/?$/, "");
+    }
 
-        callback(data, status);
+    if (url == "" || url == undefined) {
+        url = "/api/tools/path";
+    } else {
+        url = "/api/tools/path/" +  url;
+    }
+
+    $.get(url + "?suffix=" + suffix +
+        "&isDirectory=" + (isDirectory ? 1 : 0) +
+        "&checkHasAnalysis=" + (checkHasAnalysis ? 1 : 0),
+        function(data, status) {
+            var val = $(input).val();
+            if (prefix) {
+                start_index = ("root/" + prefix.replace(/^\/?|\/?$/, "")).length;
+                for(i=0;i<data.suggestions.length;i++){
+                    data.suggestions[i] = data.suggestions[i].substring(start_index, data.suggestions[i].length);
+                }
+            }
+            $(input).autocomplete({source: data.suggestions});
+            if (prefix == undefined && (val == "" || (data.path == "root/" && val.length < data.path.length))) {
+                $(input).val(data.path);
+            }
+
+            callback(data, status);
     });
 }
 
@@ -80,4 +102,12 @@ function Dialogue(title, body_header, body, redirect, reactivate_button ) {
                 InputEnabled($(reactivate_button), true);
         });
 
+}
+
+function Map(arr, lambda_func) {
+    new_arr = [];
+    for (i=0; i<arr.length; i++) {
+        new_arr[i] = lambda_func(arr[i]);
+    }
+    return new_arr;
 }

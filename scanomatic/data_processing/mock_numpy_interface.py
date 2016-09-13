@@ -1,5 +1,7 @@
 from types import StringTypes
 
+# TODO: Clean up use?
+
 
 class NumpyArrayInterface(object):
 

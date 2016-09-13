@@ -1,0 +1,46 @@
+/* colors
+#541f0f
+#f8e03e
+#cd8b34
+#a45e60
+#e7d2b7
+
+*/
+
+label.image-list-label {
+    padding-left: 5px;
+    text-transform: none;
+}
+
+
+.list-entry-even {
+    background: #a45e60;
+    padding: 2px;
+}
+
+.list-entry-odd {
+    background: #cd8b34;
+    padding: 2px;
+}
+
+#manual-selection-div {
+    font-size: small;
+    border: 1px;
+    padding: 5px;
+    background: #541f0f !important;
+}
+
+#options {
+    padding-top: 6px;
+}
+
+#manual-regridding-div {
+    padding: 5px;
+    background: #541f0f !important;
+}
+
+#chaining-div {
+    padding: 5px;
+    background: #541f0f !important;
+}
+

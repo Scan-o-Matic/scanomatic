@@ -1,0 +1,81 @@
+#! /usr/bin/env python
+import sys
+from argparse import ArgumentParser
+from time import sleep
+
+import psutil
+
+from scanomatic.io.backup import backup_file
+from scanomatic.io.daemonizer import daemon
+from scanomatic.io.paths import Paths
+from scanomatic.io.rpc_client import get_client
+from scanomatic.ui_server.ui_server import ui_server_responsive
+from scanomatic.io.logger import Logger
+
+_logger = Logger("Scan-o-Matic As Service Check")
+
+
+def get_proc_name(proc):
+
+    try:
+        return proc.name()
+    except TypeError:
+        return proc.name
+
+
+def server_responsive():
+
+    return get_client().online
+
+
+if __name__ == "__main__":
+
+    parser = ArgumentParser(description="""Scan-o-Matic As Service Check""")
+
+    parser.add_argument("--schedule", default=False, dest="schedule", action='store_true',
+                        help="Inject self in schedule")
+
+    args = parser.parse_args()
+
+    if 'linux' not in sys.platform:
+        _logger.error("Non linux-system not supported for this script")
+        sys.exit(1)
+
+    if args.schedule:
+
+        pass
+
+    else:
+
+        # Testing the procs exist
+        som_server = any(True for p in psutil.process_iter() if get_proc_name(p) == "SoM Server")
+        som_ui_server = any(True for p in psutil.process_iter() if get_proc_name(p) == "SoM UI Server")
+
+        # If not responding, kill ui server
+        if som_ui_server and not ui_server_responsive():
+            _logger.info("Closing down UI Server because it doesn't respond to requests")
+            for p in (p for p in psutil.process_iter() if get_proc_name(p) == "SoM UI Server"):
+                p.kill()
+            _logger.info("Will wait 1 second before continuing")
+            sleep(1)
+            som_ui_server = False
+
+        # If not responding kill server
+        if som_server and not server_responsive():
+            _logger.info("Closing down the server because it doesn't respond to requests")
+            for p in (p for p in psutil.process_iter() if get_proc_name(p) == "SoM Server"):
+                p.kill()
+            _logger.info("Will wait 1 second before continuing")
+            sleep(1)
+            som_server = False
+
+        # Starting shit that needs starting
+        if not som_server:
+            backup_file(Paths().log_server)
+            daemon("scan-o-matic_server", std_out=Paths().log_server, shell=False)
+            _logger.info("Started SoM server")
+
+        if not som_ui_server:
+            backup_file(Paths().log_ui_server)
+            daemon("scan-o-matic", std_out=Paths().log_ui_server, daemon_args=("--no-browser",), shell=False)
+            _logger.info("Started UI server")

@@ -9,3 +9,6 @@ __version__ = "v1.3.1"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
+
+def get_version():
+    return __version__

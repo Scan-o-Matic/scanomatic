@@ -65,7 +65,7 @@ def _clone_all_files_in(path):
             yield local_child, True
 
 
-def install_data_files(target_base=None, source_base=None, install_list=None):
+def install_data_files(target_base=None, source_base=None, install_list=None, silent=False):
 
     if target_base is None:
         target_base = os.path.join(home_dir, installPath)
@@ -105,7 +105,7 @@ def install_data_files(target_base=None, source_base=None, install_list=None):
                 _logger.info("Creating file {0}".format(target_path))
                 fh = open(target_path, 'w')
                 fh.close()
-            elif (not os.path.isfile(target_path) or files[file_name] or 'y' in raw_input(
+            elif (not os.path.isfile(target_path) or files[file_name] or silent or 'y' in raw_input(
                     "Do you want to overwrite {0} (y/N)".format(target_path)).lower()):
 
                 _logger.info(
@@ -234,7 +234,7 @@ def test_executable_is_reachable(path='scan-o-matic'):
     return ret == 0
 
 
-def patch_bashrc_if_not_reachable():
+def patch_bashrc_if_not_reachable(silent=False):
 
     if not test_executable_is_reachable():
 
@@ -243,9 +243,9 @@ def patch_bashrc_if_not_reachable():
             path = os.path.expanduser(os.path.join(*path))
             if test_executable_is_reachable(path) and 'PATH' in os.environ and path not in os.environ['PATH']:
 
-                if 'y' in raw_input(
+                if silent or 'y' in raw_input(
                         "The installation path is not in your environmental variable PATH"
-                        "Do you wish me to append it in your `.bashrc` file? (y/N)").lower():
+                        "Do you wish me to append it in your `.bashrc` file? (Y/n)").lower():
 
                     with open(os.path.expanduser(os.path.join("~", ".bashrc")), 'a') as fh:
                         fh.write("\nexport PATH=$PATH:{0}\n".format(path))

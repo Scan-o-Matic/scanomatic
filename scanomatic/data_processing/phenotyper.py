@@ -1,14 +1,15 @@
-import numpy as np
-import os
 import csv
-from scipy.ndimage import median_filter
-from collections import deque
-import pickle
-from enum import Enum
-from types import StringTypes
 import glob
+import os
+import pickle
+from collections import deque
+from itertools import izip, chain, product
+from types import StringTypes
+
+import numpy as np
+from enum import Enum
+from scipy.ndimage import median_filter
 from scipy.stats import norm
-from itertools import izip, chain
 
 #
 #   INTERNAL DEPENDENCIES
@@ -21,13 +22,14 @@ import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes, \
     get_derivative
-from scanomatic.data_processing.curve_phase_phenotypes import phase_phenotypes, filter_plate, \
+from scanomatic.data_processing.phases.features import extract_phenotypes, \
     CurvePhaseMetaPhenotypes, VectorPhenotypes
-from scanomatic.data_processing.phenotypes import PhenotypeDataType
+from scanomatic.data_processing.phases.analysis import get_phase_analysis
+from scanomatic.data_processing.phenotypes import PhenotypeDataType, infer_phenotype_from_name
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.data_processing.strain_selector import StrainSelector
-from scanomatic.data_processing.norm import Offsets, get_normailzed_data
+from scanomatic.data_processing.norm import Offsets, get_normalized_data
 
 
 def time_based_gaussian_weighted_mean(data, time, sigma=1):
@@ -103,7 +105,10 @@ def edge_condition(arr, mode=EdgeCondition.Reflect, kernel_size=3):
 
 
 def merge_convolve(arr1, arr2, edge_condition_mode=EdgeCondition.Reflect, kernel_size=5,
-                   func=time_based_gaussian_weighted_mean, func_kwargs={}):
+                   func=time_based_gaussian_weighted_mean, func_kwargs=None):
+
+    if not func_kwargs:
+        func_kwargs = {}
 
     return tuple(func(v1, v2, **func_kwargs) for v1, v2 in izip(
         edge_condition(arr1, mode=edge_condition_mode, kernel_size=kernel_size),
@@ -175,7 +180,7 @@ def get_project_dates(directory_path):
     for path in (_p.phenotypes_input_data, _p.phenotype_times, _p.phenotypes_input_smooth,
                  _p.phenotypes_extraction_params, _p.phenotypes_filter, _p.phenotypes_filter_undo,
                  _p.phenotypes_meta_data, _p.normalized_phenotypes, _p.vector_phenotypes_raw,
-                 _p.vector_meta_phenotypes_raw):
+                 _p.vector_meta_phenotypes_raw, _p.phenotypes_reference_offsets):
 
         try:
             state_date = max(state_date, most_recent(os.stat(os.path.join(directory_path, path))))
@@ -284,7 +289,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._normalizable_phenotypes = {
             Phenotypes.GenerationTime, Phenotypes.ExperimentGrowthYield, Phenotypes.ExperimentPopulationDoublings,
             Phenotypes.GenerationTimePopulationSize, Phenotypes.GrowthLag, Phenotypes.ColonySize48h,
-            CurvePhaseMetaPhenotypes.InitialLag}
+            CurvePhaseMetaPhenotypes.InitialLag, Phenotypes.ExperimentLowPoint,
+            CurvePhaseMetaPhenotypes.InitialLagAlternativeModel,
+            CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime,
+            CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution
+        }
 
         self._reference_surface_positions = [Offsets.LowerRight() for _ in self.enumerate_plates]
 
@@ -298,14 +307,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
          :type phenotype: [enum.Enum OR str]
         :return: bool
         """
-        if isinstance(phenotype, str):
+        if isinstance(phenotype, StringTypes):
             try:
-                phenotype = Phenotypes[phenotype]
-            except KeyError:
-                try:
-                    phenotype = CurvePhaseMetaPhenotypes[phenotype]
-                except KeyError:
-                    return False
+                phenotype = infer_phenotype_from_name(phenotype)
+            except ValueError:
+                return False
 
         if isinstance(phenotype, Phenotypes) and self._phenotypes is not None:
             return self._phenotypes is not None and phenotype.value < self._phenotypes.shape[-1]
@@ -359,10 +365,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         Parameters:
 
-            path        The path to the xml-file
+            path:
+                The path to the xml-file
+            kwargs:
+                Optional parameters passed on to the constructor
 
         Optional Parameters can be passed as keywords and will be
-        used in instanciating the class.
+        used in instantiating the class.
         """
 
         xml = xml_reader_module.XML_Reader(path)
@@ -378,8 +387,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         Args:
 
-            dirPath (str):  Path to the directory holding the relevant
-                            files
+            directory_path (str):
+                Path to the directory holding the relevant files
 
         Returns:
 
@@ -421,6 +430,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 if inclusion_name is None:
                     inclusion_name = 'Trusted'
                 phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
+            else:
+                raise ValueError("Stored parameters in {0} can't be understood".format(
+                    os.path.join(directory_path, _p.phenotypes_extraction_params)))
 
             phenotyper._median_kernel_size = int(median_filt_size)
             phenotyper._gaussian_filter_sigma = float(gauss_sigma)
@@ -435,6 +447,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if os.path.isfile(filter_path):
             phenotyper._logger.info("Loading previous filter {0}".format(filter_path))
             phenotyper.set("phenotype_filter", np.load(filter_path))
+
+        offsets_path = os.path.join(directory_path, _p.phenotypes_reference_offsets)
+        if os.path.isfile(offsets_path):
+            phenotyper.set("reference_offsets", np.load(offsets_path))
 
         normalized_phenotypes = os.path.join(directory_path, _p.normalized_phenotypes)
         if os.path.isfile(normalized_phenotypes):
@@ -488,22 +504,22 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         Parameters:
 
-            path        The path to the data numpy file
+            path:
+                The path to the data numpy file
 
-        Optional parameter:
+            times_data_path:
+                The path to the times numpy file
+                If not supplied both paths are assumed
+                to be named as:
 
-            timesPath   The path to the times numpy file
-                        If not supplied both paths are assumed
-                        to be named as:
+                    some/path.data.npy
+                    some/path.times.npy
 
-                            some/path.data.npy
-                            some/path.times.npy
-
-                        And path parameter is expexted to be
-                        'some/path' in this examply.
+                And path parameter is expexted to be
+                'some/path' in this examply.
 
         Optional Parameters can be passed as keywords and will be
-        used in instanciating the class.
+        used in instantiating the class.
         """
         data_directory = path
         if path.lower().endswith(".npy"):
@@ -584,7 +600,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         See the wiki on how such files should be formatted
 
         Args:
-            paths: Any number of paths to files OpenOffice or Excel compatible that contains the meta data
+            meta_data_paths:
+                Any number of paths to files OpenOffice or Excel
+                compatible that contains the meta data
 
         """
 
@@ -661,13 +679,21 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         """Extract phenotypes given the current inclusion level
 
         Args:
-            keep_filter: Optional, if previous curve marks on phenotypes should be kept or not. Default
-                is to clear previous curve marks
+            keep_filter:
+                Optional, if previous curve marks on phenotypes should
+                be kept or not. Default is to clear previous curve
+                marks
+            resmoothen:
+                Optional, if smoothing should be redone.
+                Default is not to redo it.
 
         See Also:
-            Phenotyper.set_phenotype_inclusion_level: How to change what phenotypes are extracted
-            Phenotyper.get_phenotype: Accessing extracted phenotypes.
-            Phenotyper.normalize_phenotypes: Normalize phenotypes.
+            Phenotyper.set_phenotype_inclusion_level:
+                How to change what phenotypes are extracted
+            Phenotyper.get_phenotype:
+                Accessing extracted phenotypes.
+            Phenotyper.normalize_phenotypes:
+                Normalize phenotypes.
         """
         self.wipe_extracted_phenotypes(keep_filter)
 
@@ -807,7 +833,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 if phenotypes_inclusion(VectorPhenotypes):
 
-                    phases, phases_phenotypes = phase_phenotypes(
+                    phases, phases_phenotypes = get_phase_analysis(
                         self, id_plate, (id0, id1),
                         experiment_doublings=position_phenotypes[Phenotypes.ExperimentPopulationDoublings.value])
 
@@ -831,8 +857,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                         phenotype, VectorPhenotypes.PhasesPhenotypes))
                     continue
 
-                vector_meta_phenotypes[phenotype] = filter_plate(
-                    vector_phenotypes[VectorPhenotypes.PhasesPhenotypes], phenotype).astype(np.float)
+                vector_meta_phenotypes[phenotype] = extract_phenotypes(
+                    vector_phenotypes[VectorPhenotypes.PhasesPhenotypes], phenotype, phenotypes).astype(np.float)
 
             self._logger.info("Plate {0} Done".format(id_plate + 1))
             curves_in_completed_plates += 0 if plate is None else plate_flat_regression_strided.shape[0]
@@ -902,7 +928,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         """
         self._normalizable_phenotypes.remove(phenotype)
 
-    def get_curve_segments(self, plate, outer, inner):
+    def get_normalizable_phenotypes(self):
+
+        return self._normalizable_phenotypes
+
+    def get_curve_phases(self, plate, outer, inner):
 
         try:
             return self._vector_phenotypes[plate][VectorPhenotypes.PhasesClassifications][outer, inner]
@@ -934,6 +964,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         else:
             self._reference_surface_positions[plate] = offset()
 
+    def get_control_surface_offset(self, plate):
+
+        try:
+            return self._reference_surface_positions[plate]
+        except IndexError:
+            return 0
+
     def normalize_phenotypes(self):
         """Normalize phenotypes.
 
@@ -963,7 +1000,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 self._logger.info("{0} had not been extracted, so skipping it".format(phenotype))
                 continue
 
-            for id_plate, plate in enumerate(get_normailzed_data(data, self._reference_surface_positions)):
+            for id_plate, plate in enumerate(get_normalized_data(data, self._reference_surface_positions)):
                 self._normalized_phenotypes[id_plate][phenotype] = plate
 
     @property
@@ -1178,6 +1215,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             self._init_remove_filter_and_undo_actions()
             self._init_default_offsets()
 
+        elif data_type == 'reference_offsets':
+
+            self._reference_surface_positions = data
+
         elif data_type == 'normalized_phenotypes':
 
             if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
@@ -1342,7 +1383,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                             phenotype not in self._phenotype_filter[plate_index]:
 
                         self._phenotype_filter[plate_index][phenotype] = np.zeros(
-                            self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
+                            self._vector_meta_phenotypes[plate_index][phenotype].shape, dtype=np.int8)
 
                         self._phenotype_filter[plate_index][phenotype][
                             np.where(np.isfinite(
@@ -1532,8 +1573,20 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         if save_data == SaveData.ScalarPhenotypesRaw:
             data_source = self._phenotypes
+        elif save_data == SaveData.ScalarPhenotypesNormalized:
+            data_source = self._normalized_phenotypes
         else:
             self._logger.error("Not implemented saving '{0}'".format(save_data))
+            return False
+
+        if data_source is None or len(data_source) == 0:
+            if save_data is SaveData.ScalarPhenotypesRaw:
+                self._logger.error("You must extract phenotypes before you can save them")
+            elif save_data is SaveData.ScalarPhenotypesNormalized:
+                self._logger.error("You must normalize before you can save anything...")
+            else:
+                self._logger.error("No data to save")
+
             return False
 
         default_meta_data = ('Plate', 'Row', 'Column')
@@ -1559,33 +1612,68 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 cw = csv.writer(fh, dialect=dialect)
 
+                # DATA
+                plate = data_source[plate_index]
+
                 # HEADER ROW
                 meta_data_headers = self.meta_data_headers(plate_index)
 
-                cw.writerow(
-                    tuple(self._make_csv_row(
-                        default_meta_data,
-                        meta_data_headers,
-                        (p for p in Phenotypes if self._phenotypes_inclusion(p)))))
+                if save_data is SaveData.ScalarPhenotypesRaw:
 
-                # DATA
-                plate = data_source[plate_index]
+                    cw.writerow(
+                        tuple(self._make_csv_row(
+                            default_meta_data,
+                            meta_data_headers,
+                            (p for p in Phenotypes if self._phenotypes_inclusion(p)))))
+
+                elif save_data is SaveData.ScalarPhenotypesNormalized:
+
+                    cw.writerow(
+                        tuple(self._make_csv_row(
+                            default_meta_data,
+                            meta_data_headers,
+                            plate.keys())))
+
                 filt = self._phenotype_filter[plate_index]
 
                 if plate is None:
                     continue
 
-                for idX, X in enumerate(plate):
+                if save_data is SaveData.ScalarPhenotypesRaw:
 
-                    for idY, Y in enumerate(X):
+                    for idX, X in enumerate(plate):
+
+                        for idY, Y in enumerate(X):
+
+                            cw.writerow(
+                                tuple(self._make_csv_row(
+                                    (plate_index, idX, idY),
+                                    no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
+                                    (y if filt[Phenotypes(idP)][idX, idY] == 0 else
+                                     Filter(filt[Phenotypes(idP)][idX, idY]).name
+                                     for idP, y in zip(phenotype_filter, Y[phenotype_filter])))))
+
+                elif save_data is SaveData.ScalarPhenotypesNormalized:
+
+                    idX = 0
+                    idY = 0
+                    lX, lY = plate[plate.keys()[0]].shape
+
+                    while True:
 
                         cw.writerow(
-                            tuple(self._make_csv_row(
-                                (plate_index, idX, idY),
-                                no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
-                                (y if filt[Phenotypes(idP)][idX, idY] == 0 else
-                                 Filter(filt[Phenotypes(idP)][idX, idY]).name
-                                 for idP, y in zip(phenotype_filter, Y[phenotype_filter])))))
+                                tuple(self._make_csv_row(
+                                    (plate_index, idX, idY),
+                                    no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
+                                    (plate[p][idX, idY] for p in plate)
+                                    )))
+
+                        idX += 1
+                        if idX == lX:
+                            idX = 0
+                            idY += 1
+                            if idY == lY:
+                                break
 
                 self._logger.info("Saved {0}, plate {1} to {2}".format(save_data, plate_index + 1, plate_path))
 
@@ -1634,6 +1722,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._phenotype_filter)
 
+        p = os.path.join(dir_path, self._paths.phenotypes_reference_offsets)
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
+            np.save(p, self._reference_surface_positions)
+
         p = os.path.join(dir_path, self._paths.phenotypes_filter_undo)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
 
@@ -1659,3 +1751,86 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                  None if self._phenotypes_inclusion is None else self._phenotypes_inclusion.name])
 
         self._logger.info("State saved to '{0}'".format(dir_path))
+
+    def for_each_call(self, extra_keyword_args=tuple(), start_plate=None, start_pos=None, funcs=tuple()):
+        """For each curve, the supplied functions are called.
+
+        Each function must have the following initial argument order:
+
+            phenotyper_object, plate, position_tuple
+
+        After those, the rest of the arguments should have default values
+        and/or have their needed information supplied in the
+        ```extra_keyword_args``` parameter.
+
+        Args:
+            extra_keyword_args (tuple or dict):
+                Tuple of dicts or a single dict used as extra keyword
+                arguments sent to the functions. Either specific for
+                each function or the same for all.
+            start_plate (int): Starting plate to iterate from
+            start_pos ((int, int)): Starting position on plate to iterate from
+            funcs (tuple[function]):
+                A list of functions to be called for each position.
+
+        Returns:
+            A generator to loop through the calling on the
+            positions.
+
+        Examples:
+
+            Interactive plotting of the phase-classification of all
+            curves:
+
+            ```
+            from matplotlib as plt
+            from scanomatic.qc import phenotype_results
+
+            def outer(i):
+                for _ in i:
+                    f.show()
+                    yield
+                    for ax in f.axes:
+                        if ax is not ax1 and ax is not ax2:
+                            f.delaxes(ax)
+                        else:
+                            ax.cla()
+
+            f = plt.figure()
+            ax1 = f.add_subplot(2, 1, 1,)
+            ax2 = f.add_subplot(2, 1, 2)
+            plt.ion()
+
+            i = P.for_each_call(
+                ({'ax': ax1}, {'ax': ax2}),
+                phenotype_results.plot_phases,
+                phenotype_results.plot_curve_and_derivatives)
+
+            o = outer(i)
+            ```
+
+            Then ```next(o)``` can be used to step through the
+            generator.
+        """
+        if not isinstance(extra_keyword_args, tuple):
+            extra_keyword_args = tuple(extra_keyword_args for _ in range(len(self)))
+
+        skip = False if start_pos is None else True
+
+        for plate, shape in enumerate(self.plate_shapes):
+
+            if not shape or start_plate is not None and plate < start_plate:
+                continue
+
+            for pos in product(*(range(s) for s in shape)):
+
+                if skip:
+                    if pos == start_pos:
+                        skip = False
+                    else:
+                        continue
+
+                for idf, f in enumerate(funcs):
+                    f(self, plate, pos, **extra_keyword_args[idf])
+
+                yield plate, pos
