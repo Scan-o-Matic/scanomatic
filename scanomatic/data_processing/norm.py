@@ -22,7 +22,17 @@ from scanomatic.generics.phenotype_filter import FilterArray, Filter
 
 
 class Offsets(Enum):
+    """Subplate offsets with orientation
+    (`scanomatic.data_processing.phenotyper.Phenotyper` data)
 
+    Indices enumerate from 0.
+
+    Attributes:
+        Offsets.LowerRight: Outer index even, inner index even
+        Offsets.LowerLeft: Outer index even, inner index odd
+        Offsets.UpperLeft: Outer index odd, inner index odd
+        Offsets.UpperRight: Outer index odd, inner index even
+    """
     LowerRight = 0
     LowerLeft = 1
     UpperLeft = 2
@@ -32,6 +42,16 @@ class Offsets(Enum):
 
         return np.array([[self is Offsets.UpperLeft, self is Offsets.UpperRight],
                          [self is Offsets.LowerLeft, self is Offsets.LowerRight]], dtype=np.bool)
+
+
+def infer_offset(arr):
+
+    for offset in Offsets:
+
+        if (offset() == arr).all():
+            return offset
+
+    raise ValueError("Supplied pattern {0} not a known offset".format(arr.tolist()))
 
 #
 #   METHODS: Normalisation methods
@@ -66,34 +86,40 @@ def get_downsampled_plates(data, subsampling="BR"):
                 The subsampling used
     """
 
-    # How much smaller the cut should be than the original
-    # (e.g. take every second)
-    subsampling_size = 2
-
-    # Number of dimensions to subsample
-    subsample_first_dim = 2
-
-    # Lookup to translate subsamplingexpressions to coordinates
-    sub_sample_lookup = {'TL': (0, 0), 'TR': (0, 1), 'BL': (1, 0), 'BR': (1, 1)}
 
     # Generic -> Per plate
     if isinstance(subsampling, StringTypes):
         subsampling = [subsampling for _ in range(data.shape[0])]
 
-    # Name to offset
-    subsampling = [sub_sample_lookup[s] for s in subsampling]
+        # Lookup to translate subsamplingexpressions to coordinates
+        sub_sample_lookup = {'TL': Offsets.UpperLeft, 'TR': Offsets.UpperRight,
+                             'BL': Offsets.LowerLeft, 'BR': Offsets.LowerRight}
+
+        # Name to offset
+        subsampling = [sub_sample_lookup[s]() for s in subsampling]
 
     # Create a new container for the plates. It is important that this remains
-    # a list and is not converted into an array if both returned memebers of A
+    # a list and is not converted into an array if both returned members of A
     # and original plate values should operate on the same memory
+
+    # Number of dimensions to subsample, take first two
+    # subsample_first_dim = 2
+
     out = []
     for i, plate in enumerate(data):
         offset = subsampling[i]
-        new_shape = (tuple(plate.shape[d] / subsampling_size for d in xrange(subsample_first_dim)) +
-                     plate.shape[subsample_first_dim:])
-        new_strides = (tuple(plate.strides[d] * subsampling_size for d in xrange(subsample_first_dim)) +
-                       plate.strides[subsample_first_dim:])
-        out.append(np.lib.stride_tricks.as_strided(plate[offset[0]:, offset[1]:], shape=new_shape, strides=new_strides))
+
+        # How much smaller the cut should be than the original
+        # (e.g. take every second)
+        subsample_scale = 2 if offset.sum() == 1 else 0
+        if not subsample_scale:
+            raise ValueError(
+                "Only exactly one reference position offset per plate allowed. "
+                "You had {0}".format(offset))
+
+        d1, d2 = np.where(offset)
+
+        out.append(plate[d1::2, d2::2])
 
     return out
 
@@ -278,7 +304,7 @@ def get_control_positions_average(control_pos_data_array,
     return np.array(plate_control_averages)
 
 
-def get_normailsation_surface(control_positions_filtered_data, control_position_coordinates=None,
+def get_normalisation_surface(control_positions_filtered_data, control_position_coordinates=None,
                               norm_sequence=('cubic', 'linear', 'nearest'), use_accumulated=False, fill_value=np.nan,
                               offsets=None, apply_median_smoothing_kernel=None, apply_gaussian_smoothing_sigma=None):
     """Constructs normalisation surface using iterative runs of
@@ -466,16 +492,16 @@ def apply_outlier_filter(data, median_filter_size=(3, 3), measure=None, k=2.0, p
         [1, -6, 1],
         [0.5, 1, 0.5]], dtype=data[0].dtype)
 
-    old_nans = -1
-    new_nans = 1
-    iterations = 0
-    while new_nans != old_nans and iterations < max_iterations:
+    for plate in data:
 
-        old_nans = new_nans
+        old_nans = -1
         new_nans = 0
-        iterations += 1
+        iterations = 0
 
-        for plate in data:
+        while new_nans != old_nans and iterations < max_iterations:
+
+            old_nans = new_nans
+            iterations += 1
 
             if measure is None:
                 plate_copy = plate.copy()
@@ -493,14 +519,14 @@ def apply_outlier_filter(data, median_filter_size=(3, 3), measure=None, k=2.0, p
             # Make normalness analysis to find lower and upper threshold
             # Rang based to z-score, compare to threshold adjusted by expected
             # fraction of removed positions
-            plate_copy_ravel = plate_copy.ravel()
+            plate_copy_ravel = np.ma.masked_invalid(plate_copy.ravel())
             if measure is None:
                 plate_ravel = plate.ravel()
             else:
                 plate_ravel = plate[..., measure].ravel()
-            sigma = np.std(plate_copy_ravel)
-            mu = np.mean(plate_copy_ravel)
-            z_scores = np.abs(plate_copy_ravel - mu)
+            sigma = plate_copy_ravel.std()
+            mu = plate_copy_ravel.mean()
+            z_scores = np.abs(plate_copy_ravel.data - mu)
 
             for pos in np.argsort(z_scores)[::-1]:
                 if np.isnan(plate_ravel[pos]) or \
@@ -517,9 +543,9 @@ def apply_outlier_filter(data, median_filter_size=(3, 3), measure=None, k=2.0, p
                     break
 
             if measure is None:
-                new_nans += np.isnan(plate).sum()
+                new_nans = np.isnan(plate).sum()
             else:
-                new_nans += np.isnan(plate[..., measure]).sum()
+                new_nans = np.isnan(plate[..., measure]).sum()
 
 
 def apply_log2_transform(data, measures=None):
@@ -663,11 +689,12 @@ def ipv_residue(scaling_params, ipv, gt):
 #
 
 
-def get_normailzed_data(data, offsets=None):
+def get_normalized_data(data, offsets=None):
 
     surface = get_control_position_filtered_arrays(data, offsets=offsets)
-    apply_outlier_filter(surface, measure=None)
-    surface = get_normailsation_surface(surface, offsets=offsets)
+    pre_surface = get_downsampled_plates(surface, offsets)
+    apply_outlier_filter(pre_surface, measure=None)
+    surface = get_normalisation_surface(surface, offsets=offsets)
 
     return normalisation(data, surface, log=True)
 

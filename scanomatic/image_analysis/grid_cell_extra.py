@@ -838,7 +838,7 @@ class Blob(CellItem):
 
             for item_label in quality_order[1:]:
 
-                if self.filter_array[tuple(map(round, centre_of_masses[item_label]))]:
+                if self.filter_array[tuple(map(int, map(round, centre_of_masses[item_label])))]:
 
                     composite_blob.append(item_label)
 

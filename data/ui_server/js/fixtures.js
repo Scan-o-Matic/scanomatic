@@ -261,7 +261,7 @@ function testAsGrayScale(plate) {
     if (plate) {
         var grayscale_name = GetSelectedGrayscale();
         $.ajax({
-            url: "?grayscale=1&fixture=" + fixture_name + "&grayscale_name=" + grayscale_name,
+            url: "/api/data/grayscale/fixture/" + fixture_name + "?grayscale_name=" + grayscale_name,
             method: "POST",
             data: plate,
             success: function (data) {
@@ -293,9 +293,10 @@ function testAsGrayScale(plate) {
     }
 }
 
-function OnEnterFixtureName() {
-    var fix_name = $(new_fixture_name);
-    fix_name.val(get_fixture_as_name(fix_name.val()));
+function OnEnterFixtureName(button) {
+    button = $(button);
+    fixture_name = get_fixture_from_name(button.val());
+    button.text(get_fixture_as_name(fixture_name));
     SetAllowDetect();
 }
 
@@ -308,7 +309,7 @@ function SetAllowDetect() {
 function get_fixtures() {
     var options = $(current_fixture_id);
     options.empty();
-    $.get("/fixtures?names=1", function(data, status) {
+    $.get("/api/data/fixture/names", function(data, status) {
         $.each(data.fixtures, function() {
             options.append($("<option />").val(this).text(get_fixture_as_name(this)));
         })
@@ -336,7 +337,7 @@ function get_fixture() {
     load_fixture(options.val());
     load_fixture_image(get_fixture_from_name(options.val()));
     $.ajax({
-        url: '/fixtures/' + options.val(),
+        url: '/api/data/fixture/get/' + options.val(),
         type: "GET",
         success: function(data) {
             if (data.success) {
@@ -372,13 +373,12 @@ function detect_markers() {
     var formData = new FormData();
     formData.append("markers", $(new_fixture_markers_id).val());
     formData.append("image", $(new_fixture_image_id)[0].files[0]);
-    formData.append("name", $(new_fixture_name).val());
     InputEnabled($(new_fixture_detect_id), false);
     var button = $(save_fixture_button);
     InputEnabled(button, false);
     $(new_fixture_detect_id).val("...");
     $.ajax({
-        url: '?detect=1',
+        url: '/api/data/markers/detect/' + $(new_fixture_name).val(),
         type: 'POST',
         contentType: false,
         enctype: 'multipart/form-data',
@@ -428,7 +428,7 @@ function load_fixture_image(image_name) {
             fixture_image = img;
             draw_fixture();
         }
-        img.src = "?rnd=" + Math.random() + "&image=" + image_name;
+        img.src = "/api/data/fixture/image/get/" + image_name + "?rnd=" + Math.random();
 
     } else {
         fixture_image = null;
@@ -446,16 +446,14 @@ function set_fixture_markers(data) {
 }
 
 function SaveFixture() {
-    var action = $(save_fixture_action_id).val();
     var button = $(save_fixture_button);
     InputEnabled(button, false);
     payload = {
         markers: markers,
         grayscale_name: GetSelectedGrayscale(),
-        areas: areas,
-        name: fixture_name};
+        areas: areas};
     $.ajax({
-        url:"/fixtures?" + action + "=1",
+        url:"/api/data/fixture/set/" + fixture_name,
         data: JSON.stringify(payload, null, '\t'),
         contentType: 'application/json;charset=UTF-8',
         dataType: "json",
@@ -464,7 +462,7 @@ function SaveFixture() {
         success: function(data) {
             if (data.success) {
                 $(selected_fixture_div_id).hide();
-                Dialog('Fixture', 'Fixture "' + fixture_name + '" saved', '','?');
+                Dialogue('Fixture', 'Fixture "' + fixture_name + '" saved', '','?');
             } else {
                 if (data.reason)
                     context_warning = "Save refused: " + data.reason;
@@ -496,17 +494,15 @@ function RemoveFixture() {
                         buttons: {
                             Yes: function() {
 
-                                payload = {
-                                    name: fixture_name};
+                                payload = {};
 
                                 $.ajax({
-                                    url: "/fixtures?remove=1",
-                                    data: payload,
-                                    method: "POST",
+                                    url: "/api/data/fixture/remove/" + fixture_name,
+                                    method: "GET",
                                     success: function(data) {
                                         if (data.success) {
                                             $(selected_fixture_div_id).hide();
-                                            Dialog('Fixture', 'Fixture "' + fixture_name + '" has been removed',
+                                            Dialogue('Fixture', 'Fixture "' + fixture_name + '" has been removed',
                                                 '(A backup is always stored in the fixture config folder)', '?');
 
                                         } else {

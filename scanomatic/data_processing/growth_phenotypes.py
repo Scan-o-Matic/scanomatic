@@ -53,19 +53,40 @@ def initial_value(curve_smooth_growth_data, *args, **kwargs):
 
 
 def curve_first_two_average(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[:2].mean()
+    if curve_smooth_growth_data[:2].any():
+        return curve_smooth_growth_data[:2].mean()
+    else:
+        return np.nan
 
 
 def curve_baseline(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[:3].mean()
+    if curve_smooth_growth_data[:3].any():
+        return curve_smooth_growth_data[:3].mean()
+    else:
+        return np.nan
 
 
 def curve_low_point(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[:3].min()
+    if curve_smooth_growth_data.any():
+        return np.ma.masked_invalid(np.convolve(curve_smooth_growth_data, np.ones(3) / 3., mode='valid')).min()
+    else:
+        return np.nan
+
+
+def curve_low_point_time(curve_smooth_growth_data, flat_times, *args, **kwargs):
+    # TODO: If a keeper make the convoloution be precalc and not done twice (se above func)
+    try:
+        return flat_times[
+            np.ma.masked_invalid(np.convolve(curve_smooth_growth_data, np.ones(3) / 3., mode='valid')).argmin() + 1]
+    except ValueError:
+        return np.nan
 
 
 def curve_end_average(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[-3:].mean()
+    if curve_smooth_growth_data[-3:].any():
+        return curve_smooth_growth_data[-3:].mean()
+    else:
+        return np.nan
 
 
 def growth_yield(curve_smooth_growth_data, *args, **kwargs):
@@ -150,8 +171,12 @@ def CalculateFitRSquare(X, Y, p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18], dtype
 
     Yhat = ChapmanRichards4ParameterExtendedCurve(
         X, *p)
-    return (1.0 - np.square(Yhat - Y).sum() /
-        np.square(Yhat - Y[np.isfinite(Y)].mean()).sum()), p
+
+    if np.isfinite(Y).any():
+        return (1.0 - np.square(Yhat - Y).sum() /
+            np.square(Yhat - Y[np.isfinite(Y)].mean()).sum()), p
+    else:
+        return np.nan, p
 
 
 def RCResiduals(crParams, X, Y):
@@ -241,38 +266,107 @@ def _get_generation_time_index(log2_masked_derivative_data, rank):
 
 
 class Phenotypes(Enum):
+    """Growth phenotypes from direct study of the growth data.
 
+    They are done on smooth data.
+
+    Each attribute can be called to perform that calculation given that sufficient data is supplied.
+
+    Attributes:
+        InitialValue: The first measurement
+        ExperimentFirstTwoAverage: Average of first two measurements
+        ExperimentBaseLine: Part of `GrowthLag` and `GrowthYield` calculations,
+            the average value of first three measurements.
+        ExperimentLowPoint: The minimum of first three measurements.
+        ExperimentEndAverage: The average of the last three measurements. Part of `GrowthYield` calculations.
+
+        ExperimentGrowthYield: The yield of the experiment, difference between beginning and end in population size.
+        GrowthLag: The duration of how long it took before growth started. Intercept between `InitialValue` and
+            the tangent at `GenterationTimeWhen` on log2-scale.
+
+        GenerationTime48h: The generation time at 48h after experiment start
+        ColonySize48h: The size of the population at 48h after experiment start
+
+        GenerationTime: The minimum time of population doubling
+        GenerationTimeStErrOfEstimate: The standard error of the estimate of the linear regression that
+            is the basis of `GenerationTime`
+        GenerationTimeWhen: When during the experiment `GenerationTime` occurred.
+        GenerationTimePopulationSize: The population size when `GenerationTime` occurred.
+
+        GenerationTime2: The second shortest time of population doubling
+        GenerationTime2StErrOfEstimate: The standard error of the estimate of the linear regression that
+            is the basis of `GenerationTime2`
+        GenerationTime2When: When during the experiment `GenerationTime2` occurred.
+
+        ChapmanRichardsFit: How well the Chapman-Richards growth model fit the data
+        ChapmanRichardsParam1: The first parameter of the model
+        ChapmanRichardsParam2: The second parameter of the model
+        ChapmanRichardsParam3: The third parameter of the model
+        ChapmanRichardsParam4: The fourth parameter of the model
+        ChapmanRichardsParamXtra: The additional parameter (population size at start of experiment).
+
+        ExperimentPopulationDoublings: The `GrowthYield` recalculated as population size doublings.
+            _NOTE_: This does not directly imply number of cell divisions or generations (death exisits!).
+        GrowthVelocityVector: The derivative of the growth data.
+
+    """
     InitialValue = 12
+    """:type Phenotypes"""
     ExperimentFirstTwoAverage = 13
+    """:type Phenotypes"""
     ExperimentBaseLine = 14
+    """:type Phenotypes"""
     ExperimentLowPoint = 15
+    """:type Phenotypes"""
+    ExperimentLowPointWhen = 23
+    """:type Phenotypes"""
     ExperimentEndAverage = 16
+    """:type Phenotypes"""
 
     ExperimentGrowthYield = 17
+    """:type Phenotypes"""
     GrowthLag = 18
+    """:type Phenotypes"""
 
     GenerationTime48h = 19
+    """:type Phenotypes"""
     ColonySize48h = 20
+    """:type Phenotypes"""
 
     GenerationTime = 0
+    """:type Phenotypes"""
     GenerationTimeStErrOfEstimate = 1
+    """:type Phenotypes"""
     GenerationTimeWhen = 2
+    """:type Phenotypes"""
     GenerationTimePopulationSize = 21
+    """:type Phenotypes"""
 
     GenerationTime2 = 3
+    """:type Phenotypes"""
     GenerationTime2StErrOfEstimate = 4
+    """:type Phenotypes"""
     GenerationTime2When = 5
+    """:type Phenotypes"""
 
     ChapmanRichardsFit = 6
+    """:type Phenotypes"""
     ChapmanRichardsParam1 = 7
+    """:type Phenotypes"""
     ChapmanRichardsParam2 = 8
+    """:type Phenotypes"""
     ChapmanRichardsParam3 = 9
+    """:type Phenotypes"""
     ChapmanRichardsParam4 = 10
+    """:type Phenotypes"""
     ChapmanRichardsParamXtra = 11
+    """:type Phenotypes"""
 
     ExperimentPopulationDoublings = 22
+    """:type Phenotypes"""
 
     GrowthVelocityVector = 1000
+    """:type Phenotypes"""
 
     def __call__(self, **kwargs):
 
@@ -302,6 +396,9 @@ class Phenotypes(Enum):
 
         elif self is Phenotypes.ExperimentLowPoint:
             return curve_low_point(**kwargs)
+
+        elif self is Phenotypes.ExperimentLowPointWhen:
+            return curve_low_point_time(**kwargs)
 
         elif self is Phenotypes.ChapmanRichardsFit:
             return kwargs['chapman_richards_fit'][0]

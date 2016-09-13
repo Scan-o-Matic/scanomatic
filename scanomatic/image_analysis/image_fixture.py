@@ -151,8 +151,8 @@ class FixtureImage(object):
         if coordinates is None:
             image_slice = conv_img
         else:
-            image_slice = conv_img[coordinates['d0_min']: coordinates['d0_max'],
-                                   coordinates['d1_min']: coordinates['d1_max']]
+            image_slice = conv_img[int(round(coordinates['d0_min'])): int(round(coordinates['d0_max'])),
+                                   int(round(coordinates['d1_min'])): int(round(coordinates['d1_max']))]
 
         gauss_size = max(image_slice.shape)
 
@@ -206,15 +206,16 @@ class FixtureImage(object):
             if (offset ** 2).sum() < min_refinement_sq_distance:
                 break
 
-        coordinates = {'d0_min': round(max(0, hit[0] - half_stencil_size[0] - 1)),
-                       'd0_max': round(min(conv_img.shape[0], hit[0] + half_stencil_size[0])),
-                       'd1_min': round(max(0, hit[1] - half_stencil_size[1] - 1)),
-                       'd1_max': round(min(conv_img.shape[1], hit[1] + half_stencil_size[1]))}
+        coordinates = {'d0_min': int(round(max(0, hit[0] - half_stencil_size[0] - 1))),
+                       'd0_max': int(round(min(conv_img.shape[0], hit[0] + half_stencil_size[0]))),
+                       'd1_min': int(round(max(0, hit[1] - half_stencil_size[1] - 1))),
+                       'd1_max': int(round(min(conv_img.shape[1], hit[1] + half_stencil_size[1])))}
 
         conv_img[coordinates['d0_min']: coordinates['d0_max'],
                  coordinates['d1_min']: coordinates['d1_max']] = conv_img.min() - 1
 
         return hit, conv_img
+
 
     def get_best_locations(self, conv_img, stencil_size, n, refine_hit_gauss_weight_size_fraction=2.0):
         """This returns the best locations as a list of coordinates on the

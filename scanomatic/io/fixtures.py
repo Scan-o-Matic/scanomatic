@@ -58,6 +58,10 @@ class FixtureSettings(object):
 
         return self._conf_path
 
+    def update_path_to_local_copy(self, local_directory):
+
+        self._conf_path = os.path.join(local_directory, Paths().experiment_local_fixturename)
+
     def get_marker_path(self):
 
         paths = Paths()

@@ -25,7 +25,7 @@ from scanomatic.generics.maths import mid50_mean as iqr_mean
 #
 
 
-class GridCell():
+class GridCell(object):
 
     MAX_THRESHOLD = 4200
     MIN_THRESHOLD = 0
@@ -46,7 +46,7 @@ class GridCell():
         self.image_index = -1
         self.features = AnalysisFeaturesFactory.create(index=tuple(self.position), data={})
         self._analysis_items = {}
-        """:type: dict[scanomatic.models.analysis_model.ITEMS | scanomatic.image_analysis.grid_cell_extra.CellItem]"""
+        """:type: dict[scanomatic.models.analysis_model.COMPARTMENTS | scanomatic.image_analysis.grid_cell_extra.CellItem]"""
         self._set_empty_analysis_items()
 
     def _set_empty_analysis_items(self):
@@ -78,8 +78,8 @@ class GridCell():
     def set_grid_coordinates(self, grid_cell_corners):
 
         flipped_long_axis_position = grid_cell_corners.shape[2] - self.position[0] - 1
-        self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]]
-        self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]]
+        self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]].astype(np.int)
+        self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]].astype(np.int)
 
     def set_new_data_source_space(self, space=VALUES.Cell_Estimates, bg_sub_source=None, polynomial_coeffs=None):
 
@@ -182,7 +182,6 @@ class GridCell():
         np.save(base_path + ".blob.filter.npy", blob.filter_array)
         np.save(base_path + ".blob.trash.current.npy", blob.trash_array)
         np.save(base_path + ".blob.trash.old.npy", blob.old_trash)
-
 
     def clear_features(self):
 

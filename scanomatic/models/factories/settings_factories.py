@@ -65,7 +65,8 @@ class UIServerFactory(AbstractModelFactory):
     STORE_SECTION_SERIALIZERS = {
         "port": int,
         "host": str,
-        "local": bool
+        "local": bool,
+        "master_key": str,
     }
 
     @classmethod

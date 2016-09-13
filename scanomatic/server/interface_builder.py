@@ -515,7 +515,7 @@ class InterfaceBuilder(SingeltonOneInit):
         global _SOM_SERVER
 
         scanner_manager = _SOM_SERVER.scanner_manager
-        operation = operation.to_upper()
+        operation = operation.upper()
 
         if not scanner_manager.connected_to_scanners:
 

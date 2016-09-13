@@ -16,7 +16,16 @@ def fold(f, iterable):
 
 
 class Filter(Enum):
+    """Marks for data positions.
 
+    Attributes:
+        Filter.OK: Data is good.
+        Filter.NoGrowth: Something was here but didn't grow
+        Filter.BadData: Somethingnt was here, grew but technical problems caused bad data.
+        Filter.Empty: Nothing was ever placed here
+        Filter.UndecidedProblem: Data is not good, but reason unknown, typically set when phenotype algorithms
+            generate non-finite values.
+    """
     OK = 0
     NoGrowth = 1
     BadData = 2

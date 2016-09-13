@@ -136,7 +136,7 @@ class CompileProjectFactory(AbstractModelFactory):
         images = [{'path': p, 'index': i} for i, p in enumerate(sorted(glob.glob(image_path)))]
 
         return cls.to_dict(cls.create(
-            compile_action=compile_action,
+            compile_action=compile_action.name,
             images=images,
             fixture_type=
                 is_local and compile_project_model.FIXTURE.Local.name or compile_project_model.FIXTURE.Global.name,

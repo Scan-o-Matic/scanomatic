@@ -323,8 +323,12 @@ class FixtureImage(object):
         rotations_ref = np.arccos(x_centered_ref / length_ref)
         rotations_ref = rotations_ref * (y_centered_ref > 0) + -1 * rotations_ref * (y_centered_ref < 0)
 
+        rotation = (rotations - rotations_ref).mean()
         """:type : float"""
-        return (rotations - rotations_ref).mean()
+        if np.abs(rotation) < 0.001:
+            return 0
+        else:
+            return rotation
 
     def _get_offset(self):
 
@@ -365,8 +369,10 @@ class FixtureImage(object):
 
             try:
 
-                return im[max(grayscale_model.y1 * scale, 0): min(grayscale_model.y2 * scale, im.shape[0]),
-                          max(grayscale_model.x1 * scale, 0): min(grayscale_model.x2 * scale, im.shape[1])]
+                return im[int(round(max(grayscale_model.y1 * scale, 0))):
+                          int(round(min(grayscale_model.y2 * scale, im.shape[0]))),
+                          int(round(max(grayscale_model.x1 * scale, 0))):
+                          int(round(min(grayscale_model.x2 * scale, im.shape[1])))]
 
             except (IndexError, TypeError):
 

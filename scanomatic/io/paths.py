@@ -40,6 +40,8 @@ class Paths(SingeltonOneInit):
         self.fixtures = os.path.join(self.config, "fixtures")
         self.images = os.path.join(self.root, "images")
 
+        self.source_location_file = os.path.join(self.root, "source_location.txt")
+
         self.desktop_file = "scan-o-matic.desktop"
         self.desktop_file_path = os.path.join(
             self.config, self.desktop_file)
@@ -50,7 +52,6 @@ class Paths(SingeltonOneInit):
         self.analysis = "scan-o-matic_analysis"
         self.experiment = "scan-o-matic_experiment"
         self.make_project = "scan-o-matic_compile_project"
-        self.revive = "scan-o-matic_relauncher"
         self.install_autostart = "scan-o-matic_autostart"
 
         self.config_main_app = os.path.join(self.config, 'main.config')
@@ -96,10 +97,10 @@ class Paths(SingeltonOneInit):
         self.fixture_grid_history_pattern = "{0}.grid.history"
 
         self.log = os.path.join(self.root, "logs")
+        self.log_ui_server = os.path.join(self.log, "ui_server.log")
+        self.log_server = os.path.join(self.log, "server.log")
         self.log_scanner_out = os.path.join(self.log, "scanner_{0}.stdout")
         self.log_scanner_err = os.path.join(self.log, "scanner_{0}.stderr")
-        self.log_main_out = os.path.join(self.log, "main.stdout")
-        self.log_main_err = os.path.join(self.log, "main.stderr")
 
         self.log_relaunch = os.path.join(self.log, "relaunch.log")
         self.log_project_progress = os.path.join(self.log, "progress.projects")
@@ -112,7 +113,7 @@ class Paths(SingeltonOneInit):
         self.analysis_polynomial = os.path.join(
             self.config, "calibration.polynomials")
         self.analysis_calibration_data = os.path.join(
-            self.config, "calibration.data")
+            self.config, "{0}calibration.data")
         self.analysis_graycsales = os.path.join(
             self.config, "grayscales.cfg")
 
@@ -135,6 +136,7 @@ class Paths(SingeltonOneInit):
         self.vector_meta_phenotypes_raw = "phenotypes_meta_vector_raw.npy"
         self.normalized_phenotypes = "normalized_phenotypes.npy"
         self.phenotypes_filter = "phenotypes_filter.npy"
+        self.phenotypes_reference_offsets = "phenotypes_reference_offsets.npy"
         self.phenotypes_filter_undo = "phenotypes_filter.undo.pickle"
         self.phenotypes_meta_data = "meta_data.pickle"
         self.phenotypes_meta_data_original_file_patern = "meta_data_{0}.{1}"

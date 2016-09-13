@@ -1,10 +1,16 @@
 import os
+
 from flask import Flask, jsonify
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response
+
+from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response, \
+    serve_numpy_as_image
+
 from scanomatic.io.paths import Paths
 from glob import glob
 from scanomatic.models.compile_project_model import CompileInstructionsModel
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
+from scanomatic.io import image_loading
+from scanomatic.data_processing import phenotyper
 
 
 def add_routes(app):
@@ -14,6 +20,25 @@ def add_routes(app):
      :type app: Flask
     :return:
     """
+
+    @app.route("/api/compile/colony_image")
+    @app.route("/api/compile/colony_image/")
+    @app.route("/api/compile/colony_image/<int:time_index>/<int:plate>/<int:outer>/<int:inner>/<path:project>")
+    @app.route("/api/compile/colony_image/<int:plate>/<int:outer>/<int:inner>/<path:project>")
+    def get_colony_image(time_index=0, plate=None, outer=None, inner=None, project=None):
+        base_url = "/api/compile/colony_image"
+
+        path = convert_url_to_path(project)
+
+        is_project = phenotyper.path_has_saved_project_state(path)
+
+        if not is_project:
+            return jsonify(success=True, is_project=False, is_endpoint=False,
+                           **get_search_results(path, base_url))
+
+        im = image_loading.load_colony_image((plate, outer, inner), analysis_directory=path, time_index=time_index)
+
+        return serve_numpy_as_image(im)
 
     @app.route("/api/compile/instructions", defaults={'project': ''})
     @app.route("/api/compile/instructions/", defaults={'project': ''})
@@ -61,3 +86,13 @@ def add_routes(app):
                     compile_instructions=compile_instructions,
                     scan_instructions=scan_instructions,
                     **get_search_results(path, base_url))))
+
+    @app.route("/api/compile/image_list/<location>/<path:project>")
+    def get_compile_image_list(location='root', project=None):
+
+        if location != 'root':
+            return jsonify(success=False, reason='Illegal location');
+
+        path = convert_url_to_path(project)
+        model = CompileProjectFactory.dict_from_path_and_fixture(path)
+        return jsonify(images=[{"index": m['index'], 'file': os.path.basename(m['path'])} for m in model['images']])

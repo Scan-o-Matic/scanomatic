@@ -1,19 +1,24 @@
+#!/usr/bin/env python
 import os
 import shutil
 import sys
 import glob
 import stat
+from subprocess import PIPE, call
 
 
 class MiniLogger(object):
 
-    def info(self, txt):
+    @staticmethod
+    def info(txt):
         print("INFO: " + txt)
 
-    def warning(self, txt):
+    @staticmethod
+    def warning(txt):
         print("WARNING: " + txt)
 
-    def error(self, txt):
+    @staticmethod
+    def error(txt):
         print("ERROR: " + txt)
 
 _logger = MiniLogger()
@@ -60,7 +65,7 @@ def _clone_all_files_in(path):
             yield local_child, True
 
 
-def install_data_files(target_base=None, source_base=None, install_list=None):
+def install_data_files(target_base=None, source_base=None, install_list=None, silent=False):
 
     if target_base is None:
         target_base = os.path.join(home_dir, installPath)
@@ -100,10 +105,8 @@ def install_data_files(target_base=None, source_base=None, install_list=None):
                 _logger.info("Creating file {0}".format(target_path))
                 fh = open(target_path, 'w')
                 fh.close()
-            elif (not os.path.isfile(target_path) or files[file_name]
-                    or 'y' in raw_input(
-                        "Do you want to overwrite {0} (y/N)".format(
-                            target_path)).lower()):
+            elif (not os.path.isfile(target_path) or files[file_name] or silent or 'y' in raw_input(
+                    "Do you want to overwrite {0} (y/N)".format(target_path)).lower()):
 
                 _logger.info(
                     "Copying file: {0} => {1}".format(
@@ -220,6 +223,38 @@ def purge():
     except IOError:
         _logger.info("No settings found")
 
+
+def test_executable_is_reachable(path='scan-o-matic'):
+
+    try:
+        ret = call([path, '--help'], stdout=PIPE)
+    except (IOError, OSError):
+        return False
+
+    return ret == 0
+
+
+def patch_bashrc_if_not_reachable(silent=False):
+
+    if not test_executable_is_reachable():
+
+        for path in [('~', '.local', 'bin')]:
+
+            path = os.path.expanduser(os.path.join(*path))
+            if test_executable_is_reachable(path) and 'PATH' in os.environ and path not in os.environ['PATH']:
+
+                if silent or 'y' in raw_input(
+                        "The installation path is not in your environmental variable PATH"
+                        "Do you wish me to append it in your `.bashrc` file? (Y/n)").lower():
+
+                    with open(os.path.expanduser(os.path.join("~", ".bashrc")), 'a') as fh:
+                        fh.write("\nexport PATH=$PATH:{0}\n".format(path))
+
+                    _logger.info("You will need to open a new terminal before you can launch `scan-o-matic`.")
+                else:
+                    _logger.info("Skipping PATH patching")
+
+#
 
 if __name__ == "__main__":
 
