@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-__version__ = "0.9991"
+__version__ = "v1.4"
 
 #
 # DEPENDENCIES
