@@ -29,7 +29,7 @@ from scanomatic.data_processing.phenotypes import PhenotypeDataType, infer_pheno
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.data_processing.strain_selector import StrainSelector
-from scanomatic.data_processing.norm import Offsets, get_normalized_data
+from scanomatic.data_processing.norm import Offsets, get_normalized_data, get_reference_positions
 
 
 def time_based_gaussian_weighted_mean(data, time, sigma=1):
@@ -1061,6 +1061,20 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
     def generation_times(self):
 
         return self.get_phenotype(Phenotypes.GenerationTime)
+
+    def get_reference_median(self, phenotype):
+        """ Getting reference position medians per plate.
+
+        Args:
+            phenotype: The phenotype of interest.
+
+        Returns: tuple of floats
+
+        """
+        plates = self.get_phenotype(phenotype, filtered=False)
+        return tuple(
+            np.median(np.ma.masked_invalid(get_reference_positions([plate], [offset]))) for
+            plate, offset in zip(plates, self._reference_surface_positions))
 
     def get_phenotype(self, phenotype, filtered=True, norm_state=NormState, **kwargs):
         """Getting phenotype data
