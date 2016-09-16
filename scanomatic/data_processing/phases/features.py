@@ -110,13 +110,15 @@ def filter_plate_custom_filter(
         phase_selector=lambda phases: phases[0]):
 
     def f(phenotype_vector):
+        if np.isnan(phenotype_vector):
+            return np.nan
 
         phases = tuple(d for t, d in phenotype_vector if t == phase)
         if phases_requirement(phases):
             return phase_selector(phases)[measure]
         return np.nan
 
-    return np.ma.masked_invalid(np.frompyfunc(f, 1, 1)(plate).astype(np.float))
+    return np.ma.masked_invalid((np.frompyfunc(f, 1, 1)(plate)).astype(np.float))
 
 
 def filter_plate_on_phase_id(plate, phases_id, measure):
@@ -130,7 +132,7 @@ def filter_plate_on_phase_id(plate, phases_id, measure):
         except (KeyError, TypeError):
             return np.nan
 
-    return np.ma.masked_invalid(np.frompyfunc(f, 2, 1)(plate, phases_id).astype(np.float))
+    return np.ma.masked_invalid((np.frompyfunc(f, 2, 1)(plate, phases_id)).astype(np.float))
 
 
 def _get_phase_id(plate, *phases):
@@ -138,6 +140,9 @@ def _get_phase_id(plate, *phases):
     l = len(phases)
 
     def f(v):
+        if np.isnan(v):
+            return -1
+
         v = zip(*v)[0]
         i = 0
         for id_phase, phase in enumerate(v):
@@ -154,7 +159,7 @@ def _get_phase_id(plate, *phases):
 
 def _phase_finder(phase_vector, phase):
 
-    if phase_vector:
+    if phase_vector and not np.isnan(phase_vector):
         return tuple(i for i, (p_type, p_data) in enumerate(phase_vector) if p_type == phase)
     return tuple()
 
@@ -162,7 +167,7 @@ def _phase_finder(phase_vector, phase):
 
 
 def _py_impulse_counter(phase_vector):
-    if phase_vector:
+    if phase_vector and not np.isnan(phase_vector):
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Impulse)
     return -1
 
@@ -176,7 +181,7 @@ def _np_ma_impulse_counter(phases):
 
 def _py_inner_impulse_counter(phase_vector):
 
-    if phase_vector:
+    if phase_vector and not np.isnan(phase_vector):
         acc = _phase_finder(phase_vector, CurvePhases.GrowthAcceleration)
         if not acc:
             return -1
@@ -196,7 +201,7 @@ def _np_ma_inner_impulse_counter(phases):
 
 
 def _py_collapse_counter(phase_vector):
-    if phase_vector:
+    if phase_vector and not np.isnan(phase_vector):
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Collapse)
     return -1
 
@@ -229,6 +234,9 @@ def _py_get_major_impulse_for_plate(phases):
     Returns: 2D numpy.ma.masked_array with indices of the major
         growth impulses in the vectors.
     """
+
+    if np.isnan(phases):
+        return -np.inf
 
     sort_order = np.argsort(tuple(
         p_data[CurvePhasePhenotypes.FractionYield] if
