@@ -986,6 +986,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         return tuple(v for v in set(self._normalizable_phenotypes.intersection(self._phenotypes_inclusion())))
 
+    @property
+    def phenotypes_that_dont_normalize(self):
+
+        return tuple(set(self.phenotypes).difference(self.phenotypes_that_normalize))
+
     def set_control_surface_offsets(self, offset, plate=None):
         """Set which of four offsets is the control surface positions.
 
