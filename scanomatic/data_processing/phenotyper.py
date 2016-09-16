@@ -1071,7 +1071,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         """
         plates = self.get_phenotype(phenotype, filtered=False)
         return tuple(
-            np.median(np.ma.masked_invalid(get_reference_positions([plate], [offset]))) for
+            np.ma.median(np.ma.masked_invalid(get_reference_positions([plate], [offset]))) for
             plate, offset in zip(plates, self._reference_surface_positions))
 
     def get_phenotype(self, phenotype, filtered=True, norm_state=NormState.Absolute,
