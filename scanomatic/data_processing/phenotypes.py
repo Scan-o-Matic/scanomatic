@@ -131,9 +131,9 @@ class PhenotypeDataType(Enum):
         elif self is PhenotypeDataType.UnderDevelopment:
 
             if phenotype is None:
-                return _under_development
+                return set(chain(_under_development, _trusted))
 
-            return phenotype in _trusted or phenotype in _under_development
+            return phenotype in _trusted or phenotype in set(chain(_under_development, _trusted))
 
         elif self is PhenotypeDataType.Other:
 
