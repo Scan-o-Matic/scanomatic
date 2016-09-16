@@ -204,9 +204,13 @@ class SaveData(Enum):
         Phenotyper.save_phenotypes: Exporting phenotypes to csv.
     """
     ScalarPhenotypesRaw = 0
+    """:type : SaveData"""
     ScalarPhenotypesNormalized = 1
+    """:type : SaveData"""
     VectorPhenotypesRaw = 10
+    """:type : SaveData"""
     VectorPhenotypesNormalized = 11
+    """:type : SaveData"""
 
 
 # TODO: Phenotypes should possibly not be indexed based on enum value either and use dict like the undo/filter
