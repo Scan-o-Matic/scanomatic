@@ -284,7 +284,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def __init__(self, raw_growth_data, times_data=None,
                  median_kernel_size=5, gaussian_filter_sigma=1.5, linear_regression_size=5,
-                 phenotypes=None, base_name=None, run_extraction=False,
+                 base_name=None, run_extraction=False, phenotypes=None,
                  phenotypes_inclusion=PhenotypeDataType.Trusted):
 
         self._paths = paths.Paths()
@@ -292,7 +292,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._raw_growth_data = raw_growth_data
         self._smooth_growth_data = None
 
-        self._phenotypes = None
+        self._phenotypes = phenotypes
         self._vector_phenotypes = None
         self._vector_meta_phenotypes = None
         self._normalized_phenotypes = None

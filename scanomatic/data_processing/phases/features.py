@@ -110,6 +110,7 @@ def filter_plate_custom_filter(
         phase_selector=lambda phases: phases[0]):
 
     def f(phenotype_vector):
+
         phases = tuple(d for t, d in phenotype_vector if t == phase)
         if phases_requirement(phases):
             return phase_selector(phases)[measure]
