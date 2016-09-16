@@ -15,6 +15,8 @@ from scipy.stats import norm
 #   INTERNAL DEPENDENCIES
 #
 
+# TODO: Something is wrong with phase features again
+
 import mock_numpy_interface
 import scanomatic.io.xml.reader as xml_reader_module
 import scanomatic.io.logger as logger
