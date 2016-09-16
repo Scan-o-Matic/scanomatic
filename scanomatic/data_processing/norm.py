@@ -699,6 +699,15 @@ def get_normalized_data(data, offsets=None):
     return normalisation(data, surface, log=True)
 
 
+def get_reference_positions(data, offsets, outlier_filter=True):
+
+    surface = get_control_position_filtered_arrays(data, offsets=offsets)
+    pre_surface = get_downsampled_plates(surface, offsets)
+    if outlier_filter:
+        apply_outlier_filter(pre_surface, measure=None)
+    return pre_surface
+
+
 def normalisation(data, norm_surface, log=False):
 
     normed_data = []
