@@ -1076,21 +1076,34 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             np.median(np.ma.masked_invalid(get_reference_positions([plate], [offset]))) for
             plate, offset in zip(plates, self._reference_surface_positions))
 
-    def get_phenotype(self, phenotype, filtered=True, norm_state=NormState, **kwargs):
+    def get_phenotype(self, phenotype, filtered=True, norm_state=NormState.Absolute,
+                      reference_values=None, **kwargs):
         """Getting phenotype data
 
         Args:
-            phenotype: The phenotype, either a `scanomatic.data_processing.growth_phenotypes.Phenotypes`
+            phenotype:
+                The phenotype, either a `scanomatic.data_processing.growth_phenotypes.Phenotypes`
                 or a `scanomatic.data_processing.curve_phase_phenotypes.CurvePhasePhenotypes`
-            filtered: Optional, if the curve-markings should be present or not on the returned object.
+            filtered:
+                Optional, if the curve-markings should be present or not on the returned object.
                 Defaults to including curve markings.
-            normalized: Optional, if it is the normalized data or the non-normalized data that should be returned.
-                Defaults to non-normalized data.
+            norm_state:
+                Optional, the type of data-state to return.
+                If `NormState.NormalizedAbsoluteNonBatched`, then `reference_values` must be supplied.
+            reference_values:
+                Optional, tuple of the means of all comparable plates-medians
+                of their reference positions.
+                One value per plate in the current project.
 
         Returns:
             List of plate-wise phenotype data. Depending on the `filtered` argument this is either `FilteredArrays`
             that behave similar to `numpy.ma.masked_array` or pure `numpy.ndarray`s for non-filtered data.
+
+        See Also:
+            Phenotyper.get_reference_median:
+                Produces reference values for plates.
         """
+
         if phenotype not in self:
 
             raise ValueError(
@@ -1099,7 +1112,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         if 'normalized' in kwargs:
             self._logger.warning("Deprecation warning: Use phenotyper.NormState enums instead")
-            norm_state = NormState.NormalizedRelative if kwargs['noramlized'] else NormState.Absolute
+            norm_state = NormState.NormalizedRelative if kwargs['normalized'] else NormState.Absolute
 
         if not PhenotypeDataType.Trusted(phenotype):
             self._logger.warning("The phenotype '{0}' has not been fully tested and verified!".format(phenotype.name))
@@ -1113,6 +1126,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         elif norm_state is NormState.Absolute:
 
             return self._get_abs_phenotype(phenotype, filtered)
+
+        else:
+
+            normed_plates = self._get_norm_phenotype(phenotype, filtered)
+            if norm_state is NormState.NormalizedAbsoluteBatched:
+                reference_values = self.get_reference_median(phenotype)
+            return tuple(ref_val * np.power(2, plate) for ref_val, plate in izip(reference_values, normed_plates))
 
     def _get_norm_phenotype(self, phenotype, filtered):
 
