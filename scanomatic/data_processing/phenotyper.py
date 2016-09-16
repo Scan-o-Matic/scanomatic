@@ -213,6 +213,41 @@ class SaveData(Enum):
     """:type : SaveData"""
 
 
+class NormState(Enum):
+    """Spatial bias normalisation state in data
+
+    Attributes:
+        NormState.Absolute:
+            Data is as produced by phenotype extraction.
+            This includes spatial 2D bias
+        NormState.NormalizedRelative:
+            Data is log_2 normalized relative values or
+            strain coefficients. This relates to LSC values
+            in Warringer (2003) but there are slight differences.
+        NormState.NormalizedAbsoluteBatched:
+            This is a plate-wise recalculation of absolute values
+            based on the `NormState.NormalizedRelative` values and
+            the median `NormState.Absolute` value of the reference
+            positions.
+            *Note that this reintroduces plate-wise batch effects,
+            so it is only recommended if all experiments for a given
+            environment were done on a single plate*
+        NormState.NormalizedAbsoluteNonBatched:
+            This is a global recalculation of absolute values
+            based on the `NormState.NormalizedRelative` values and
+            a supplied mean of all comparable plate-median reference position
+            `NormState.Absolute` values.
+    """
+    Absolute = 0
+    """:type : NormState"""
+    NormalizedRelative = 1
+    """:type : NormState"""
+    NormalizedAbsoluteBatched = 2
+    """:type : NormState"""
+    NormalizedAbsoluteNonBatched = 3
+    """:type : NormState"""
+
+
 # TODO: Phenotypes should possibly not be indexed based on enum value either and use dict like the undo/filter
 
 
@@ -1027,7 +1062,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         return self.get_phenotype(Phenotypes.GenerationTime)
 
-    def get_phenotype(self, phenotype, filtered=True, normalized=False):
+    def get_phenotype(self, phenotype, filtered=True, norm_state=NormState, **kwargs):
         """Getting phenotype data
 
         Args:
@@ -1048,12 +1083,16 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 "'{0}' has not been extracted, please re-run 'extract_phenotypes()' to include it.".format(
                     phenotype.name))
 
+        if 'normalized' in kwargs:
+            self._logger.warning("Deprecation warning: Use phenotyper.NormState enums instead")
+            norm_state = NormState.NormalizedRelative if kwargs['noramlized'] else NormState.Absolute
+
         if not PhenotypeDataType.Trusted(phenotype):
             self._logger.warning("The phenotype '{0}' has not been fully tested and verified!".format(phenotype.name))
 
         self._init_remove_filter_and_undo_actions()
 
-        if normalized:
+        if norm_state is NormState.NormalizedRelative:
 
             if self._normalized_phenotypes is None or not \
                     all(True if p is None else phenotype in p for p in self._normalized_phenotypes):
@@ -1074,7 +1113,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 return [None if p is None else p[phenotype] for _, p in enumerate(self._normalized_phenotypes)]
 
-        else:
+        elif norm_state is NormState.Absolute:
+
             if isinstance(phenotype, Phenotypes):
                 data = self._restructure_growth_phenotype(phenotype)
             else:
