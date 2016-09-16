@@ -1094,39 +1094,47 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         if norm_state is NormState.NormalizedRelative:
 
-            if self._normalized_phenotypes is None or not \
-                    all(True if p is None else phenotype in p for p in self._normalized_phenotypes):
-
-                if self._normalized_phenotypes is None:
-                    self._logger.warning("No phenotypes have been normalized")
-                else:
-                    self._logger.warning("Phenotypes {0} not included in normalized phenotypes".format(phenotype))
-                return [None for _ in self._phenotype_filter]
-
-            if filtered:
-
-                return [None if (p is None or phenotype not in self._phenotype_filter[id_plate]) else
-                        FilterArray(p[phenotype], self._phenotype_filter[id_plate][phenotype])
-                        for id_plate, p in enumerate(self._normalized_phenotypes)]
-
-            else:
-
-                return [None if p is None else p[phenotype] for _, p in enumerate(self._normalized_phenotypes)]
+            return self._get_norm_phenotype(phenotype, filtered)
 
         elif norm_state is NormState.Absolute:
 
-            if isinstance(phenotype, Phenotypes):
-                data = self._restructure_growth_phenotype(phenotype)
-            else:
-                data = self._get_phenotype_data(phenotype)
+            return self._get_abs_phenotype(phenotype, filtered)
 
-            if filtered:
+    def _get_norm_phenotype(self, phenotype, filtered):
 
-                return [None if (p is None or phenotype not in self._phenotype_filter[id_plate]) else
-                        FilterArray(p, self._phenotype_filter[id_plate][phenotype])
-                        for id_plate, p in enumerate(data)]
+        if self._normalized_phenotypes is None or not \
+                all(True if p is None else phenotype in p for p in self._normalized_phenotypes):
+
+            if self._normalized_phenotypes is None:
+                self._logger.warning("No phenotypes have been normalized")
             else:
-                return data
+                self._logger.warning("Phenotypes {0} not included in normalized phenotypes".format(phenotype))
+            return [None for _ in self._phenotype_filter]
+
+        if filtered:
+
+            return [None if (p is None or phenotype not in self._phenotype_filter[id_plate]) else
+                    FilterArray(p[phenotype], self._phenotype_filter[id_plate][phenotype])
+                    for id_plate, p in enumerate(self._normalized_phenotypes)]
+
+        else:
+
+            return [None if p is None else p[phenotype] for _, p in enumerate(self._normalized_phenotypes)]
+
+    def _get_abs_phenotype(self, phenotype, filtered):
+
+        if isinstance(phenotype, Phenotypes):
+            data = self._restructure_growth_phenotype(phenotype)
+        else:
+            data = self._get_phenotype_data(phenotype)
+
+        if filtered:
+
+            return [None if (p is None or phenotype not in self._phenotype_filter[id_plate]) else
+                    FilterArray(p, self._phenotype_filter[id_plate][phenotype])
+                    for id_plate, p in enumerate(data)]
+        else:
+            return data
 
     def _get_phenotype_data(self, phenotype):
 
