@@ -299,7 +299,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._times_data = None
 
-        self._limited_phenotypes = phenotypes
         self._phenotypes_inclusion = phenotypes_inclusion
         self._base_name = base_name
 
@@ -393,9 +392,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         else:
             self._logger.error("Value not a PhenotypeDataType!")
 
-    def phenotype_names(self):
+    def phenotype_names(self, normed=False):
 
-        return tuple(p.name for p in Phenotypes if not self._limited_phenotypes or p in self._limited_phenotypes)
+        return tuple(p.name for p in (self.phenotypes_that_normalize if normed else self.phenotypes))
 
     @classmethod
     def LoadFromXML(cls, path, **kwargs):
@@ -667,7 +666,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._logger.info(
             "Iteration started, will extract {0} phenotypes".format(
-                self.number_of_phenotypes))
+                self.get_number_of_phenotypes()))
 
         if not self.has_smooth_growth_data:
             self._smoothen()
@@ -804,7 +803,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         regression_size = self._linear_regression_size
         position_offset = (regression_size - 1) / 2
-        phenotypes_count = self.number_of_phenotypes
+        phenotypes_count = self.get_number_of_phenotypes()
 
         total_curves = float(self.number_of_curves)
 
@@ -980,12 +979,12 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     @property
     def phenotypes(self):
-        return tuple(p for p in chain(Phenotypes, CurvePhaseMetaPhenotypes) if p in self)
+        return tuple(p for p in self._phenotypes_inclusion())
 
     @property
     def phenotypes_that_normalize(self):
 
-        return tuple(v for v in self._normalizable_phenotypes)
+        return tuple(v for v in set(self._normalizable_phenotypes.intersection(self._phenotypes_inclusion())))
 
     def set_control_surface_offsets(self, offset, plate=None):
         """Set which of four offsets is the control surface positions.
@@ -1047,15 +1046,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         return sum(p.shape[0] * p.shape[1] if (p is not None and p.ndim > 1) else 0 for p in self._raw_growth_data)
 
-    @property
-    def number_of_phenotypes(self):
+    def get_number_of_phenotypes(self, normed=False):
 
-        if self._phenotypes is not None:
-            phenotypes = np.unique(tuple(p.shape[2] for p in self._phenotypes if p is not None and p.ndim == 3))
-            if phenotypes.size == 1:
-                return phenotypes[0]
-
-        return len(Phenotypes) if not self._limited_phenotypes else len(self._limited_phenotypes)
+        return len(self.phenotypes_that_normalize if normed else self.phenotypes)
 
     @property
     def generation_times(self):
@@ -1681,7 +1674,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         no_metadata = tuple()
 
         phenotype_filter = np.where([self._phenotypes_inclusion(p) for p in Phenotypes])[0]
-        phenotype_filter = phenotype_filter[phenotype_filter < self.number_of_phenotypes]
 
         for plate_index in self.enumerate_plates:
 
