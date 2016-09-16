@@ -160,7 +160,8 @@ def add_routes(app, rpc_client, is_debug_mode):
                     pheno.name: [None if p is None else p.tojson() for p in state.get_phenotype(pheno)]
                     for pheno in state.phenotypes},
                 phenotypes_normed={
-                    pheno.name: [p.tojson() for p in state.get_phenotype(pheno, normalized=True)]
+                    pheno.name: [p.tojson() for p in state.get_phenotype(
+                        pheno, norm_state=phenotyper.NormState.NormalizedRelative)]
                     for pheno in state.phenotypes_that_normalize},
                 curve_phases=json_data(curve_segments))
 
