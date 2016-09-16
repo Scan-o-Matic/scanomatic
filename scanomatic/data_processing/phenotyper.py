@@ -1130,7 +1130,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             normed_plates = self._get_norm_phenotype(phenotype, filtered)
             if norm_state is NormState.NormalizedAbsoluteBatched:
                 reference_values = self.get_reference_median(phenotype)
-            return tuple(ref_val * np.power(2, plate) for ref_val, plate in izip(reference_values, normed_plates))
+            return tuple((None if ref_val is None or plate is None else ref_val * np.power(2, plate))
+                         for ref_val, plate in izip(reference_values, normed_plates))
 
     def _get_norm_phenotype(self, phenotype, filtered):
 
