@@ -1175,8 +1175,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def _get_phenotype_data(self, phenotype):
 
-        if isinstance(phenotype, CurvePhaseMetaPhenotypes):
+        if isinstance(phenotype, CurvePhaseMetaPhenotypes) and self._vector_meta_phenotypes is not None:
             return [None if p is None else p[phenotype] for p in self._vector_meta_phenotypes]
+        return [None for _ in self.enumerate_plates]
 
     def _restructure_growth_phenotype(self, phenotype):
 
