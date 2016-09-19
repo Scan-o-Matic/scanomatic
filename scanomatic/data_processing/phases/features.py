@@ -462,5 +462,5 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
             _np_get_flanking_angle_relation(plate, indices.data, indices.mask).astype(np.float))
 
     else:
-
-        return np.ma.masked_invalid(np.ones_like(plate.shape) * np.nan)
+        _l.error("Not implemented phenotype extraction: {0}".format(meta_phenotype))
+        return np.ones_like(plate) * np.nan
