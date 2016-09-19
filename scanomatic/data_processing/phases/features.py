@@ -118,7 +118,7 @@ def filter_plate_custom_filter(
             return phase_selector(phases)[measure]
         return np.nan
 
-    return np.ma.masked_invalid((np.frompyfunc(f, 1, 1)(plate)).astype(np.float))
+    return np.frompyfunc(f, 1, 1)(plate).astype(float)
 
 
 def filter_plate_on_phase_id(plate, phases_id, measure):
@@ -132,7 +132,7 @@ def filter_plate_on_phase_id(plate, phases_id, measure):
         except (KeyError, TypeError):
             return np.nan
 
-    return np.ma.masked_invalid((np.frompyfunc(f, 2, 1)(plate, phases_id)).astype(np.float))
+    return np.frompyfunc(f, 2, 1)(plate, phases_id).astype(np.float)
 
 
 def _get_phase_id(plate, *phases):
@@ -197,7 +197,9 @@ _np_inner_impulse_counter = np.frompyfunc(_py_inner_impulse_counter, 1, 1)
 
 def _np_ma_inner_impulse_counter(phases):
 
-    return np.ma.masked_less(_np_inner_impulse_counter(phases), 0)
+    data = _np_inner_impulse_counter(phases).astype(float)
+    data[data < 0] = np.nan
+    return data
 
 
 def _py_collapse_counter(phase_vector):
@@ -210,7 +212,9 @@ _np_collapse_counter = np.frompyfunc(_py_collapse_counter, 1, 1)
 
 def _np_ma_collapse_counter(phases):
 
-    return np.ma.masked_less(_np_collapse_counter(phases), 0)
+    data = _np_collapse_counter(phases)
+    data[data < 0] = np.nan
+    return data
 
 # END REGION: Phase counters
 
@@ -360,7 +364,7 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
 
         lag = (impulse_intercept - flat_intercept) / (flat_slope - impulse_slope)
         lag[lag < 0] = np.nan
-        return np.ma.masked_invalid(lag)
+        return lag
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialLagAlternativeModel:
 
@@ -402,7 +406,7 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
 
         lag[(lag < 0) | (impulse_start < low_point_time)] = np.nan
 
-        return np.ma.masked_invalid(lag)
+        return lag
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle:
 
@@ -458,8 +462,7 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
     elif meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry:
 
         indices = _np_ma_get_major_impulse_indices(plate)
-        return np.ma.masked_invalid(
-            _np_get_flanking_angle_relation(plate, indices.data, indices.mask).astype(np.float))
+        return _np_get_flanking_angle_relation(plate, indices.data, indices.mask).astype(np.float)
 
     else:
         _l.error("Not implemented phenotype extraction: {0}".format(meta_phenotype))
