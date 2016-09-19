@@ -1430,6 +1430,21 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if len(self._reference_surface_positions) != len(self._phenotypes):
             self.set_control_surface_offsets(Offsets.LowerRight)
 
+    def _init_plate_filter(self, plate_index, phenotype, phenotype_data):
+
+        self._phenotype_filter[plate_index][phenotype] = np.zeros(
+            self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
+
+        if phenotype_data is not None:
+            self._phenotype_filter[plate_index][phenotype][np.where(np.isfinite(phenotype_data) == False)] = \
+                Filter.UndecidedProblem.value
+
+        if self._phenotype_filter_undo[plate_index]:
+            self._logger.warning(
+                "Undo cleared for plate {0} because of rewriting, better solution not yet implemented.".format(
+                    plate_index + 1
+                ))
+
     def _init_remove_filter_and_undo_actions(self):
 
         if self._phenotypes is None:
@@ -1437,48 +1452,35 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             self._phenotype_filter_undo = None
             return
 
-        if not self._correct_shapes(self._phenotypes, self._phenotype_filter):
+        if self._phenotype_filter is None or len(self._phenotypes) != len(self._phenotype_filter):
 
-            if self._phenotype_filter is not None:
-                self._logger.info("Filter & undo doesn't match number of plates and their shapes. Rewriting...")
+            self._logger.warning("Filter doesn't match number of plates. Rewriting...")
             self._phenotype_filter = np.array([{} for _ in range(self._phenotypes.shape[0])], dtype=np.object)
             self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
-        elif not self._correct_shapes(self._phenotypes, self._phenotype_filter_undo):
+        elif self._phenotype_filter_undo is None or len(self._phenotypes) != len(self._phenotype_filter_undo):
+
+            self._logger.warning("Undo doesn't match number of plates. Rewriting...")
             self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
-        for plate_index in range(self._phenotypes.shape[0]):
+        for phenotype in self.phenotypes:
 
-            if self._phenotypes[plate_index] is None:
-                continue
+            phenotype_data = self._get_abs_phenotype(phenotype, False)
 
-            for phenotype in Phenotypes:
+            for plate_index in range(self._phenotypes.shape[0]):
 
-                # If phenotype is included and extracted but no filter exists set default
-                if self._phenotypes_inclusion(phenotype) and phenotype not in self._phenotype_filter[plate_index]\
-                        and phenotype.value < self._phenotypes[plate_index].shape[-1]:
+                if phenotype_data[plate_index] is None:
 
-                    self._phenotype_filter[plate_index][phenotype] = np.zeros(
-                        self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
+                    continue
 
-                    self._phenotype_filter[plate_index][phenotype][
-                        np.where(np.isfinite(self._phenotypes[plate_index][..., phenotype.value]) == False)] = \
-                        Filter.UndecidedProblem.value
+                if phenotype not in self._phenotype_filter[plate_index]:
 
-            if self._vector_meta_phenotypes is not None:
+                    self._init_plate_filter(plate_index, phenotype, phenotype_data[plate_index])
 
-                for phenotype in CurvePhaseMetaPhenotypes:
+                elif self._phenotype_filter[plate_index][phenotype].shape != phenotype_data[0].shape:
 
-                    if self._phenotypes_inclusion(phenotype) and phenotype in self and \
-                            phenotype not in self._phenotype_filter[plate_index]:
-
-                        self._phenotype_filter[plate_index][phenotype] = np.zeros(
-                            self._vector_meta_phenotypes[plate_index][phenotype].shape, dtype=np.int8)
-
-                        self._phenotype_filter[plate_index][phenotype][
-                            np.where(np.isfinite(
-                                self._vector_meta_phenotypes[plate_index][phenotype]) == False)] = \
-                            Filter.UndecidedProblem.value
+                    self._logger.warning("The phenotype filter doesn't match plate {0} shape!".format(plate_index + 1))
+                    self._init_plate_filter(plate_index, phenotype, phenotype_data[plate_index])
 
     def infer_filter(self, template, *phenotypes):
         """Transfer all marks on one phenotype to other phenotypes.
