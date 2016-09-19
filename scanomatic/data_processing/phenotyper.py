@@ -1299,6 +1299,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
                 self._phenotypes = None
+
             else:
                 self._phenotypes = data
 
@@ -1402,28 +1403,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 new_data.append(None)
 
         return np.array(new_data)
-
-    @staticmethod
-    def _correct_shapes(guide, obj):
-
-        if guide is None:
-            return True
-        elif obj is None:
-            return False
-        elif len(guide) != len(obj):
-            return False
-
-        if isinstance(obj, np.ndarray):
-            for g, o in zip(guide, obj):
-                if (g is None) is not (o is None):
-                    return False
-                if isinstance(o, dict):
-                    for v in o.itervalues():
-                        if g.shape[:2] != v.shape[:2]:
-                            return False
-                elif g.shape[:2] != o.shape[:2]:
-                    return False
-        return True
 
     def _init_default_offsets(self):
 
