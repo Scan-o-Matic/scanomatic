@@ -897,8 +897,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                         phenotype, VectorPhenotypes.PhasesPhenotypes))
                     continue
 
-                vector_meta_phenotypes[phenotype] = extract_phenotypes(
-                    vector_phenotypes[VectorPhenotypes.PhasesPhenotypes], phenotype, phenotypes).astype(np.float)
+                phenotype_data = extract_phenotypes(vector_phenotypes[VectorPhenotypes.PhasesPhenotypes],
+                                                    phenotype, phenotypes)
+
+                vector_meta_phenotypes[phenotype] = phenotype_data.astype(np.float)
 
             self._logger.info("Plate {0} Done".format(id_plate + 1))
             curves_in_completed_plates += 0 if plate is None else plate_flat_regression_strided.shape[0]
