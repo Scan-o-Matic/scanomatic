@@ -110,12 +110,13 @@ def filter_plate_custom_filter(
         phase_selector=lambda phases: phases[0]):
 
     def f(phenotype_vector):
-        if np.isnan(phenotype_vector):
-            return np.nan
 
-        phases = tuple(d for t, d in phenotype_vector if t == phase)
-        if phases_requirement(phases):
-            return phase_selector(phases)[measure]
+        try:
+            phases = tuple(d for t, d in phenotype_vector if t == phase)
+            if phases_requirement(phases):
+                return phase_selector(phases)[measure]
+        except TypeError:
+            pass
         return np.nan
 
     return np.frompyfunc(f, 1, 1)(plate).astype(float)
@@ -140,18 +141,17 @@ def _get_phase_id(plate, *phases):
     l = len(phases)
 
     def f(v):
-        if np.isnan(v):
-            return -1
-
-        v = zip(*v)[0]
-        i = 0
-        for id_phase, phase in enumerate(v):
-            if i < l:
-                if phase is phases[i]:
-                    i += 1
-                    if i == l:
-                        return id_phase
-
+        try:
+            v = zip(*v)[0]
+            i = 0
+            for id_phase, phase in enumerate(v):
+                if i < l:
+                    if phase is phases[i]:
+                        i += 1
+                        if i == l:
+                            return id_phase
+        except TypeError:
+            pass
         return -1
 
     return np.frompyfunc(f, 1, 1)(plate).astype(np.int)
@@ -159,29 +159,33 @@ def _get_phase_id(plate, *phases):
 
 def _phase_finder(phase_vector, phase):
 
-    if phase_vector and not np.isnan(phase_vector):
+    try:
         return tuple(i for i, (p_type, p_data) in enumerate(phase_vector) if p_type == phase)
-    return tuple()
+    except TypeError:
+        return tuple()
 
 # REGION: Phase counters
 
 
 def _py_impulse_counter(phase_vector):
-    if phase_vector and not np.isnan(phase_vector):
+    try:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Impulse)
-    return -1
+    except TypeError:
+        return -1
 
 _np_impulse_counter = np.frompyfunc(_py_impulse_counter, 1, 1)
 
 
 def _np_ma_impulse_counter(phases):
 
-    return np.ma.masked_less(_np_impulse_counter(phases), 0)
+    data = _np_impulse_counter(phases)
+    data[data < 0] = np.nan
+    return data
 
 
 def _py_inner_impulse_counter(phase_vector):
 
-    if phase_vector and not np.isnan(phase_vector):
+    try:
         acc = _phase_finder(phase_vector, CurvePhases.GrowthAcceleration)
         if not acc:
             return -1
@@ -189,8 +193,8 @@ def _py_inner_impulse_counter(phase_vector):
         if not ret:
             return -1
         return _py_impulse_counter(phase_vector[acc[0]: ret[-1]])
-
-    return -1
+    except TypeError:
+        return -1
 
 _np_inner_impulse_counter = np.frompyfunc(_py_inner_impulse_counter, 1, 1)
 
@@ -203,9 +207,10 @@ def _np_ma_inner_impulse_counter(phases):
 
 
 def _py_collapse_counter(phase_vector):
-    if phase_vector and not np.isnan(phase_vector):
+    try:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Collapse)
-    return -1
+    except TypeError:
+        return -1
 
 _np_collapse_counter = np.frompyfunc(_py_collapse_counter, 1, 1)
 
@@ -235,23 +240,24 @@ def _py_get_major_impulse_for_plate(phases):
     Args:
         phases: Plate of phase data
 
-    Returns: 2D numpy.ma.masked_array with indices of the major
+    Returns: 2D numpy.ndarray with indices of the major
         growth impulses in the vectors.
     """
 
-    if np.isnan(phases):
-        return -np.inf
+    try:
 
-    sort_order = np.argsort(tuple(
-        p_data[CurvePhasePhenotypes.FractionYield] if
-        p_data is not None and p_data[CurvePhasePhenotypes.FractionYield] else -np.inf for p_type, p_data in phases))
+        sort_order = np.argsort(tuple(
+            p_data[CurvePhasePhenotypes.FractionYield] if
+            p_data is not None and p_data[CurvePhasePhenotypes.FractionYield] else -np.inf for p_type, p_data in phases))
 
-    impulses = np.array(tuple(
-        (i, v) for i, v in enumerate(sort_order) if
-        phases[i][VectorPhenotypes.PhasesClassifications.value] == CurvePhases.Impulse))
+        impulses = np.array(tuple(
+            (i, v) for i, v in enumerate(sort_order) if
+            phases[i][VectorPhenotypes.PhasesClassifications.value] == CurvePhases.Impulse))
 
-    if impulses.any():
-        return impulses[np.argmax(impulses[:, -1])][0]
+        if impulses.any():
+            return impulses[np.argmax(impulses[:, -1])][0]
+    except TypeError:
+        pass
     return -1
 
 _np_get_major_impulse_for_plate = np.frompyfunc(_py_get_major_impulse_for_plate, 1, 1)
@@ -259,12 +265,14 @@ _np_get_major_impulse_for_plate = np.frompyfunc(_py_get_major_impulse_for_plate,
 
 def _np_ma_get_major_impulse_indices(phases):
 
-    return np.ma.masked_less(_np_get_major_impulse_for_plate(phases), 0)
+    data = _np_get_major_impulse_for_plate(phases)
+    data[data < 0] = np.nan
+    return data
 
 # END REGION: Major pulse index
 
 
-def _py_get_flanking_angle_relation(phases, major_impulse_index, masked):
+def _py_get_flanking_angle_relation(phases, major_impulse_index):
 
     def _flank_angle(flank, impulse):
 
@@ -286,7 +294,7 @@ def _py_get_flanking_angle_relation(phases, major_impulse_index, masked):
         else:
             return np.inf
 
-    if masked or \
+    if np.isnan(major_impulse_index) or \
             phases[major_impulse_index][VectorPhenotypes.PhasesPhenotypes.value] is None:
         return np.inf
     if phases[major_impulse_index][VectorPhenotypes.PhasesClassifications.value] is not CurvePhases.Impulse:
@@ -304,7 +312,7 @@ def _py_get_flanking_angle_relation(phases, major_impulse_index, masked):
 
     return a2 / a1
 
-_np_get_flanking_angle_relation = np.frompyfunc(_py_get_flanking_angle_relation, 3, 1)
+_np_get_flanking_angle_relation = np.frompyfunc(_py_get_flanking_angle_relation, 2, 1)
 
 
 def extract_phenotypes(plate, meta_phenotype, phenotypes):
@@ -462,7 +470,7 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
     elif meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry:
 
         indices = _np_ma_get_major_impulse_indices(plate)
-        return _np_get_flanking_angle_relation(plate, indices.data, indices.mask).astype(np.float)
+        return _np_get_flanking_angle_relation(plate, indices).astype(np.float)
 
     else:
         _l.error("Not implemented phenotype extraction: {0}".format(meta_phenotype))
