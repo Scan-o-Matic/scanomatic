@@ -81,6 +81,8 @@ class PhenotypeDataType(Enum):
             Phenotypes.GrowthLag,
             Phenotypes.ExperimentLowPoint,
             Phenotypes.ExperimentLowPointWhen,
+            Phenotypes.ResidualGrowth,
+            Phenotypes.ResidualGrowthAsPopulationDoublings,
             CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution,
             CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime,
             CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution,

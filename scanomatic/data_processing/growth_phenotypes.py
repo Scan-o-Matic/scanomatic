@@ -97,6 +97,22 @@ def growth_curve_doublings(curve_smooth_growth_data, *args, **kwargs):
     return np.log2(curve_end_average(curve_smooth_growth_data)) - np.log2(curve_baseline(curve_smooth_growth_data))
 
 
+def residual_growth(curve_smooth_growth_data, *args, **kwargs):
+    return curve_end_average(curve_smooth_growth_data) - \
+           population_size_at_generation_time(
+               curve_smooth_growth_data=curve_smooth_growth_data,
+               index=_get_generation_time_index(kwargs['derivative_values_log2'], 0),
+               **kwargs)
+
+
+def residual_growth_as_population_doublings(curve_smooth_growth_data, *args, **kwargs):
+    return np.log2(curve_end_average(curve_smooth_growth_data)) - \
+           np.log2(population_size_at_generation_time(
+               curve_smooth_growth_data=curve_smooth_growth_data,
+               index=_get_generation_time_index(kwargs['derivative_values_log2'], 0),
+               **kwargs))
+
+
 def growth_48h(curve_smooth_growth_data, index48h, *args, **kwargs):
     if index48h < 0 or index48h >= curve_smooth_growth_data.size:
         _logger.warning("Faulty index {0} for 48h size (max {1})".format(index48h, curve_smooth_growth_data.size - 1))
@@ -337,6 +353,13 @@ class Phenotypes(Enum):
             doublings.
             _NOTE_: This does not directly imply number of cell
             divisions or generations (death exisits!).
+
+        Phenotypes.ResidualGrowth:
+            The amount of growth that happens after time of maximum
+            growth (`Phenotypes.GenerationTimeWhen`).
+        Phenotypes.ResidualGrowthAsPopulationDoublings:
+            The number of times the population doubles after time
+            of maximum growth (`Phenotypes.GenerationTimeWhen`).
         Phenotypes.GrowthVelocityVector:
             The derivative of the growth data.
 
@@ -396,6 +419,11 @@ class Phenotypes(Enum):
     ExperimentPopulationDoublings = 22
     """:type Phenotypes"""
 
+    ResidualGrowth = 24
+    """:type Phenotypes"""
+    ResidualGrowthAsPopulationDoublings = 25
+    """:type Phenotypes"""
+
     GrowthVelocityVector = 1000
     """:type Phenotypes"""
 
@@ -424,6 +452,12 @@ class Phenotypes(Enum):
 
         elif self is Phenotypes.ExperimentPopulationDoublings:
             return growth_curve_doublings(**kwargs)
+
+        elif self is Phenotypes.ResidualGrowth:
+            return residual_growth(**kwargs)
+
+        elif self is Phenotypes.ResidualGrowthAsPopulationDoublings:
+            return residual_growth_as_population_doublings(**kwargs)
 
         elif self is Phenotypes.ExperimentLowPoint:
             return curve_low_point(**kwargs)

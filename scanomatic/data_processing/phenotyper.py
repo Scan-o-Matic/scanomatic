@@ -327,12 +327,27 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._meta_data = None
 
         self._normalizable_phenotypes = {
-            Phenotypes.GenerationTime, Phenotypes.ExperimentGrowthYield, Phenotypes.ExperimentPopulationDoublings,
-            Phenotypes.GenerationTimePopulationSize, Phenotypes.GrowthLag, Phenotypes.ColonySize48h,
-            CurvePhaseMetaPhenotypes.InitialLag, Phenotypes.ExperimentLowPoint,
+            Phenotypes.GenerationTime,
+            Phenotypes.GenerationTimePopulationSize,
+            Phenotypes.ExperimentGrowthYield,
+            Phenotypes.ExperimentPopulationDoublings,
+            Phenotypes.GenerationTimePopulationSize,
+            Phenotypes.GrowthLag,
+            Phenotypes.ColonySize48h,
+            Phenotypes.ResidualGrowth,
+            Phenotypes.ResidualGrowthAsPopulationDoublings,
+            Phenotypes.ExperimentLowPoint,
+            Phenotypes.ExperimentBaseLine,
+
+            CurvePhaseMetaPhenotypes.InitialLag,
             CurvePhaseMetaPhenotypes.InitialLagAlternativeModel,
             CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime,
-            CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution
+            CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution,
+            CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry,
+            CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle,
+            CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteIntersect,
+            CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteAngle,
+            CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteIntersect,
         }
 
         self._reference_surface_positions = [Offsets.LowerRight() for _ in self.enumerate_plates]
