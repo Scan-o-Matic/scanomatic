@@ -248,7 +248,8 @@ def _py_get_major_impulse_for_plate(phases):
 
         sort_order = np.argsort(tuple(
             p_data[CurvePhasePhenotypes.FractionYield] if
-            p_data is not None and p_data[CurvePhasePhenotypes.FractionYield] else -np.inf for p_type, p_data in phases))
+            p_data is not None and p_data[CurvePhasePhenotypes.FractionYield] else -np.inf for p_type, p_data in phases
+        ))
 
         impulses = np.array(tuple(
             (i, v) for i, v in enumerate(sort_order) if
