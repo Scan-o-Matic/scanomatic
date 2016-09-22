@@ -1257,29 +1257,29 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         shape = tuple(self.plate_shapes)[plate]
 
-        if Phenotypes.GenerationTime in self:
-            gt = self.get_phenotype(Phenotypes.GenerationTime)[plate]
-        else:
+        try:
+            gt = self.get_phenotype(Phenotypes.GenerationTime)[plate].data
+        except (AttributeError, IndexError):
             gt = np.ones(shape)
 
-        if Phenotypes.GenerationTimeStErrOfEstimate in self:
-            gt_err = self.get_phenotype(Phenotypes.GenerationTimeStErrOfEstimate)[plate]
-        else:
+        try:
+            gt_err = self.get_phenotype(Phenotypes.GenerationTimeStErrOfEstimate)[plate].data
+        except (AttributeError, IndexError):
             gt_err = np.ones(shape)
 
-        if Phenotypes.ChapmanRichardsFit in self:
-            cr_fit = self.get_phenotype(Phenotypes.ChapmanRichardsFit)[plate]
-        else:
+        try:
+            cr_fit = self.get_phenotype(Phenotypes.ChapmanRichardsFit)[plate].data
+        except (AttributeError, IndexError):
             cr_fit = np.ones(shape)
 
-        if Phenotypes.GrowthLag in self:
-            lag = self.get_phenotype(Phenotypes.GrowthLag)[plate]
-        else:
+        try:
+            lag = self.get_phenotype(Phenotypes.GrowthLag)[plate].data
+        except (AttributeError, IndexError):
             lag = np.ones(shape)
 
-        if Phenotypes.ExperimentGrowthYield in self:
-            growth = self.get_phenotype(Phenotypes.ExperimentGrowthYield)[plate]
-        else:
+        try:
+            growth = self.get_phenotype(Phenotypes.ExperimentGrowthYield)[plate].data
+        except (AttributeError, IndexError):
             growth = np.ones(shape)
 
         gt_mean = gt[np.isfinite(gt)].mean()
