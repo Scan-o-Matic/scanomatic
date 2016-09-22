@@ -273,41 +273,72 @@ class Phenotypes(Enum):
     Each attribute can be called to perform that calculation given that sufficient data is supplied.
 
     Attributes:
-        InitialValue: The first measurement
-        ExperimentFirstTwoAverage: Average of first two measurements
-        ExperimentBaseLine: Part of `GrowthLag` and `GrowthYield` calculations,
+        Phenotypes.InitialValue:
+            The first measurement
+        Phenotypes.ExperimentFirstTwoAverage:
+            Average of first two measurements
+        Phenotypes.ExperimentBaseLine:
+            Part of `GrowthLag` and `GrowthYield` calculations,
             the average value of first three measurements.
-        ExperimentLowPoint: The minimum of first three measurements.
-        ExperimentEndAverage: The average of the last three measurements. Part of `GrowthYield` calculations.
+        Phenotypes.ExperimentLowPoint:
+            The minimum of first three measurements.
+        Phenotypes.ExperimentEndAverage:
+            The average of the last three measurements.
+            Part of `GrowthYield` calculations.
 
-        ExperimentGrowthYield: The yield of the experiment, difference between beginning and end in population size.
-        GrowthLag: The duration of how long it took before growth started. Intercept between `InitialValue` and
-            the tangent at `GenterationTimeWhen` on log2-scale.
+        Phenotypes.ExperimentGrowthYield:
+            The yield of the experiment, difference between beginning
+            and end in population size.
+        Phenotypes.GrowthLag:
+            The duration of how long it took before growth started.
+            Intercept between `InitialValue` and the tangent at
+            `Phenotypes.GenerationTimeWhen` on log2-scale.
 
-        GenerationTime48h: The generation time at 48h after experiment start
-        ColonySize48h: The size of the population at 48h after experiment start
+        Phenotypes.GenerationTime48h:
+            The generation time at 48h after experiment start
+        Phenotypes.ColonySize48h:
+            The size of the population at 48h after experiment start
 
-        GenerationTime: The minimum time of population doubling
-        GenerationTimeStErrOfEstimate: The standard error of the estimate of the linear regression that
-            is the basis of `GenerationTime`
-        GenerationTimeWhen: When during the experiment `GenerationTime` occurred.
-        GenerationTimePopulationSize: The population size when `GenerationTime` occurred.
+        Phenotypes.GenerationTime:
+            The minimum time of population doubling
+        Phenotypes.GenerationTimeStErrOfEstimate:
+            The standard error of the estimate of the linear
+            regression that is the basis of `GenerationTime`.
+        Phenotypes.GenerationTimeWhen:
+            When during the experiment `GenerationTime` occurred.
+        Phenotypes.GenerationTimePopulationSize:
+            The population size when `GenerationTime` occurred.
 
-        GenerationTime2: The second shortest time of population doubling
-        GenerationTime2StErrOfEstimate: The standard error of the estimate of the linear regression that
-            is the basis of `GenerationTime2`
-        GenerationTime2When: When during the experiment `GenerationTime2` occurred.
+        Phenotypes.GenerationTime2:
+            The second shortest time of population doubling
+        Phenotypes.GenerationTime2StErrOfEstimate:
+            The standard error of the estimate of the linear
+            regression that is the basis of
+            `Phenotypes.GenerationTime2`.
+        Phenotypes.GenerationTime2When:
+            When during the experiment `GenerationTime2` occurred.
 
-        ChapmanRichardsFit: How well the Chapman-Richards growth model fit the data
-        ChapmanRichardsParam1: The first parameter of the model
-        ChapmanRichardsParam2: The second parameter of the model
-        ChapmanRichardsParam3: The third parameter of the model
-        ChapmanRichardsParam4: The fourth parameter of the model
-        ChapmanRichardsParamXtra: The additional parameter (population size at start of experiment).
+        Phenotypes.ChapmanRichardsFit:
+            How well the Chapman-Richards growth model fit the data
+        Phenotypes.ChapmanRichardsParam1:
+            The first parameter of the model
+        Phenotypes.ChapmanRichardsParam2:
+            The second parameter of the model
+        Phenotypes.ChapmanRichardsParam3:
+            The third parameter of the model
+        Phenotypes.ChapmanRichardsParam4:
+            The fourth parameter of the model
+        Phenotypes.ChapmanRichardsParamXtra:
+            The additional parameter (population size at start of
+            experiment).
 
-        ExperimentPopulationDoublings: The `GrowthYield` recalculated as population size doublings.
-            _NOTE_: This does not directly imply number of cell divisions or generations (death exisits!).
-        GrowthVelocityVector: The derivative of the growth data.
+        Phenotypes.ExperimentPopulationDoublings:
+            The `GrowthYield` recalculated as population size
+            doublings.
+            _NOTE_: This does not directly imply number of cell
+            divisions or generations (death exisits!).
+        Phenotypes.GrowthVelocityVector:
+            The derivative of the growth data.
 
     """
     InitialValue = 12
