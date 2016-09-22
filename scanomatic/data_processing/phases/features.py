@@ -48,15 +48,10 @@ class CurvePhaseMetaPhenotypes(Enum):
             The intercept time of the linear model of the first `CurvePhases.Flat` and the first
             `CurvePhases.Impulse`. Note that this does not have to be the major impulse in the above
             measurements.
-        CurvePhaseMetaPhenotypes.ExperimentDoublings:
-            (Not implemented) Total doublings
         CurvePhaseMetaPhenotypes.Modalities:
             The number of `CurvePhases.Impulse`
         CurvePhaseMetaPhenotypes.Collapses:
             The number of `CurvePhases.Collapse`
-
-        CurvePhaseMetaPhenotypes.ResidualGrowth:
-            (Not implemented) Classifying the growth that happens after the last `CurvePhases.Impulse`.
 
     See Also:
         filter_plate: Get one of these out of a plate of phase segmentation information
@@ -75,14 +70,10 @@ class CurvePhaseMetaPhenotypes(Enum):
     InitialLag = 20
     InitialLagAlternativeModel = 22
 
-    ExperimentDoublings = 21
-
     Modalities = 25
     ModalitiesAlternativeModel = 27
 
     Collapses = 26
-
-    ResidualGrowth = 30
 
 
 class VectorPhenotypes(Enum):
