@@ -178,5 +178,7 @@ def get_sort_order(phenotype):
     :param phenotype: the phenotype name
     :return:
     """
-    # TODO: Add the inverse exceptions
+    # TODO: Add more inverse exceptions
+    if phenotype in (Phenotypes.ExperimentGrowthYield,):
+        return -1
     return 1
