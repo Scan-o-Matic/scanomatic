@@ -756,8 +756,12 @@ def add_routes(app):
                 reason="Phenotype hasn't been extracted",
                 plate=plate, phenotype=phenotype, **response)
 
+        qindex_rows, qindex_cols = state.get_quality_index(plate)
+
         return jsonify(
             data=plate_data.tojson(), plate=plate, phenotype=phenotype,
+            qindex_rows=qindex_rows.to_list(),
+            qindex_cols=qindex_rows.to_list(),
             is_segmentation_based=is_segmentation_based,
             **merge_dicts(
                 {filt.name: tuple(v.tolist() for v in plate_data.where_mask_layer(filt))
