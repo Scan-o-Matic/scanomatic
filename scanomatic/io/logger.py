@@ -5,7 +5,7 @@ import threading
 import time
 from functools import partial
 import warnings
-
+import re
 
 #
 # CLASSES
@@ -22,6 +22,8 @@ class Logger(object):
     DEBUG = 5
 
     _LOGFORMAT = "%Y-%m-%d %H:%M:%S -- {lvl}\t**{name}** "
+    LOG_PARSING_EXPRESSION = re.compile(
+        r"(\d{4}-\d{1,2}-\d{1,2}) (\d{1,2}:\d{1,2}:\d{1,2}) -- (\w+)\t\*{2}([\w ]+)\*{2}(.*)")
 
     _DEFAULT_LOGFILE = None
     _DEFAULT_CATCH_OUT = False
@@ -344,3 +346,57 @@ class _ExtendedFileObject(file):
         for i in range(length):
             self._buffer.pop(0)
         self._semaphor = False
+
+
+def parse_log_file(path, seek=0, max_records=-1, filter_status=None):
+
+    with open(path, 'r') as fh:
+
+        if seek:
+            fh.seek(seek)
+
+        n = 0
+        pattern = Logger.LOG_PARSING_EXPRESSION
+
+        records = []
+        tell = fh.tell()
+        garbage = []
+        record = {}
+        eof = False
+        while n < max_records or max_records < 0:
+
+            line = fh.readline()
+            if tell == fh.tell():
+                eof = True
+                break
+            else:
+                tell = fh.tell()
+
+            match = pattern.match(line)
+
+            if match:
+
+                if record and (filter_status is None or record['status'] in filter_status):
+                    records.append(record)
+                    n += 1
+                groups = match.groups()
+                record = {
+                    'date': groups[0],
+                    'time': groups[1],
+                    'status': groups[2],
+                    'source': groups[3],
+                    'message': groups[4].strip()
+                }
+            elif record:
+                record['message'] += '\n{0}'.format(line.rstrip())
+            else:
+                garbage.append(line.rstrip())
+
+        return {
+            'file': path,
+            'start_position': seek,
+            'end_position': tell,
+            'end_of_file': eof,
+            'records': records,
+            'garbage': garbage
+        }
