@@ -1,4 +1,6 @@
 import os
+from itertools import chain
+from glob import glob
 
 from flask import Flask, jsonify
 
@@ -6,8 +8,6 @@ from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_ur
     serve_numpy_as_image
 
 from scanomatic.io.paths import Paths
-from glob import glob
-from scanomatic.models.compile_project_model import CompileInstructionsModel
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.io import image_loading
 from scanomatic.data_processing import phenotyper
@@ -64,10 +64,15 @@ def add_routes(app):
         compile_instructions = [convert_path_to_url(base_url, c) for c in
                                 glob(os.path.join(path, Paths().project_compilation_instructions_pattern.format("*")))]
 
+        compile_logs = tuple(chain(((
+            convert_path_to_url("/api/tools/logs/0/0", c),
+            convert_path_to_url("/api/tools/logs/WARNING_ERROR_CRITICAL/0/0", c)) for c in
+            glob(os.path.join(path, Paths().project_compilation_log_pattern.format("*"))))))
+
         if model is not None:
 
             return jsonify(**json_response(
-                ["urls", "compile_instructions", "scan_instructions"],
+                ["urls", "compile_instructions", "scan_instructions", "compile_logs"],
                 dict(
                     instructions={
                         'fixture': model.fixture_name,
@@ -77,21 +82,23 @@ def add_routes(app):
                     },
                     compile_instructions=compile_instructions,
                     scan_instructions=scan_instructions,
+                    compile_logs=compile_logs,
                     **get_search_results(path, base_url))))
 
         else:
             return jsonify(**json_response(
-                ["urls", "compile_instructions", "scan_instructions"],
+                ["urls", "compile_instructions", "scan_instructions", "compile_logs"],
                 dict(
                     compile_instructions=compile_instructions,
                     scan_instructions=scan_instructions,
+                    compile_logs=compile_logs,
                     **get_search_results(path, base_url))))
 
     @app.route("/api/compile/image_list/<location>/<path:project>")
     def get_compile_image_list(location='root', project=None):
 
         if location != 'root':
-            return jsonify(success=False, reason='Illegal location');
+            return jsonify(success=False, reason='Illegal location')
 
         path = convert_url_to_path(project)
         model = CompileProjectFactory.dict_from_path_and_fixture(path)
