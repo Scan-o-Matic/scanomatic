@@ -23,7 +23,7 @@ class Logger(object):
 
     _LOGFORMAT = "%Y-%m-%d %H:%M:%S -- {lvl}\t**{name}** "
     LOG_PARSING_EXPRESSION = re.compile(
-        r"(\d{4}-\d{1,2}-\d{1,2}) (\d{1,2}:\d{1,2}:\d{1,2}) -- (\w+)\t\*{2}([\w ]+)\*{2}(.*)")
+        r"(\d{4}-\d{1,2}-\d{1,2}) (\d{1,2}:\d{1,2}:\d{1,2}) -- (\w+)\t\*{2}([^\*]+)\*{2}(.*)")
 
     _DEFAULT_LOGFILE = None
     _DEFAULT_CATCH_OUT = False
