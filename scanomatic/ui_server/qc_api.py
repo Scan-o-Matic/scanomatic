@@ -772,7 +772,7 @@ def add_routes(app):
         return jsonify(
             data=plate_data.tojson(), plate=plate, phenotype=phenotype,
             qindex_rows=qindex_rows.tolist(),
-            qindex_cols=qindex_rows.tolist(),
+            qindex_cols=qindex_cols.tolist(),
             is_segmentation_based=is_segmentation_based,
             **merge_dicts(
                 {filt.name: tuple(v.tolist() for v in plate_data.where_mask_layer(filt))
