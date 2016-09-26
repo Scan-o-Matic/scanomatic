@@ -5,8 +5,10 @@ import glob
 
 from scanomatic.ui_server.general import safe_directory_name
 from scanomatic.io.app_config import Config
-from scanomatic.io.logger import Logger
+from scanomatic.io.logger import Logger, parse_log_file
+from scanomatic.io.paths import Paths
 from scanomatic.data_processing.phenotyper import path_has_saved_project_state
+from .general import convert_url_to_path, json_response, get_search_results
 
 _logger = Logger("Tools API")
 
@@ -22,6 +24,26 @@ def add_routes(app):
     Args:
         app (Flask): The flask app to decorate
     """
+
+    @app.route("/api/tools/logs")
+    @app.route("/api/tools/logs/<filter>/<path:project>")
+    @app.route("/api/tools/logs/<int:n_records>/<path:project>")
+    @app.route("/api/tools/logs/<filter>/<int:n_records>/<path:project>")
+    @app.route("/api/tools/logs/<int:start_at>/<int:n_records>/<path:project>")
+    @app.route("/api/tools/logs/<filter>/<int:start_at>/<int:n_records>/<path:project>")
+    def log_view(project='', filter=None, n_records=-1, start_at=0):
+
+        # base_url = "/api/tools/logs"
+        path = convert_url_to_path(project)
+        if n_records == 0:
+            n_records = -1
+
+        try:
+            data = parse_log_file(path, seek=start_at, max_records=n_records, filter_status=filter)
+        except IOError:
+            return jsonify(success=False, is_endpoint=True, reason="No log-file found with that name")
+
+        return jsonify(success=True, is_endpoint=True, **{k:v for k, v in data.iteritems() if k not in ('file',)})
 
     @app.route("/api/tools/selection", methods=['POST'])
     @app.route("/api/tools/selection/<operation>", methods=['POST'])
