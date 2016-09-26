@@ -7,6 +7,7 @@ from itertools import chain, product
 from subprocess import call
 import uuid
 from enum import Enum
+from glob import glob
 
 from scanomatic.data_processing import phenotyper
 from scanomatic.data_processing.phenotypes import get_sort_order, PhenotypeDataType, infer_phenotype_from_name
@@ -211,20 +212,30 @@ def add_routes(app):
         path = convert_url_to_path(project)
         is_project = phenotyper.path_has_saved_project_state(path)
 
+        feature_logs = tuple(chain(((
+            convert_path_to_url("/api/tools/logs/0/0", c),
+            convert_path_to_url("/api/tools/logs/WARNING_ERROR_CRITICAL/0/0", c)) for c in
+            glob(os.path.join(path, Paths().phenotypes_extraction_log)))))
+
         if is_project:
             analysis_date, extraction_date, change_date = phenotyper.get_project_dates(path)
         else:
 
-            return jsonify(success=True, is_project=False, is_endpoint=False,
-                           **get_search_results(path, "/api/results/browse"))
+            return jsonify(**json_response(
+                ["feature_logs"],
+                dict(
+                    success=True, is_project=False, is_endpoint=False,
+                    feature_logs=feature_logs,
+                    **get_search_results(path, "/api/results/browse"))))
 
         name = get_project_name(path)
 
         return jsonify(**json_response(
             ["urls", "add_lock", "remove_lock", "add_meta_data", "meta_data_column_names",
              "phenotype_names", "curves", "quality_index", "gridding", "analysis_instructions", "curve_mark_undo",
-             "curve_mark_set"],
+             "curve_mark_set", "feature_logs"],
             dict(
+                feature_logs=feature_logs,
                 project=project,
                 is_project=is_project,
                 project_name=name,

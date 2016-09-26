@@ -8,7 +8,7 @@ from scanomatic.io.app_config import Config
 from scanomatic.io.logger import Logger, parse_log_file
 from scanomatic.io.paths import Paths
 from scanomatic.data_processing.phenotyper import path_has_saved_project_state
-from .general import convert_url_to_path, json_response, get_search_results
+from .general import convert_url_to_path, json_response
 
 _logger = Logger("Tools API")
 
@@ -25,13 +25,49 @@ def add_routes(app):
         app (Flask): The flask app to decorate
     """
 
+    @app.route("/api/tools/system_logs")
+    @app.route("/api/tools/system_logs/<what>/<detail>")
+    @app.route("/api/tools/system_logs/<what>")
+    def system_log_view(what=None, detail=None):
+
+        base_url = "/api/tools/system_logs"
+        if what == 'server':
+            what = Paths().log_server
+        elif what == "ui_server":
+            what = Paths().log_ui_server
+        elif what == "scanner_error":
+            if detail is None:
+                return jsonify(success=False, is_endpoint=True,
+                               reason="{0} needs to know what scanner log detail".format(what))
+            what = Paths().log_scanner_err.format(detail)
+        elif what == "scanner":
+            if detail is None:
+                return jsonify(success=False, is_endpoint=True,
+                               reason="{0} needs to know what scanner log detail".format(what))
+            what = Paths().log_scanner_out.format(detail)
+        else:
+
+            return jsonify(**json_response(
+                ['urls'],
+                dict(
+                    urls=["{0}/{1}".format(base_url, w) for w in ('server', 'ui_server', 'scanner', 'scanner_error')]
+                )
+            ))
+
+        try:
+            data = parse_log_file(what)
+        except IOError:
+            return jsonify(success=False, is_endpoint=True, reason="No log-file found with that name")
+
+        return jsonify(success=True, is_endpoint=True, **{k: v for k, v in data.iteritems() if k not in ('file',)})
+
     @app.route("/api/tools/logs")
-    @app.route("/api/tools/logs/<filter>/<path:project>")
+    @app.route("/api/tools/logs/<filter_status>/<path:project>")
     @app.route("/api/tools/logs/<int:n_records>/<path:project>")
-    @app.route("/api/tools/logs/<filter>/<int:n_records>/<path:project>")
+    @app.route("/api/tools/logs/<filter_status>/<int:n_records>/<path:project>")
     @app.route("/api/tools/logs/<int:start_at>/<int:n_records>/<path:project>")
-    @app.route("/api/tools/logs/<filter>/<int:start_at>/<int:n_records>/<path:project>")
-    def log_view(project='', filter=None, n_records=-1, start_at=0):
+    @app.route("/api/tools/logs/<filter_status>/<int:start_at>/<int:n_records>/<path:project>")
+    def log_view(project='', filter_status=None, n_records=-1, start_at=0):
 
         # base_url = "/api/tools/logs"
         path = convert_url_to_path(project)
@@ -39,11 +75,11 @@ def add_routes(app):
             n_records = -1
 
         try:
-            data = parse_log_file(path, seek=start_at, max_records=n_records, filter_status=filter)
+            data = parse_log_file(path, seek=start_at, max_records=n_records, filter_status=filter_status)
         except IOError:
             return jsonify(success=False, is_endpoint=True, reason="No log-file found with that name")
 
-        return jsonify(success=True, is_endpoint=True, **{k:v for k, v in data.iteritems() if k not in ('file',)})
+        return jsonify(success=True, is_endpoint=True, **{k: v for k, v in data.iteritems() if k not in ('file',)})
 
     @app.route("/api/tools/selection", methods=['POST'])
     @app.route("/api/tools/selection/<operation>", methods=['POST'])
