@@ -16,7 +16,7 @@ from scanomatic.generics.phenotype_filter import Filter
 from scanomatic.io.paths import Paths
 from scanomatic.io.app_config import Config
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, \
-    get_project_name, json_response
+    get_project_name, json_response, serve_zip_file
 
 RESERVATION_TIME = 60 * 5
 FILM_TYPES = {'colony': 'animate_colony_growth("{save_target}", {pos}, "{path}")',
@@ -1299,9 +1299,7 @@ def add_routes(app):
                 ask_if_overwrite=False):
 
             # TODO: list saved files
-            # TODO: Add the zip functionality http://stackoverflow.com/questions/2463770/python-in-memory-zip-library#2463818
-
-            return
+            return serve_zip_file(state.get_csv_file_name(path, save_data, plate) for plate in state.enumerate_plates)
 
         else:
             return jsonify(**json_response(

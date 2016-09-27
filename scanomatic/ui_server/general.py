@@ -209,6 +209,10 @@ def json_response(exits, data, success=True):
     return data
 
 
+def serve_zip_file(*file_list):
+    # TODO: Add the zip functionality http://stackoverflow.com/questions/2463770/python-in-memory-zip-library#2463818
+    return send_file
+
 def serve_pil_image(pil_img):
     img_io = StringIO()
     pil_img.save(img_io, 'JPEG', quality=70)
