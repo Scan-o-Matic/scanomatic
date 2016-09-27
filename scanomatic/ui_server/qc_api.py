@@ -529,7 +529,7 @@ def add_routes(app):
                 **response))
 
         state.remove_phenotype_from_normalization(pheno)
-        state.save_phenotypes(path, ask_if_overwrite=False)
+        state.save_state(path, ask_if_overwrite=False)
 
         if lock_state is LockState.LockedByMeTemporary:
             _remove_lock(path)
@@ -577,7 +577,7 @@ def add_routes(app):
                 **response))
 
         state.add_phenotype_to_normalization(pheno)
-        state.save_phenotypes(path, ask_if_overwrite=False)
+        state.save_state(path, ask_if_overwrite=False)
 
         if lock_state is LockState.LockedByMeTemporary:
             _remove_lock(path)
