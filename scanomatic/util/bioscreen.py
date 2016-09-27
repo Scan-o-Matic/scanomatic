@@ -45,6 +45,9 @@ def _parse_data(data, mode, time_scale, start_row=-1):
             return sum(float(a) * b for a, b in izip(v.split(":"), (1, 1/60., 1/3600.)))
 
         time = np.frompyfunc(f, 1, 1)(data[:, 0])
+    except IndexError:
+        print("Failed parsing data {0}".format(data))
+        raise
 
     colstart = max(1, data.shape[1] - 200)
 
