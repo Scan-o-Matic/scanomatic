@@ -5,6 +5,7 @@ from StringIO import StringIO
 from itertools import chain
 from flask import send_file
 import numpy as np
+import zipfile
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -211,6 +212,14 @@ def json_response(exits, data, success=True):
 
 def serve_zip_file(*file_list):
     # TODO: Add the zip functionality http://stackoverflow.com/questions/2463770/python-in-memory-zip-library#2463818
+    # find leasst common denominator and produce  relative references from it
+    # add filled
+    memory_zip = StringIO()
+    zf = zipfile.ZipFile(memory_zip, 'a', zipfile.ZIP_DEFLATED, False)
+    for file in file_list:
+        zp.writestr(local_name, file)
+
+
     return send_file
 
 def serve_pil_image(pil_img):
