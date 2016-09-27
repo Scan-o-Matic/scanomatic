@@ -1268,5 +1268,48 @@ def add_routes(app):
         return jsonify(offset_name=offset.name, offset_value=offset.value,
                        offset_pattern=offset().tolist(), **response)
 
+    @app.route("/api/results/export/phenotypes/<save_data>/<path:project>")
+    def export_phenotypes(project, save_data=""):
+        url_root = "/api/results/export/phenotypes"
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+            return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
+
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+
+        state, name = _get_state_update_response(path, response, success=True)
+
+        try:
+            save_data = phenotyper.SaveData[save_data]
+        except KeyError:
+            return jsonify(**json_response(
+                ['urls'],
+                dict(
+                    urls = ["{0}/{1}/{2}".format(base_url, sd.name, project) for sd in
+                            (phenotyper.SaveData.ScalarPhenotypesRaw, phenotyper.SaveData.ScalarPhenotypesNormalized)],
+                    reason="SaveData-type {0} not known".format(save_data)
+                ),
+                success=False))
+
+        if state.save_phenotypes(
+                dir_path=path,
+                save_data=save_data,
+                ask_if_overwrite=False):
+
+            # TODO: list saved files
+            # TODO: Add the zip functionality http://stackoverflow.com/questions/2463770/python-in-memory-zip-library#2463818
+
+            return
+
+        else:
+            return jsonify(**json_response(
+                [],
+                dict(
+                    reason="Saving phenotypes failed for some unknown reason"
+                ),
+                success=False))
+
     # End of UI extension with qc-functionality
     return True
