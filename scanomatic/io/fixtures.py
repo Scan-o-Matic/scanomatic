@@ -87,7 +87,7 @@ class FixtureSettings(object):
 
     def save(self):
 
-        FixtureFactory.serializer.dump(self.model, self.path)
+        FixtureFactory.serializer.dump(self.model, self.path, overwrite=True)
 
 
 class Fixtures(object):
