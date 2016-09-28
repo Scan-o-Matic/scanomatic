@@ -13,3 +13,6 @@ This file here will only discuss code-related issues.
 * Showing of gridding in Status and QC-view. (API exists, viewing in regridding exists)
 * Showing of logfiles for a project at various stages and views (API exists).
 * Showing of the instructions given at various stages to Scan-o-matic (API exists).
+* `scan-o-matic_as_service_check` script should allow for reboot as well
+* Fixture creation image selection should allow to select file on server as well as uploading image
+* Fixture creation should have magnification of what is hovered.
