@@ -1689,7 +1689,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 if 'y' not in raw_input("Overwrite existing file '{0}'? (y/N)".format(plate_path)).lower():
                     continue
 
-            with open(plate_path, 'w') as fh:
+            with open(plate_path, 'wb') as fh:
 
                 cw = csv.writer(fh, dialect=dialect)
 
