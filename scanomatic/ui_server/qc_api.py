@@ -233,7 +233,7 @@ def add_routes(app):
         return jsonify(**json_response(
             ["urls", "add_lock", "remove_lock", "add_meta_data", "meta_data_column_names",
              "phenotype_names", "curves", "quality_index", "gridding", "analysis_instructions", "curve_mark_undo",
-             "curve_mark_set", "feature_logs"],
+             "curve_mark_set", "feature_logs", "export_phenotypes_absolute", "export_phenotypes"],
             dict(
                 feature_logs=feature_logs,
                 project=project,
@@ -263,6 +263,11 @@ def add_routes(app):
                 if change_date else "",
 
                 analysis_instructions=convert_path_to_url("/api/analysis/instructions", path) if is_project else None,
+
+                export_phenotypes=[
+                    convert_path_to_url("/api/results/export/phenotypes/{0}".format(norm_state.name), path)
+                    for norm_state in phenotyper.NormState] if is_project else None,
+
                 **get_search_results(path, "/api/results/browse"))))
 
     @app.route("/api/results/lock/add/<path:project>")
