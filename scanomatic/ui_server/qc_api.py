@@ -1288,13 +1288,13 @@ def add_routes(app):
         state, name = _get_state_update_response(path, response, success=True)
 
         try:
-            save_data = phenotyper.SaveData[save_data]
+            save_data = phenotyper.NormState[save_data]
         except KeyError:
             return jsonify(**json_response(
                 ['urls'],
                 dict(
-                    urls = ["{0}/{1}/{2}".format(base_url, sd.name, project) for sd in
-                            (phenotyper.SaveData.ScalarPhenotypesRaw, phenotyper.SaveData.ScalarPhenotypesNormalized)],
+                    urls = ["{0}/{1}/{2}".format(url_root, sd.name, project) for sd in
+                            phenotyper.NormState],
                     reason="SaveData-type {0} not known".format(save_data)
                 ),
                 success=False))
@@ -1304,8 +1304,9 @@ def add_routes(app):
                 save_data=save_data,
                 ask_if_overwrite=False):
 
-            # TODO: list saved files
-            return serve_zip_file(state.get_csv_file_name(path, save_data, plate) for plate in state.enumerate_plates)
+            return serve_zip_file(
+                "{0}.phenotypes.{1}.zip".format(name, save_data.name),
+                *(state.get_csv_file_name(path, save_data, plate) for plate in state.enumerate_plates))
 
         else:
             return jsonify(**json_response(
