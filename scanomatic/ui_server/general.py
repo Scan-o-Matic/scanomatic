@@ -210,17 +210,55 @@ def json_response(exits, data, success=True):
     return data
 
 
-def serve_zip_file(*file_list):
-    # TODO: Add the zip functionality http://stackoverflow.com/questions/2463770/python-in-memory-zip-library#2463818
-    # find leasst common denominator and produce  relative references from it
-    # add filled
-    memory_zip = StringIO()
-    zf = zipfile.ZipFile(memory_zip, 'a', zipfile.ZIP_DEFLATED, False)
-    for file in file_list:
-        zp.writestr(local_name, file)
+def get_common_root_and_relative_paths(*file_list):
+
+    dir_list = set(tuple(os.path.dirname(f) if os.path.isfile(f) else f for f in file_list))
+    common_test = zip(*(os.path.split(p) for p in dir_list))
+    root = ""
+    for d_list in common_test:
+        if all(d == d_list[0] for d in d_list):
+            root = os.path.join(root, d_list[0])
+        else:
+            break
+
+    root += os.path.sep
+    start_at = len(root)
+    return root, tuple(f[start_at:] for f in file_list)
 
 
-    return send_file
+def serve_zip_file(zip_name, *file_list):
+    """Serves a zip-file created from a file list
+
+    Code inspired by:
+    http://stackoverflow.com/questions/2463770/python-in-memory-zip-library#2463818
+
+    The filesystem in the zip will use the deepest common denominator in the filelist
+    as its root.
+
+    :param file_list: local paths
+    :return: Flask sending of data
+    """
+
+    # file_list = tuple(str(f) for f in file_list)
+    data_buffer = StringIO()
+    zf = zipfile.ZipFile(data_buffer, 'a', zipfile.ZIP_DEFLATED, False)
+    root, local_names = get_common_root_and_relative_paths(*file_list)
+    for local_file in local_names:
+        print("{0}  {1}".format(local_file, os.path.join(root, local_file)))
+        zf.write(os.path.join(root, local_file), local_file)
+
+    for zfile in zf.filelist:
+        zfile.create_system = 0
+
+    zf.close()
+
+    data_buffer.seek(0)
+
+    return send_file(data_buffer,
+                     mimetype='application/zip, application/octet-stream',
+                     as_attachment=True,
+                     attachment_filename=str(zip_name))
+
 
 def serve_pil_image(pil_img):
     img_io = StringIO()
