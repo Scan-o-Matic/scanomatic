@@ -646,6 +646,12 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         for i, _ in enumerate(self._raw_growth_data):
             yield i
 
+    def enumerate_plate_positions(self, plate):
+
+        shape = self._raw_growth_data[plate].shape[:-1]
+        for pos_tup in izip(*np.unravel_index(np.arange(np.prod(shape)), shape)):
+            yield pos_tup
+
     @property
     def plate_shapes(self):
 
