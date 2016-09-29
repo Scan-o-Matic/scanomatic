@@ -1017,6 +1017,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         except (ValueError, IndexError, TypeError, KeyError):
             return None
 
+    def get_curve_phase_data(self, plate, outer, inner):
+
+        try:
+            return self._vector_phenotypes[plate][VectorPhenotypes.PhasesPhenotypes][outer, inner]
+        except (ValueError, IndexError, TypeError, KeyError):
+            return None
+
     @property
     def phenotypes(self):
         return tuple(p for p in self._phenotypes_inclusion())
