@@ -84,6 +84,97 @@ def get_position_phenotypes(phenotypes, plate, position_selection=None):
 
 
 @_validate_input
+def get_phase_assignment_data(phenotypes, plate):
+
+    data = []
+    vshape = None
+    for x, y in phenotypes.enumerate_plate_positions(plate):
+        v = phenotypes.get_curve_phases(plate, x, y)
+        if v.ndim == 1 and v.shape[0] and (vshape is None or v.shape == vshape):
+            if vshape is None:
+                vshape = v.shape
+            data.append(v)
+    return np.ma.array(data)
+
+
+@_validate_input
+def get_phase_assignment_frequencies(phenotypes, plate):
+
+    data = get_phase_assignment_data(phenotypes, plate)
+    min_length = data.max() + 1
+    bin_counts = [np.bincount(data[..., i], minlength=min_length) for i in range(data.shape[1])]
+    return np.array(bin_counts)
+
+
+@_validate_input
+def plot_plate_phase_variance(phenotypes, plate):
+
+    data = get_phase_assignment_frequencies(phenotypes, plate)
+    print (data.shape)
+    data = data / data.sum(axis=1)[..., np.newaxis].astype(float)
+    cum_data = np.cumsum(data, axis=1)
+    f = plt.figure()
+
+    ax = f.add_subplot(2, 1, 1)
+    for idx in range(cum_data.shape[-1]):
+
+        ax.fill_between(
+            phenotypes.times,
+            cum_data[:, idx],
+            0 if idx == 0 else cum_data[:, idx - 1],
+            color=PHASE_PLOTTING_COLORS[CurvePhases(idx)],
+            alpha=0.75,
+            interpolate=True)
+
+        ax.plot(
+            phenotypes.times, cum_data[:, idx],
+            lw=2, label=CurvePhases(idx).name,
+            color=PHASE_PLOTTING_COLORS[CurvePhases(idx)])
+
+    tax = ax.twinx()
+    a, b, c = phenotypes.smooth_growth_data[plate].shape
+    var = np.ma.masked_invalid(np.log2(phenotypes.smooth_growth_data[plate]).reshape(a * b, c)).var(axis=0)
+
+    tax.plot(phenotypes.times, var, '--', color='k', lw=2.5, label="Population size variance")
+
+    ax.set_xlim(0, phenotypes.times.max())
+    ax.set_ylim(0, 1)
+    ax.set_xlabel("Time (h)")
+    ax.set_ylabel("Frequency of classification")
+
+    tax.set_ylabel("Log2 Population Size Variance")
+
+    ax2 = f.add_subplot(2, 2, 3)
+    ax2.set_aspect(1)
+
+    var_decomp = (data * var[..., np.newaxis]).sum(axis=0) / var.sum()
+    ax2.pie(
+        var_decomp,
+        colors=tuple(PHASE_PLOTTING_COLORS[CurvePhases(idx)] for idx in range(var_decomp.size)),
+        labels=tuple(CurvePhases(idx).name.replace("Growth", "G ").replace("Collapse", "C")
+                     if var_decomp[idx] > 0.005 else ""
+                     for idx in range(var_decomp.size)))
+
+    ax2.set_title("Total variance explained by phase type")
+
+    ax3 = f.add_subplot(2, 2, 4)
+    ax3.axis("off")
+    ax3.legend(
+        ax.lines + tax.lines,
+        [l.get_label() for l in ax.lines + tax.lines],
+        loc="center",
+        fontsize='small',
+        numpoints=1,
+    )
+
+
+
+    f.tight_layout()
+
+    return f
+
+
+@_validate_input
 def plot_plate_heatmap(
         phenotypes, plate_index, measure=None, use_common_value_axis=True, vmin=None, vmax=None, show_color_bar=True,
         horizontal_orientation=True, cm=plt.cm.RdBu_r, title_text=None, hide_axis=False, fig=None,
