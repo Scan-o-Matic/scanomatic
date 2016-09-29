@@ -451,28 +451,34 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         """
         _p = paths.Paths()
 
-        try:
-            phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
-        except IOError:
-            phenotypes = None
-
-        try:
-            vector_phenotypes = np.load(os.path.join(directory_path, _p.vector_phenotypes_raw))
-        except IOError:
-            vector_phenotypes = None
-
-        try:
-            vector_meta_phenotypes = np.load(os.path.join(directory_path, _p.vector_meta_phenotypes_raw))
-        except IOError:
-            vector_meta_phenotypes = None
-
         raw_growth_data = np.load(os.path.join(directory_path,  _p.phenotypes_input_data))
 
         times = np.load(os.path.join(directory_path, _p.phenotype_times))
 
-        smooth_growth_data = np.load(os.path.join(directory_path, _p.phenotypes_input_smooth))
-
         phenotyper = cls(raw_growth_data, times, run_extraction=False, base_name=directory_path)
+
+        try:
+            phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
+        except (IOError, ValueError):
+            phenotyper._logger.warning(
+                "Could not load Phenotypes, probably too old extraction, please rerun!")
+            phenotypes = None
+
+        try:
+            vector_phenotypes = np.load(os.path.join(directory_path, _p.vector_phenotypes_raw))
+        except (IOError, ValueError):
+            phenotyper._logger.warning(
+                "Could not load Vector Phenotypes, probably too old extraction, please rerun!")
+            vector_phenotypes = None
+
+        try:
+            vector_meta_phenotypes = np.load(os.path.join(directory_path, _p.vector_meta_phenotypes_raw))
+        except (IOError, ValueError):
+            phenotyper._logger.warning(
+                "Could not load Vector Meta Phenotypes, probably too old extraction, please rerun!")
+            vector_meta_phenotypes = None
+
+        smooth_growth_data = np.load(os.path.join(directory_path, _p.phenotypes_input_smooth))
 
         extraction_params = np.load(
             os.path.join(directory_path, _p.phenotypes_extraction_params))
@@ -501,7 +507,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         filter_path = os.path.join(directory_path, _p.phenotypes_filter)
         if os.path.isfile(filter_path):
             phenotyper._logger.info("Loading previous filter {0}".format(filter_path))
-            phenotyper.set("phenotype_filter", np.load(filter_path))
+            try:
+                phenotyper.set("phenotype_filter", np.load(filter_path))
+            except (ValueError, IOError):
+                phenotyper._logger.warning(
+                    "Could not load QC Filter, probably too old extraction, please rerun!")
 
         offsets_path = os.path.join(directory_path, _p.phenotypes_reference_offsets)
         if os.path.isfile(offsets_path):
@@ -509,7 +519,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         normalized_phenotypes = os.path.join(directory_path, _p.normalized_phenotypes)
         if os.path.isfile(normalized_phenotypes):
-            phenotyper.set("normalized_phenotypes", np.load(normalized_phenotypes))
+            try:
+                phenotyper.set("normalized_phenotypes", np.load(normalized_phenotypes))
+            except (ValueError, IOError):
+                phenotyper._logger.warning(
+                    "Could not load Normalized Phenotypes, probably too old extraction, please rerun!")
 
         filter_undo_path = os.path.join(directory_path, _p.phenotypes_filter_undo)
         if os.path.isfile(filter_undo_path):
