@@ -24,4 +24,4 @@ __The rest of this file here will only discuss code-related issues.__
 * Scan.instructions could include more scanner information such as actual `scanimage` argument string used.
 * Gridding could attempt to use heuristics or history about grids to assist gridding and/or warn users
 * Add 16 BIT image scanning?
-
+* Uninstall
