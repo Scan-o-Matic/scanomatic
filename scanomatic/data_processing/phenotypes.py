@@ -79,6 +79,7 @@ class PhenotypeDataType(Enum):
         _under_development = (
             Phenotypes.GenerationTimePopulationSize,
             Phenotypes.GrowthLag,
+            Phenotypes.Monotonicity,
             Phenotypes.ExperimentLowPoint,
             Phenotypes.ExperimentLowPointWhen,
             Phenotypes.ResidualGrowth,

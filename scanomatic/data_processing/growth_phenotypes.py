@@ -89,6 +89,12 @@ def curve_end_average(curve_smooth_growth_data, *args, **kwargs):
         return np.nan
 
 
+def curve_monotonicity(curve_smooth_growth_data, *args, **kwargs):
+    return (
+        (curve_smooth_growth_data.argsort() - np.arange(curve_smooth_growth_data.size)) ** 2
+    ).sum().astype(float) / (curve_smooth_growth_data.size ** 2)
+
+
 def growth_yield(curve_smooth_growth_data, *args, **kwargs):
     return curve_end_average(curve_smooth_growth_data) - curve_baseline(curve_smooth_growth_data)
 
@@ -424,6 +430,9 @@ class Phenotypes(Enum):
     ResidualGrowthAsPopulationDoublings = 25
     """:type Phenotypes"""
 
+    Monotonicity = 26
+    """:type Phenotypes"""
+
     GrowthVelocityVector = 1000
     """:type Phenotypes"""
 
@@ -510,3 +519,5 @@ class Phenotypes(Enum):
         elif self is Phenotypes.GrowthVelocityVector:
             return growth_velocity_vector(**kwargs)
 
+        elif self is Phenotypes.Monotonicity:
+            return curve_monotonicity(**kwargs)
