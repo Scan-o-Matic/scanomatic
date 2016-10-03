@@ -514,8 +514,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                     if inclusion_name is None:
                         inclusion_name = 'Trusted'
 
-                    phenotyper._no_growth_monotonicity_threshold = no_growth_monotonicity_threshold
-                    phenotyper._no_growth_pop_doublings_threshold = no_growth_pop_doublings_threshold
+                    phenotyper._no_growth_monotonicity_threshold = float(no_growth_monotonicity_threshold)
+                    phenotyper._no_growth_pop_doublings_threshold = float(no_growth_pop_doublings_threshold)
 
                     phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
 
