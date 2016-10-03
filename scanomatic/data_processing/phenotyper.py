@@ -896,6 +896,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
             phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_max_value,), dtype=np.float)
+            plate_size = np.prod(plate.shape[:2])
+            self._logger.info("Plate {0} has {1} curves".format(id_plate + 1, plate_size))
 
             vector_phenotypes = {
                 p: np.zeros(plate.shape[:2], dtype=np.object) * np.nan
@@ -933,7 +935,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                             position_phenotypes[phenotype.value] = phenotype(**curve_data)
                         except IndexError:
                             self._logger.critical(
-                                "Could not store {0}, something is wrong, aborting...".format(phenotype))
+                                "Could not store {0} (index {1}) expected max {2}.".format(
+                                    phenotype, phenotype.value, phenotypes_max_value))
                             return
 
                 phenotypes[id0, id1, ...] = position_phenotypes
@@ -950,9 +953,16 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                     if phenotypes_inclusion(VectorPhenotypes.PhasesPhenotypes):
                         vector_phenotypes[VectorPhenotypes.PhasesPhenotypes][id0, id1] = phases_phenotypes
 
-                if id0 == 0:
+                if id1 == 0:
+
                     self._logger.debug("Done plate {0} pos {1} {2} {3}".format(
                         id_plate, id0, id1, list(position_phenotypes)))
+
+                    self._logger.info("Plate {1} growth phenotypes {0:.1f}% done".format(
+                        100.0 * (pos_index + 1.0) / plate_size,
+                        id_plate + 1,
+                    ))
+
                     yield (curves_in_completed_plates + pos_index + 1.0) / total_curves
 
             for phenotype in CurvePhaseMetaPhenotypes:
