@@ -944,6 +944,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             for phenotype in CurvePhaseMetaPhenotypes:
 
+                self._logger.info("Extracting {0} for plate {1}".format(phenotype.name, id_plate + 1))
+
                 if not phenotypes_inclusion(phenotype):
                     continue
 
