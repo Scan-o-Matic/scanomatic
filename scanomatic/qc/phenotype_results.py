@@ -401,7 +401,7 @@ def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=0.
 
     times = model.times
     phases = model.phases
-    curve = model.curve
+    log2_curve = model.log2_curve
 
     # noinspection PyTypeChecker
     for phase in CurvePhases:
@@ -415,12 +415,12 @@ def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=0.
             left = positions[0]
             right = positions[-1]
             left = np.linspace(times[max(left - 1, 0)], times[left], 3)[1]
-            right = np.linspace(times[min(curve.size - 1, right + 1)], times[right], 3)[1]
+            right = np.linspace(times[min(log2_curve.size - 1, right + 1)], times[right], 3)[1]
             span = ax.axvspan(left, right, color=colors[phase], alpha=segment_alpha, label=phase.name)
             if phase not in legend:
                 legend[phase] = span
 
-    ax.plot(times, curve, "-", color=colors["smooth"], lw=2)
+    ax.plot(times, log2_curve, "-", color=colors["smooth"], lw=2)
 
     ax.set_xlim(xmin=times[0], xmax=times[-1])
     ax.set_xlabel("Time [h]")
