@@ -90,8 +90,7 @@ def curve_end_average(curve_smooth_growth_data, *args, **kwargs):
 
 
 def curve_monotonicity(curve_smooth_growth_data, *args, **kwargs):
-    return np.power(
-        np.e,
+    return np.exp(
         -(
             (curve_smooth_growth_data.argsort() - np.arange(curve_smooth_growth_data.size)) ** 2
         ).sum().astype(float) / (curve_smooth_growth_data.size ** 2) / 10.0)
