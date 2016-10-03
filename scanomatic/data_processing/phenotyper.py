@@ -487,38 +487,45 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         smooth_growth_data = np.load(os.path.join(directory_path, _p.phenotypes_input_smooth))
 
-        extraction_params = np.load(
-            os.path.join(directory_path, _p.phenotypes_extraction_params))
+        try:
+            extraction_params = np.load(
+                os.path.join(directory_path, _p.phenotypes_extraction_params))
+        except IOError:
+            phenotyper._logger.warning(
+                "Could not find stored extraction parameters, assuming defaults were used")
+        else:
+            if extraction_params.size > 0:
+                if extraction_params.size == 3:
+                    median_filt_size, gauss_sigma, linear_reg_size = extraction_params
+                elif extraction_params.size == 4:
+                    median_filt_size, gauss_sigma, linear_reg_size, inclusion_name = extraction_params
+                    if inclusion_name is None:
+                        inclusion_name = 'Trusted'
+                    phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
+                elif extraction_params.size == 6:
 
-        if extraction_params.size > 0:
-            if extraction_params.size == 3:
-                median_filt_size, gauss_sigma, linear_reg_size = extraction_params
-            elif extraction_params.size == 4:
-                median_filt_size, gauss_sigma, linear_reg_size, inclusion_name = extraction_params
-                if inclusion_name is None:
-                    inclusion_name = 'Trusted'
-                phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
-            elif extraction_params.size == 5:
+                    median_filt_size,\
+                        gauss_sigma, \
+                        linear_reg_size, \
+                        inclusion_name, \
+                        no_growth_monotonicity_threshold, \
+                        no_growth_pop_doublings_threshold = extraction_params
 
-                median_filt_size,\
-                    gauss_sigma, \
-                    linear_reg_size, \
-                    inclusion_name, \
-                    no_growth_threshold = extraction_params
+                    if inclusion_name is None:
+                        inclusion_name = 'Trusted'
 
-                if inclusion_name is None:
-                    inclusion_name = 'Trusted'
+                    phenotyper._no_growth_monotonicity_threshold = no_growth_monotonicity_threshold
+                    phenotyper._no_growth_pop_doublings_threshold = no_growth_pop_doublings_threshold
 
-                phenotyper._no_growth_threshold = no_growth_threshold
-                phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
+                    phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
 
-            else:
-                raise ValueError("Stored parameters in {0} can't be understood".format(
-                    os.path.join(directory_path, _p.phenotypes_extraction_params)))
+                else:
+                    raise ValueError("Stored parameters in {0} can't be understood".format(
+                        os.path.join(directory_path, _p.phenotypes_extraction_params)))
 
-            phenotyper._median_kernel_size = int(median_filt_size)
-            phenotyper._gaussian_filter_sigma = float(gauss_sigma)
-            phenotyper._linear_regression_size = int(linear_reg_size)
+                phenotyper._median_kernel_size = int(median_filt_size)
+                phenotyper._gaussian_filter_sigma = float(gauss_sigma)
+                phenotyper._linear_regression_size = int(linear_reg_size)
 
         phenotyper.set('smooth_growth_data', smooth_growth_data)
         phenotyper.set('phenotypes', phenotypes)
