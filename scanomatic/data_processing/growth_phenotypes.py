@@ -121,7 +121,7 @@ def growth_48h(curve_smooth_growth_data, index48h, *args, **kwargs):
 
 
 def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
-    """Reterns a Chapman-Ritchards 4 parameter curve exteneded with a
+    """Reterns a Chapman-Ritchards 4 parameter log2_curve exteneded with a
     Y-axis offset D parameter.
 
     ''Note: The parameters b0, b1, b2 and b3 have been transposed so
@@ -152,13 +152,13 @@ def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
 
                         ``np.power(np.e, b3) / (np.power(np.e, b3) + 1)``
 
-        D (float):  Any real number, used as the offset of the curve,
+        D (float):  Any real number, used as the offset of the log2_curve,
                     no transformation applied.
 
     Returns:
 
         np.array.       An array of matching size as X with the
-                        Chapman-Ritchards extended curve for the
+                        Chapman-Ritchards extended log2_curve for the
                         parameter set.
 
     """

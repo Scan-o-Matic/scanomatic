@@ -162,7 +162,7 @@ def is_valid_grayscale(calibration_target_values, image_values, pixel_depth=8):
     poly = np.poly1d(fit)
     data = poly(np.arange(2*pixel_depth))
 
-    # Analytical derivative over the value span ensuring that the curve is continuously increasing or decreasing
+    # Analytical derivative over the value span ensuring that the log2_curve is continuously increasing or decreasing
     poly_is_ok = np.unique(np.sign(data[1:] - data[:-1])).size == 1
     if not poly_is_ok:
         _logger.warning("Polynomial fit failed required monotonous test")

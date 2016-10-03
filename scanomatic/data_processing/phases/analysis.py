@@ -10,7 +10,7 @@ from scanomatic.data_processing.phases.segmentation import CurvePhases, DEFAULT_
 
 
 class CurvePhasePhenotypes(Enum):
-    """Phenotypes for individual curve phases.
+    """Phenotypes for individual log2_curve phases.
 
     _NOTE_ Some apply only to some `CurvePhases`.
 
@@ -73,8 +73,8 @@ def _phenotype_phases(model, doublings):
 
                 k1 = model.dydt[max(0, left - model.offset)]
                 k2 = model.dydt[right - 1 - model.offset]
-                m1 = np.log2(model.curve[left]) - k1 * time_left
-                m2 = np.log2(model.curve[right - 1]) - k2 * time_right
+                m1 = model.log2_curve[left] - k1 * time_left
+                m2 = model.log2_curve[right - 1] - k2 * time_right
                 i_x = (m2 - m1) / (k1 - k2)
                 current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = \
                     (i_x - time_left) / (time_right - time_left)
@@ -83,7 +83,7 @@ def _phenotype_phases(model, doublings):
 
             elif is_detected_linear(phase):
                 # B. For linear phases get the doubling time
-                slope, intercept, _, _, _ = linregress(model.times[filt], np.log2(model.curve[filt]))
+                slope, intercept, _, _, _ = linregress(model.times[filt], model.log2_curve[filt])
                 current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
                 current_phase_phenotypes[CurvePhasePhenotypes.LinearModelSlope] = slope
                 current_phase_phenotypes[CurvePhasePhenotypes.LinearModelIntercept] = intercept
@@ -93,7 +93,7 @@ def _phenotype_phases(model, doublings):
 
             # D. Get fraction of doublings
             current_phase_phenotypes[CurvePhasePhenotypes.FractionYield] = \
-                (np.log2(model.curve[right - 1]) - np.log2(model.curve[left])) / doublings
+                (model.log2_curve[right - 1] - model.log2_curve[left]) / doublings
 
             # E. Get start of phase
             current_phase_phenotypes[CurvePhasePhenotypes.Start] = time_left

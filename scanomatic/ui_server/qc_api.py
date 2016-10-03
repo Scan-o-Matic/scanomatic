@@ -811,7 +811,7 @@ def add_routes(app):
     @app.route("/api/results/curve_mark/undo/<int:plate>/<path:project>")
     @app.route("/api/results/curve_mark/undo/<path:project>")
     def undo_curve_mark(plate=None, project=None):
-        """Undo last curve mark
+        """Undo last log2_curve mark
 
         Args:
             plate: int, index of plate to invoke undo on
@@ -867,7 +867,7 @@ def add_routes(app):
     @app.route("/api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<path:project>", methods=["POST", "GET"])
     @app.route("/api/results/curve_mark/set/<path:project>")
     def set_curve_mark( mark=None, phenotype=None, plate=None, d1_row=None, d2_col=None, project=None):
-        """Sets a curve filter mark for a position or list of positions
+        """Sets a log2_curve filter mark for a position or list of positions
 
         If several positions should be marked at once the `d1_row` and
         `d2_col` should be omitted from the url and instead be

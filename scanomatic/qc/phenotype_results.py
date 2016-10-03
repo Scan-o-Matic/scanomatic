@@ -242,7 +242,7 @@ def plot_plate_heatmap(
 @_setup_figure
 def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT_THRESHOLDS, show_thresholds=True,
                                ax=None, f=None):
-    """Plots a curve and both its derivatives as calculated and
+    """Plots a log2_curve and both its derivatives as calculated and
     smoothed by scanomatic during the phase sectioning.
 
     Args:

@@ -961,7 +961,7 @@ class Interactive_Menu():
                             s[0], s[1:], phenoName))
 
                     fig.show()
-                    if str(raw_input("Is this a bad curve (y/N)?")).upper() == "Y":
+                    if str(raw_input("Is this a bad log2_curve (y/N)?")).upper() == "Y":
 
                         remove_list.append(s)
 

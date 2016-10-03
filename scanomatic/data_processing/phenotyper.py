@@ -719,7 +719,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._init_remove_filter_and_undo_actions()
 
     def wipe_extracted_phenotypes(self, keep_filter=False):
-        """ This clears all extracted phenotypes but keeps the curve data
+        """ This clears all extracted phenotypes but keeps the log2_curve data
 
         Args:
             keep_filter: Optional, if the markings of curves should be kept, default is to
@@ -755,8 +755,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         Args:
             keep_filter:
-                Optional, if previous curve marks on phenotypes should
-                be kept or not. Default is to clear previous curve
+                Optional, if previous log2_curve marks on phenotypes should
+                be kept or not. Default is to clear previous log2_curve
                 marks
             resmoothen:
                 Optional, if smoothing should be redone.
@@ -1130,8 +1130,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 The phenotype, either a `scanomatic.data_processing.growth_phenotypes.Phenotypes`
                 or a `scanomatic.data_processing.curve_phase_phenotypes.CurvePhasePhenotypes`
             filtered:
-                Optional, if the curve-markings should be present or not on the returned object.
-                Defaults to including curve markings.
+                Optional, if the log2_curve-markings should be present or not on the returned object.
+                Defaults to including log2_curve markings.
             norm_state:
                 Optional, the type of data-state to return.
                 If `NormState.NormalizedAbsoluteNonBatched`, then `reference_values` must be supplied.
@@ -1533,7 +1533,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def add_position_mark(self, plate, positions, phenotype=None, position_mark=Filter.BadData,
                           undoable=True):
-        """ Adds curve mark for position or set of positions.
+        """ Adds log2_curve mark for position or set of positions.
 
         Args:
             plate: The plate index (0 for firs)
@@ -1824,7 +1824,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._logger.info("State saved to '{0}'".format(dir_path))
 
     def for_each_call(self, extra_keyword_args=tuple(), start_plate=None, start_pos=None, funcs=tuple()):
-        """For each curve, the supplied functions are called.
+        """For each log2_curve, the supplied functions are called.
 
         Each function must have the following initial argument order:
 

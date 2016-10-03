@@ -146,7 +146,7 @@ def validateFromData(name, source, target):
         return False
 
     #A true grayscale is monotoniously increasing or decreasing
-    #Given that the fitted curve is,
+    #Given that the fitted log2_curve is,
     #
     # y = a * x**3 + b * x**2 + c * x + d
     #

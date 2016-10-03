@@ -144,7 +144,7 @@ def is_undetermined(phase_type):
 
 
 def segment(segmentation_model, thresholds=None):
-    """Iteratively segments a curve into its component CurvePhases
+    """Iteratively segments a log2_curve into its component CurvePhases
 
     Proposed future segmentation structure:
 
@@ -262,7 +262,7 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
 
     model.plate = plate
     model.pos = tuple(pos)
-    model.curve = np.ma.masked_invalid(np.log2(phenotyper_object.smooth_growth_data[plate][pos]))
+    model.log2_curve = np.ma.masked_invalid(np.log2(phenotyper_object.smooth_growth_data[plate][pos]))
     model.times = phenotyper_object.times
 
     # Smoothing kernel for derivatives
@@ -286,7 +286,7 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
     d2_offset = (model.times.size - d2yd2t.size) / 2
     model.d2yd2t = np.ma.masked_invalid(np.hstack(([d2yd2t[0] for _ in range(d2_offset)], d2yd2t, [d2yd2t[-1] for _ in range(d2_offset)])))
 
-    model.phases = np.ones_like(model.curve).astype(np.int) * CurvePhases.Undetermined.value
+    model.phases = np.ones_like(model.log2_curve).astype(np.int) * CurvePhases.Undetermined.value
     """:type : numpy.ndarray"""
 
     # Determine second derivative signs
@@ -314,7 +314,7 @@ def _fill_undefined_gaps(phases):
     undefined, = np.where(phases == CurvePhases.Undetermined.value)
     last_index = phases.size - 1
 
-    # If the curve is just two measurements this makes little sense
+    # If the log2_curve is just two measurements this makes little sense
     if last_index < 2:
         return
 
@@ -367,7 +367,7 @@ def classifier_nonflat_linear(model, thresholds, filt):
 
     Args:
         model (scanomatic.models.phases_models.SegmentationModel):
-            Data container for the curve.
+            Data container for the log2_curve.
         thresholds (dict):
             Set of thresholds to use
         filt (numpy.ndarray):
@@ -391,7 +391,7 @@ def classifier_nonflat_linear(model, thresholds, filt):
 
     # Getting back the sign and values for linear model
     loc_slope = model.dydt[loc]
-    loc_value = model.curve[loc]
+    loc_value = model.log2_curve[loc]
     loc_time = model.times[loc]
 
     # Tangent at max
@@ -401,7 +401,7 @@ def classifier_nonflat_linear(model, thresholds, filt):
     phase = CurvePhases.Collapse if loc_slope < 0 else CurvePhases.Impulse
 
     # Find all candidates
-    candidates = (np.abs(model.curve - tangent) <
+    candidates = (np.abs(model.log2_curve - tangent) <
                   np.abs(thresholds[Thresholds.LinearModelExtension] * loc_value)).filled(False)
 
     candidates &= filt
@@ -426,7 +426,7 @@ def _set_nonflat_linear_segment(model, thresholds):
 
     Args:
         model (scanomatic.models.phases_models.SegmentationModel):
-            Data container for the curve
+            Data container for the log2_curve
         thresholds (dict):
             Set of thresholds used.
 
@@ -462,7 +462,7 @@ def _set_nonflat_linear_segment(model, thresholds):
            (model.phases == CurvePhases.UndeterminedNonFlat.value)
 
     # Only consider flanking those that have valid sign.
-    # TODO: Note that it can cause an issue if curve is very wack, could merge two segments that shouldn't be
+    # TODO: Note that it can cause an issue if log2_curve is very wack, could merge two segments that shouldn't be
     # Probably extremely unlikely
     op1 = operator.le if phase is CurvePhases.Collapse else operator.ge
     filt &= op1(model.dydt_signs, 0)
@@ -504,7 +504,7 @@ def classifier_nonlinear(model, thresholds, filt, test_edge):
 
     Args:
         model (scanomatic.models.phases_models.SegmentationModel):
-            Data container for the curve
+            Data container for the log2_curve
         thresholds (dict):
             The set of thresholds used
         filt (numpy.ndarray):
@@ -553,7 +553,7 @@ def classify_non_linear_segment_type(model, thresholds, filt, test_edge):
 
     Args:
         model (scanomatic.models.phases_models.SegmentationModel):
-            Data container for the curve
+            Data container for the log2_curve
         thresholds (dict):
             Set of thresholds used
         filt (numpy.ndarrya):
@@ -611,7 +611,7 @@ def _set_nonlinear_phase_type(model, thresholds, filt, test_edge):
 
     Args:
         model (scanomatic.models.phases_models.SegmentationModel) :
-            Data container for the curve analysed.
+            Data container for the log2_curve analysed.
         thresholds (dict):
             A collection of thresholds to use
         filt (numpy.ndarray):

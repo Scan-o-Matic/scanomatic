@@ -90,7 +90,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             "raw_growth_data", a 4-dimensional array where the outer dimension
                 represents plates, the two middle represents a plate layout and
                 the fourth represents the data vector/time dimension.
-                It is possible to send a single curve in a 1-d array or arrays with
+                It is possible to send a single log2_curve in a 1-d array or arrays with
                 2 or 3 dimensions. These will be reshaped with new dimensions added
                 outside of the existing dimensions until i has 4 dimensions.
                 _NOTE_: The values should be on linear scale, not log2 transformed
@@ -103,7 +103,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         Optional keys:
 
             "smooth_growth_data" must match in shape with "raw_growth_data" and
-                will trigger skipping the default curve smoothing.
+                will trigger skipping the default log2_curve smoothing.
             "inclusion_level" (Trusted, UnderDevelopment, Other) default is
                 Trusted.
             "normalize", (True, False), default is False

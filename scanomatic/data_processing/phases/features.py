@@ -10,7 +10,7 @@ _l = Logger("Curve Phase Meta Phenotyping")
 
 
 class CurvePhaseMetaPhenotypes(Enum):
-    """Phenotypes of an entire growth-curve based on the phase segmentation.
+    """Phenotypes of an entire growth-log2_curve based on the phase segmentation.
 
     Attributes:
         CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution:
@@ -85,7 +85,7 @@ class VectorPhenotypes(Enum):
             for classification of which phase each population size measurement in the growth data
             is classified as.
         VectorPhenotypes.PhasesPhenotypes:
-            1D vector of `CurvePhasePhenotypes` keyed dicts for each segment in the curve.
+            1D vector of `CurvePhasePhenotypes` keyed dicts for each segment in the log2_curve.
     """
     PhasesClassifications = 0
     """:type : VectorPhenotypes"""
