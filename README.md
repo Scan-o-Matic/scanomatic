@@ -21,3 +21,7 @@ __The rest of this file here will only discuss code-related issues.__
 * `scan-o-matic_as_service_check` script should allow for reboot as well
 * Fixture creation image selection should allow to select file on server as well as uploading image
 * Fixture creation should have magnification of what is hovered.
+* Scan.instructions could include more scanner information such as actual `scanimage` argument string used.
+* Gridding could attempt to use heuristics or history about grids to assist gridding and/or warn users
+* Add 16 BIT image scanning?
+
