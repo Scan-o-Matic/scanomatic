@@ -13,10 +13,10 @@ __The rest of this file here will only discuss code-related issues.__
 
 # Features that would be nice if included
 
-* Ability to calibrate and add a new grayscale with using old as refernce.
+* Ability to calibrate and add a new grayscale with using old as reference.
 * Validation of that a grayscale is producing acceptable values in a scanner over time
-* Showing of gridding in Status and QC-view. (API exists, viewing in regridding exists)
-* Showing of logfiles for a project at various stages and views (API exists).
+* Showing of gridding in Status and QC-view. (API exists, viewing in re-gridding exists)
+* Showing of log-files for a project at various stages and views (API exists).
 * Showing of the instructions given at various stages to Scan-o-matic (API exists).
 * `scan-o-matic_as_service_check` script should allow for reboot as well
 * Fixture creation image selection should allow to select file on server as well as uploading image
