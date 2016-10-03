@@ -285,7 +285,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
     UNDO_HISTORY_LENGTH = 50
 
     def __init__(self, raw_growth_data, times_data=None,
-                 median_kernel_size=5, gaussian_filter_sigma=1.5, linear_regression_size=5,
+                 median_kernel_size=5,
+                 gaussian_filter_sigma=1.5,
+                 linear_regression_size=5,
+                 no_growth_threshold=10,
                  base_name=None, run_extraction=False, phenotypes=None,
                  phenotypes_inclusion=PhenotypeDataType.Trusted):
 
@@ -324,6 +327,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._median_kernel_size = median_kernel_size
         self._gaussian_filter_sigma = gaussian_filter_sigma
         self._linear_regression_size = linear_regression_size
+        self._no_growth_threshold = no_growth_threshold
+
         self._meta_data = None
 
         self._normalizable_phenotypes = {
@@ -491,6 +496,20 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 if inclusion_name is None:
                     inclusion_name = 'Trusted'
                 phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
+            elif extraction_params.size == 5:
+
+                median_filt_size,\
+                    gauss_sigma, \
+                    linear_reg_size, \
+                    inclusion_name, \
+                    no_growth_threshold = extraction_params
+
+                if inclusion_name is None:
+                    inclusion_name = 'Trusted'
+
+                phenotyper._no_growth_threshold = no_growth_threshold
+                phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
+
             else:
                 raise ValueError("Stored parameters in {0} can't be understood".format(
                     os.path.join(directory_path, _p.phenotypes_extraction_params)))
@@ -1452,7 +1471,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if len(self._reference_surface_positions) != len(self._phenotypes):
             self.set_control_surface_offsets(Offsets.LowerRight)
 
-    def _init_plate_filter(self, plate_index, phenotype, phenotype_data):
+    def _init_plate_filter(self, plate_index, phenotype, phenotype_data, growth_filter):
 
         self._phenotype_filter[plate_index][phenotype] = np.zeros(
             self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
@@ -1460,6 +1479,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if phenotype_data is not None:
             self._phenotype_filter[plate_index][phenotype][np.where(np.isfinite(phenotype_data) == False)] = \
                 Filter.UndecidedProblem.value
+
+            self._phenotype_filter[plate_index][phenotype][growth_filter] = Filter.NoGrowth.value
 
         if self._phenotype_filter_undo[plate_index]:
             self._logger.warning(
@@ -1485,6 +1506,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             self._logger.warning("Undo doesn't match number of plates. Rewriting...")
             self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
+        if Phenotypes.Monotonicity in self.phenotypes:
+            growth_filter = self._phenotypes[..., Phenotypes.Monotonicity.value] > self._no_growth_threshold
+        else:
+            growth_filter = [[] for _ in range(self._phenotypes.shape[0])]
+
         for phenotype in self.phenotypes:
 
             phenotype_data = self._get_abs_phenotype(phenotype, False)
@@ -1497,12 +1523,16 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 if phenotype not in self._phenotype_filter[plate_index]:
 
-                    self._init_plate_filter(plate_index, phenotype, phenotype_data[plate_index])
+                    self._init_plate_filter(plate_index, phenotype,
+                                            phenotype_data[plate_index],
+                                            growth_filter[plate_index])
 
                 elif self._phenotype_filter[plate_index][phenotype].shape != phenotype_data[0].shape:
 
                     self._logger.warning("The phenotype filter doesn't match plate {0} shape!".format(plate_index + 1))
-                    self._init_plate_filter(plate_index, phenotype, phenotype_data[plate_index])
+                    self._init_plate_filter(plate_index, phenotype,
+                                            phenotype_data[plate_index],
+                                            growth_filter[plate_index])
 
     def infer_filter(self, template, *phenotypes):
         """Transfer all marks on one phenotype to other phenotypes.
@@ -1819,7 +1849,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 [self._median_kernel_size,
                  self._gaussian_filter_sigma,
                  self._linear_regression_size,
-                 None if self._phenotypes_inclusion is None else self._phenotypes_inclusion.name])
+                 None if self._phenotypes_inclusion is None else self._phenotypes_inclusion.name,
+                 self._no_growth_threshold])
 
         self._logger.info("State saved to '{0}'".format(dir_path))
 
