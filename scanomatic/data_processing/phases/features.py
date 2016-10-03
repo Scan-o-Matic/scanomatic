@@ -467,3 +467,24 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
     else:
         _l.error("Not implemented phenotype extraction: {0}".format(meta_phenotype))
         return np.ones_like(plate) * np.nan
+
+
+def get_phase_assignment_data(phenotypes, plate):
+
+    data = []
+    vshape = None
+    for x, y in phenotypes.enumerate_plate_positions(plate):
+        v = phenotypes.get_curve_phases(plate, x, y)
+        if v.ndim == 1 and v.shape[0] and (vshape is None or v.shape == vshape):
+            if vshape is None:
+                vshape = v.shape
+            data.append(v)
+    return np.ma.array(data)
+
+
+def get_phase_assignment_frequencies(phenotypes, plate):
+
+    data = get_phase_assignment_data(phenotypes, plate)
+    min_length = data.max() + 1
+    bin_counts = [np.bincount(data[..., i], minlength=min_length) for i in range(data.shape[1])]
+    return np.array(bin_counts)

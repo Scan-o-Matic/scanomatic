@@ -11,6 +11,7 @@ from scipy.ndimage import label
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
 from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS, \
     get_data_needed_for_segmentation
+from scanomatic.data_processing.phases.features import get_phase_assignment_frequencies
 from scanomatic.data_processing.phenotyper import Phenotyper
 from scanomatic.io.logger import Logger
 from scanomatic.io.movie_writer import MovieWriter
@@ -80,30 +81,8 @@ def _setup_figure(f):
 @_validate_input
 def get_position_phenotypes(phenotypes, plate, position_selection=None):
 
-    return {phenotype.name: phenotypes.get_phenotype(phenotype)[plate][position_selection] for phenotype in Phenotypes}
-
-
-@_validate_input
-def get_phase_assignment_data(phenotypes, plate):
-
-    data = []
-    vshape = None
-    for x, y in phenotypes.enumerate_plate_positions(plate):
-        v = phenotypes.get_curve_phases(plate, x, y)
-        if v.ndim == 1 and v.shape[0] and (vshape is None or v.shape == vshape):
-            if vshape is None:
-                vshape = v.shape
-            data.append(v)
-    return np.ma.array(data)
-
-
-@_validate_input
-def get_phase_assignment_frequencies(phenotypes, plate):
-
-    data = get_phase_assignment_data(phenotypes, plate)
-    min_length = data.max() + 1
-    bin_counts = [np.bincount(data[..., i], minlength=min_length) for i in range(data.shape[1])]
-    return np.array(bin_counts)
+    return {phenotype.name: phenotypes.get_phenotype(phenotype)[plate][position_selection] for
+            phenotype in Phenotypes}
 
 
 @_validate_input
