@@ -136,8 +136,8 @@ def get_phase_analysis(phenotyper_object, plate, pos, thresholds=None, experimen
 
     if experiment_doublings is None:
 
-        experiment_doublings = np.log2(phenotyper_object.get_phenotype(
-            growth_phenotypes.Phenotypes.ExperimentPopulationDoublings)[plate][pos])
+        experiment_doublings = phenotyper_object.get_phenotype(
+            growth_phenotypes.Phenotypes.ExperimentPopulationDoublings)[plate][pos]
 
     # TODO: ensure it isn't unintentionally smoothed dydt that is uses for values, good for location though
     return model.phases, _phenotype_phases(model, experiment_doublings)
