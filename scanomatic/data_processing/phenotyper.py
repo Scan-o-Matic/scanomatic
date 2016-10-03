@@ -288,7 +288,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                  median_kernel_size=5,
                  gaussian_filter_sigma=1.5,
                  linear_regression_size=5,
-                 no_growth_threshold=10,
+                 no_growth_monotonocity_threshold=16,
+                 no_growth_pop_doublings_threshold=1,
                  base_name=None, run_extraction=False, phenotypes=None,
                  phenotypes_inclusion=PhenotypeDataType.Trusted):
 
@@ -327,7 +328,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._median_kernel_size = median_kernel_size
         self._gaussian_filter_sigma = gaussian_filter_sigma
         self._linear_regression_size = linear_regression_size
-        self._no_growth_threshold = no_growth_threshold
+        self._no_growth_monotonicity_threshold = no_growth_monotonocity_threshold
+        self._no_growth_pop_doublings_threshold = no_growth_pop_doublings_threshold
 
         self._meta_data = None
 
@@ -1508,8 +1510,21 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             self._logger.warning("Undo doesn't match number of plates. Rewriting...")
             self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
-        if Phenotypes.Monotonicity in self.phenotypes:
-            growth_filter = self._phenotypes[..., Phenotypes.Monotonicity.value] > self._no_growth_threshold
+        if Phenotypes.Monotonicity in self.phenotypes and Phenotypes.ExperimentPopulationDoublings in self.phenotypes:
+            growth_filter = [
+                self._phenotypes[i, ..., Phenotypes.Monotonicity.value] > self._no_growth_monotonicity_threshold &
+                self._phenotypes[i, ..., Phenotypes.ExperimentPopulationDoublings.value] <
+                self._no_growth_pop_doublings_threshold
+                for i in range(self._phenotypes.shape[0])]
+        elif Phenotypes.Monotonicity in self.phenotypes:
+            growth_filter = [
+                self._phenotypes[i, ..., Phenotypes.Monotonicity.value] > self._no_growth_monotonicity_threshold
+                for i in range(self._phenotypes.shape[0])]
+        elif Phenotypes.ExperimentPopulationDoublings in self.phenotypes:
+            growth_filter = [
+                self._phenotypes[i, ..., Phenotypes.ExperimentPopulationDoublings.value] <
+                self._no_growth_pop_doublings_threshold
+                for i in range(self._phenotypes.shape[0])]
         else:
             growth_filter = [[] for _ in range(self._phenotypes.shape[0])]
 
@@ -1852,7 +1867,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                  self._gaussian_filter_sigma,
                  self._linear_regression_size,
                  None if self._phenotypes_inclusion is None else self._phenotypes_inclusion.name,
-                 self._no_growth_threshold])
+                 self._no_growth_monotonicity_threshold,
+                 self._no_growth_pop_doublings_threshold])
 
         self._logger.info("State saved to '{0}'".format(dir_path))
 
