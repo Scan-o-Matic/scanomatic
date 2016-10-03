@@ -224,7 +224,7 @@ class NormState(Enum):
             This includes spatial 2D bias
         NormState.NormalizedRelative:
             Data is log_2 normalized relative values or
-            strain coefficients. This relates to LSC values
+            strain coefficients. This relates to the LSC values
             in Warringer (2003) but there are slight differences.
         NormState.NormalizedAbsoluteBatched:
             This is a plate-wise recalculation of absolute values
