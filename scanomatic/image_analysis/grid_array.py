@@ -36,6 +36,12 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semapho
     save_extra_data = grid_cell.save_extra_data
 
     grid_cell.source = _get_image_slice(im, grid_cell).astype(np.float64)
+    if grid_cell.source is None:
+        GridArray._LOGGER.error("Tried to analyse grid cell that doesn't have any area")
+        if semaphore is not None:
+            semaphore.release()
+        return
+
     grid_cell.image_index = image_index
 
     if save_extra_data:
@@ -73,12 +79,16 @@ def _get_image_slice(im, grid_cell):
 
     """
 
-    :type grid_cell: scanomatic.imageAnalysis.grid_cell.GridCell
+    :type grid_cell: scanomatic.imageAnalysis.grid_cell.GridCell or None
     """
+
     xy1 = grid_cell.xy1
     xy2 = grid_cell.xy2
 
-    return im[xy1[0]: xy2[0], xy1[1]: xy2[1]].copy()
+    if len(xy1) == 2 and len(xy2) == 2:
+        return im[xy1[0]: xy2[0], xy1[1]: xy2[1]].copy()
+    else:
+        return None
 
 
 def _create_grid_array_identifier(identifier):
