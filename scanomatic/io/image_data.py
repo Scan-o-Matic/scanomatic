@@ -82,7 +82,7 @@ class ImageData(object):
                             cell_features.index,
                             plate_features.index))
                 else:
-                    ImageData._LOGGER.info("Missing compartment for colony position {0}, palte {1}".format(
+                    ImageData._LOGGER.info("Missing compartment for colony position {0}, plate {1}".format(
                         cell_features.index,
                         plate_features.index
                     ))
