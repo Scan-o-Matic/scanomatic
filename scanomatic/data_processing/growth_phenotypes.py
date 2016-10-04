@@ -90,10 +90,8 @@ def curve_end_average(curve_smooth_growth_data, *args, **kwargs):
 
 
 def curve_monotonicity(curve_smooth_growth_data, *args, **kwargs):
-    return np.exp(
-        -(
-            (curve_smooth_growth_data.argsort() - np.arange(curve_smooth_growth_data.size)) ** 2
-        ).sum().astype(float) / (curve_smooth_growth_data.size ** 2) / 10.0)
+    return 1 - (np.diff(curve_smooth_growth_data.argsort()) != 1).astype(float).sum() / \
+               (curve_smooth_growth_data.size - 1)
 
 
 def growth_yield(curve_smooth_growth_data, *args, **kwargs):
