@@ -25,3 +25,4 @@ __The rest of this file here will only discuss code-related issues.__
 * Gridding could attempt to use heuristics or history about grids to assist gridding and/or warn users
 * Add 16 BIT image scanning?
 * Uninstall
+* Regridding grid image can block the ui elements, also may not work if less than 4 images...
