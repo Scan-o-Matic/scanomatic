@@ -212,6 +212,13 @@ def _np_ma_collapse_counter(phases):
     data[data < 0] = np.nan
     return data
 
+
+def _py_phase_counter(phase_vector):
+
+    return sum(1 for t, d in phase_vector if t != CurvePhases.Undetermined)
+
+_np_phase_counter = np.frompyfunc(_py_phase_counter, 1, 1)
+
 # END REGION: Phase counters
 
 # REGION: Major pulse index
