@@ -288,7 +288,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                  median_kernel_size=5,
                  gaussian_filter_sigma=1.5,
                  linear_regression_size=5,
-                 no_growth_monotonocity_threshold=0.45,
+                 no_growth_monotonocity_threshold=0.6,
                  no_growth_pop_doublings_threshold=1.0,
                  base_name=None, run_extraction=False, phenotypes=None,
                  phenotypes_inclusion=PhenotypeDataType.Trusted):
