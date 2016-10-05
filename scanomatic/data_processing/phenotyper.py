@@ -1615,6 +1615,18 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                         self._phenotype_filter[plate][phenotype][template_filt[plate] == mark.value] = mark.value
 
+    def get_curves_filter_compacted(self, plate, threshold=0.8):
+
+        filt = self._phenotype_filter[plate]
+
+        if filt is None:
+            return filt
+
+        filt = np.array(filt.values())
+
+        return ((np.sum(filt, axis=0) / float(filt.shape[0]) > threshold) |
+                np.any(filt == Filter.NoGrowth.value, axis=0))
+
     def add_position_mark(self, plate, positions, phenotype=None, position_mark=Filter.BadData,
                           undoable=True):
         """ Adds log2_curve mark for position or set of positions.
