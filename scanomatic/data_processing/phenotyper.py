@@ -924,25 +924,37 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                     index_for_48h=index_for_48h,
                     position_offset=position_offset)
 
-                for phenotype in Phenotypes:
+                curve_has_data = True
 
-                    if not phenotypes_inclusion(phenotype):
-                        continue
+                if curve_data['curve_smooth_growth_data'].mask.all():
 
-                    if PhenotypeDataType.Scalar(phenotype):
+                    self._logger.warning("Position ({0}, {1}) on plate {2} seems void of data".format(
+                        id0, id1, id_plate + 1
+                    ))
+                    curve_has_data = False
 
-                        try:
-                            position_phenotypes[phenotype.value] = phenotype(**curve_data)
-                        except IndexError:
-                            self._logger.critical(
-                                "Could not store {0} (index {1}) expected max {2}.".format(
-                                    phenotype, phenotype.value, phenotypes_max_value))
-                            return
+                else:
+
+                    for phenotype in Phenotypes:
+
+                        if not phenotypes_inclusion(phenotype):
+                            continue
+
+                        if PhenotypeDataType.Scalar(phenotype):
+
+                            try:
+                                position_phenotypes[phenotype.value] = phenotype(**curve_data)
+                            except IndexError:
+                                self._logger.critical(
+                                    "Could not store {0} (index {1}) expected max {2}.".format(
+                                        phenotype, phenotype.value, phenotypes_max_value))
+                                return
 
                 phenotypes[id0, id1, ...] = position_phenotypes
 
-                if phenotypes_inclusion(VectorPhenotypes.PhasesClassifications) or \
-                        phenotypes_inclusion(VectorPhenotypes.PhasesPhenotypes):
+                if curve_has_data and (
+                            phenotypes_inclusion(VectorPhenotypes.PhasesClassifications) or
+                            phenotypes_inclusion(VectorPhenotypes.PhasesPhenotypes)):
 
                     phases, phases_phenotypes = get_phase_analysis(
                         self, id_plate, (id0, id1),
