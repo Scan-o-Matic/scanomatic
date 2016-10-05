@@ -1533,21 +1533,23 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         if Phenotypes.Monotonicity in self.phenotypes and Phenotypes.ExperimentPopulationDoublings in self.phenotypes:
             growth_filter = [
-                (self._phenotypes[i, ..., Phenotypes.Monotonicity.value] <
-                 self._no_growth_monotonicity_threshold) &
-                (self._phenotypes[i, ..., Phenotypes.ExperimentPopulationDoublings.value] <
-                 self._no_growth_pop_doublings_threshold)
-                for i in range(self._phenotypes.shape[0])]
+                ((plate[..., Phenotypes.Monotonicity.value] < self._no_growth_monotonicity_threshold) |
+                 (np.isfinite(plate[..., Phenotypes.Monotonicity.value]) == np.False_)) &
+                ((plate[..., Phenotypes.ExperimentPopulationDoublings.value] <
+                  self._no_growth_pop_doublings_threshold) |
+                 (np.isfinite(plate[..., Phenotypes.ExperimentPopulationDoublings.value]) == np.False_))
+                for plate in self._phenotypes]
         elif Phenotypes.Monotonicity in self.phenotypes:
             growth_filter = [
-                self._phenotypes[i, ..., Phenotypes.Monotonicity.value] <
-                self._no_growth_monotonicity_threshold
-                for i in range(self._phenotypes.shape[0])]
+                ((plate[..., Phenotypes.Monotonicity.value] < self._no_growth_monotonicity_threshold) |
+                 (np.isfinite(plate[..., Phenotypes.Monotonicity.value]) == np.False_))
+                for plate in self._phenotypes]
         elif Phenotypes.ExperimentPopulationDoublings in self.phenotypes:
             growth_filter = [
-                self._phenotypes[i, ..., Phenotypes.ExperimentPopulationDoublings.value] <
-                self._no_growth_pop_doublings_threshold
-                for i in range(self._phenotypes.shape[0])]
+                ((plate[..., Phenotypes.ExperimentPopulationDoublings.value] <
+                  self._no_growth_pop_doublings_threshold) |
+                 (np.isfinite(plate[..., Phenotypes.ExperimentPopulationDoublings.value]) == np.False_))
+                for plate in self._phenotypes]
         else:
             growth_filter = [[] for _ in range(self._phenotypes.shape[0])]
 
