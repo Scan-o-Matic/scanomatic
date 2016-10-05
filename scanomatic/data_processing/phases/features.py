@@ -497,14 +497,31 @@ def get_phase_assignment_frequencies(phenotypes, plate):
     return np.array(bin_counts)
 
 
+def _get_index_array(shape):
+
+    m = np.mgrid[:shape[0], :shape[1]]
+
+    l = zip(*(v.ravel() for v in m))
+    a2 = np.empty(m.shape[1:], dtype=np.object)
+    a2.ravel()[:] = l
+    return a2
+
+
 def get_phase_phenotypes_aligned(phenotypes, plate):
 
     p = phenotypes._vector_phenotypes[plate][VectorPhenotypes.PhasesPhenotypes]
     filt = phenotypes.get_curves_filter_compacted(plate)
+    coords = _get_index_array(p.shape)
+
     p = p[filt == np.False_]
+    coords = coords[filt == np.False_]
+
     major_idx = np.ma.masked_invalid(_np_ma_get_major_impulse_indices(p).astype(np.float))
     p = p[major_idx.mask == np.False_]
+    coords = coords[major_idx.mask == np.False_]
+
     l = _np_phase_counter(p)
     id_most_left_phases = major_idx.argmax()
     id_most_right_phases = (l - major_idx).argmax()
+
     return id_most_left_phases, id_most_right_phases
