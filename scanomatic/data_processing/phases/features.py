@@ -524,4 +524,5 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
     id_most_left_phases = major_idx.argmax()
     id_most_right_phases = (l - major_idx).argmax()
 
+    # TODO: Need to know (that all phases have placement, energy of placement, that all placements have phases)
     return id_most_left_phases, id_most_right_phases
