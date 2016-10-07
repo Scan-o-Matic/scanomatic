@@ -1273,6 +1273,31 @@ def add_routes(app):
         return jsonify(offset_name=offset.name, offset_value=offset.value,
                        offset_pattern=offset().tolist(), **response)
 
+    @app.route("/api/results/has_normalized/<path:project>")
+    def _get_has_been_normed(project):
+        """If the project has normalized data.
+
+        Arga:
+
+            project: str, url-formatted path to the project.
+
+
+        """
+        url_root = "/api/results/has_normalized"
+
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
+
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+
+        state, name = _get_state_update_response(path, response, success=True)
+
+        return jsonify(has_normalized=state.has_normalized_data, **response)
+
     @app.route("/api/results/export/phenotypes/<save_data>/<path:project>")
     def export_phenotypes(project, save_data=""):
         url_root = "/api/results/export/phenotypes"
