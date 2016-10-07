@@ -233,7 +233,9 @@ def add_routes(app):
         return jsonify(**json_response(
             ["urls", "add_lock", "remove_lock", "add_meta_data", "meta_data_column_names",
              "phenotype_names", "curves", "quality_index", "gridding", "analysis_instructions", "curve_mark_undo",
-             "curve_mark_set", "feature_logs", "export_phenotypes_absolute", "export_phenotypes"],
+             "curve_mark_set", "feature_logs", "export_phenotypes_absolute", "export_phenotypes",
+             "phenotype_normalized_names", "has_normalized_data"
+             ],
             dict(
                 feature_logs=feature_logs,
                 project=project,
