@@ -1006,7 +1006,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._phenotypes = np.array(all_phenotypes)
         self._vector_phenotypes = np.array(all_vector_phenotypes)
         self._vector_meta_phenotypes = np.array(all_vector_meta_phenotypes)
-
+        self._normalized_phenotypes = None
         self._logger.info("Phenotype Extraction Done")
 
     def _get_plate_linear_regression_strided(self, plate):
