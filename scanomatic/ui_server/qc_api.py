@@ -249,6 +249,9 @@ def add_routes(app):
                 curve_mark_undo=convert_path_to_url("/api/results/curve_mark/undo", path) if is_project else None,
                 curve_mark_set=convert_path_to_url("/api/results/curve_mark/set", path) if is_project else None,
                 phenotype_names=convert_path_to_url("/api/results/phenotype_names", path) if is_project else None,
+                phenotype_normalized_names=convert_path_to_url("/api/results/phenotype_normalizable/names", path) if
+                is_project else None,
+                has_normalized_data=convert_path_to_url("/api/results/has_normalized", path) if is_project else None,
                 curves=convert_path_to_url("/api/results/curves", path) if is_project else None,
                 quality_index=convert_path_to_url("/api/results/quality_index", path) if is_project else None,
                 gridding=convert_path_to_url("/api/results/gridding", path) if is_project else None,
