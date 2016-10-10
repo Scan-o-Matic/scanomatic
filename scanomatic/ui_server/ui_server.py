@@ -38,7 +38,7 @@ _supress_prints = None
 
 def init_logging():
 
-    backup_file(Paths().log_server)
+    backup_file(Paths().log_ui_server)
     _logger.set_output_target(
         Paths().log_ui_server,
         catch_stdout=True, catch_stderr=True)
