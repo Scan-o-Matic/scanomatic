@@ -712,9 +712,13 @@ def add_routes(app):
             response['success'] = False
             return jsonify(reason="Phenotype hasn't been normalized", plate=plate, phenotype=phenotype, **response)
 
+        qindex_rows, qindex_cols = state.get_quality_index(plate)
+
         return jsonify(
             data=plate_data.tojson(), plate=plate, phenotype=phenotype,
             is_segmentation_based=is_segmentation_based,
+            qindex_rows=qindex_rows.tolist(),
+            qindex_cols=qindex_cols.tolist(),
             **merge_dicts(
                 {filt.name: tuple(v.tolist() for v in plate_data.where_mask_layer(filt))
                  for filt in Filter if filt != Filter.OK},
