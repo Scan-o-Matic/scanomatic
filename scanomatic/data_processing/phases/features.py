@@ -671,8 +671,10 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
         append_phases(phase_data, (id_most_right_phases, id_phase))
 
     # Run through all curves
+    first_run = True
+
     for n in range(10):
-        first_run = True
+
         for id_curve, v in enumerate(plate_data):
 
             prev_phase = None
