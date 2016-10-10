@@ -572,7 +572,11 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
         min_e = None
         best_id = None
         if phase_ref:
+            if phase_ref[1] >= len(phases):
+                return None
+
             min_e = get_energy(phases[phase_ref[1]], phase_phenotypes)
+
             best_id = phase_ref[1]
 
         for phase_id in possible:
