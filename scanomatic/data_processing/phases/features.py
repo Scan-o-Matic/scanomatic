@@ -3,7 +3,7 @@ from enum import Enum
 
 from scanomatic.data_processing import growth_phenotypes
 from scanomatic.io.logger import Logger
-from scanomatic.data_processing.phases.analysis import CurvePhasePhenotypes
+from scanomatic.data_processing.phases.analysis import CurvePhasePhenotypes, number_of_phenotypes
 from scanomatic.data_processing.phases.segmentation import CurvePhases, is_detected_non_linear
 
 _l = Logger("Curve Phase Meta Phenotyping")
@@ -714,3 +714,11 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
         # TODO: Should iterate until energy is stable
 
     return phases
+
+
+def _ravel_phase_phenotypes(phases, ravel_plate, coords, shape):
+
+    idx = [number_of_phenotypes(phase[PhaseData.Type]) for phase in phases]
+    idx.insert(0, 0)
+    idx = np.cumsum(idx)
+    return idx
