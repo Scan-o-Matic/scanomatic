@@ -71,10 +71,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     _logger.info("Requested to launch UI-server at {0} being local={1} and debug={2}".format(
         _url, is_local, debug))
 
-    @app.before_first_request
-    def init():
-        app.log_recycler = Timer(LOG_RECYCLE_TIME, init_logging)
-        app.log_recycler.start()
+    app.log_recycler = Timer(LOG_RECYCLE_TIME, init_logging)
+    app.log_recycler.start()
 
     @app.route("/")
     def _root():
