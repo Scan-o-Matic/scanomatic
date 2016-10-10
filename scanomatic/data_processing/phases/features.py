@@ -1,5 +1,6 @@
 import numpy as np
 from enum import Enum
+from itertools import izip
 
 from scanomatic.data_processing import growth_phenotypes
 from scanomatic.io.logger import Logger
@@ -665,7 +666,7 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
         append_phases(phase_data, (id_most_right_phases, id_phase))
 
     # Run through all curves
-    for _ in range(10):
+    for n in range(10):
         first_run = True
         for id_curve, v in enumerate(plate_data):
 
@@ -708,17 +709,32 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
                 prev_phase = cur_phase
 
         phases = [phase for phase in sorted(phases, key=lambda x: x[PhaseData.Anchor])
-                  if len(phase[PhaseData.Members]) > 0]
+                  if len(phase[PhaseData.Members]) > (0 if n == 9 else int(0.05 * coords.size))]
 
         first_run = False
         # TODO: Should iterate until energy is stable
 
-    return phases
+    return _ravel_phase_phenotypes(phases, plate_data, coords, phenotypes[plate].shape[:2])
 
 
 def _ravel_phase_phenotypes(phases, ravel_plate, coords, shape):
 
+    def ravel(data, coord, id_curve, phase_vector):
+
+        for id_phase, (phase_type, phase_phenotypes) in enumerate(phase_vector):
+            id_tup = (id_curve, id_phase)
+            for id_data, aligned_phase in enumerate(phases):
+                if id_tup in aligned_phase[PhaseData.Members]:
+                    data[coord][idx[id_data]: idx[id_data] + number_of_phenotypes(phase_type)] = [
+                        phase_phenotypes[key] for key in CurvePhasePhenotypes if key in phase_phenotypes
+                    ]
+
     idx = [number_of_phenotypes(phase[PhaseData.Type]) for phase in phases]
     idx.insert(0, 0)
     idx = np.cumsum(idx)
-    return idx
+    data = np.ones(shape + (idx[-1],), dtype=float) * np.nan
+
+    for id_curve, (coord, phase_vector) in enumerate(izip(coords, ravel_plate)):
+        ravel(data, coord, id_curve, phase_vector)
+
+    return data
