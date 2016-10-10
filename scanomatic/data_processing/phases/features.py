@@ -627,26 +627,26 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
         else:
             return min((abs(v) for v in (phase_anchor - end, phase_anchor - start))) / float(end - start)
 
-    p = phenotypes._vector_phenotypes[plate][VectorPhenotypes.PhasesPhenotypes]
+    plate_data = phenotypes._vector_phenotypes[plate][VectorPhenotypes.PhasesPhenotypes]
     filt = phenotypes.get_curves_filter_compacted(plate)
-    coords = _get_index_array(p.shape)
+    coords = _get_index_array(plate_data.shape)
 
-    p = p[filt == np.False_]
+    plate_data = plate_data[filt == np.False_]
     coords = coords[filt == np.False_]
 
-    major_idx = np.ma.masked_invalid(_np_ma_get_major_impulse_indices(p).astype(np.float))
+    major_idx = np.ma.masked_invalid(_np_ma_get_major_impulse_indices(plate_data).astype(np.float))
 
-    p = p[major_idx.mask == np.False_]
+    plate_data = plate_data[major_idx.mask == np.False_]
     coords = coords[major_idx.mask == np.False_]
     major_idx = major_idx[major_idx.mask == np.False_]
 
-    l = _np_phase_counter(p)
+    l = _np_phase_counter(plate_data)
     id_most_left_phases = major_idx.argmax()
     id_most_right_phases = (l - major_idx).argmax()
     major_idx = [int(v) if np.isfinite(v) else None for v in major_idx]
 
     # Init left phases
-    for id_phase, phase_data in enumerate(p[id_most_left_phases][: major_idx[id_most_left_phases] if
+    for id_phase, phase_data in enumerate(plate_data[id_most_left_phases][: major_idx[id_most_left_phases] if
                                           isinstance(major_idx[id_most_left_phases], int) else None]):
 
         append_phases(phase_data, (id_most_left_phases, id_phase))
@@ -654,12 +654,12 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
     # Adding a major phase
     major_phase_id = len(phases)
     phases.append({PhaseData.Type: CurvePhases.Impulse, PhaseData.Members: set()})
-    add_to_phase(p[id_most_left_phases][major_idx[id_most_left_phases]],
+    add_to_phase(plate_data[id_most_left_phases][major_idx[id_most_left_phases]],
                  (id_most_left_phases, major_idx[id_most_left_phases]),
                  phases[major_phase_id])
 
     # Init right phases
-    for id_phase, phase_data in enumerate(p[id_most_right_phases]):
+    for id_phase, phase_data in enumerate(plate_data[id_most_right_phases]):
         if id_phase <= major_idx[id_most_right_phases]:
             continue
         append_phases(phase_data, (id_most_right_phases, id_phase))
@@ -667,7 +667,7 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
     # Run through all curves
     for _ in range(10):
         first_run = True
-        for id_curve, v in enumerate(p):
+        for id_curve, v in enumerate(plate_data):
 
             prev_phase = None
             major_phase = (id_curve, major_idx[id_curve])
