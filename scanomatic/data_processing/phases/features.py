@@ -507,7 +507,59 @@ def _get_index_array(shape):
     return a2
 
 
+class PhaseData(Enum):
+    Type = 0
+    """:type: PhaseData"""
+    Members = 1
+    """:type: PhaseData"""
+    Anchor = 2
+    """:type: PhaseData"""
+
+
 def get_phase_phenotypes_aligned(phenotypes, plate):
+
+    phases = []
+
+    def current_phase(phase_ref):
+
+        for i, phase in enumerate(phases):
+            if phase[PhaseData.Members].contains(phase_ref):
+                return i
+        return None
+
+    def add_to_phase(phase_phenotypes, phase_ref, phase, w=0.9):
+
+        anchor = phase_phenotypes[CurvePhasePhenotypes.Start] + \
+                 phase_phenotypes[CurvePhasePhenotypes.Duration] / 2.0
+
+        if PhaseData.Anchor in phase:
+            phase[PhaseData.Anchor] = w * phase[PhaseData.Anchor] + (1 - w) * anchor
+        else:
+            phase[PhaseData.Anchor] = anchor
+
+        phase[PhaseData.Members].add(phase_ref)
+
+    def append_phases(data, phase_ref):
+
+        for phase in CurvePhases:
+
+            if phase is CurvePhases.Undetermined:
+                continue
+
+            phases.append({PhaseData.Type: phase, PhaseData.Members: set()})
+            if data[0] is phase:
+                add_to_phase(data[1], phase_ref, phases[-1])
+
+    def get_energy(phase, phase_phenotypes):
+
+        start = phase_phenotypes[CurvePhasePhenotypes.Start]
+        end = start + phase_phenotypes[CurvePhasePhenotypes.Duration]
+
+        phase_anchor = phase[PhaseData.Anchor]
+        if start <= phase_anchor <= end:
+            return 0
+        else:
+            return min(abs((phase_anchor - end, phase_anchor - start))) / float(end - start)
 
     p = phenotypes._vector_phenotypes[plate][VectorPhenotypes.PhasesPhenotypes]
     filt = phenotypes.get_curves_filter_compacted(plate)
@@ -524,5 +576,55 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
     id_most_left_phases = major_idx.argmax()
     id_most_right_phases = (l - major_idx).argmax()
 
-    # TODO: Need to know (that all phases have placement, energy of placement, that all placements have phases)
-    return id_most_left_phases, id_most_right_phases
+    # Init left phases
+    for id_phase, phase_data in enumerate(p[id_most_left_phases][:major_idx[id_most_left_phases]]):
+        append_phases(phase_data, (id_most_left_phases, id_phase))
+
+    # Adding a major phase
+    major_phase_id = len(phases)
+    phases.append({PhaseData.Type: CurvePhases.Impulse, PhaseData.Members: set()})
+    add_to_phase(p[id_most_left_phases][major_idx[id_most_left_phases]][1],
+                 (id_most_left_phases, major_idx[id_most_left_phases]),
+                 phases[major_phase_id])
+
+    # Init right phases
+    for id_phase, phase_data in enumerate(p[id_most_right_phases]):
+        if id_phase <= major_idx[id_most_right_phases]:
+            continue
+        append_phases(phase_data, (id_most_right_phases, id_phase))
+
+    # Run through all curves
+    first_run = True
+    for id_curve, v in enumerate(p):
+
+        prev_phase = None
+        major_phase = (id_curve, major_idx[id_curve])
+
+        for id_phase, phase_data in enumerate(v):
+            id_tup = (id_curve, id_phase)
+            cur_phase = current_phase(id_tup)
+            e = None
+
+            # May not move major phase alignment
+            if id_tup == major_phase:
+                if first_run and cur_phase is None:
+                    add_to_phase(phase_data[1], id_tup, phases[major_phase_id])
+                prev_phase = cur_phase
+                continue
+
+            if cur_phase is not None:
+                if cur_phase > prev_phase:
+                    e = get_energy(phases[cur_phase], phase_data[1])
+                    if e == 0:
+                        prev_phase = cur_phase
+                        continue
+
+            # TODO: Search for optimal phase
+            prev_phase = cur_phase
+
+    phases = [phase for phase in sorted(phases, key=lambda x: x[PhaseData.Anchor])
+              if len(phase[PhaseData.Members]) > 0]
+
+    # TODO: Should iterate until all curves come in correct order
+
+    return phases
