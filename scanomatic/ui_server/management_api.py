@@ -104,11 +104,13 @@ def add_routes(app, rpc_client):
     def _app_actions(action=None):
 
         if action == 'reboot':
+            app.log_recycler.cancel()
             shutdown_server()
             Thread(target=relaunch).start()
             return jsonify(success=True)
 
         elif action == 'shutdown':
+            app.log_recycler.cancel()
             shutdown_server()
             return jsonify(success=True)
 

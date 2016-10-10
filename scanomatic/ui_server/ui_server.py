@@ -6,11 +6,11 @@ import webbrowser
 from flask import Flask, request, send_from_directory, redirect, jsonify, render_template
 
 from socket import error
-from threading import Thread
+from threading import Thread, Timer
 from types import StringTypes
 
 from scanomatic.io.app_config import Config
-from scanomatic.io.logger import Logger
+from scanomatic.io.logger import Logger, LOG_RECYCLE_TIME
 from scanomatic.io.paths import Paths
 from scanomatic.io.power_manager import POWER_MANAGER_TYPE
 from scanomatic.io.rpc_client import get_client
@@ -19,6 +19,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.io.backup import backup_file
 
 from . import qc_api
 from . import analysis_api
@@ -32,12 +33,22 @@ from .general import get_2d_list
 
 _url = None
 _logger = Logger("UI-server")
+_supress_prints = None
+
+
+def init_logging():
+
+    backup_file(Paths().log_server)
+    _logger.set_output_target(
+        Paths().log_ui_server,
+        catch_stdout=True, catch_stderr=True)
+    _logger.surpress_prints = _supress_prints
 
 
 def launch_server(is_local=None, port=None, host=None, debug=False):
 
-    global _url
-
+    global _url, _supress_prints
+    _supress_prints = debug is False
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
 
     rpc_client = get_client(admin=True)
@@ -56,9 +67,14 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         is_local = False
 
     _url = "http://{host}:{port}".format(host=host, port=port)
-
+    init_logging()
     _logger.info("Requested to launch UI-server at {0} being local={1} and debug={2}".format(
         _url, is_local, debug))
+
+    @app.before_first_request
+    def init():
+        app.log_recycler = Timer(LOG_RECYCLE_TIME, init_logging)
+        app.log_recycler.start()
 
     @app.route("/")
     def _root():
