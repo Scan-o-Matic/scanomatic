@@ -7,6 +7,8 @@ from functools import partial
 import warnings
 import re
 
+LOG_RECYCLE_TIME = 60 * 60 * 24
+
 #
 # CLASSES
 #
