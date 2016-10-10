@@ -27,3 +27,4 @@ __The rest of this file here will only discuss code-related issues.__
 * Uninstall
 * Regridding grid image can block the ui elements, also may not work if less than 4 images...
 * Adding meta-data to QC should trigger suggesting certain positions as Empty based on missing info in meta data.
+* QC be able to know what phenotypes been extracted and normed
