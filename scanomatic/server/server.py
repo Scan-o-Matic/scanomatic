@@ -17,6 +17,8 @@ from scanomatic.io.resource_status import Resource_Status
 import scanomatic.generics.decorators as decorators
 import scanomatic.models.rpc_job_models as rpc_job_models
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
+from scanomatic.io.paths import Paths
+from scanomatic.io.backup import backup_file
 
 #
 # CLASSES
@@ -29,6 +31,9 @@ class Server(object):
         config = app_config.Config()
 
         self.logger = logger.Logger("Server")
+        self._cycle_log_time = 0
+        self._init_logging()
+
         self.admin = config.rpc_server.admin
         self._running = False
         self._started = False
@@ -39,6 +44,20 @@ class Server(object):
         self._queue = queue.Queue(self._jobs)
 
         self._scanner_manager = scanner_manager.ScannerPowerManager()
+
+    @property
+    def _is_time_to_cycle_log(self):
+        self.logger.info(time.time() - self._cycle_log_time)
+        return time.time() - self._cycle_log_time > logger.LOG_RECYCLE_TIME
+
+    def _init_logging(self):
+
+        backup_file(Paths().log_server)
+        self.logger.set_output_target(
+            Paths().log_server,
+            catch_stdout=True, catch_stderr=True)
+        self.logger.surpress_prints = True
+        self._cycle_log_time = time.time()
 
     @property
     def scanner_manager(self):
@@ -142,6 +161,8 @@ class Server(object):
                 self._scanner_manager.update()
             else:
                 self._jobs.sync()
+                if self._is_time_to_cycle_log:
+                    self._init_logging()
 
             time.sleep(sleep)
             i += 1
