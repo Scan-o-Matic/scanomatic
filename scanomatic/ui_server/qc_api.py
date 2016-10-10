@@ -707,7 +707,12 @@ def add_routes(app):
                 dict(
                     urls=urls, plate_indices=plate_indices, is_segmentation_based=is_segmentation_based, **response)))
 
-        plate_data = state.get_phenotype(phenotype_enum, normalized=True)[plate]
+        try:
+            plate_data = state.get_phenotype(phenotype_enum, normalized=True)[plate]
+        except ValueError:
+            response['success'] = False
+            return jsonify(reason="Phenotype hasn't been normalized", plate=plate, phenotype=phenotype, **response)
+
         if plate_data is None:
             response['success'] = False
             return jsonify(reason="Phenotype hasn't been normalized", plate=plate, phenotype=phenotype, **response)
@@ -774,7 +779,14 @@ def add_routes(app):
                 dict(
                     urls=urls, plate_indices=plate_indices, is_segmentation_based=is_segmentation_based, **response)))
 
-        plate_data = state.get_phenotype(phenotype_enum)[plate]
+        try:
+            plate_data = state.get_phenotype(phenotype_enum)[plate]
+        except ValueError:
+            response['success'] = False
+            return jsonify(
+                reason="Phenotype hasn't been extracted",
+                plate=plate, phenotype=phenotype, **response)
+
         if plate_data is None:
             response['success'] = False
             return jsonify(
