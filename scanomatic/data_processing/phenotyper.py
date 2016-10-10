@@ -825,7 +825,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
     def has_normalized_data(self):
 
         return self._normalizable_phenotypes is not None and \
-               not all(plate is None for plate in self._normalizable_phenotypes)
+               isinstance(self._normalized_phenotypes, np.ndarray) and \
+               not all(plate is None for plate in self._normalized_phenotypes) and \
+               self._normalized_phenotypes.size > 0
 
     def _smoothen(self):
 
