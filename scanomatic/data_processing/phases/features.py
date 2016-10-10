@@ -581,6 +581,7 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
 
         for phase_id in possible:
 
+            # TODO: Somehow can fall outside `phases`
             energy = get_energy(phases[phase_id], phase_phenotypes)
             if energy < 1 and (min_e is None or energy < min_e):
                 min_e = energy
