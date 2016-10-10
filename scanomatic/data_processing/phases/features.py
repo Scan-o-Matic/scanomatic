@@ -215,7 +215,7 @@ def _np_ma_collapse_counter(phases):
 
 def _py_phase_counter(phase_vector):
 
-    return sum(1 for t, d in phase_vector if t != CurvePhases.Undetermined)
+    return sum(1 for t, d in phase_vector if t is not CurvePhases.Undetermined)
 
 _np_phase_counter = np.frompyfunc(_py_phase_counter, 1, 1)
 
