@@ -46,6 +46,22 @@ class CurvePhasePhenotypes(Enum):
     """type: CurvePhasePhenotypes"""
 
 
+def number_of_phenotypes(phase):
+    """
+    Args:
+        phase: .analysis.CurvePhases
+
+    Returns:
+
+    """
+    if is_detected_linear(phase):
+        return 6
+    elif is_detected_non_linear(phase):
+        return 5
+    else:
+        return 3
+
+
 def _phenotype_phases(model, doublings):
 
     phenotypes = []
