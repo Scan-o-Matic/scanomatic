@@ -821,6 +821,12 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         return all(((a is None) is (b is None)) or a.shape == b.shape for a, b in
                    zip(self._raw_growth_data, self._smooth_growth_data))
 
+    @property
+    def has_normalized_data(self):
+
+        return self._normalizable_phenotypes is not None and \
+               not all(plate is None for plate in self._normalizable_phenotypes)
+
     def _smoothen(self):
 
         self.set("smooth_growth_data", self._raw_growth_data.copy())
@@ -1000,7 +1006,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._phenotypes = np.array(all_phenotypes)
         self._vector_phenotypes = np.array(all_vector_phenotypes)
         self._vector_meta_phenotypes = np.array(all_vector_meta_phenotypes)
-
+        self._normalized_phenotypes = None
         self._logger.info("Phenotype Extraction Done")
 
     def _get_plate_linear_regression_strided(self, plate):

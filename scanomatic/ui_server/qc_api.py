@@ -233,7 +233,9 @@ def add_routes(app):
         return jsonify(**json_response(
             ["urls", "add_lock", "remove_lock", "add_meta_data", "meta_data_column_names",
              "phenotype_names", "curves", "quality_index", "gridding", "analysis_instructions", "curve_mark_undo",
-             "curve_mark_set", "feature_logs", "export_phenotypes_absolute", "export_phenotypes"],
+             "curve_mark_set", "feature_logs", "export_phenotypes_absolute", "export_phenotypes",
+             "phenotype_normalized_names", "has_normalized_data"
+             ],
             dict(
                 feature_logs=feature_logs,
                 project=project,
@@ -249,6 +251,9 @@ def add_routes(app):
                 curve_mark_undo=convert_path_to_url("/api/results/curve_mark/undo", path) if is_project else None,
                 curve_mark_set=convert_path_to_url("/api/results/curve_mark/set", path) if is_project else None,
                 phenotype_names=convert_path_to_url("/api/results/phenotype_names", path) if is_project else None,
+                phenotype_normalized_names=convert_path_to_url("/api/results/phenotype_normalizable/names", path) if
+                is_project else None,
+                has_normalized_data=convert_path_to_url("/api/results/has_normalized", path) if is_project else None,
                 curves=convert_path_to_url("/api/results/curves", path) if is_project else None,
                 quality_index=convert_path_to_url("/api/results/quality_index", path) if is_project else None,
                 gridding=convert_path_to_url("/api/results/gridding", path) if is_project else None,
@@ -1272,6 +1277,31 @@ def add_routes(app):
 
         return jsonify(offset_name=offset.name, offset_value=offset.value,
                        offset_pattern=offset().tolist(), **response)
+
+    @app.route("/api/results/has_normalized/<path:project>")
+    def _get_has_been_normed(project):
+        """If the project has normalized data.
+
+        Arga:
+
+            project: str, url-formatted path to the project.
+
+
+        """
+        url_root = "/api/results/has_normalized"
+
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
+
+        lock_key = request.values.get("lock_key")
+        lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
+
+        state, name = _get_state_update_response(path, response, success=True)
+
+        return jsonify(has_normalized=state.has_normalized_data, **response)
 
     @app.route("/api/results/export/phenotypes/<save_data>/<path:project>")
     def export_phenotypes(project, save_data=""):
