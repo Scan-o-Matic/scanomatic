@@ -140,6 +140,7 @@ class Logger(object):
             cls,  target, catch_stdout=False, catch_stderr=False,
             mode='w', buffering=None):
 
+        # TODO: Problem if waiting...fix some day
         if cls._DEFAULT_LOGFILE is not None:
             cls._DEFAULT_LOGFILE.close()
 
@@ -345,6 +346,7 @@ class Logger(object):
 
 
 class _ExtendedFileObject(file):
+    # TODO: Regain buffer and release threads while closing
 
     def __init__(self, path, mode, buffering=None):
 
