@@ -13,22 +13,50 @@ __The rest of this file here will only discuss code-related issues.__
 
 # Features that would be nice if included
 
+## UI
+
+### Admin stuff
 * Ability to calibrate and add a new grayscale with using old as reference.
 * Validation of that a grayscale is producing acceptable values in a scanner over time
+
+### Troubleshooting and QC
+
 * Showing of gridding in Status and QC-view. (API exists, viewing in re-gridding exists)
 * Showing of log-files for a project at various stages and views (API exists).
 * Showing of the instructions given at various stages to Scan-o-matic (API exists).
-* `scan-o-matic_as_service_check` script should allow for reboots as well
+* Regridding grid image can block the ui elements, also may not work if less than 4 images...
+* QC be able to know what phenotypes been extracted and normed
+
+### Fixtures
+
 * Fixture creation image selection should allow to select file on server as well as uploading image
 * Fixture creation should have magnification of what is hovered.
+
+## CLI
+
+* `scan-o-matic_as_service_check` script should allow for reboots as well
+* Uninstall
+
+## Code
+
 * Scan.instructions could include more scanner information such as actual `scanimage` argument string used.
+
+### Image analysis
+
 * Gridding could attempt to use heuristics or history about grids to assist gridding and/or warn users
 * Add 16 BIT image scanning?
-* Uninstall
-* Regridding grid image can block the ui elements, also may not work if less than 4 images...
+
+### Data/Features/QC
+
 * Adding meta-data to QC should trigger suggesting certain positions as Empty based on missing info in meta data.
-* QC be able to know what phenotypes been extracted and normed
+
+### Logging
+
 * Log parsing should be able to add non-formatted strings to current log item
 * Logs can be lost when swapping outputs
+
+### API
+
 * Be able to email logs.
 * Server should say if it reaches the power manager.
+* QC be able to know what phenotypes been extracted and normed
