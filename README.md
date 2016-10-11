@@ -18,7 +18,7 @@ __The rest of this file here will only discuss code-related issues.__
 * Showing of gridding in Status and QC-view. (API exists, viewing in re-gridding exists)
 * Showing of log-files for a project at various stages and views (API exists).
 * Showing of the instructions given at various stages to Scan-o-matic (API exists).
-* `scan-o-matic_as_service_check` script should allow for reboot as well
+* `scan-o-matic_as_service_check` script should allow for reboots as well
 * Fixture creation image selection should allow to select file on server as well as uploading image
 * Fixture creation should have magnification of what is hovered.
 * Scan.instructions could include more scanner information such as actual `scanimage` argument string used.
@@ -28,3 +28,7 @@ __The rest of this file here will only discuss code-related issues.__
 * Regridding grid image can block the ui elements, also may not work if less than 4 images...
 * Adding meta-data to QC should trigger suggesting certain positions as Empty based on missing info in meta data.
 * QC be able to know what phenotypes been extracted and normed
+* Log parsing should be able to add non-formatted strings to current log item
+* Logs can be lost when swapping outputs
+* Be able to email logs.
+* Server should say if it reaches the power manager.
