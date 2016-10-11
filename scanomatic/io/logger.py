@@ -351,36 +351,61 @@ class _ExtendedFileObject(file):
         super(_ExtendedFileObject, self).__init__(path, mode, buffering=buffering)
         self._semaphor = False
         self._buffer = []
+        self._flush_buffer = False
+        self._cache = []
 
-    def write(self, s):
+    def pause(self):
 
-        self._buffer.append(s)
-        self._write()
-
-    def writelines(self, *lines):
-
-        lines = list(lines)
-        for i in range(len(lines)):
-            if lines[i][-1] != "\n":
-                lines[i] = str(lines[-1]) + "\n"
-        self._buffer += lines
-        self._write()
-
-    def _write(self):
-
-        t = threading.Thread(target=self._write_to_file)
-        t.start()
-
-    def _write_to_file(self):
+        if -1 not in self._buffer:
+            self._buffer.insert(0, -1)
 
         while self._semaphor:
             time.sleep(0.01)
 
-        self._semaphor = True
-        length = len(self._buffer)
-        super(_ExtendedFileObject, self).writelines(self._buffer[:length])
-        for i in range(length):
+    def close(self):
+
+        if self._buffer and not self._buffer[0] == -1:
+            self.pause()
+        super(_ExtendedFileObject, self).close()
+        self._flush_buffer = True
+        self.resume()
+        while self._buffer:
+            time.sleep(0.01)
+        return self._cache
+
+    def resume(self):
+
+        if self._buffer and self._buffer[0] == -1:
             self._buffer.pop(0)
+
+    def write(self, s):
+        self._write([s])
+
+    def writelines(self, *lines):
+        self._write(lines)
+
+    def _write(self, obj):
+
+        id = hash(obj)
+        self._buffer.append(id)
+        t = threading.Thread(target=self._write_to_file, args=(id, obj))
+        t.start()
+
+    def _write_to_file(self, id, obj):
+
+        while self._semaphor and id != self._buffer[0]:
+            time.sleep(0.01)
+
+        if self._flush_buffer:
+            for l in obj:
+                self._cache.append(obj)
+            self._buffer.remove(id)
+            return
+
+        self._semaphor = True
+        self._buffer.remove(id)
+
+        super(_ExtendedFileObject, self).writelines([l if l.endswith(u"\n") else l + u"\n" for l in obj])
         self._semaphor = False
 
 
