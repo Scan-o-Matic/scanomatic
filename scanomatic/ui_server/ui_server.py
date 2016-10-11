@@ -33,22 +33,24 @@ from .general import get_2d_list
 
 _url = None
 _logger = Logger("UI-server")
-_supress_prints = None
+_debug_mode = None
 
 
 def init_logging():
 
+    _logger.pause()
     backup_file(Paths().log_ui_server)
     _logger.set_output_target(
         Paths().log_ui_server,
-        catch_stdout=True, catch_stderr=True)
-    _logger.surpress_prints = _supress_prints
+        catch_stdout=_debug_mode is False, catch_stderr=_debug_mode is False)
+    _logger.surpress_prints = _debug_mode is False
+    _logger.resume()
 
 
 def launch_server(is_local=None, port=None, host=None, debug=False):
 
-    global _url, _supress_prints
-    _supress_prints = debug is False
+    global _url, _debug_mode
+    _debug_mode = debug
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
 
     rpc_client = get_client(admin=True)
