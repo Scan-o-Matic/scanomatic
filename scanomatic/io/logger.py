@@ -89,6 +89,32 @@ class Logger(object):
 
         self._output(5, msg)
 
+    def pause(self):
+
+        file = self._active_log_file
+        if file is None:
+            self.error("Attempting to pause logging while not having any log file")
+        else:
+            file.pause()
+
+    def resume(self):
+
+        file = self._active_log_file
+        if file is None:
+            self.error("Attempting to resume logging while not having any log file")
+        else:
+            file.resume()
+
+    def close_output(self):
+
+        file = self._active_log_file
+        if file is not None:
+            file.close()
+            if file is self._log_file:
+                self._log_file = None
+            else:
+                self._DEFAULT_LOGFILE = None
+
     @classmethod
     def set_global_log_levels(cls, log_levels=None):
 
