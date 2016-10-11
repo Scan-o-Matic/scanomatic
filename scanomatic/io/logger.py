@@ -275,8 +275,7 @@ class Logger(object):
         if (self._active and lvl <= self._level and
                 lvl in self._LOGLEVELS_TO_TEXT):
 
-            output = (self._usePrivateOutput and self._log_file or
-                      self._DEFAULT_LOGFILE)
+            output = self._active_log_file
 
             if output is not None:
                 if isinstance(msg, list) or isinstance(msg, tuple):
@@ -334,6 +333,15 @@ class Logger(object):
              for frame in stack[:-3]])
 
         output(txt)
+
+    @property
+    def _active_log_file(self):
+        if self._log_file is not None and self._usePrivateOutput:
+            return self._log_file
+        elif self._DEFAULT_LOGFILE is not None:
+            return self._DEFAULT_LOGFILE
+        else:
+            return self._log_file
 
 
 class _ExtendedFileObject(file):
