@@ -543,7 +543,7 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
 
         try:
             start = phase_phenotypes[1][CurvePhasePhenotypes.Start] / \
-                    major_phase_time - 1.0 if phase_phenotypes[1][CurvePhasePhenotypes.Start] < major_phase_time else \
+                major_phase_time - 1.0 if phase_phenotypes[1][CurvePhasePhenotypes.Start] < major_phase_time else \
                 (phase_phenotypes[1][CurvePhasePhenotypes.Start] - major_phase_time) / (end_time - major_phase_time)
 
             anchor = start + (
