@@ -29,7 +29,7 @@ from . import scan_api
 from . import management_api
 from . import tools_api
 from . import data_api
-from .general import get_2d_list
+from .general import get_2d_list, decorate_access_restriction
 
 _url = None
 _logger = Logger("UI-server")
@@ -81,6 +81,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_root_file)
 
     @app.route("/help")
+    @decorate_access_restriction
     def _help():
         return send_from_directory(Paths().ui_root, Paths().ui_help_file)
 

@@ -3,7 +3,7 @@ import os
 import re
 from StringIO import StringIO
 from itertools import chain
-from flask import send_file
+from flask import send_file, request, send_from_directory
 import numpy as np
 import zipfile
 
@@ -336,3 +336,19 @@ def split_areas_into_grayscale_and_plates(areas):
             _logger.warning("Bad data: '{0}' does not have the expected area attributes".format(area))
 
     return gs, plates
+
+
+def is_local_ip(ip):
+
+    return False
+
+
+def decorate_access_restriction(restricted_route):
+
+    def restrictor(*args, **kwargs):
+
+        if request.remote_addr:
+            return restricted_route(*args, **kwargs)
+        else:
+            _logger.warning("Illegal access attempt to {0} from {1}".format(restricted_route, request.remote_addr))
+            return send_from_directory(Paths().ui_root, Paths().ui_access_restricted)
