@@ -282,8 +282,9 @@ class Logger(object):
                 if isinstance(msg, list) or isinstance(msg, tuple):
                     msg = list(msg)
                     msg[0] = self._decorate(lvl) + unicode(msg[0])
+                    msg = tuple(msg)
                 else:
-                    msg = self._decorate(lvl) + unicode(msg)
+                    msg = (self._decorate(lvl) + unicode(msg),)
 
                 self._log_file.writelines(msg)
 
@@ -381,7 +382,7 @@ class _ExtendedFileObject(file):
             self._buffer.pop(0)
 
     def write(self, s):
-        self._write([s])
+        self._write((s,))
 
     def writelines(self, *lines):
         self._write(lines)
