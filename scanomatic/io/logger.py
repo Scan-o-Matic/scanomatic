@@ -385,6 +385,10 @@ class _ExtendedFileObject(file):
         self._write((s,))
 
     def writelines(self, *lines):
+
+        if len(lines) == 1 and (isinstance(lines[0], list) or isinstance(lines[0], tuple)):
+            lines = lines[0]
+
         self._write(lines)
 
     def _write(self, obj):
