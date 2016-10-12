@@ -346,7 +346,48 @@ def set_local_app():
     _app_runs_locally = True
 
 
+__ip_memory = {}
+
+
+def memoize_ip(f):
+
+    def _inner(ip):
+        if ip in __ip_memory:
+            return __ip_memory[ip]
+        else:
+            val = f(ip)
+            if len(__ip_memory) > 1000:
+                del __ip_memory[__ip_memory.keys()[-1]]
+
+            __ip_memory[ip] = val
+
+            return val
+
+    return _inner
+
+
+@memoize_ip
 def is_local_ip(ip):
+
+    # TODO: Only handles IPv4
+
+    if ip is None:
+        return False
+
+    if ip == '127.0.0.1':
+        return True
+
+    if ip.startswith('10.') or ip.startswith('192.168.') or ip.startswith('169.254.'):
+        return True
+
+    iplist = ip.split(".")
+    if ip.startswith('172.'):
+
+        if len(iplist) == 4 and iplist[1] in ('16', '17', '18', '19', '20',
+                                              '21', '22', '23', '24', '25',
+                                              '26', '27', '28', '29', '30', '31'):
+
+            return True
 
     return False
 
