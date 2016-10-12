@@ -29,7 +29,7 @@ from . import scan_api
 from . import management_api
 from . import tools_api
 from . import data_api
-from .general import get_2d_list, decorate_access_restriction
+from .general import get_2d_list, decorate_access_restriction, set_local_app
 
 _url = None
 _logger = Logger("UI-server")
@@ -62,6 +62,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         port = Config().ui_server.port
 
     if is_local is True or (Config().ui_server.local and is_local is None):
+        set_local_app()
         host = "localhost"
         is_local = True
     elif host is None:
