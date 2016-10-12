@@ -281,9 +281,9 @@ class Logger(object):
             if output is not None:
                 if isinstance(msg, list) or isinstance(msg, tuple):
                     msg = list(msg)
-                    msg[0] = self._decorate(lvl) + msg[0]
+                    msg[0] = self._decorate(lvl) + unicode(msg[0])
                 else:
-                    msg = self._decorate(lvl) + msg
+                    msg = self._decorate(lvl) + unicode(msg)
 
                 self._log_file.writelines(msg)
 
