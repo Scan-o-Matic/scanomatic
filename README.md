@@ -32,6 +32,10 @@ __The rest of this file here will only discuss code-related issues.__
 * Fixture creation image selection should allow to select file on server as well as uploading image
 * Fixture creation should have magnification of what is hovered.
 
+### Compilation
+
+* It would be nice to have some feedback that a selected directory contains useful images.
+
 ## CLI
 
 * `scan-o-matic_as_service_check` script should allow for reboots as well

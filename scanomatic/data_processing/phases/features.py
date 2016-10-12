@@ -528,6 +528,9 @@ class PhaseSide(Enum):
 
 def get_phase_phenotypes_aligned(phenotypes, plate):
 
+    # TODO: 1. Make own module
+    # TODO: 2. Support multiple plates and files, for this the global end_time should be used
+
     phases = []
 
     def current_phase(phase_ref):
@@ -537,13 +540,18 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
                 return i
         return None
 
-    def insert_phase(phase_phenotypes, id_tup, prev_phase, side):
+    def insert_phase(phase_phenotypes, id_tup, prev_phase, side, end_time, major_phase_time):
 
         possible = get_possible(prev_phase, side)
 
         try:
-            anchor = phase_phenotypes[1][CurvePhasePhenotypes.Start] + \
-                     phase_phenotypes[1][CurvePhasePhenotypes.Duration] / 2.0
+            start = phase_phenotypes[1][CurvePhasePhenotypes.Start] / \
+                major_phase_time - 1.0 if phase_phenotypes[1][CurvePhasePhenotypes.Start] < major_phase_time else \
+                (phase_phenotypes[1][CurvePhasePhenotypes.Start] - major_phase_time) / (end_time - major_phase_time)
+
+            anchor = start + (
+                0.5 * phase_phenotypes[1][CurvePhasePhenotypes.Duration] / major_phase_time if start < 0 else
+                0.5 * phase_phenotypes[1][CurvePhasePhenotypes.Duration] / (end_time - major_phase_time))
         except (TypeError, KeyError, IndexError):
             print(phase_phenotypes)
             raise
@@ -553,10 +561,10 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
             if phases[phase_id][PhaseData.Anchor] > anchor:
                 break
         if phase_id is None:
-            append_phases(phase_phenotypes, id_tup)
+            append_phases(phase_phenotypes, id_tup, end_time, major_phase_time)
         else:
             phases.insert(phase_id, {PhaseData.Type: phase_phenotypes[0], PhaseData.Members: set()})
-            add_to_phase(phase_phenotypes, id_tup, phases[phase_id])
+            add_to_phase(phase_phenotypes, id_tup, phases[phase_id], end_time, major_phase_time)
 
     def get_possible(prev_phase, side):
         if side is PhaseSide.Both:
@@ -566,7 +574,7 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
         else:
             return range(max((major_phase_id + 1, 0 if prev_phase is None else prev_phase), len(phases)))
 
-    def optimal_phase(phase_phenotypes, phase_ref, prev_phase, side):
+    def optimal_phase(phase_phenotypes, phase_ref, prev_phase, side, end_time, major_phase_time):
 
         possible = get_possible(prev_phase, side)
         min_e = None
@@ -575,21 +583,21 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
             if phase_ref[1] >= len(phases):
                 return None
 
-            min_e = get_energy(phases[phase_ref[1]], phase_phenotypes)
+            min_e = get_energy(phases[phase_ref[1]], phase_phenotypes, end_time, major_phase_time)
 
             best_id = phase_ref[1]
 
         for phase_id in possible:
 
             # TODO: Somehow can fall outside `phases`
-            energy = get_energy(phases[phase_id], phase_phenotypes)
+            energy = get_energy(phases[phase_id], phase_phenotypes, end_time, major_phase_time)
             if energy < 1 and (min_e is None or energy < min_e):
                 min_e = energy
                 best_id = phase_id
 
         return best_id
 
-    def add_to_phase(phase_phenotypes, phase_ref, phase, w=0.9):
+    def add_to_phase(phase_phenotypes, phase_ref, phase, end_time, major_phase_time, w=0.9):
 
         try:
             anchor = phase_phenotypes[1][CurvePhasePhenotypes.Start] + \
@@ -605,7 +613,7 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
 
         phase[PhaseData.Members].add(phase_ref)
 
-    def append_phases(data, phase_ref):
+    def append_phases(data, phase_ref, end_time, major_phase_time):
 
         for phase in CurvePhases:
 
@@ -614,15 +622,20 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
 
             phases.append({PhaseData.Type: phase, PhaseData.Members: set()})
             if data[0] is phase:
-                add_to_phase(data, phase_ref, phases[-1])
+                add_to_phase(data, phase_ref, phases[-1], end_time, major_phase_time)
 
-    def get_energy(phase, phase_phenotypes):
+    def get_energy(phase, phase_phenotypes, end_time, major_phase_time):
 
         if phase[PhaseData.Type] is not phase_phenotypes[0]:
             return np.inf
 
-        start = phase_phenotypes[1][CurvePhasePhenotypes.Start]
-        end = start + phase_phenotypes[1][CurvePhasePhenotypes.Duration]
+        start = phase_phenotypes[1][CurvePhasePhenotypes.Start] / \
+            major_phase_time - 1.0 if phase_phenotypes[1][CurvePhasePhenotypes.Start] < major_phase_time else \
+            (phase_phenotypes[1][CurvePhasePhenotypes.Start] - major_phase_time) / (end_time - major_phase_time)
+
+        end = start + (
+            phase_phenotypes[1][CurvePhasePhenotypes.Duration] / major_phase_time if start < 0 else
+            phase_phenotypes[1][CurvePhasePhenotypes.Duration] / (end_time - major_phase_time))
 
         phase_anchor = phase[PhaseData.Anchor] if PhaseData.Anchor in phase else None
 
@@ -633,6 +646,7 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
         else:
             return min((abs(v) for v in (phase_anchor - end, phase_anchor - start))) / float(end - start)
 
+    end_time = phenotypes.times.max()
     plate_data = phenotypes._vector_phenotypes[plate][VectorPhenotypes.PhasesPhenotypes]
     filt = phenotypes.get_curves_filter_compacted(plate)
     coords = _get_index_array(plate_data.shape)
@@ -652,23 +666,30 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
     major_idx = [int(v) if np.isfinite(v) else None for v in major_idx]
 
     # Init left phases
+    v = plate_data[id_most_left_phases]
+    major_phase_time = v[major_idx[id_most_left_phases]][CurvePhasePhenotypes.Start] + \
+        0.5 * v[major_idx[id_most_left_phases]][CurvePhasePhenotypes.Duration]
     for id_phase, phase_data in enumerate(plate_data[id_most_left_phases][: major_idx[id_most_left_phases] if
                                           isinstance(major_idx[id_most_left_phases], int) else None]):
 
-        append_phases(phase_data, (id_most_left_phases, id_phase))
+        append_phases(phase_data, (id_most_left_phases, id_phase), end_time, major_phase_time)
 
     # Adding a major phase
     major_phase_id = len(phases)
     phases.append({PhaseData.Type: CurvePhases.Impulse, PhaseData.Members: set()})
     add_to_phase(plate_data[id_most_left_phases][major_idx[id_most_left_phases]],
                  (id_most_left_phases, major_idx[id_most_left_phases]),
-                 phases[major_phase_id])
+                 phases[major_phase_id], end_time, major_phase_time)
 
     # Init right phases
-    for id_phase, phase_data in enumerate(plate_data[id_most_right_phases]):
+    v = plate_data[id_most_right_phases]
+    major_phase_time = v[major_idx[id_most_right_phases]][CurvePhasePhenotypes.Start] + \
+        0.5 * v[major_idx[id_most_right_phases]][CurvePhasePhenotypes.Duration]
+
+    for id_phase, phase_data in enumerate(v):
         if id_phase <= major_idx[id_most_right_phases]:
             continue
-        append_phases(phase_data, (id_most_right_phases, id_phase))
+        append_phases(phase_data, (id_most_right_phases, id_phase), end_time, major_phase_time)
 
     # Run through all curves
     first_run = True
@@ -680,6 +701,8 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
             prev_phase = None
             major_phase = (id_curve, major_idx[id_curve])
             side = PhaseSide.Left if isinstance(major_phase[1], int) else PhaseSide.Both
+            major_phase_time = None if side is PhaseSide.Both else \
+                v[major_phase[1]][CurvePhasePhenotypes.Start] + 0.5 * v[major_phase[1]][CurvePhasePhenotypes.Duration]
 
             for id_phase, phase_data in enumerate(v):
 
@@ -695,23 +718,23 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
                 # May not move major phase alignment
                 if id_tup == major_phase:
                     if first_run and cur_phase is None:
-                        add_to_phase(phase_data, id_tup, phases[major_phase_id])
+                        add_to_phase(phase_data, id_tup, phases[major_phase_id], end_time, major_phase_time)
                     prev_phase = cur_phase
                     continue
 
                 if cur_phase is not None:
                     if cur_phase > prev_phase:
-                        e = get_energy(phases[cur_phase], phase_data)
+                        e = get_energy(phases[cur_phase], phase_data, end_time, major_phase_time)
                         if e == 0:
                             prev_phase = cur_phase
                             continue
                         phases[cur_phase][PhaseData.Members].remove(id_tup)
 
-                best_phase = optimal_phase(phase_data, id_tup, prev_phase, side)
+                best_phase = optimal_phase(phase_data, id_tup, prev_phase, side, end_time, major_phase_time)
                 if best_phase is None:
-                    insert_phase(phase_data, id_tup, prev_phase, side)
+                    insert_phase(phase_data, id_tup, prev_phase, side, end_time, major_phase_time)
                 else:
-                    add_to_phase(phase_data, id_tup, phases[best_phase])
+                    add_to_phase(phase_data, id_tup, phases[best_phase], end_time, major_phase_time)
 
                 prev_phase = cur_phase
 
