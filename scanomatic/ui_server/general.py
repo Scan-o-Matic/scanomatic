@@ -338,6 +338,14 @@ def split_areas_into_grayscale_and_plates(areas):
     return gs, plates
 
 
+_app_runs_locally = False
+
+
+def set_local_app():
+    global _app_runs_locally
+    _app_runs_locally = True
+
+
 def is_local_ip(ip):
 
     return False
@@ -347,8 +355,10 @@ def decorate_access_restriction(restricted_route):
 
     def restrictor(*args, **kwargs):
 
-        if request.remote_addr:
+        if not _app_runs_locally or is_local_ip(request.remote_addr):
             return restricted_route(*args, **kwargs)
         else:
             _logger.warning("Illegal access attempt to {0} from {1}".format(restricted_route, request.remote_addr))
             return send_from_directory(Paths().ui_root, Paths().ui_access_restricted)
+
+    return restrictor
