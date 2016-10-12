@@ -82,11 +82,11 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_root_file)
 
     @app.route("/help")
-    @decorate_access_restriction
     def _help():
         return send_from_directory(Paths().ui_root, Paths().ui_help_file)
 
     @app.route("/qc_norm")
+    @decorate_access_restriction
     def _qc_norm():
         return send_from_directory(Paths().ui_root, Paths().ui_qc_norm_file)
 
@@ -95,6 +95,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return redirect("https://github.com/local-minimum/scanomatic/wiki")
 
     @app.route("/maintain")
+    @decorate_access_restriction
     def _maintain():
         return send_from_directory(Paths().ui_root, Paths().ui_maintain_file)
 
@@ -120,6 +121,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/status")
     @app.route("/status/<status_type>")
+    @decorate_access_restriction
     def _status(status_type=""):
 
         if status_type != "" and not rpc_client.online:
@@ -140,6 +142,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return jsonify(succes=False, reason='Unknown status request')
 
     @app.route("/settings", methods=['get', 'post'])
+    @decorate_access_restriction
     def _config():
 
         app_conf = Config()
@@ -173,6 +176,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return render_template(Paths().ui_settings_template, **app_conf.model_copy())
 
     @app.route("/analysis", methods=['get', 'post'])
+    @decorate_access_restriction
     def _analysis():
 
         action = request.args.get("action")
@@ -238,6 +242,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_analysis_file)
 
     @app.route("/experiment", methods=['get', 'post'])
+    @decorate_access_restriction
     def _experiment():
 
         if request.args.get("enqueue"):
@@ -289,6 +294,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
 
     @app.route("/compile", methods=['get', 'post'])
+    @decorate_access_restriction
     def _compile():
 
         if request.args.get("run"):
@@ -329,6 +335,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
 
     @app.route("/scanners/<scanner_query>")
+    @decorate_access_restriction
     def _scanners(scanner_query=None):
         if scanner_query is None or scanner_query.lower() == 'all':
             return jsonify(scanners=rpc_client.get_scanner_status(), success=True)
@@ -345,6 +352,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     scanner_query))
 
     @app.route("/fixtures", methods=['post', 'get'])
+    @decorate_access_restriction
     def _fixtures():
 
         return send_from_directory(Paths().ui_root, Paths().ui_fixture_file)
