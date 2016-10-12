@@ -527,6 +527,8 @@ class PhaseSide(Enum):
 
 
 def get_phase_phenotypes_aligned(phenotypes, plate):
+    # TODO: 1. Make own module
+    # TODO: 2. Support multiple plates and files, for this the global end_time should be used
 
     phases = []
 
