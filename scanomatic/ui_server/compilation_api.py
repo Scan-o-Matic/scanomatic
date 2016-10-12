@@ -5,7 +5,7 @@ from glob import glob
 from flask import Flask, jsonify
 
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response, \
-    serve_numpy_as_image
+    serve_numpy_as_image, decorate_api_access_restriction
 
 from scanomatic.io.paths import Paths
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
@@ -25,6 +25,7 @@ def add_routes(app):
     @app.route("/api/compile/colony_image/")
     @app.route("/api/compile/colony_image/<int:time_index>/<int:plate>/<int:outer>/<int:inner>/<path:project>")
     @app.route("/api/compile/colony_image/<int:plate>/<int:outer>/<int:inner>/<path:project>")
+    @decorate_api_access_restriction
     def get_colony_image(time_index=0, plate=None, outer=None, inner=None, project=None):
         base_url = "/api/compile/colony_image"
 
@@ -43,6 +44,7 @@ def add_routes(app):
     @app.route("/api/compile/instructions", defaults={'project': ''})
     @app.route("/api/compile/instructions/", defaults={'project': ''})
     @app.route("/api/compile/instructions/<path:project>")
+    @decorate_api_access_restriction
     def get_compile_instructions(project=None):
 
         base_url = "/api/compile/instructions"
@@ -95,6 +97,7 @@ def add_routes(app):
                     **get_search_results(path, base_url))))
 
     @app.route("/api/compile/image_list/<location>/<path:project>")
+    @decorate_api_access_restriction
     def get_compile_image_list(location='root', project=None):
 
         if location != 'root':

@@ -16,7 +16,7 @@ from scanomatic.generics.phenotype_filter import Filter
 from scanomatic.io.paths import Paths
 from scanomatic.io.app_config import Config
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, \
-    get_project_name, json_response, serve_zip_file
+    get_project_name, json_response, serve_zip_file, decorate_api_access_restriction
 
 RESERVATION_TIME = 60 * 5
 FILM_TYPES = {'colony': 'animate_colony_growth("{save_target}", {pos}, "{path}")',
@@ -201,6 +201,7 @@ def add_routes(app):
 
     @app.route("/api/results/browse/<path:project>")
     @app.route("/api/results/browse")
+    @decorate_api_access_restriction
     def browse_for_results(project=""):
 
         local_zone = tz.gettz()
@@ -276,6 +277,7 @@ def add_routes(app):
                 **get_search_results(path, "/api/results/browse"))))
 
     @app.route("/api/results/lock/add/<path:project>")
+    @decorate_api_access_restriction
     def lock_project(project=""):
 
         path = convert_url_to_path(project)
@@ -295,6 +297,7 @@ def add_routes(app):
         return jsonify(**response)
 
     @app.route("/api/results/lock/remove/<path:project>")
+    @decorate_api_access_restriction
     def unlock_project(project=""):
 
         path = convert_url_to_path(project)
@@ -315,6 +318,7 @@ def add_routes(app):
         return jsonify(**response)
 
     @app.route("/api/results/meta_data/add/<path:project>", methods=["POST"])
+    @decorate_api_access_restriction
     def add_meta_data(project=None):
 
         path = convert_url_to_path(project)
@@ -371,6 +375,7 @@ def add_routes(app):
     @app.route("/api/results/meta_data/column_names/<int:plate>/<path:project>")
     @app.route("/api/results/meta_data/column_names/<path:project>")
     @app.route("/api/results/meta_data/column_names")
+    @decorate_api_access_restriction
     def show_meta_data_headers(plate=None, project=None):
 
         base_url = "/api/results/meta_data/column_names"
@@ -397,6 +402,7 @@ def add_routes(app):
     @app.route("/api/results/meta_data/get/<int:plate>/<path:project>")
     @app.route("/api/results/meta_data/get/<path:project>")
     @app.route("/api/results/meta_data/get")
+    @decorate_api_access_restriction
     def get_meta_data(plate=None, project=None):
 
         base_url = "/api/results/meta_data/get"
@@ -425,6 +431,7 @@ def add_routes(app):
 
     @app.route("/api/results/pinning", defaults={'project': ""})
     @app.route("/api/results/pinning/<path:project>")
+    @decorate_api_access_restriction
     def get_pinning(project=None):
 
         path = convert_url_to_path(project)
@@ -445,6 +452,7 @@ def add_routes(app):
     @app.route("/api/results/gridding/<int:plate>", defaults={'project': ""})
     @app.route("/api/results/gridding/<int:plate>/<path:project>")
     @app.route("/api/results/gridding/<path:project>")
+    @decorate_api_access_restriction
     def get_gridding(project=None, plate=None):
 
         base_url = "/api/results/gridding"
@@ -471,6 +479,7 @@ def add_routes(app):
 
     @app.route("/api/results/phenotype_names")
     @app.route("/api/results/phenotype_names/<path:project>")
+    @decorate_api_access_restriction
     def get_phenotype_names(project=None):
 
         path = convert_url_to_path(project)
@@ -500,6 +509,7 @@ def add_routes(app):
 
     @app.route("/api/results/phenotype_normalizable/remove")
     @app.route("/api/results/phenotype_normalizable/remove/<phenotype>/<path:project>")
+    @decorate_api_access_restriction
     def remove_normalizeable_phenotype(project=None, phenotype=""):
 
         path = convert_url_to_path(project)
@@ -548,6 +558,7 @@ def add_routes(app):
 
     @app.route("/api/results/phenotype_normalizable/add")
     @app.route("/api/results/phenotype_normalizable/add/<phenotype>/<path:project>")
+    @decorate_api_access_restriction
     def add_normalizeable_phenotype(project=None, phenotype=""):
 
         path = convert_url_to_path(project)
@@ -596,6 +607,7 @@ def add_routes(app):
 
     @app.route("/api/results/phenotype_normalizable/names")
     @app.route("/api/results/phenotype_normalizable/names/<path:project>")
+    @decorate_api_access_restriction
     def get_normalizeable_phenotype_names(project=None):
 
         path = convert_url_to_path(project)
@@ -627,6 +639,7 @@ def add_routes(app):
     @app.route("/api/results/quality_index")
     @app.route("/api/results/quality_index/<int:plate>/<path:project>")
     @app.route("/api/results/quality_index/<path:project>")
+    @decorate_api_access_restriction
     def get_quality_index(project=None, plate=None):
 
         path = convert_url_to_path(project)
@@ -658,6 +671,7 @@ def add_routes(app):
     @app.route("/api/results/normalized_phenotype/<phenotype>/<int:plate>/<path:project>")
     @app.route("/api/results/normalized_phenotype/<int:plate>/<path:project>")
     @app.route("/api/results/normalized_phenotype/<phenotype>/<path:project>")
+    @decorate_api_access_restriction
     def get_normalized_phenotype_data(phenotype=None, project=None, plate=None):
 
         base_url = "/api/results/normalized_phenotype"
@@ -733,6 +747,7 @@ def add_routes(app):
     @app.route("/api/results/phenotype/<phenotype>/<int:plate>/<path:project>")
     @app.route("/api/results/phenotype/<int:plate>/<path:project>")
     @app.route("/api/results/phenotype/<phenotype>/<path:project>")
+    @decorate_api_access_restriction
     def get_phenotype_data(phenotype=None, project=None, plate=None):
 
         path = convert_url_to_path(project)
@@ -806,6 +821,7 @@ def add_routes(app):
                 response))
 
     @app.route("/api/results/curve_mark/names")
+    @decorate_api_access_restriction
     def curve_mark_names():
         """Get the names
 
@@ -831,6 +847,7 @@ def add_routes(app):
     @app.route("/api/results/curve_mark/undo")
     @app.route("/api/results/curve_mark/undo/<int:plate>/<path:project>")
     @app.route("/api/results/curve_mark/undo/<path:project>")
+    @decorate_api_access_restriction
     def undo_curve_mark(plate=None, project=None):
         """Undo last log2_curve mark
 
@@ -887,6 +904,7 @@ def add_routes(app):
     @app.route("/api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
     @app.route("/api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<path:project>", methods=["POST", "GET"])
     @app.route("/api/results/curve_mark/set/<path:project>")
+    @decorate_api_access_restriction
     def set_curve_mark( mark=None, phenotype=None, plate=None, d1_row=None, d2_col=None, project=None):
         """Sets a log2_curve filter mark for a position or list of positions
 
@@ -1041,6 +1059,7 @@ def add_routes(app):
     @app.route("/api/results/curves/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
     @app.route("/api/results/curves/<int:plate>/<path:project>")
     @app.route("/api/results/curves/<path:project>")
+    @decorate_api_access_restriction
     def get_growth_data(plate=None, d1_row=None, d2_col=None, project=None):
 
         url_root = "/api/results/curves"
@@ -1100,6 +1119,7 @@ def add_routes(app):
     @app.route("/api/results/movie/make/<int:plate>/<int:outer_dim>/<int:inner_dim>/<path:project>")
     @app.route("/api/results/movie/make/<int:plate>/<path:project>")
     @app.route("/api/results/movie/make/<path:project>")
+    @decorate_api_access_restriction
     def get_film(project=None, film_type=None, plate=None, outer_dim=None, inner_dim=None):
 
         url_root = "/api/results/movie/make"
@@ -1157,6 +1177,7 @@ def add_routes(app):
 
     @app.route("/api/results/normalize")
     @app.route("/api/results/normalize/<path:project>")
+    @decorate_api_access_restriction
     def _do_normalize(project):
         """Preform normalization
 
@@ -1193,6 +1214,7 @@ def add_routes(app):
         return jsonify(**response)
 
     @app.route("/api/results/normalize/reference/offsets")
+    @decorate_api_access_restriction
     def _get_offset_names():
 
         names = [o.name for o in phenotyper.Offsets]
@@ -1201,6 +1223,7 @@ def add_routes(app):
 
     @app.route("/api/results/normalize/reference/set/<int:plate>/<offset>/<path:project>")
     @app.route("/api/results/normalize/reference/set/<offset>/<path:project>")
+    @decorate_api_access_restriction
     def _set_normalization_offset(project, offset, plate=None):
         """Sets a normalization offset
 
@@ -1261,6 +1284,7 @@ def add_routes(app):
         return jsonify(**response)
 
     @app.route("/api/results/normalize/reference/get/<int:plate>/<path:project>")
+    @decorate_api_access_restriction
     def _get_normalization_offset(project, plate):
         """Gets the normalization offset of a plate
 
@@ -1295,6 +1319,7 @@ def add_routes(app):
                        offset_pattern=offset().tolist(), **response)
 
     @app.route("/api/results/has_normalized/<path:project>")
+    @decorate_api_access_restriction
     def _get_has_been_normed(project):
         """If the project has normalized data.
 
@@ -1320,6 +1345,7 @@ def add_routes(app):
         return jsonify(has_normalized=state.has_normalized_data, **response)
 
     @app.route("/api/results/export/phenotypes/<save_data>/<path:project>")
+    @decorate_api_access_restriction
     def export_phenotypes(project, save_data=""):
         url_root = "/api/results/export/phenotypes"
         path = convert_url_to_path(project)

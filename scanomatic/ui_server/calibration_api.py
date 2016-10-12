@@ -10,6 +10,7 @@ import os
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
     get_data_file_path
+from .general import decorate_api_access_restriction
 
 _VALID_CHARACTERS = letters + "-._1234567890"
 
@@ -23,6 +24,7 @@ def add_routes(app):
     """
 
     @app.route("/api/calibration/compress")
+    @decorate_api_access_restriction
     def calibration_compress():
         """Get compressed calibration entry
 
@@ -51,6 +53,7 @@ def add_routes(app):
 
     @app.route("/api/calibration/add/<name>")
     @app.route("/api/calibration/add/<name>/<int:degree>")
+    @decorate_api_access_restriction
     def calibration_add(name, degree=5):
 
         data_object = request.get_json(silent=True, force=True)
@@ -81,6 +84,7 @@ def add_routes(app):
     @app.route("/api/calibration/get")
     @app.route("/api/calibration/get/<name>")
     @app.route("/api/calibration/get/<name>/<int:degree>")
+    @decorate_api_access_restriction
     def calibration_get(name="", degree=None):
 
         try:
@@ -90,6 +94,7 @@ def add_routes(app):
 
     @app.route("/api/calibration/remove/<name>")
     @app.route("/api/calibration/remove/<name>/<int:degree>")
+    @decorate_api_access_restriction
     def calibration_remove(name, degree=None):
 
         if remove_calibration(label=name, degree=degree):
@@ -103,6 +108,7 @@ def add_routes(app):
 
     @app.route("/api/calibration/export")
     @app.route("/api/calibration/export/<name>")
+    @decorate_api_access_restriction
     def calibration_export(name=''):
 
         data_path = get_data_file_path(label=name)

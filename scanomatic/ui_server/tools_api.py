@@ -8,7 +8,7 @@ from scanomatic.io.app_config import Config
 from scanomatic.io.logger import Logger, parse_log_file
 from scanomatic.io.paths import Paths
 from scanomatic.data_processing.phenotyper import path_has_saved_project_state
-from .general import convert_url_to_path, json_response
+from .general import convert_url_to_path, json_response, decorate_api_access_restriction
 
 _logger = Logger("Tools API")
 
@@ -28,6 +28,7 @@ def add_routes(app):
     @app.route("/api/tools/system_logs")
     @app.route("/api/tools/system_logs/<what>/<detail>")
     @app.route("/api/tools/system_logs/<what>")
+    @decorate_api_access_restriction
     def system_log_view(what=None, detail=None):
 
         base_url = "/api/tools/system_logs"
@@ -67,6 +68,7 @@ def add_routes(app):
     @app.route("/api/tools/logs/<filter_status>/<int:n_records>/<path:project>")
     @app.route("/api/tools/logs/<int:start_at>/<int:n_records>/<path:project>")
     @app.route("/api/tools/logs/<filter_status>/<int:start_at>/<int:n_records>/<path:project>")
+    @decorate_api_access_restriction
     def log_view(project='', filter_status=None, n_records=-1, start_at=0):
 
         # base_url = "/api/tools/logs"
@@ -83,6 +85,7 @@ def add_routes(app):
 
     @app.route("/api/tools/selection", methods=['POST'])
     @app.route("/api/tools/selection/<operation>", methods=['POST'])
+    @decorate_api_access_restriction
     def tools_create_selection(operation='rect'):
         """Converts selection ranges to api-understood selections.
 
@@ -137,6 +140,7 @@ def add_routes(app):
 
     @app.route("/api/tools/coordinates", methods=['POST'])
     @app.route("/api/tools/coordinates/<operation>", methods=['POST'])
+    @decorate_api_access_restriction
     def tools_coordinates(operation='create'):
         """Conversion between coordinates and api selections.
 
@@ -173,6 +177,7 @@ def add_routes(app):
     @app.route("/api/tools/path/<command>", methods=['get', 'post'])
     @app.route("/api/tools/path/<command>/", methods=['get', 'post'])
     @app.route("/api/tools/path/<command>/<path:sub_path>", methods=['get', 'post'])
+    @decorate_api_access_restriction
     def _experiment_commands(command=None, sub_path=""):
 
         if command is None:

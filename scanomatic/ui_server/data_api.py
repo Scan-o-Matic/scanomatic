@@ -22,7 +22,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFacto
 
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
     get_area_too_large_for_grayscale, get_grayscale_is_valid, usable_plates, image_is_allowed, \
-    get_fixture_image, convert_url_to_path
+    get_fixture_image, convert_url_to_path, decorate_api_access_restriction
 
 
 _logger = Logger("Data API")
@@ -74,6 +74,7 @@ def add_routes(app, rpc_client, is_debug_mode):
     """
 
     @app.route("/api/data/phenotype", methods=['POST'])
+    @decorate_api_access_restriction
     def data_phenotype():
         """Takes growth data extracts phenotypes and normalizes.
 
@@ -172,6 +173,7 @@ def add_routes(app, rpc_client, is_debug_mode):
                        curve_phases=json_data(curve_segments))
 
     @app.route("/api/data/grayscales", methods=['post', 'get'])
+    @decorate_api_access_restriction
     def _grayscales():
         """The known grayscale names
 
@@ -190,6 +192,7 @@ def add_routes(app, rpc_client, is_debug_mode):
 
 
     @app.route("/api/data/grayscale/image/<grayscale_name>", methods=['POST'])
+    @decorate_api_access_restriction
     def _gs_get_from_image(grayscale_name):
         """Analyse image slice as grayscale-strip
 
@@ -245,6 +248,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             exits=["transform_grayscale"], transform_grayscale=["/api/data/image/transform/grayscale"])
 
     @app.route("/api/data/grayscale/fixture/<fixture_name>", methods=['POST', 'GET'])
+    @decorate_api_access_restriction
     def _gs_get_from_fixture(fixture_name):
         """Get grayscale analysis based on fixture image
 
@@ -283,6 +287,7 @@ def add_routes(app, rpc_client, is_debug_mode):
                        grayscale=valid, reason=None if valid else "No Grayscale")
 
     @app.route("/api/data/fixture/names")
+    @decorate_api_access_restriction
     def _fixure_names():
         """Names of fixtures
 
@@ -298,6 +303,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             return jsonify(fixtures=[], success=False, reason="Scan-o-Matic server offline")
 
     @app.route("/api/data/fixture/local/<path:project>")
+    @decorate_api_access_restriction
     def _fixture_local_data(project):
 
         path = os.path.join(convert_url_to_path(project), Paths().experiment_local_fixturename)
@@ -318,6 +324,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             return jsonify(success=False, reason="Fixture data corrupted")
 
     @app.route("/api/data/fixture/get/<name>")
+    @decorate_api_access_restriction
     def _fixture_data(name=None):
         """Get the specifications of a fixture
 
@@ -356,6 +363,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             return jsonify(success=False, reason="Unknown fixture")
 
     @app.route("/api/data/fixture/remove/<name>")
+    @decorate_api_access_restriction
     def _fixture_remove(name):
         """Remove a fixture by name
 
@@ -384,6 +392,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         return jsonify(success=True, reason="Happy")
 
     @app.route("/api/data/fixture/image/get/<name>")
+    @decorate_api_access_restriction
     def _fixture_get_image(name):
         """Get downscaled png image for the fixture.
 
@@ -398,6 +407,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         return send_from_directory(Paths().fixtures, image)
 
     @app.route("/api/data/fixture/set/<name>", methods=["POST"])
+    @decorate_api_access_restriction
     def _fixture_set(name):
 
         if not rpc_client.online:
@@ -470,6 +480,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         return jsonify(success=True)
 
     @app.route("/api/data/markers/detect/<fixture_name>", methods=['POST'])
+    @decorate_api_access_restriction
     def _markers_detect(fixture_name):
 
         markers = request.values.get('markers', default=3, type=int)
@@ -504,6 +515,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             reason="No fixture image name" if image_is_allowed(ext) else "Image type not allowed")
 
     @app.route("/api/data/image/transform/grayscale", methods=['POST'])
+    @decorate_api_access_restriction
     def image_transform_grayscale():
         """Method to convert image to grayscale space.
 
@@ -546,6 +558,7 @@ def add_routes(app, rpc_client, is_debug_mode):
                        exits=["detect_colony"], detect_colony=["/api/data/image/detect/colony"])
 
     @app.route("/api/data/image/detect/colony", methods=['POST'])
+    @decorate_api_access_restriction
     def image_detect_colony():
         """Detect colony in image
 
@@ -592,6 +605,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         )
 
     @app.route("/api/data/image/analyse/colony", methods=['POST'])
+    @decorate_api_access_restriction
     def image_analyse_colony():
         """Automatically analyse image section
 
@@ -634,6 +648,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         )
 
     @app.route("/api/data/image/transform/cells", methods=['POST'])
+    @decorate_api_access_restriction
     def image_transform_cells():
         """Transform image values into cells per pixel
 
@@ -680,6 +695,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             analyse_compartment=['/api/data/image/analyse/compartment/{0}'.format(c) for c in COMPARTMENTS])
 
     @app.route("/api/data/image/analyse/compartment/<compartment>")
+    @decorate_api_access_restriction
     def image_analyse_compartment(compartment):
 
         data_object = request.get_json(silent=True, force=True)

@@ -6,6 +6,7 @@ from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_ur
 from scanomatic.io.paths import Paths
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import AnalysisModel
+from .general import decorate_api_access_restriction
 
 
 def add_routes(app):
@@ -19,6 +20,7 @@ def add_routes(app):
     @app.route("/api/analysis/instructions", defaults={'project': ''})
     @app.route("/api/analysis/instructions/", defaults={'project': ''})
     @app.route("/api/analysis/instructions/<path:project>")
+    @decorate_api_access_restriction
     def get_analysis_instructions(project=None):
 
         base_url = "/api/analysis/instructions"

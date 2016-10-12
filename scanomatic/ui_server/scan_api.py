@@ -1,7 +1,8 @@
 import os
 from itertools import chain
 from flask import Flask, jsonify
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response
+from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response, \
+    decorate_api_access_restriction
 from scanomatic.io.paths import Paths
 from glob import glob
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
@@ -18,6 +19,7 @@ def add_routes(app):
     @app.route("/api/scan/instructions", defaults={'project': ''})
     @app.route("/api/scan/instructions/", defaults={'project': ''})
     @app.route("/api/scan/instructions/<path:project>")
+    @decorate_api_access_restriction
     def get_scan_instructions(project=None):
 
         base_url = "/api/scan/instructions"

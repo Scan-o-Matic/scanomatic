@@ -3,7 +3,7 @@ import os
 import re
 from StringIO import StringIO
 from itertools import chain
-from flask import send_file, request, send_from_directory
+from flask import send_file, request, send_from_directory, jsonify
 import numpy as np
 import zipfile
 
@@ -401,5 +401,18 @@ def decorate_access_restriction(restricted_route):
         else:
             _logger.warning("Illegal access attempt to {0} from {1}".format(restricted_route, request.remote_addr))
             return send_from_directory(Paths().ui_root, Paths().ui_access_restricted)
+
+    return restrictor
+
+
+def decorate_api_access_restriction(restricted_route):
+
+    def restrictor(*args, **kwargs):
+
+        if not _app_runs_locally or is_local_ip(request.remote_addr):
+            return restricted_route(*args, **kwargs)
+        else:
+            _logger.warning("Illegal access attempt to {0} from {1}".format(restricted_route, request.remote_addr))
+            return jsonify(success=False, is_endpoint=True, reason="Your IP is not white-listed, access denied")
 
     return restrictor
