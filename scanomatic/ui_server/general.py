@@ -6,6 +6,7 @@ from itertools import chain
 from flask import send_file, request, send_from_directory, jsonify
 import numpy as np
 import zipfile
+from urllib import unquote
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -106,7 +107,7 @@ def convert_url_to_path(url):
     if url is None:
         url = ""
     else:
-        url = url.split("/")
+        url = unquote(url).split("/")
     root = Config().paths.projects_root
     return os.path.abspath(os.path.join(*chain([root], url)))
 
