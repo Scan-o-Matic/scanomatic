@@ -564,8 +564,6 @@ class InterfaceBuilder(SingeltonOneInit):
         """
 
         global _SOM_SERVER
-        if not _SOM_SERVER.scanner_manager.connected_to_scanners:
-            return False
         return sanitize_communication(_SOM_SERVER.scanner_manager.fixtures)
 
     @_verify_admin
