@@ -2,6 +2,7 @@ from flask import request, Flask, jsonify
 from itertools import product, chain
 import os
 import glob
+from urllib import unquote
 
 from scanomatic.ui_server.general import safe_directory_name
 from scanomatic.io.app_config import Config
@@ -183,7 +184,8 @@ def add_routes(app):
         if command is None:
             command = 'root'
 
-        sub_path = sub_path.split("/")
+        sub_path = unquote(sub_path).split("/")
+
         try:
             is_directory = bool(request.values.get('isDirectory', type=int, default=True))
         except ValueError:
