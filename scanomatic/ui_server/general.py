@@ -394,25 +394,41 @@ def is_local_ip(ip):
 
 def decorate_access_restriction(restricted_route):
 
-    def restrictor(*args, **kwargs):
+    class Restrictor(object):
 
-        if not _app_runs_locally or is_local_ip(request.remote_addr):
-            return restricted_route(*args, **kwargs)
-        else:
-            _logger.warning("Illegal access attempt to {0} from {1}".format(restricted_route, request.remote_addr))
-            return send_from_directory(Paths().ui_root, Paths().ui_access_restricted)
+        def __getattribute__(self, item):
 
-    return restrictor
+            def restrictor(*args, **kwargs):
+                if not _app_runs_locally or is_local_ip(request.remote_addr):
+                    return restricted_route(*args, **kwargs)
+                else:
+                    _logger.warning("Illegal access attempt to {0} from {1}".format(restricted_route, request.remote_addr))
+                    return send_from_directory(Paths().ui_root, Paths().ui_access_restricted)
+
+            ret = restrictor
+            ret.func_name = "{0}_{1}".format(ret.func_name, item)
+            return ret
+
+    return getattr(Restrictor(), restricted_route.__name__)
 
 
 def decorate_api_access_restriction(restricted_route):
 
-    def restrictor(*args, **kwargs):
+    class Restrictor(object):
 
-        if not _app_runs_locally or is_local_ip(request.remote_addr):
-            return restricted_route(*args, **kwargs)
-        else:
-            _logger.warning("Illegal access attempt to {0} from {1}".format(restricted_route, request.remote_addr))
-            return jsonify(success=False, is_endpoint=True, reason="Your IP is not white-listed, access denied")
+        def __getattribute__(self, item):
 
-    return restrictor
+            def restrictor(*args, **kwargs):
+
+                if not _app_runs_locally or is_local_ip(request.remote_addr):
+                    return restricted_route(*args, **kwargs)
+                else:
+                    _logger.warning("Illegal access attempt to {0} from {1}".format(
+                        restricted_route, request.remote_addr))
+                    return jsonify(success=False, is_endpoint=True, reason="Your IP is not white-listed, access denied")
+
+            ret = restrictor
+            ret.func_name = "{0}_{1}".format(ret.func_name, item)
+            return ret
+
+    return getattr(Restrictor(), restricted_route.__name__)
