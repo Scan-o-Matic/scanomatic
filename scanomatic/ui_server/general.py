@@ -6,7 +6,7 @@ from itertools import chain
 from flask import send_file, request, send_from_directory, jsonify
 import numpy as np
 import zipfile
-from urllib import unquote
+from urllib import unquote, quote
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -17,7 +17,7 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
 from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
 from scanomatic.image_analysis.image_grayscale import is_valid_grayscale
 
-_safe_dir = re.compile(r"^[A-Za-z_0-9./]*$")
+_safe_dir = re.compile(r"^[A-Za-z_0-9.%/ \\]*$" if os.sep == "\\" else r"^[A-Za-z_0-9.%/ ]*$")
 _no_super = re.compile(r"/?\.{2}/")
 _logger = Logger("UI API helpers")
 _ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.tiff'}
@@ -117,6 +117,8 @@ def convert_path_to_url(prefix, path):
         path = "/".join(chain([prefix], os.path.relpath(path, Config().paths.projects_root).split(os.sep)))
     else:
         path = "/".join(os.path.relpath(path, Config().paths.projects_root).split(os.sep))
+
+    path = quote(path)
 
     if safe_directory_name(path):
         return path
