@@ -51,7 +51,7 @@ def number_of_phenotypes(phase):
     Args:
         phase: .analysis.CurvePhases
 
-    Returns:
+    Returns: int
 
     """
     if is_detected_linear(phase):
