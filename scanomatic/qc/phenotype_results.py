@@ -1,7 +1,7 @@
 import pandas as pd
 from functools import wraps
 from types import StringTypes
-from itertools import chain
+from itertools import chain, izip
 import re
 
 import matplotlib
@@ -88,6 +88,56 @@ def get_position_phenotypes(phenotypes, plate, position_selection=None):
 
     return {phenotype.name: phenotypes.get_phenotype(phenotype)[plate][position_selection] for
             phenotype in Phenotypes}
+
+
+def get_linkage_matrix(
+        aligned_phases, clust_method='single', clust_metric='euclidean', nan_to_mean=True,
+        drop_low_cov_phenotypes=0.01):
+
+    if aligned_phases.ndim > 2:
+
+        aligned_phases = aligned_phases.reshape((np.prod(aligned_phases.shape[:-1]), ) + aligned_phases.shape[-1:])
+
+    if not np.isfinite(aligned_phases).all():
+        aligned_phases = np.ma.masked_invalid(aligned_phases)
+
+    if hasattr(aligned_phases, 'mask') and aligned_phases.mask.any():
+        mask = aligned_phases.mask
+        aligned_phases = aligned_phases.data
+        if nan_to_mean:
+            for i in range(aligned_phases.shape[1]):
+                if mask[:, i].any():
+                    aligned_phases[:, i][mask[:, i]] = aligned_phases[:, i][mask[:, i] == np.False_].mean()
+            print("\n**WARNING** Setting masked values to phenotype means\n")
+        else:
+            aligned_phases[mask] = 0
+            print("\n**WARNING** Setting masked values to 0\n")
+
+    if drop_low_cov_phenotypes is not None:
+
+        cov = aligned_phases.var(axis=0) / aligned_phases.mean(axis=0)
+        aligned_phases = aligned_phases[:, cov >= drop_low_cov_phenotypes]
+
+    print(aligned_phases.shape)
+    return sch.linkage(aligned_phases, method=clust_method, metric=clust_metric)
+
+
+def plot_plate_clustered_heatmap(shape, c, similarity_threshold=0.25, cmap=plt.cm.jet):
+
+    z = sch.dendrogram(c, no_plot=True, color_threshold=similarity_threshold)
+
+    plate = np.zeros(shape, dtype=float) * np.nan
+    colors = tuple(np.unique(z["color_list"]))
+
+    for color, ravel_pos in izip(z["color_list"], z["leaves"]):
+
+        plate[np.unravel_index((ravel_pos, ), shape)] = colors.index(color)
+
+    f = plt.figure("Experiment Clustering")
+    ax = plt.gca()
+    ax.set_title("Similarity threshold {0}, {1} clusters".format(similarity_threshold, len(colors)))
+    ax.imshow(plate, cmap=cmap, interpolation='nearest')
+    return f
 
 
 def plot_phase_correlation_dendrogram(
