@@ -4,7 +4,7 @@ from itertools import izip
 
 from scanomatic.data_processing import growth_phenotypes
 from scanomatic.io.logger import Logger
-from scanomatic.data_processing.phases.analysis import CurvePhasePhenotypes, number_of_phenotypes
+from scanomatic.data_processing.phases.analysis import CurvePhasePhenotypes, number_of_phenotypes, get_phenotypes_tuple
 from scanomatic.data_processing.phases.segmentation import CurvePhases, is_detected_non_linear
 
 _l = Logger("Curve Phase Meta Phenotyping")
@@ -773,4 +773,6 @@ def _ravel_phase_phenotypes(phases, ravel_plate, coords, shape):
     for id_curve, (coord, phase_vector) in enumerate(izip(coords, ravel_plate)):
         ravel(data, coord, id_curve, phase_vector)
 
-    return data
+    return data, \
+        tuple((phase[PhaseData.Type],
+               get_phenotypes_tuple(phase[PhaseData.Type])) for phase in phases)
