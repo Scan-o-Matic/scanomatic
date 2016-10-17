@@ -600,8 +600,13 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
     def add_to_phase(phase_phenotypes, phase_ref, phase, end_time, major_phase_time, w=0.9):
 
         try:
-            anchor = phase_phenotypes[1][CurvePhasePhenotypes.Start] + \
-                     phase_phenotypes[1][CurvePhasePhenotypes.Duration] / 2.0
+            start = phase_phenotypes[1][CurvePhasePhenotypes.Start] / \
+                major_phase_time - 1.0 if phase_phenotypes[1][CurvePhasePhenotypes.Start] < major_phase_time else \
+                (phase_phenotypes[1][CurvePhasePhenotypes.Start] - major_phase_time) / (end_time - major_phase_time)
+
+            anchor = start + (
+                0.5 * phase_phenotypes[1][CurvePhasePhenotypes.Duration] / major_phase_time if start < 0 else
+                0.5 * phase_phenotypes[1][CurvePhasePhenotypes.Duration] / (end_time - major_phase_time))
         except KeyError:
             print (phase_phenotypes)
             raise
@@ -667,8 +672,8 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
 
     # Init left phases
     v = plate_data[id_most_left_phases]
-    major_phase_time = v[major_idx[id_most_left_phases]][CurvePhasePhenotypes.Start] + \
-        0.5 * v[major_idx[id_most_left_phases]][CurvePhasePhenotypes.Duration]
+    major_phase_time = v[major_idx[id_most_left_phases]][1][CurvePhasePhenotypes.Start] + \
+        0.5 * v[major_idx[id_most_left_phases]][1][CurvePhasePhenotypes.Duration]
     for id_phase, phase_data in enumerate(plate_data[id_most_left_phases][: major_idx[id_most_left_phases] if
                                           isinstance(major_idx[id_most_left_phases], int) else None]):
 
@@ -683,8 +688,8 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
 
     # Init right phases
     v = plate_data[id_most_right_phases]
-    major_phase_time = v[major_idx[id_most_right_phases]][CurvePhasePhenotypes.Start] + \
-        0.5 * v[major_idx[id_most_right_phases]][CurvePhasePhenotypes.Duration]
+    major_phase_time = v[major_idx[id_most_right_phases]][1][CurvePhasePhenotypes.Start] + \
+        0.5 * v[major_idx[id_most_right_phases]][1][CurvePhasePhenotypes.Duration]
 
     for id_phase, phase_data in enumerate(v):
         if id_phase <= major_idx[id_most_right_phases]:
@@ -702,7 +707,8 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
             major_phase = (id_curve, major_idx[id_curve])
             side = PhaseSide.Left if isinstance(major_phase[1], int) else PhaseSide.Both
             major_phase_time = None if side is PhaseSide.Both else \
-                v[major_phase[1]][CurvePhasePhenotypes.Start] + 0.5 * v[major_phase[1]][CurvePhasePhenotypes.Duration]
+                v[major_phase[1]][1][CurvePhasePhenotypes.Start] + \
+                0.5 * v[major_phase[1]][1][CurvePhasePhenotypes.Duration]
 
             for id_phase, phase_data in enumerate(v):
 
