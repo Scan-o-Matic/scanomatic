@@ -62,6 +62,39 @@ def number_of_phenotypes(phase):
         return 3
 
 
+def get_phenotypes_tuple(phase):
+    """
+    Args:
+        phase: .analysis.CurvePhases
+
+    Returns: (CurvePhasePhenotypes)
+
+    """
+    if is_detected_linear(phase):
+        return (
+            CurvePhasePhenotypes.Start,
+            CurvePhasePhenotypes.Duration,
+            CurvePhasePhenotypes.FractionYield,
+            CurvePhasePhenotypes.LinearModelIntercept,
+            CurvePhasePhenotypes.LinearModelSlope,
+            CurvePhasePhenotypes.PopulationDoublingTime,
+        )
+    elif is_detected_non_linear(phase):
+        return (
+            CurvePhasePhenotypes.Start,
+            CurvePhasePhenotypes.Duration,
+            CurvePhasePhenotypes.FractionYield,
+            CurvePhasePhenotypes.AsymptoteAngle,
+            CurvePhasePhenotypes.AsymptoteIntersection,
+        )
+    else:
+        return (
+            CurvePhasePhenotypes.Start,
+            CurvePhasePhenotypes.Duration,
+            CurvePhasePhenotypes.FractionYield,
+        )
+
+
 def _phenotype_phases(model, doublings):
 
     phenotypes = []
