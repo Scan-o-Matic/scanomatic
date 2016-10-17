@@ -16,21 +16,24 @@ __The rest of this file here will only discuss code-related issues.__
 ## UI
 
 ### Admin stuff
-* Ability to calibrate and add a new grayscale with using old as reference.
+* :star: Ability to calibrate and add a new grayscale with using old as reference.
 * Validation of that a grayscale is producing acceptable values in a scanner over time
 
 ### Troubleshooting and QC
 
 * Showing of gridding in Status and QC-view. (API exists, viewing in re-gridding exists)
-* Showing of log-files for a project at various stages and views (API exists).
+* :star: Showing of log-files for a project at various stages and views (API exists).
 * Showing of the instructions given at various stages to Scan-o-matic (API exists).
 * Regridding grid image can block the ui elements, also may not work if less than 4 images...
+* :star: Be able to specify what images to be included for each plate at the analysis stage.
+  If one plate has problems towards the end of experiment, only this one should skip last
+  couple of images.
 * QC be able to know what phenotypes been extracted and normed
 
 ### Fixtures
 
-* Fixture creation image selection should allow to select file on server as well as uploading image
-* Fixture creation should have magnification of what is hovered.
+* :star: Fixture creation image selection should allow to select file on server as well as uploading image
+* :star: Fixture creation should have magnification of what is hovered.
 
 ### Compilation
 
@@ -52,7 +55,7 @@ __The rest of this file here will only discuss code-related issues.__
 
 ### Data/Features/QC
 
-* Adding meta-data to QC should trigger suggesting certain positions as Empty based on missing info in meta data.
+* :star: Adding meta-data to QC should trigger suggesting certain positions as Empty based on missing info in meta data.
 
 ### Logging
 
@@ -62,5 +65,5 @@ __The rest of this file here will only discuss code-related issues.__
 ### API
 
 * Be able to email logs.
-* Server should say if it reaches the power manager.
+* :star: Server should say if it reaches the power manager.
 * QC be able to know what phenotypes been extracted and normed
