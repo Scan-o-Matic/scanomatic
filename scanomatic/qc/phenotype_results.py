@@ -146,8 +146,6 @@ def plot_plate_phase_variance(phenotypes, plate):
         numpoints=1,
     )
 
-
-
     f.tight_layout()
 
     return f
