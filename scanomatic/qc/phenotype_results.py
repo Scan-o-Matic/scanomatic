@@ -1,17 +1,22 @@
 import pandas as pd
 from functools import wraps
 from types import StringTypes
+from itertools import chain
+import re
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.lines import Line2D
+from matplotlib.font_manager import FontProperties
 from scipy.ndimage import label
+import scipy.cluster.hierarchy as sch
 
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
 from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS, \
     get_data_needed_for_segmentation
-from scanomatic.data_processing.phases.features import get_phase_assignment_frequencies
+from scanomatic.data_processing.phases.features import get_phase_assignment_frequencies, CurvePhasePhenotypes
 from scanomatic.data_processing.phenotyper import Phenotyper
 from scanomatic.io.logger import Logger
 from scanomatic.io.movie_writer import MovieWriter
@@ -83,6 +88,129 @@ def get_position_phenotypes(phenotypes, plate, position_selection=None):
 
     return {phenotype.name: phenotypes.get_phenotype(phenotype)[plate][position_selection] for
             phenotype in Phenotypes}
+
+
+def plot_phase_correlation_dendrogram(
+        aligned_phases, phase_labels, clust_method='single', clust_metric='euclidean', cmap=plt.cm.jet, vmax=None,
+        nan_to_mean=True):
+
+    print("Reshaping")
+    if aligned_phases.ndim > 2:
+
+        aligned_phases = aligned_phases.reshape((np.prod(aligned_phases.shape[:-1]), ) + aligned_phases.shape[-1:])
+
+    print("Building key matrix")
+    aligned_phases = aligned_phases.T
+    phase_key = np.ones((aligned_phases.shape[0], 3), dtype=float)
+    phase_key[:, 0] = tuple(chain(*((i,) * len(v[1]) for i, v in enumerate(phase_labels))))
+    phase_key[:, 1] = tuple(chain(*((v[0].value,) * len(v[1]) for i, v in enumerate(phase_labels))))
+    phase_key[:, 2] = tuple(chain(*((v2.value for v2 in v[1]) for i, v in enumerate(phase_labels))))
+
+    if vmax is None:
+        vmax = phase_key.max()
+
+    for i in range(phase_key.shape[1]):
+        phase_key[:, i] *= vmax / phase_key[:, i].max()
+
+    if hasattr(aligned_phases, 'mask') and aligned_phases.mask.any():
+        mask = aligned_phases.mask
+        aligned_phases = aligned_phases.data
+        if nan_to_mean:
+            for i in range(aligned_phases.shape[0]):
+                if mask[i].any():
+                    aligned_phases[i][mask[i]] = aligned_phases[i][mask[i] == np.False_].mean()
+            print("\n**WARNING** Setting masked values to phenotype means\n")
+        else:
+            aligned_phases[mask] = 0
+            print("\n**WARNING** Setting masked values to 0\n")
+
+    f = plt.figure("Phase Correlations")
+    ax_low = 0.01
+    ax_height = 0.85
+
+    dend_ax = f.add_axes([0.05, ax_low, 0.4, ax_height])
+    dend_ax.axis("off")
+    print("Calculating linkage")
+    linkage_mat = sch.linkage(aligned_phases, method=clust_method, metric=clust_metric)
+    print("Producing dendrogram")
+    dendrogram = sch.dendrogram(linkage_mat, orientation='left', ax=dend_ax, no_labels=True)
+
+    dend_ax.set_xticks([])
+    dend_ax.set_yticks([])
+    dend_ax.set_title("Similarity ({0}, {1}) of phases".format(clust_method, clust_metric), size='small')
+
+    idx1 = dendrogram['leaves']
+
+    print("Plotting heatmap")
+    heat_ax = f.add_axes([0.45, ax_low, 0.15, ax_height])
+    heat_ax.matshow(phase_key[idx1, :], origin='lower', aspect='auto', cmap=cmap)
+    heat_ax.set_yticks([])
+    heat_ax.set_xticks([0, 1, 2])
+    heat_ax.set_xticklabels(["Index", "Type", "Phenotype"], rotation=45, size='small', ha='left')
+    heat_ax.get_xaxis().set_tick_params(direction='out')
+    heat_ax.xaxis.tick_top()
+    heat_ax.spines['top'].set_visible(False)
+    heat_ax.spines['left'].set_visible(False)
+    heat_ax.spines['right'].set_visible(False)
+    heat_ax.spines['bottom'].set_visible(False)
+    print("Plotting legends")
+
+    def proxy_line(color):
+        return Line2D([0], [0], linestyle='None', marker='s', mec='k', mew=0.5, mfc=color)
+
+    font_props = FontProperties()
+    font_props.set_size('small')
+
+    l_width = 0.34
+    l_x = 0.64
+    l_spacer = 0.03
+    l1_height = 0.45
+    l0_height = 0.09
+    l2_height = 0.35
+
+    label_space = 0.63
+
+    loc = "lower left"
+
+    f.legend([proxy_line(cmap(i / float(len(phase_labels)))) for i in range(len(phase_labels))],
+             ["" for _ in range(len(phase_labels))],
+             title="Phase Index (0 - {0})".format(len(phase_labels) - 1),
+             numpoints=1, markerscale=2, ncol=len(phase_labels),
+             bbox_to_anchor=(l_x, ax_low, l_width, l0_height),
+             bbox_transform=f.transFigure,
+             prop=font_props,
+             loc=loc,
+             columnspacing=0.25,
+             handlelength=0.4,
+             borderpad=1.05,
+             mode='expand',
+             )
+
+    f.legend([proxy_line(cmap(p.value / float(len(CurvePhases)))) for p in CurvePhases],
+             [re.sub(r'([a-z])([A-Z])', r'\1 \2', p.name) for p in CurvePhases],
+             title="Phase Type",
+             numpoints=1, markerscale=2,
+             bbox_to_anchor=(l_x, ax_low + l0_height + l_spacer, l_width, l1_height),
+             bbox_transform=f.transFigure,
+             prop=font_props,
+             loc=loc,
+             labelspacing=label_space,
+             mode='expand',
+             )
+
+    f.legend([proxy_line(cmap(p.value / float(len(CurvePhasePhenotypes)))) for p in CurvePhasePhenotypes],
+             [re.sub(r'([a-z])([A-Z])', r'\1 \2', p.name) for p in CurvePhasePhenotypes],
+             title="Phenotype",
+             numpoints=1, markerscale=2,
+             bbox_to_anchor=(l_x, ax_low + l0_height + l1_height + l_spacer * 2, l_width, l2_height),
+             bbox_transform=f.transFigure,
+             prop=font_props,
+             loc=loc,
+             labelspacing=label_space,
+             mode='expand',
+             )
+
+    return f
 
 
 @_validate_input
