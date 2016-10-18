@@ -3,7 +3,7 @@ import requests
 
 import time
 import webbrowser
-from flask import Flask, request, send_from_directory, redirect, jsonify, render_template, url_for
+from flask import Flask, request, send_from_directory, redirect, jsonify, render_template
 
 from socket import error
 from threading import Thread, Timer
@@ -121,7 +121,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/home")
     def _show_homescreen():
-        return redirect(url_for("_status"))
+        return redirect("/status")
 
     @app.route("/status")
     @app.route("/status/<status_type>")
