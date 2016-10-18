@@ -3,7 +3,7 @@ import requests
 
 import time
 import webbrowser
-from flask import Flask, request, send_from_directory, redirect, jsonify, render_template
+from flask import Flask, request, send_from_directory, redirect, jsonify, render_template, url_for
 
 from socket import error
 from threading import Thread, Timer
@@ -118,6 +118,11 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     def _font_base(font=None):
         if font:
             return send_from_directory(Paths().ui_font, font)
+
+    @app.route("/home")
+    def _show_homescreen():
+
+        return redirect(url_for("status"))
 
     @app.route("/status")
     @app.route("/status/<status_type>")
