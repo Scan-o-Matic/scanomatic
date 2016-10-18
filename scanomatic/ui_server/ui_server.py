@@ -121,8 +121,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/home")
     def _show_homescreen():
-
-        return redirect(url_for("status"))
+        return redirect(url_for("/status"))
 
     @app.route("/status")
     @app.route("/status/<status_type>")
