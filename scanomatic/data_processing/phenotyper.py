@@ -1801,6 +1801,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             NormState.NormalizedAbsoluteBatched, NormState.NormalizedAbsoluteNonBatched,
             NormState.NormalizedRelative) else self.phenotypes
 
+        phenotypes = tuple(p for p in phenotypes if PhenotypeDataType.Scalar(p))
+
         data_source = {p: self.get_phenotype(p, norm_state=save_data, reference_values=reference_values)
                        for p in phenotypes}
 
