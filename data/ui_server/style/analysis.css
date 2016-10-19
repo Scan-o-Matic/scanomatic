@@ -37,9 +37,9 @@
 }
 
 #manual-regridding-image {
-    position: fixed;
-    top: 4px;
-    left: 4px;
+    position: absolute;
+    left: 10px;
+    bottom: 330px;
     width: 480px;
     height: 320px;
     display: block;
