@@ -1,5 +1,5 @@
-﻿//var baseUrl = "http://localhost:5000";
-var baseUrl = "";
+﻿var baseUrl = "http://localhost:5000";
+//var baseUrl = " ";
 var BrowseRootPath = baseUrl+"/api/results/browse";
 var NormalizeRefOffsets = baseUrl+"/api/results/normalize/reference/offsets";
 var NormalizeProjectUrl = baseUrl+"/api/results/normalize";
