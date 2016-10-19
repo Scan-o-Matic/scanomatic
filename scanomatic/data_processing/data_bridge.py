@@ -30,20 +30,21 @@ class Data_Bridge(mock_numpy_interface.NumpyArrayInterface):
 
         """
 
+        self._time_index = None
         self._source = source
         super(Data_Bridge, self).__init__(None)
 
-        #This method is assigned dynamically based on
-        #type of data imported
-        self.updateSource = None
+        # This method is assigned dynamically based on
+        # type of data imported
+        self.update_source = None
 
-        self._createArrayRepresentation(**kwargs)
+        self._create_array_representation(**kwargs)
 
-    def _createArrayRepresentation(self, **kwargs):
+    def _create_array_representation(self, **kwargs):
 
         if isinstance(self._source, np.ndarray):
-            self._smooth_growth_data = self._source.copy()
-            self.updateSource = self._updateToArray
+            self._data = self._source.copy()
+            self.update_source = self._update_to_array
 
         elif isinstance(self._source, dict):
 
@@ -64,8 +65,8 @@ class Data_Bridge(mock_numpy_interface.NumpyArrayInterface):
 
                                 plates[-1][-1][-1].append(value)
 
-            self._smooth_growth_data = np.array(plates)
-            self.updateSource = self._updateToFeatureDict
+            self._data = np.array(plates)
+            self.update_source = self._update_to_feature_dict
 
         elif isinstance(self._source, xmlReader.XML_Reader):
 
@@ -76,75 +77,75 @@ class Data_Bridge(mock_numpy_interface.NumpyArrayInterface):
 
             else:
 
-                self._timeIndex = kwargs["time"]
-                tmpD = []
+                self._time_index = kwargs["time"]
+                tmp_d = []
                 for p in self._source.get_data().values():
-                    tmpD.append(p[..., self._timeIndex, :].copy())
-                self._smooth_growth_data = np.array(tmpD)
+                    tmp_d.append(p[..., self._time_index, :].copy())
+                self._data = np.array(tmp_d)
 
         else:
 
             raise Exception(
                 "Unknown data format {0}".format(type(self._source)))
 
-    def _updateToFeatureDict(self):
+    def _update_to_feature_dict(self):
         """Updates the source inplace"""
 
-        plateIndex = 0
+        id_plate = 0
         for p in self._source:
 
-            for d1Index, d1 in enumerate(p):
+            for id_d1, d1 in enumerate(p):
 
-                for d2Index, cell in enumerate(d1):
+                for id_d2, cell in enumerate(d1):
 
-                    measureIndex = 0
+                    id_measure = 0
 
                     for compartment in cell.values():
 
-                        for valueKey in compartment:
+                        for key in compartment:
 
-                            compartment[valueKey] = self._smooth_growth_data[
-                                plateIndex, d1Index, d2Index, measureIndex]
+                            compartment[key] = self._data[
+                                id_plate, id_d1, id_d2, id_measure]
 
-                            measureIndex += 1
-            plateIndex += 1
+                            id_measure += 1
+            id_plate += 1
 
-    def _updateToArray(self):
+    def _update_to_array(self):
         """Updates the source inplace"""
 
         for i, p in enumerate(self._source):
 
-            p[...] = self._smooth_growth_data[i]
+            p[...] = self._data[i]
 
-    def _updateToXMLreader(self):
+    def _update_to_xml_reader(self):
         """Updates the source inplace"""
 
-        for plateIndex in self._smooth_growth_data.shape[0]:
+        for id_plate in self._data.shape[0]:
 
-            for d1 in self._smooth_growth_data[plateIndex].shape[0]:
+            for d1 in self._data[id_plate].shape[0]:
 
-                for d2 in self._smooth_growth_data[plateIndex].shape[1]:
+                for d2 in self._data[id_plate].shape[1]:
 
                     self._source.set_data_value(
-                        plateIndex, d1, d2, self._timeIndex,
-                        self._smooth_growth_data[plateIndex][d1, d2])
+                        id_plate, d1, d2, self._time_index,
+                        self._data[id_plate][d1, d2])
 
-    def getSource(self):
+    def get_source(self):
         """Returns a reference to the source"""
 
         return self._source
 
-    def getAsArray(self):
+    def get_as_array(self):
         """Returns the data as a normalisations compatible array"""
 
-        return self._smooth_growth_data
+        return self._data
 
-    def setArrayRepresentation(self, array):
+    def set_array_representation(self, array):
         """Method for overwriting the array representation of the data"""
 
-        if (array.shape == self._smooth_growth_data.shape):
-            self._smooth_growth_data = array
+        if array.shape == self._data.shape:
+            self._data = array
         else:
             raise Exception(
                 "New representation must match current shape: {0}".format(
-                    self._smooth_growth_data.shape))
+                    self._data.shape))

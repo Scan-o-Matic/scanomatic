@@ -317,7 +317,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         assert self._times_data is not None, "A data series needs its times"
 
-        super(Phenotyper, self).__init__(None)
+        super(Phenotyper, self).__init__(self._raw_growth_data)
 
         self._phenotype_filter = None
         self._phenotype_filter_undo = None

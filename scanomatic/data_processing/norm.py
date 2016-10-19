@@ -141,7 +141,7 @@ def get_control_position_filtered_arrays(data, offsets=None, fill_value=np.nan):
     """
 
     if isinstance(data, Data_Bridge):
-        data = data.getAsArray()
+        data = data.get_as_array()
     else:
         for i, d in enumerate(data):
             if isinstance(d, FilterArray):
@@ -209,7 +209,7 @@ def get_experiment_positions_coordinates(data, offsets=None):
 def get_coordinate_filtered(data, coordinates, measure=1, require_finite=True, require_correlated=False):
 
     if isinstance(data, Data_Bridge):
-        data = data.getAsArray()
+        data = data.get_as_array()
 
     filtered = []
     for i in range(len(data)):
@@ -246,7 +246,7 @@ def get_center_transformed_control_positions(control_pos_coordinates, data):
     center_transformed = []
 
     if isinstance(data, Data_Bridge):
-        data = data.getAsArray()
+        data = data.get_as_array()
 
     for id_plate, plate in enumerate(control_pos_coordinates):
 
@@ -712,7 +712,7 @@ def normalisation(data, norm_surface, log=False):
 
     normed_data = []
     if isinstance(data, Data_Bridge):
-        data = data.getAsArray()
+        data = data.get_as_array()
 
     for id_plate, (plate, surf) in enumerate(zip(data, norm_surface)):
 
