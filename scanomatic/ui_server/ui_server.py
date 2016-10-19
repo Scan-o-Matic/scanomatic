@@ -29,7 +29,7 @@ from . import scan_api
 from . import management_api
 from . import tools_api
 from . import data_api
-from .general import get_2d_list, decorate_access_restriction, set_local_app
+from .general import get_2d_list, decorate_access_restriction, set_local_app, is_local_ip, get_app_is_local
 
 _url = None
 _logger = Logger("UI-server")
@@ -121,7 +121,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/home")
     def _show_homescreen():
-        return redirect("/status")
+
+        if not get_app_is_local() or is_local_ip(request.remote_addr):
+            return redirect("/status")
+        return ""
 
     @app.route("/status")
     @app.route("/status/<status_type>")

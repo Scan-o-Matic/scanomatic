@@ -349,6 +349,9 @@ def set_local_app():
     _app_runs_locally = True
 
 
+def get_app_is_local():
+    return _app_runs_locally
+
 __ip_memory = {}
 
 
