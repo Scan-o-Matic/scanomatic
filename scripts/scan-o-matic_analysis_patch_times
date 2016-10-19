@@ -68,6 +68,30 @@ def get_time_generator_from_file(fpath, order='inc'):
         yield t
 
 
+compilation_pattern = re.compile(r" *time_stamp = ")
+
+
+def write_times_to_project_compilation(file_path, time_generator):
+    """
+
+    Args:
+        file_path (str): path to file
+        time_generator (generator):
+    """
+
+    replacement = "time_stamp = {0}\n"
+
+    with open(file_path, 'r') as fh:
+        data = fh.readlines()
+
+    for i, l in enumerate(data):
+        if compilation_pattern.match(l):
+            data[i] = replacement.format(time_generator.next())
+
+    with open(file_path, 'w') as fh:
+        fh.writelines(data)
+
+
 def write_times_to_first_pass_file(fpath, timeGenerator):
     """Replaces times in a file with times from the generator
 
@@ -190,15 +214,20 @@ if __name__ == "__main__":
 
     outgroup = parser.add_argument_group("Output Options")
 
-    outgroup.add_argument("-f", "--first-pass-file", dest="target_first",
+    outgroup.add_argument("-c", "--compilation", dest="target_compilation",
                           type=str, metavar="PATH",
-                          help="""First pass file that should be updated with
-                          new times""")
+                          help="""The project.compilation-file that should be
+                          updated with new times""")
 
     outgroup.add_argument("-x", "--xml-file", dest="target_xml",
                           type=str, metavar="PATH",
                           help="""XML-file that should be updated
                           with new times""")
+
+    outgroup.add_argument("-f", "--first-pass-file", dest="target_first",
+                          type=str, metavar="PATH",
+                          help="""First pass file that should be updated with
+                          new times (this format is deprecated)""")
 
     args = parser.parse_args()
 
@@ -221,47 +250,60 @@ if __name__ == "__main__":
     except:
         firstImages = None
 
-    if xmlImages == firstImages or None in (xmlImages, firstImages):
+    try:
+        with open(args.target_compilation, 'r') as fh:
+            data = fh.readlines()
+        compilationImages = len([1 for l in data if compilation_pattern.match(l)])
+    except:
+        compilationImages = None
 
-        nImages = xmlImages
+    n_images = set(n for n in (xmlImages, firstImages, compilationImages) if n is not None)
 
-    else:
+    if len(n_images) != 1:
 
-        parser.error("The number of images in the two outfiles do not agree")
+        parser.error("The number of images in the two out-files do not agree")
+
+    n_images = n_images.pop()
+    times_f = None
 
     if (args.source_file not in (None, "") and
             os.path.isfile(args.source_file)):
 
-        timesF = functools.partial(get_time_generator_from_file,
-                                   args.source_file)
+        times_f = functools.partial(get_time_generator_from_file,
+                                    args.source_file)
 
     elif args.interval is not None:
 
-        timesF = functools.partial(get_time_generator, args.interval * 60,
-                                   nImages)
+        times_f = functools.partial(get_time_generator, args.interval * 60,
+                                    n_images)
 
     else:
 
         parser.error("Could not find '{0}' and no interval submitted".format(
             args.source_file))
 
-    doneSomething = False
+    done_something = False
 
     if (args.target_first not in (None, "") and os.path.isfile(
             args.target_first)):
 
-        write_times_to_first_pass_file(args.target_first, timesF(order='inc'))
-        doneSomething = True
+        write_times_to_first_pass_file(args.target_first, times_f(order='inc'))
+        done_something = True
 
     if (args.target_xml not in (None, "") and os.path.isfile(
             args.target_xml)):
 
-        write_times_to_xml_file(args.target_xml, timesF(order='dec'))
-        doneSomething = True
+        write_times_to_xml_file(args.target_xml, times_f(order='dec'))
+        done_something = True
 
-    if not doneSomething:
+    if args.target_compilation not in (None, "") and os.path.isfile(args.target_compilation):
 
-        parser.error("Could not find any XML or first pass (or non supplied)")
+        write_times_to_project_compilation(args.target_compilation, times_f(order="inc"))
+        done_something = True
+
+    if not done_something:
+
+        parser.error("Could not find of the output files (or non supplied)")
 
     else:
 
