@@ -33,7 +33,6 @@ __The rest of this file here will only discuss code-related issues.__
 ### Fixtures
 
 * :star: Fixture creation image selection should allow to select file on server as well as uploading image
-* :star: Fixture creation should have magnification of what is hovered.
 
 ### Compilation
 
