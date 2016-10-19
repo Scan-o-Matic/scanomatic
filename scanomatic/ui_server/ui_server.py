@@ -10,7 +10,7 @@ from threading import Thread, Timer
 from types import StringTypes
 
 from scanomatic.io.app_config import Config
-from scanomatic.io.logger import Logger, LOG_RECYCLE_TIME
+from scanomatic.io.logger import Logger, LOG_RECYCLE_TIME, parse_log_file
 from scanomatic.io.paths import Paths
 from scanomatic.io.power_manager import POWER_MANAGER_TYPE
 from scanomatic.io.rpc_client import get_client
@@ -125,6 +125,33 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if not get_app_is_local() or is_local_ip(request.remote_addr):
             return redirect("/status")
         return ""
+
+    @app.route("/logs/system/<log>")
+    def _logs(log):
+        """
+        Args:
+            log:
+
+        Returns:
+
+        """
+        if log == 'server':
+            what = Paths().log_server
+        elif log == "ui_server":
+            what = Paths().log_ui_server
+
+        data = parse_log_file(what)
+        data['garbage'] = [l.replace("\n", "<br>") for l in data['garbage']]
+        for e in data['records']:
+            e['message'] = e['message'].split("\n")
+
+        if data:
+            return render_template(
+                Paths().ui_log_template,
+                title=log.replace("_", " ").capitalize(),
+                **data)
+        else:
+            return ""
 
     @app.route("/status")
     @app.route("/status/<status_type>")

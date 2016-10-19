@@ -24,10 +24,9 @@ img.icon-large {
     margin-left: 3px;
 }
 
-
 .ui-helper-hidden-accessible {
     display: none;
-    hidden: hidden;
+    visibility: hidden;
 }
 
 .long {
@@ -59,7 +58,7 @@ img.icon-large {
 
 p {
 	padding: 12px;
-	margin-below: 6px;
+	margin-bottom: 6px;
 	text-align: justify;
 	line-height: 150%;
 }
@@ -121,7 +120,7 @@ ul {
 
 label {
 	text-transform: uppercase;
-	letter-spacing: 100%;
+	letter-spacing: 0px;
 	font-size: 105%;
 	margin-right: 20px;
 }
@@ -141,11 +140,10 @@ label {
     font-family: sans;
 
 }
-}
 
 #cont h2 {
 	text-transform: uppercase;
-	letter-spacing: 100%;
+	letter-spacing: 0px;
 	font-size: 105%;
 	display: block;
 	width: 100%;
@@ -182,7 +180,7 @@ label {
 
 .section h2 {
 	text-transform: uppercase;
-	letter-spacing: 100%;
+	letter-spacing: 0px;
 	font-size: 105%;
 	display: block;
 	width: 100%;
@@ -221,7 +219,7 @@ label {
 
 #toc h1 {
 	text-transform: uppercase;
-	letter-spacing: 150%;
+	letter-spacing: 0px;
 	font-size: 200%;
 	display: block;
 	width: 100%;
@@ -252,7 +250,7 @@ label {
 
 .ui-dialog button {
     padding: 3px;
-    spacing: 3px;
+    margin: 3px;
 }
 
 .ui-dialog-titlebar, .ui-dialog-buttonpane {
@@ -266,34 +264,41 @@ label {
     vertical-align: bottom;
     height: 2em;
 }
+
 .onoffswitch-checkbox {
     display: none;
 }
+
 .onoffswitch-label {
     display: block; overflow: hidden; cursor: pointer;
     border: 2px solid #E7D2B7; border-radius: 20px;
 }
+
 .onoffswitch-inner {
     display: block; width: 200%; margin-left: -100%;
     -moz-transition: margin 0.3s ease-in 0s; -webkit-transition: margin 0.3s ease-in 0s;
     -o-transition: margin 0.3s ease-in 0s; transition: margin 0.3s ease-in 0s;
 }
+
 .onoffswitch-inner:before, .onoffswitch-inner:after {
     display: block; float: left; width: 50%; height: 30px; padding: 0; line-height: 30px;
     font-size: 1em; color: white; font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
     -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
 }
+
 .onoffswitch-inner:before {
     content: "Local";
     padding-left: 10px;
     background-color: #F8E03E; color: #541F0F;
 }
+
 .onoffswitch-inner:after {
     content: "Global";
     padding-right: 10px;
     background-color: #541F0F; color: #F8E03E;
     text-align: right;
 }
+
 .onoffswitch-switch {
     display: block; width: 18px; margin: 6px;
     background: #CD8B34;
@@ -302,9 +307,11 @@ label {
     -moz-transition: all 0.3s ease-in 0s; -webkit-transition: all 0.3s ease-in 0s;
     -o-transition: all 0.3s ease-in 0s; transition: all 0.3s ease-in 0s;
 }
+
 .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
     margin-left: 0;
 }
+
 .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
     right: 20px;
 }
@@ -316,6 +323,7 @@ label {
 .onoffswitch-inner.chain:after {
     content: "Chain consecutive steps" !important;
 }
+
 .onoffswitch-inner.chain:before {
     content: "Execute only this step" !important;
 }
