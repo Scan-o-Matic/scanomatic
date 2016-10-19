@@ -24,7 +24,7 @@ __The rest of this file here will only discuss code-related issues.__
 * Showing of gridding in Status and QC-view. (API exists, viewing in re-gridding exists)
 * :star: Showing of log-files for a project at various stages and views (API exists).
 * Showing of the instructions given at various stages to Scan-o-matic (API exists).
-* Regridding grid image can block the ui elements, also may not work if less than 4 images...
+* Regridding grid image may not work if less than 4 images on 4 plate fixture...
 * :star: Be able to specify what images to be included for each plate at the analysis stage.
   If one plate has problems towards the end of experiment, only this one should skip last
   couple of images.
