@@ -31,7 +31,7 @@
                         </label>
                     </div>
                     <label for="current-fixture"></label>
-                    <select name="current-fixtures" id="current-fixture" onchange="set_fiture_status();"></select>
+                    <select name="current-fixtures" id="current-fixture" onchange="set_fixture_status();"></select>
                     <br>
                     <div class="error-message" id="fixture-error-message"></div>
                 </div>
@@ -39,8 +39,8 @@
                     <label for="project-directory">Project Directory</label>
                     <input id="project-directory" name="project-directory" class="long"
                            onchange="set_project_directory(this);"
-                                   onfocus="set_project_directory(this);"
-                                   onkeyup="set_project_directory(this);">
+                           onfocus="set_project_directory(this);"
+                           onkeyup="set_project_directory(this);">
                     <div class="indented"><em>The project directory is the directory that contains the images that were scanned.</em></div>
 
                 </div>

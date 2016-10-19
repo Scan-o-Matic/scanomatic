@@ -3,7 +3,7 @@ var path = '';
 var project_path_valid = false;
 var image_list_div = null;
 
-function set_fiture_status() {
+function set_fixture_status() {
     callback = function(data, status) {
         if (!data.success) {
             $("#fixture-error-message").html("<em>" + data.reason + "</em>").show();
@@ -77,6 +77,12 @@ function setImageSuggestions(path) {
                     "<label class='image-list-label' for='image-data-" + image_data.index + "'>" + image_data.file + "</label></div>");
             }
 
+            no_img_err = "<em>Not a project folder</em>";
+            if (data.images.length == 0) {
+                $("#fixture-error-message").html(no_img_err).show();
+            } else if ($("#fixture-error-message").html() == no_img_err) {
+                $("#fixture-error-message").html("").hide();
+            }
         });
 
     }
