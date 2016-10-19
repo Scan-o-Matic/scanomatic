@@ -63,6 +63,7 @@
                     <label for="manual-regridding-source-folder">Previous gridding folder (local)</label>
                     <input id="manual-regridding-source-folder"
                            title="This only has affect if manual gridding is activated."
+                           value="analysis"
                            onchange="set_regridding_source_directory(this);"
                            onfocus="set_regridding_source_directory(this);"
                            onkeyup="set_regridding_source_directory(this);" disabled>
@@ -115,6 +116,8 @@
 
             </form>
         </div>
+
+
         <h2>Feature extraction</h2>
         <div class="section-frame">
             <form>
@@ -137,7 +140,6 @@
         get_fixtures();
         InputEnabled($("#submit-button2"), false);
         toggleManualRegridding($("#manual-regridding"));
-
     </script>
 </body>
 </html>
