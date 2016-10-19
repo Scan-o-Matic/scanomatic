@@ -126,6 +126,7 @@ class XML_Writer(object):
 
             except socket.gaierror:
                 self._logger.warning("Can't find IP with socked")
+                s = ""
 
             try:
                 mac = re.search(r"(([a-f\d]{1,2}\:){3,8}[a-f\d]{1,2})", s).groups()[0]
