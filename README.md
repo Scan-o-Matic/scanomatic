@@ -15,7 +15,14 @@ __The rest of this file here will only discuss code-related issues.__
 
 ## UI
 
+### Feature extraction
+
+* If there's a state/previous extraction, we can allow (a) loading this state and
+  if the user uses this option allow (a.1) keeping previous filter and/or (a.2) keep smoothed data.
+* Make feature extraction of bioscreen data available.
+
 ### Admin stuff
+
 * :star: Ability to calibrate and add a new grayscale with using old as reference.
 * Validation of that a grayscale is producing acceptable values in a scanner over time
 
