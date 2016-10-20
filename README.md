@@ -9,7 +9,7 @@ Please refer to the [Wiki](https://github.com/local-minimum/scanomatic/wiki) for
 If you are considering setting up Scan-o-matic at your lab, we would be very happy and would love to hear from you. But, before you decide on this, the Faculty of Science at University of Gothenburg has included Scan-o-matic among its high-throughput phenomics infrastructure and it is our expressed interest that external researchers come to us. If you are interested there's some more information and contact information here: [The center for large scale cell based screeening](http://cmb.gu.se/english/research/microbiology/center-for-large-scale-cell-based-screening). It is yet to become listed on the page, but don't worry, it will be part of the list.
 
 
-__The rest of this file here will only discuss code-related issues.__
+__The rest of this file should probably be maintained in another way.__
 
 # Features that would be nice if included
 
