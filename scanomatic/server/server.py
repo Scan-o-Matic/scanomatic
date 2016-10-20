@@ -47,7 +47,7 @@ class Server(object):
 
     @property
     def _is_time_to_cycle_log(self):
-        self.logger.info(time.time() - self._cycle_log_time)
+        # self.logger.info(time.time() - self._cycle_log_time)
         return time.time() - self._cycle_log_time > logger.LOG_RECYCLE_TIME
 
     def _init_logging(self):
