@@ -126,7 +126,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.UniformityThreshold: 0.4,
     Thresholds.UniformityTestMinSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5,
-    Thresholds.NonFlatLinearMinimumYield: 0.4}
+    Thresholds.NonFlatLinearMinimumYield: 0.3}
 
 
 def is_detected_non_linear(phase_type):
@@ -442,11 +442,35 @@ def _set_nonflat_linear_segment(model, thresholds):
 
             return False
 
-        elif elected[-1] - elected[0] * (-1 if phase is CurvePhases.Collapse else 1) < \
-                thresholds[Thresholds.NonFlatLinearMinimumYield]:
+        # Get first and last index of elected stretch
+        left, right = np.where(elected)[0][0::elected.sum() - 1]
+        if model.offset:
 
-            return False
+            if (model.log2_curve[model.offset: -model.offset][right] -
+                    model.log2_curve[model.offset: -model.offset][left]) * \
+                    (-1 if phase is CurvePhases.Collapse else 1) < \
+                    thresholds[Thresholds.NonFlatLinearMinimumYield]:
 
+                """
+                print("***Failed phase ({2}, {3}): {0:.2f}".format(
+                    np.abs(model.log2_curve[left] - model.log2_curve[right]), None, model.plate, model.pos))
+                """
+                return False
+        else:
+
+            if (model.log2_curve[right] - model.log2_curve[left]) * (-1 if phase is CurvePhases.Collapse else 1) < \
+                    thresholds[Thresholds.NonFlatLinearMinimumYield]:
+
+                """
+                print("***Failed phase ({2}, {3}): {0:.2f}".format(
+                    np.abs(model.log2_curve[left] - model.log2_curve[right]), None, model.plate, model.pos))
+                """
+                return False
+
+        """
+        print("*Good phase ({2}, {3}): {0:.2f}, {1:.2f}".format(
+            model.log2_curve[left], model.log2_curve[right], model.plate, model.pos))
+        """
         return True
 
     # yield / total yield maybe though if total yield failed nothing
