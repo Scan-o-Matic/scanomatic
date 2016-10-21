@@ -433,7 +433,7 @@ def _set_nonflat_linear_segment(model, thresholds):
     Returns:
 
     """
-    # TODO: Require height delta over phase to be substantial maybe
+
     # yield / total yield maybe though if total yield failed nothing
     # will be reported
 
