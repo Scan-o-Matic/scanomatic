@@ -519,8 +519,13 @@ def _set_nonflat_linear_segment(model, thresholds):
             # Rewrite region as flanks and return that nothing was detected
             flanks = set(f for f in _get_flanks(model.phases, elected) if f is not None)
             if len(flanks) == 1:
-                model.phases[elected] = flanks.pop()
-                return np.array([])
+                # We must ensure that we don't return phase to more initial states
+                # of indeterminate.
+                flank = flanks.pop()
+                if flank not in (CurvePhases.Undetermined.value,
+                                 CurvePhases.UndeterminedNonFlat.value):
+                    model.phases[elected] = flank
+                    return np.array([])
 
         model.phases[elected] = CurvePhases.UndeterminedNonLinear.value
         # Since no segment was detected there are no bordering segments
