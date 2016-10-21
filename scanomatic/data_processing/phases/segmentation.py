@@ -98,6 +98,8 @@ class Thresholds(Enum):
     """:type : Thresholds"""
     NonFlatLinearMinimumLength = 7
     """:type : Thresholds"""
+    NonFlatLinearMinimumYield = 8
+    """:type : Thresholds"""
 
 
 class PhaseEdge(Enum):
@@ -123,7 +125,8 @@ DEFAULT_THRESHOLDS = {
     Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.UniformityThreshold: 0.4,
     Thresholds.UniformityTestMinSize: 7,
-    Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
+    Thresholds.SecondDerivativeSigmaAsNotZero: 0.5,
+    Thresholds.NonFlatLinearMinimumYield: 0.4}
 
 
 def is_detected_non_linear(phase_type):
@@ -410,6 +413,7 @@ def classifier_nonflat_linear(model, thresholds, filt):
     candidates, n_found = label(candidates)
 
     # Verify that there's actually still a candidate at the peak value
+    # TODO: Add test of yield here I suppose
     if n_found == 0:
 
         model.phases[filt] = CurvePhases.UndeterminedNonLinear.value
