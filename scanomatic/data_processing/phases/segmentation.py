@@ -438,6 +438,18 @@ def _set_nonflat_linear_segment(model, thresholds):
 
     """
 
+    def _validate_phase():
+        if phase is CurvePhases.Undetermined or elected.sum() < thresholds[Thresholds.PhaseMinimumLength]:
+
+            return False
+
+        elif elected[-1] - elected[0] * (-1 if phase is CurvePhases.Collapse else 1) < \
+                thresholds[Thresholds.NonFlatLinearMinimumYield]:
+
+            return False
+
+        return True
+
     # yield / total yield maybe though if total yield failed nothing
     # will be reported
 
@@ -454,7 +466,7 @@ def _set_nonflat_linear_segment(model, thresholds):
     phase, elected = classifier_nonflat_linear(model, thresholds, filt)
 
     # Verify that the elected phase fulfills length threshold
-    if phase is CurvePhases.Undetermined or elected.sum() < thresholds[Thresholds.PhaseMinimumLength]:
+    if not _validate_phase():
 
         model.phases[elected] = CurvePhases.UndeterminedNonLinear.value
         # Since no segment was detected there are no bordering segments
