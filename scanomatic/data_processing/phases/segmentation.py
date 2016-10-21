@@ -413,7 +413,6 @@ def classifier_nonflat_linear(model, thresholds, filt):
     candidates, n_found = label(candidates)
 
     # Verify that there's actually still a candidate at the peak value
-    # TODO: Add test of yield here I suppose
     if n_found == 0:
 
         model.phases[filt] = CurvePhases.UndeterminedNonLinear.value
