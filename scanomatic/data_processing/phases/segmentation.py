@@ -311,8 +311,15 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
 
 def _get_flanks(phases, filt):
 
-    left, right = np.where(filt)[0][0::filt.sum() - 1]
-    if left > 0  and right < phases.size - 2:
+    n = filt.sum()
+    if n == 0:
+        return None, None,
+    elif n == 1:
+        left = right = np.where(filt)[0][0]
+    else:
+        left, right = np.where(filt)[0][0::n - 1]
+
+    if left > 0 and right < phases.size - 2:
         return phases[left - 1], phases[right + 1]
     elif left > 0:
         return phases[left - 1], None
