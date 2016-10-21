@@ -100,6 +100,8 @@ class Thresholds(Enum):
     """:type : Thresholds"""
     NonFlatLinearMinimumYield = 8
     """:type : Thresholds"""
+    NonFlatLinearMergeLengthMax = 9
+    """:type : Thresholds"""
 
 
 class PhaseEdge(Enum):
@@ -126,7 +128,8 @@ DEFAULT_THRESHOLDS = {
     Thresholds.UniformityThreshold: 0.4,
     Thresholds.UniformityTestMinSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5,
-    Thresholds.NonFlatLinearMinimumYield: 0.3}
+    Thresholds.NonFlatLinearMinimumYield: 0.3,
+    Thresholds.NonFlatLinearMergeLengthMax: 15}
 
 
 def is_detected_non_linear(phase_type):
@@ -304,6 +307,19 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
     model.dydt_signs[np.abs(model.dydt) < thresholds[Thresholds.FlatlineSlopRequirement]] = 0
 
     return model
+
+
+def _get_flanks(phases, filt):
+
+    left, right = np.where(filt)[0][0::filt.sum() - 1]
+    if left > 0  and right < phases.size - 2:
+        return phases[left - 1], phases[right + 1]
+    elif left > 0:
+        return phases[left - 1], None
+    elif right < phases.size - 2:
+        return None, phases[right + 1]
+    else:
+        return None, None
 
 
 def _fill_undefined_gaps(phases):
@@ -490,6 +506,14 @@ def _set_nonflat_linear_segment(model, thresholds):
 
     # Verify that the elected phase fulfills length threshold
     if not _validate_phase():
+
+        if elected.sum() < thresholds[Thresholds.NonFlatLinearMergeLengthMax]:
+            # If flanking is consistent and elected not too long
+            # Rewrite region as flanks and return that nothing was detected
+            flanks = set(f for f in _get_flanks(model.phases, elected) if f is not None)
+            if len(flanks) == 1:
+                model.phases[elected] = flanks.pop()
+                return np.array([])
 
         model.phases[elected] = CurvePhases.UndeterminedNonLinear.value
         # Since no segment was detected there are no bordering segments
