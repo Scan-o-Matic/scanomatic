@@ -265,10 +265,9 @@ def plot_phase_correlation_dendrogram(
 
 
 @_validate_input
-def plot_plate_phase_variance(phenotypes, plate):
+def plot_plate_phase_assigment_frequencies(phenotypes, plate):
 
     data = get_phase_assignment_frequencies(phenotypes, plate)
-    print (data.shape)
     data = data / data.sum(axis=1)[..., np.newaxis].astype(float)
     cum_data = np.cumsum(data, axis=1)
     f = plt.figure()
@@ -299,6 +298,7 @@ def plot_plate_phase_variance(phenotypes, plate):
     ax.set_ylim(0, 1)
     ax.set_xlabel("Time (h)")
     ax.set_ylabel("Frequency of classification")
+    ax.set_title("Plate phase classifications {0}".format(plate + 1))
 
     tax.set_ylabel("Log2 Population Size Variance")
 
