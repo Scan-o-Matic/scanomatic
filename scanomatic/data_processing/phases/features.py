@@ -653,7 +653,7 @@ def get_phase_phenotypes_aligned(phenotypes, plate):
 
     end_time = phenotypes.times.max()
     plate_data = phenotypes._vector_phenotypes[plate][VectorPhenotypes.PhasesPhenotypes]
-    filt = phenotypes.get_curves_filter_compacted(plate)
+    filt = phenotypes.get_curve_qc_filter(plate)
     coords = _get_index_array(plate_data.shape)
 
     plate_data = plate_data[filt == np.False_]

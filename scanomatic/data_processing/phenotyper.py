@@ -1623,7 +1623,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                         self._phenotype_filter[plate][phenotype][template_filt[plate] == mark.value] = mark.value
 
-    def get_curves_filter_compacted(self, plate, threshold=0.8):
+    def get_curve_qc_filter(self, plate, threshold=0.8):
 
         filt = self._phenotype_filter[plate]
 
