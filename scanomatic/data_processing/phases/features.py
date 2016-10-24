@@ -504,7 +504,7 @@ def get_variance_decomposition_by_phase(plate_phenotype, phenotypes, id_plate, i
     plate = np.ma.masked_array(plate_phenotype, filt)
     ret = {None: plate.ravel().var()}
     phases = phenotypes.get_curve_phases_at_time(id_plate, id_time)
-    ret.update({phase.value: plate[phases == phase.value].ravel().var() for phase in CurvePhases})
+    ret.update({phase: plate[phases == phase.value].ravel().var() for phase in CurvePhases})
     return ret
 
 
