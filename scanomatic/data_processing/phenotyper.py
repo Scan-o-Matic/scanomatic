@@ -1081,6 +1081,21 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         except (ValueError, IndexError, TypeError, KeyError):
             return None
 
+    def get_curve_phases_at_time(self, plate, time_index):
+
+        try:
+            p = self._vector_phenotypes[plate][VectorPhenotypes.PhasesClassifications]
+
+            # The init value is illegal, no phase has that value. On purpose
+            arr = np.ones(p.shape, dtype=int) * -2
+            for id1, id2 in product(*(range(d) for d in p.shape)):
+                v = self.get_curve_phases(plate, id1, id2)
+                if v is not None:
+                    arr[id1, id2] = v[time_index]
+            return np.ma.masked_array(arr, arr == -2)
+        except (ValueError, IndexError, TypeError, KeyError):
+            return None
+
     def get_curve_phase_data(self, plate, outer, inner):
 
         try:
