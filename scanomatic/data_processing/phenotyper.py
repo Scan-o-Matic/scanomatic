@@ -1633,7 +1633,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         filt = np.array(filt.values())
 
         return ((np.sum(filt, axis=0) / float(filt.shape[0]) > threshold) |
-                np.any(filt == Filter.NoGrowth.value, axis=0))
+                np.any((filt == Filter.NoGrowth.value) | (filt == Filter.Empty.value), axis=0))
 
     def add_position_mark(self, plate, positions, phenotype=None, position_mark=Filter.BadData,
                           undoable=True):
