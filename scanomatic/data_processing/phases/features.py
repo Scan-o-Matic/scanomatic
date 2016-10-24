@@ -483,7 +483,7 @@ def get_phase_assignment_data(phenotypes, plate):
     vshape = None
     for x, y in phenotypes.enumerate_plate_positions(plate):
         v = phenotypes.get_curve_phases(plate, x, y)
-        if v.ndim == 1 and v.shape[0] and (vshape is None or v.shape == vshape):
+        if v is not None and v.ndim == 1 and v.shape[0] and (vshape is None or v.shape == vshape):
             if vshape is None:
                 vshape = v.shape
             data.append(v)
