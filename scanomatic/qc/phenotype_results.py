@@ -331,7 +331,7 @@ def plot_plate_phase_assigment_frequencies(phenotypes, plate):
 
 
 @_validate_input
-def plot_plate_phase_pop_size_variance_decomp(phenotypes, plate):
+def plot_plate_phase_pop_size_variance_decomp(phenotypes, plate, relative=False):
 
     # Prepare the data
     log2_smooth = np.log2(phenotypes.smooth_growth_data[plate])
@@ -346,34 +346,69 @@ def plot_plate_phase_pop_size_variance_decomp(phenotypes, plate):
             elif phase.value >= 0 and np.isfinite(time_data[phase]):
                 phase_var[phase.value, id_time] = time_data[phase]
 
+    sum_phase_var = phase_var.sum(axis=0)
+    phase_var = np.ma.masked_less_equal(phase_var, 0)
+    phase_var.fill_value = 0
     # Plotting
     f = plt.figure()
 
     ax = f.add_subplot(1, 1, 1)
-    cum_sum = None
+    cum_sum = np.zeros(sum_phase_var.shape, dtype=float)
+
     for idx, data in enumerate(phase_var):
+
+        if not data.any():
+            continue
+
+        if relative:
+            vals = data / sum_phase_var
+            if cum_sum is not None:
+                vals += cum_sum
+        else:
+
+            vals = data.copy()
+            if cum_sum is not None:
+                vals += cum_sum
 
         ax.fill_between(
             phenotypes.times,
-            data if cum_sum is None else data + cum_sum,
-            0 if cum_sum is None else cum_sum,
+            vals,
+            cum_sum,
+            where=vals.mask == np.False_,
             color=PHASE_PLOTTING_COLORS[CurvePhases(idx)],
-            alpha=0.75,
+            alpha=1,
             interpolate=True)
 
-        cum_sum = data.copy() if cum_sum is None else cum_sum + data
-        print cum_sum
+        ax.plot(phenotypes.times, vals, 's',
+                ms=0.1,
+                color=PHASE_PLOTTING_COLORS[CurvePhases(idx)],
+                label=CurvePhases(idx).name)
+
+        cum_sum[...] = [c if np.ma.is_masked(m) else m for c, m in zip(cum_sum, vals)]
 
     tax = ax.twinx()
 
-    tax.plot(phenotypes.times, total_var, '--', color='k', lw=2.5, label="Population size variance")
+    tax.plot(phenotypes.times, total_var, '--', color='k', lw=2.5, label="Total Pop-size")
 
     ax.set_xlim(0, phenotypes.times.max())
 
-    # ax.set_ylim(0, 1)
+    if relative:
+        ax.set_ylim(0, 1)
+        ax.set_ylabel("Fraction of variance by phase")
+
+    else:
+        ax.set_ylabel("Log2 Population Size Variance for curves in phase")
+        ax.legend(
+            ax.lines + tax.lines,
+            [l.get_label() for l in ax.lines + tax.lines],
+            loc="upper right",
+            fontsize='x-small',
+            numpoints=1,
+            ncol=2,
+            markerscale=40,
+        )
 
     ax.set_xlabel("Time (h)")
-    ax.set_ylabel("Log2 Population Size Variance for curves in phase")
     ax.set_title("Plate {0} phase variance decomposition by phase assignment".format(plate + 1))
 
     tax.set_ylabel("Log2 Population Size Variance")
