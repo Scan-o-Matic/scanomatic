@@ -1653,6 +1653,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 Defaults to `Filter.BadData`.
             undoable: Optional, if mark should be undoable, default is yes [`True`, `False`].
 
+        Returns: If query was accepted.
+
         Notes:
             * If the present module `scanomtic.data_processing.phenotyper` was imported, then you can
               reach the `phenotype_mark` filters at `phenotyper.Filter`.
@@ -1660,17 +1662,20 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
               previously were `Filter.OK`. This may of may not have been true.
 
         """
+        if position_mark in (Filter.Empty, Filter.NoGrowth) and phenotype is not None:
+            self._logger.error("{0} can only be set for all phenotypes, not specifically for {1}".format(
+                position_mark, phenotype))
+            return False
+
         if phenotype is None:
 
             for phen in Phenotypes:
                 if self._phenotypes_inclusion(phen):
-                    self.add_position_mark(plate, positions, phen, position_mark, undoable=False)
+                    return self.add_position_mark(plate, positions, phen, position_mark, undoable=False)
 
             if undoable:
                 self._logger.warning("Undoing this mark will assume all phenotypes were previously marked as OK")
                 self._add_undo(plate, positions, None, 0)
-
-            return
 
         else:
 
@@ -1684,6 +1689,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             if undoable:
                 self._add_undo(plate, positions, phenotype, previous_state)
+
+        return True
 
     def _add_undo(self, plate, position_list, phenotype, previous_state):
 

@@ -1047,7 +1047,13 @@ def add_routes(app):
                                                                                tuple(f for f in phenotyper.Filter)),
                     **response)
 
-        state.add_position_mark(plate, (outer, inner), phenotype, mark)
+        if not state.add_position_mark(plate, (outer, inner), phenotype, mark):
+            response['success'] = False
+
+            return jsonify(
+                reason="Setting mark refused, probably trying to set NoGrowth or Empty for individual phenotype.",
+                **response)
+
         state.save_state(path, ask_if_overwrite=False)
 
         if lock_state is LockState.LockedByMeTemporary:
