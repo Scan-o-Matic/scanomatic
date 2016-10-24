@@ -498,6 +498,16 @@ def get_phase_assignment_frequencies(phenotypes, plate):
     return np.array(bin_counts)
 
 
+def get_variance_decomposition_by_phase(plate_phenotype, phenotypes, id_plate, id_time):
+
+    filt = phenotypes.get_curve_qc_filter(id_plate)
+    plate = np.ma.masked_array(plate_phenotype, filt)
+    ret = {None: plate.ravel().var()}
+    phases = phenotypes.get_curve_phases_at_time(id_plate, id_time)
+    ret.update({phase.value: plate[phases == phase.value].ravel().var() for phase in CurvePhases})
+    return ret
+
+
 def _get_index_array(shape):
 
     m = np.mgrid[:shape[0], :shape[1]]
