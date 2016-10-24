@@ -16,7 +16,8 @@ import scipy.cluster.hierarchy as sch
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
 from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS, \
     get_data_needed_for_segmentation
-from scanomatic.data_processing.phases.features import get_phase_assignment_frequencies, CurvePhasePhenotypes
+from scanomatic.data_processing.phases.features import get_phase_assignment_frequencies, CurvePhasePhenotypes, \
+    get_variance_decomposition_by_phase
 from scanomatic.data_processing.phenotyper import Phenotyper
 from scanomatic.io.logger import Logger
 from scanomatic.io.movie_writer import MovieWriter
@@ -326,6 +327,56 @@ def plot_plate_phase_variance(phenotypes, plate):
 
     f.tight_layout()
 
+    return f
+
+
+@_validate_input
+def plot_plate_phase_pop_size_variance_decomp(phenotypes, plate):
+
+    # Prepare the data
+    log2_smooth = np.log2(phenotypes.smooth_growth_data[plate])
+    phase_var = np.zeros((max(phase.value for phase in CurvePhases) + 1, log2_smooth.shape[-1]))
+    total_var = np.zeros((log2_smooth.shape[-1],))
+
+    for id_time in range(log2_smooth.shape[-1]):
+        time_data = get_variance_decomposition_by_phase(log2_smooth[..., id_time], phenotypes, plate, id_time)
+        for phase in time_data:
+            if phase is None:
+                total_var[id_time] = time_data[phase]
+            elif phase.value >= 0 and np.isfinite(time_data[phase]):
+                phase_var[phase.value, id_time] = time_data[phase]
+
+    # Plotting
+    f = plt.figure()
+
+    ax = f.add_subplot(1, 1, 1)
+    cum_sum = None
+    for idx, data in enumerate(phase_var):
+
+        ax.fill_between(
+            phenotypes.times,
+            data if cum_sum is None else data + cum_sum,
+            0 if cum_sum is None else cum_sum,
+            color=PHASE_PLOTTING_COLORS[CurvePhases(idx)],
+            alpha=0.75,
+            interpolate=True)
+
+        cum_sum = data.copy() if cum_sum is None else cum_sum + data
+        print cum_sum
+
+    tax = ax.twinx()
+
+    tax.plot(phenotypes.times, total_var, '--', color='k', lw=2.5, label="Population size variance")
+
+    ax.set_xlim(0, phenotypes.times.max())
+
+    # ax.set_ylim(0, 1)
+
+    ax.set_xlabel("Time (h)")
+    ax.set_ylabel("Log2 Population Size Variance for curves in phase")
+    ax.set_title("Plate {0} phase variance decomposition by phase assignment".format(plate + 1))
+
+    tax.set_ylabel("Log2 Population Size Variance")
     return f
 
 
