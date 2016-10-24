@@ -1090,7 +1090,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             arr = np.ones(p.shape, dtype=int) * -2
             for id1, id2 in product(*(range(d) for d in p.shape)):
                 v = self.get_curve_phases(plate, id1, id2)
-                if v is not None:
+                if isinstance(v, np.ma.masked_array):
                     arr[id1, id2] = v[time_index]
             return np.ma.masked_array(arr, arr == -2)
         except (ValueError, IndexError, TypeError, KeyError):
