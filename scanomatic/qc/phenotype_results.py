@@ -635,7 +635,7 @@ def animate_plate_over_time(save_target, plate, truncate_value_encoding=False, i
 
 
 @_setup_figure
-def plot_phases(phenotypes, plate, position, segment_alpha=0.3, f=None, ax=None, colors=None, save_target=None):
+def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, colors=None, save_target=None):
 
     if not isinstance(phenotypes, Phenotyper):
         phenotypes = Phenotyper.LoadFromState(phenotypes)
@@ -654,7 +654,7 @@ def plot_phases(phenotypes, plate, position, segment_alpha=0.3, f=None, ax=None,
 
 
 @_setup_figure
-def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=0.3):
+def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1):
 
     if colors is None:
         colors = PHASE_PLOTTING_COLORS
