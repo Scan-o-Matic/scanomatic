@@ -431,7 +431,8 @@ def add_routes(app):
             return jsonify(meta_data=state.meta_data[plate].data, **response)
         else:
             response['success'] = False
-            return jsonify(reason="Project has no meta-data added", **response)
+            response['reason'] = "Project has no meta-data added"
+            return jsonify(**response)
 
     @app.route("/api/results/pinning", defaults={'project': ""})
     @app.route("/api/results/pinning/<path:project>")
