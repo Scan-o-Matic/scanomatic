@@ -396,19 +396,45 @@
                     $("#spAnalysis_instructions").text(projectDetails.analysis_instructions);
                     $("#spLock").data("lock_path", projectDetails.add_lock);
                     $("#spLock").data("unLock_path", projectDetails.remove_lock);
-                    $("spQidx").data("qIdx", "");
+                    $("#spQidx").data("qIdx", "");
                     var inner ="";
-                    inner += "<li><a href='http://localhost:5000/api/results/export/phenotypes/Absolute/" + projectDetails.project + "'>Absolute</a></li>";
-                    inner += "<li><a href='http://localhost:5000/api/results/export/phenotypes/NormalizedRelative/" + projectDetails.project + "'>Normalized Relative</a></li>";
-                    inner += "<li><a href='http://localhost:5000/api/results/export/phenotypes/NormalizedAbsoluteBatched/" + projectDetails.project + "'>Normalized Absolute Batched</a></li>";
+                    inner += "<li><a href='" + baseUrl + "/api/results/export/phenotypes/Absolute/" + projectDetails.project + "'>Absolute</a></li>";
+                    inner += "<li><a href='" + baseUrl + "/api/results/export/phenotypes/NormalizedRelative/" + projectDetails.project + "'>Normalized Relative</a></li>";
+                    inner += "<li><a href='" + baseUrl + "/api/results/export/phenotypes/NormalizedAbsoluteBatched/" + projectDetails.project + "'>Normalized Absolute Batched</a></li>";
                     $("#ulExport").html(inner);
                     getLock(function () {
+                        $("#btnUploadMetaData").click(function () {
+                            var key = $("#spLock").data("lock_key");
+                            var addMetaDataUrl = baseUrl + "/api/results/meta_data/add/" + projectDetails.project + addKeyParameter(key);
+                            var file = $("#meta_data")[0].files[0];
+                            var extension = file.name.split('.').pop();
+                            var formData = new FormData();
+                            formData.append("meta_data", file);
+                            formData.append("file_suffix", extension);
+                            $.ajax({
+                                url: addMetaDataUrl,
+                                type: "POST",
+                                contentType: false,
+                                enctype: 'multipart/form-data',
+                                data: formData,
+                                processData: false,
+                                success: function (data) {
+                                    alert("success:" + data);
+                                },
+                                error: function (data) {
+                                    alert("error:" + data.responseText);
+                                }
+                            });
+                        });
                         $("#btnBrowseProject").click();
                         drawRunPhenotypeSelection(projectDetails.phenotype_names);
                         drawRunNormalizedPhenotypeSelection(projectDetails.phenotype_normalized_names);
                         drawReferenceOffsetSelecton();
                     });
                 }
+
+
+
                 //draw Reference Offset selection
                 function drawReferenceOffsetSelecton() {
                     var elementName = "selRefOffSets";
@@ -616,6 +642,16 @@
                                         <ul class="dropdown-menu" aria-labelledby="ddmSave" id="ulExport">
                                         </ul>
                                     </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Load Metadata
+                                </td>
+                                <td>
+                                    <input type="file" name="meta_data" id="meta_data" accept=".xls,.xlsx,.ods" />
+                                    <input type="hidden" name="file_suffix" id="file_suffix" />
+                                    <button id="btnUploadMetaData" class="btn btn-default btn-xs">Upload</button>
                                 </td>
                             </tr>
                         </table>
