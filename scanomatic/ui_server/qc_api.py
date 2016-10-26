@@ -369,8 +369,11 @@ def add_routes(app):
             response["success"] = False
             return jsonify(reason="Failed to save file, contact server admin.", **response)
 
-        state.load_meta_data(meta_data_path)
-        state.save_state(path, ask_if_overwrite=False)
+        if state.load_meta_data(meta_data_path):
+            state.save_state(path, ask_if_overwrite=False)
+        else:
+            response['success'] = False
+            response['reason'] = "Uploaded data doesn't match shapes of the plates"
 
         if lock_state is LockState.LockedByMeTemporary:
             _remove_lock(path)
