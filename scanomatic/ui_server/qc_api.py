@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 from dateutil import tz
 from flask import request, Flask, jsonify, send_from_directory
+from werkzeug.datastructures import FileStorage
 from itertools import chain, product
 from subprocess import call
 import uuid
@@ -356,8 +357,11 @@ def add_routes(app):
         meta_data_path = _get_new_metadata_file_name(path, file_sufix)
 
         try:
-            with open(meta_data_path, 'wb') as fh:
-                fh.write(meta_data_stream)
+            if isinstance(meta_data_stream, FileStorage):
+                meta_data_stream.save(meta_data_path)
+            else:
+                with open(meta_data_path, 'wb') as fh:
+                    fh.write(meta_data_stream)
         except IOError:
             if lock_state is LockState.LockedByMeTemporary:
                 _remove_lock(path)
