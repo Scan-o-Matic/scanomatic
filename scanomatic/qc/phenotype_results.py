@@ -635,7 +635,8 @@ def animate_plate_over_time(save_target, plate, truncate_value_encoding=False, i
 
 
 @_setup_figure
-def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, colors=None, save_target=None):
+def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, colors=None, save_target=None,
+                loc="lower right"):
 
     if not isinstance(phenotypes, Phenotyper):
         phenotypes = Phenotyper.LoadFromState(phenotypes)
@@ -643,7 +644,7 @@ def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, c
     model = get_data_needed_for_segmentation(phenotypes, plate, position, DEFAULT_THRESHOLDS)
     model.phases = phenotypes.get_curve_phases(plate, position[0], position[1])
 
-    plot_phases_from_model(model, ax=ax, colors=colors, segment_alpha=segment_alpha)
+    plot_phases_from_model(model, ax=ax, colors=colors, segment_alpha=segment_alpha, loc=loc)
 
     ax.set_title("Curve phases for plate {0}, position ({1}, {2})".format(plate, *position))
 
@@ -654,7 +655,7 @@ def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, c
 
 
 @_setup_figure
-def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1):
+def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1, loc="lower right"):
 
     if colors is None:
         colors = PHASE_PLOTTING_COLORS
@@ -688,6 +689,6 @@ def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1)
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Population Size [cells]")
 
-    ax.legend(loc="lower right", handles=list(legend.values()))
+    ax.legend(loc=loc, handles=list(legend.values()))
 
     return f
