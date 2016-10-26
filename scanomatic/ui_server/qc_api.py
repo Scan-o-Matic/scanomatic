@@ -44,9 +44,16 @@ def owns_lock(lock_state):
 
 def _get_state_update_response(path, response, success=None):
 
-    state = phenotyper.Phenotyper.LoadFromState(path)
-    name = get_project_name(path)
-    print("Loaded state '{0}' from: {1}".format(name, path))
+    try:
+        state = phenotyper.Phenotyper.LoadFromState(path)
+    except ImportError:
+        name = None
+        success = False
+        state = None
+        response['reason'] = "Feature extraction outdated, please re-run."
+    else:
+        name = get_project_name(path)
+        print("Loaded state '{0}' from: {1}".format(name, path))
 
     response.update({'is_endpoint': True, 'is_project': True, 'project_name': name})
 
@@ -337,6 +344,11 @@ def add_routes(app):
 
         state, _ = _get_state_update_response(path, response)
 
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         meta_data_stream = request.files.get('meta_data')
         if not meta_data_stream:
             if lock_state is LockState.LockedByMeTemporary:
@@ -398,6 +410,11 @@ def add_routes(app):
 
         state, name = _get_state_update_response(path, response, success=True)
 
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         if plate is None:
 
             urls = ["{0}/{1}/{2}".format(base_url, plate, project)
@@ -423,6 +440,11 @@ def add_routes(app):
         lock_key = request.values.get("lock_key")
         lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
         state, name = _get_state_update_response(path, response, success=True)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
 
         if plate is None:
 
@@ -454,6 +476,12 @@ def add_routes(app):
         lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
 
         state, _ = _get_state_update_response(path, response, success=True)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         pinnings = list(state.plate_shapes)
         return jsonify(pinnings=pinnings, plates=sum(1 for p in pinnings if p is not None), **response)
 
@@ -474,6 +502,11 @@ def add_routes(app):
         lock_key = request.values.get("lock_key")
         lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
         state, name = _get_state_update_response(path, response, success=True)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
 
         if plate is None:
 
@@ -503,6 +536,11 @@ def add_routes(app):
         lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
 
         state, name = _get_state_update_response(path, response, success=True)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
 
         urls = ["/api/results/phenotype/{0}/{1}".format(phenotype, project)
                 for phenotype in state.phenotype_names()]
@@ -534,6 +572,11 @@ def add_routes(app):
             path, lock_key, request.remote_addr, require_claim=True)
 
         state, name = _get_state_update_response(path, response)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
 
         if not owns_lock(lock_state):
             return jsonify(**response)
@@ -584,6 +627,11 @@ def add_routes(app):
 
         state, name = _get_state_update_response(path, response)
 
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         if not owns_lock(lock_state):
             return jsonify(**response)
 
@@ -632,6 +680,11 @@ def add_routes(app):
 
         state, name = _get_state_update_response(path, response, success=True)
 
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         phenotypes = state.get_normalizable_phenotypes()
 
         urls = ["/api/results/normalized_phenotype/{0}/{1}".format(phenotype.name, project)
@@ -665,6 +718,11 @@ def add_routes(app):
 
         state, name = _get_state_update_response(path, response, success=True)
 
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         if plate is None:
 
             urls = ["/api/results/quality_index/{0}/{1}".format(plate, project)
@@ -695,6 +753,11 @@ def add_routes(app):
         lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
 
         state, name = _get_state_update_response(path, response, success=True)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
 
         if phenotype is None:
 
@@ -770,6 +833,11 @@ def add_routes(app):
         lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
 
         state, name = _get_state_update_response(path, response, success=True)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
 
         if phenotype is None:
 
@@ -882,6 +950,11 @@ def add_routes(app):
 
         state, name = _get_state_update_response(path, response)
 
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         if not owns_lock(lock_state):
             return jsonify(**response)
 
@@ -950,6 +1023,11 @@ def add_routes(app):
             path, lock_key, request.remote_addr, require_claim=True)
 
         state, _ = _get_state_update_response(path, response)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
 
         if not owns_lock(lock_state):
             return jsonify(**response)
@@ -1089,6 +1167,11 @@ def add_routes(app):
 
         state, name = _get_state_update_response(path, response, success=True)
 
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         if plate is None:
 
             urls = ["{0}/{1}/{2}".format(url_root, i, project)
@@ -1148,6 +1231,11 @@ def add_routes(app):
         lock_key = request.values.get("lock_key")
         lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
         state, name = _get_state_update_response(path, response, success=True)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
 
         if plate is None:
 
@@ -1217,6 +1305,11 @@ def add_routes(app):
 
         state, name = _get_state_update_response(path, response)
 
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         if not owns_lock(lock_state):
             return jsonify(**response)
 
@@ -1263,6 +1356,11 @@ def add_routes(app):
             path, lock_key, request.remote_addr, require_claim=True)
 
         state, _ = _get_state_update_response(path, response)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
 
         if not owns_lock(lock_state):
             return jsonify(**response)
@@ -1322,6 +1420,11 @@ def add_routes(app):
 
         state, name = _get_state_update_response(path, response, success=True)
 
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         offset = state.get_control_surface_offset(plate)
 
         try:
@@ -1357,6 +1460,11 @@ def add_routes(app):
 
         state, name = _get_state_update_response(path, response, success=True)
 
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
+
         return jsonify(has_normalized=state.has_normalized_data, **response)
 
     @app.route("/api/results/export/phenotypes/<save_data>/<path:project>")
@@ -1373,6 +1481,11 @@ def add_routes(app):
         lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
 
         state, name = _get_state_update_response(path, response, success=True)
+
+        if state is None:
+            if lock_state is LockState.LockedByMeTemporary:
+                _remove_lock(path)
+            return jsonify(**response)
 
         try:
             save_data = phenotyper.NormState[save_data]
