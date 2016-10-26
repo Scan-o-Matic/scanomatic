@@ -708,8 +708,14 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 compatible that contains the meta data
 
         """
-
-        self._meta_data = MetaData(tuple(self.plate_shapes), *(os.path.expanduser(p) for p in meta_data_paths))
+        m = MetaData(tuple(self.plate_shapes), *(os.path.expanduser(p) for p in meta_data_paths))
+        if m.loaded:
+            self._meta_data = m
+            return True
+        else:
+            self._logger.warning(
+                "New meta-data incompatible, keeping previous meta-data (if any existed).")
+            return False
 
     def find_in_meta_data(self, query, column=None, plates=None):
         """Look for results for specific strains.
