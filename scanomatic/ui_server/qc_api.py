@@ -359,6 +359,7 @@ def add_routes(app):
         try:
             if isinstance(meta_data_stream, FileStorage):
                 meta_data_stream.save(meta_data_path)
+                meta_data_stream.close()
             else:
                 with open(meta_data_path, 'wb') as fh:
                     fh.write(meta_data_stream)
