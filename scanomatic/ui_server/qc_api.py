@@ -1493,8 +1493,8 @@ def add_routes(app):
             return jsonify(**json_response(
                 ['urls'],
                 dict(
-                    urls = ["{0}/{1}/{2}".format(url_root, sd.name, project) for sd in
-                            phenotyper.NormState],
+                    urls=["{0}/{1}/{2}".format(url_root, sd.name, project) for sd in
+                          phenotyper.NormState],
                     reason="SaveData-type {0} not known".format(save_data)
                 ),
                 success=False))
