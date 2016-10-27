@@ -14,6 +14,7 @@ import grid
 from grid_cell import GridCell
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
+from scanomatic.io.pickler import unpickle_with_unpickler
 import image_basics
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.image_analysis.grayscale import getGrayscale
@@ -224,7 +225,7 @@ class GridArray(object):
             return self.detect_grid(im, analysis_directory=analysis_directory, grid_correction=offset)
 
         try:
-            grid = np.load(grid)
+            grid = unpickle_with_unpickler(np.load, grid)
         except IOError:
             self._LOGGER.error("No grid file named '{0}'".format(grid))
             self._LOGGER.info("Invoking grid detection instead")

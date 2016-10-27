@@ -12,6 +12,7 @@ from scanomatic.io.image_loading import load_colony_images_for_animation
 from scanomatic.io.logger import Logger
 from scanomatic.io.movie_writer import MovieWriter
 from scanomatic.io.paths import Paths
+from scanomatic.io.pickler import unpickle_with_unpickler
 
 # This import is used in 3D plotting just not explicitly stupid matplotlib
 
@@ -45,13 +46,15 @@ def calculate_growth_curve(data_paths, blob_paths, background_paths=None):
 
     if background_paths is not None:
         return np.array([
-            (np.load(data) - mid50_mean(np.load(data)[np.load(bg)]))[np.load(blob)].sum()
+            (unpickle_with_unpickler(np.load, data) -
+             mid50_mean(unpickle_with_unpickler(np.load, data)[unpickle_with_unpickler(np.load, bg)]))[
+                unpickle_with_unpickler(np.load, blob)].sum()
             for data, blob, bg in zip(data_paths, blob_paths, background_paths)
         ])
 
     else:
         return np.array([
-            np.load(data)[np.load(blob)].sum()
+            unpickle_with_unpickler(np.load, data)[unpickle_with_unpickler(np.load, blob)].sum()
             for data, blob in zip(data_paths, blob_paths)
         ])
 
@@ -150,7 +153,7 @@ def animate_blob_detection(save_target, position, analysis_folder,
 
     image_ax = fig.axes[0]
     ims = []
-    data = np.load(files[0]).astype(np.float64)
+    data = unpickle_with_unpickler(np.load, files[0]).astype(np.float64)
     for i, ax in enumerate(fig.axes[:-1]):
         ims.append(ax.imshow(data, interpolation='nearest', vmin=0, vmax=(100 if i == 0 else 1)))
 
@@ -159,7 +162,7 @@ def animate_blob_detection(save_target, position, analysis_folder,
 
         for idx, index in enumerate(image_indices):
 
-            ims[0].set_data(np.load(files[idx]))
+            ims[0].set_data(unpickle_with_unpickler(np.load, files[idx]))
             base_name = files[idx][:-21]
             image_ax.set_title("Image (t={0:.1f}h)".format(
                 image_indices[index] if interval is None else image_indices[index] * interval))
@@ -167,9 +170,9 @@ def animate_blob_detection(save_target, position, analysis_folder,
             for j, ending in enumerate(('.background.filter.npy', '.blob.filter.npy',
                                         '.blob.trash.current.npy', '.blob.trash.old.npy')):
 
-                im_data = np.load(base_name + ending)
+                im_data = unpickle_with_unpickler(np.load, base_name + ending)
                 if im_data.ndim == 2:
-                    ims[j + 1].set_data(np.load(base_name + ending))
+                    ims[j + 1].set_data(unpickle_with_unpickler(np.load, base_name + ending))
 
             set_axvspan_width(polygon, curve_times[idx])
             _sqaure_ax(curve_ax)
@@ -198,7 +201,7 @@ def animate_3d_colony(save_target, position, analysis_folder,
 
     image_ax, curve_ax = fig.axes
 
-    data = np.load(files[0])
+    data = unpickle_with_unpickler(np.load, files[0])
     im = image_ax.imshow(data, interpolation='nearest', vmin=0, vmax=100)
 
     coords_x, coords_y = np.mgrid[0:data.shape[0], 0:data.shape[1]]
@@ -216,7 +219,7 @@ def animate_3d_colony(save_target, position, analysis_folder,
 
         for idx, index in enumerate(image_indices):
 
-            im.set_data(np.load(files[idx]))
+            im.set_data(unpickle_with_unpickler(np.load, files[idx]))
 
             # Added suffix length too
             base_name = files[idx][:-(10 + 11)]
@@ -224,7 +227,7 @@ def animate_3d_colony(save_target, position, analysis_folder,
             image_ax.set_title("Image (Time={0:.1f}h)".format(
                 image_indices[index] if interval is None else image_indices[index] * interval))
 
-            cells = np.load(base_name + ".image.cells.npy")
+            cells = unpickle_with_unpickler(np.load, base_name + ".image.cells.npy")
             if cells.ndim != 2:
                 cells = np.zeros_like(coords_y)
             else:

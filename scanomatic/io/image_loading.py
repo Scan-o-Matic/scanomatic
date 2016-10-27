@@ -5,6 +5,7 @@ import os
 from scanomatic.io.paths import Paths
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 from scanomatic.io import logger
+from scanomatic.io.pickler import unpickle_with_unpickler
 from scanomatic.image_analysis.image_basics import load_image_to_numpy
 
 _logger = logger.Logger("Image loader")
@@ -70,8 +71,10 @@ def slice_im(plate_im, colony_position, colony_size):
 
 def _load_grid_info(analysis_directory, plate):
     # grids number +1
-    grid = np.load(os.path.join(analysis_directory, Paths().grid_pattern.format(plate + 1)))
-    grid_size = np.load(os.path.join(analysis_directory, Paths().grid_size_pattern.format((plate + 1))))
+    grid = unpickle_with_unpickler(
+        np.load, os.path.join(analysis_directory, Paths().grid_pattern.format(plate + 1)))
+    grid_size = unpickle_with_unpickler(
+        np.load, os.path.join(analysis_directory, Paths().grid_size_pattern.format((plate + 1))))
     return grid, grid_size
 
 

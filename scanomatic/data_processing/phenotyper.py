@@ -1,15 +1,16 @@
 import csv
 import glob
 import os
-import cPickle as pickle
+
 from collections import deque
 from itertools import izip, product
 from types import StringTypes
-
+import cPickle as pickle
 import numpy as np
 from enum import Enum
 from scipy.ndimage import median_filter
 from scipy.stats import norm
+from scanomatic.io.pickler import unpickle, unpickle_with_unpickler
 
 #
 #   INTERNAL DEPENDENCIES
@@ -146,15 +147,15 @@ def path_has_saved_project_state(directory_path, require_phenotypes=True):
 
     if require_phenotypes:
         try:
-            np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
+            unpickle_with_unpickler(np.load, os.path.join(directory_path, _p.phenotypes_raw_npy))
         except IOError:
             return False
 
     try:
-        np.load(os.path.join(directory_path,  _p.phenotypes_input_data))
-        np.load(os.path.join(directory_path, _p.phenotype_times))
-        np.load(os.path.join(directory_path, _p.phenotypes_input_smooth))
-        np.load(os.path.join(directory_path, _p.phenotypes_extraction_params))
+        unpickle_with_unpickler(np.load, os.path.join(directory_path,  _p.phenotypes_input_data))
+        unpickle_with_unpickler(np.load, os.path.join(directory_path, _p.phenotype_times))
+        unpickle_with_unpickler(np.load, os.path.join(directory_path, _p.phenotypes_input_smooth))
+        unpickle_with_unpickler(np.load, os.path.join(directory_path, _p.phenotypes_extraction_params))
     except IOError:
         return False
 
@@ -458,38 +459,41 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         """
         _p = paths.Paths()
 
-        raw_growth_data = np.load(os.path.join(directory_path,  _p.phenotypes_input_data))
+        raw_growth_data = unpickle_with_unpickler(np.load, os.path.join(directory_path,  _p.phenotypes_input_data))
 
-        times = np.load(os.path.join(directory_path, _p.phenotype_times))
+        times = unpickle_with_unpickler(np.load, os.path.join(directory_path, _p.phenotype_times))
 
         phenotyper = cls(raw_growth_data, times, run_extraction=False, base_name=directory_path)
 
         try:
-            phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
+            phenotypes = unpickle_with_unpickler(np.load, os.path.join(directory_path, _p.phenotypes_raw_npy))
         except (IOError, ValueError):
             phenotyper._logger.warning(
                 "Could not load Phenotypes, probably too old extraction, please rerun!")
             phenotypes = None
 
         try:
-            vector_phenotypes = np.load(os.path.join(directory_path, _p.vector_phenotypes_raw))
+            vector_phenotypes = unpickle_with_unpickler(
+                np.load, os.path.join(directory_path, _p.vector_phenotypes_raw))
         except (IOError, ValueError):
             phenotyper._logger.warning(
                 "Could not load Vector Phenotypes, probably too old extraction, please rerun!")
             vector_phenotypes = None
 
         try:
-            vector_meta_phenotypes = np.load(os.path.join(directory_path, _p.vector_meta_phenotypes_raw))
+            vector_meta_phenotypes = unpickle_with_unpickler(
+                np.load, os.path.join(directory_path, _p.vector_meta_phenotypes_raw))
         except (IOError, ValueError):
             phenotyper._logger.warning(
                 "Could not load Vector Meta Phenotypes, probably too old extraction, please rerun!")
             vector_meta_phenotypes = None
 
-        smooth_growth_data = np.load(os.path.join(directory_path, _p.phenotypes_input_smooth))
+        smooth_growth_data = unpickle_with_unpickler(
+            np.load, os.path.join(directory_path, _p.phenotypes_input_smooth))
 
         try:
-            extraction_params = np.load(
-                os.path.join(directory_path, _p.phenotypes_extraction_params))
+            extraction_params = unpickle_with_unpickler(
+                np.load, os.path.join(directory_path, _p.phenotypes_extraction_params))
         except IOError:
             phenotyper._logger.warning(
                 "Could not find stored extraction parameters, assuming defaults were used")
@@ -536,38 +540,36 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if os.path.isfile(filter_path):
             phenotyper._logger.info("Loading previous filter {0}".format(filter_path))
             try:
-                phenotyper.set("phenotype_filter", np.load(filter_path))
+                phenotyper.set("phenotype_filter", unpickle_with_unpickler(np.load, filter_path))
             except (ValueError, IOError):
                 phenotyper._logger.warning(
                     "Could not load QC Filter, probably too old extraction, please rerun!")
 
         offsets_path = os.path.join(directory_path, _p.phenotypes_reference_offsets)
         if os.path.isfile(offsets_path):
-            phenotyper.set("reference_offsets", np.load(offsets_path))
+            phenotyper.set("reference_offsets", unpickle_with_unpickler(np.load, offsets_path))
 
         normalized_phenotypes = os.path.join(directory_path, _p.normalized_phenotypes)
         if os.path.isfile(normalized_phenotypes):
             try:
-                phenotyper.set("normalized_phenotypes", np.load(normalized_phenotypes))
+                phenotyper.set("normalized_phenotypes", unpickle_with_unpickler(np.load, normalized_phenotypes))
             except (ValueError, IOError):
                 phenotyper._logger.warning(
                     "Could not load Normalized Phenotypes, probably too old extraction, please rerun!")
 
         filter_undo_path = os.path.join(directory_path, _p.phenotypes_filter_undo)
         if os.path.isfile(filter_undo_path):
-            with open(filter_undo_path, 'r') as fh:
-                try:
-                    phenotyper.set("phenotype_filter_undo", pickle.load(fh))
-                except EOFError:
-                    phenotyper._logger.warning("Could not load saved undo, file corrupt!")
+            try:
+                phenotyper.set("phenotype_filter_undo", unpickle(filter_undo_path))
+            except EOFError:
+                phenotyper._logger.warning("Could not load saved undo, file corrupt!")
 
         meta_data_path = os.path.join(directory_path, _p.phenotypes_meta_data)
         if os.path.isfile(meta_data_path):
-            with open(meta_data_path, 'r') as fh:
-                try:
-                    phenotyper.set("meta_data", pickle.load(fh))
-                except EOFError:
-                    phenotyper._logger.warning("Could not load saved meta-data, file corrupt!")
+            try:
+                phenotyper.set("meta_data", unpickle(meta_data_path))
+            except EOFError:
+                phenotyper._logger.warning("Could not load saved meta-data, file corrupt!")
 
         return phenotyper
 
@@ -636,7 +638,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 times_data_path += ".npy"
 
-        return cls(np.load(data_directory), np.load(times_data_path), base_name=path, run_extraction=True, **kwargs)
+        return cls(unpickle_with_unpickler(np.load, data_directory),
+                   unpickle_with_unpickler(np.load, times_data_path),
+                   base_name=path, run_extraction=True, **kwargs)
 
     @staticmethod
     def is_segmentation_based_phenotype(phenotype):
