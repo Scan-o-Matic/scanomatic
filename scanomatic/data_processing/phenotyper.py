@@ -1,9 +1,9 @@
 import csv
 import glob
 import os
-import pickle
+import cPickle as pickle
 from collections import deque
-from itertools import izip, chain, product
+from itertools import izip, product
 from types import StringTypes
 
 import numpy as np
