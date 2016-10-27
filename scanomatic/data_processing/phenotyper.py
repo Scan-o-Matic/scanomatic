@@ -1343,7 +1343,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             else:
                 return _plate_type_converter_scalar(plate)
 
-        return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self._phenotypes]
+        return [None if (p is None or phenotype not in self) else _plate_type_converter(p[..., phenotype.value])
+                for p in self._phenotypes]
 
     @property
     def analysed_phenotypes(self):
@@ -1579,7 +1580,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             self._logger.warning("Undo doesn't match number of plates. Rewriting...")
             self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
-        if Phenotypes.Monotonicity in self.phenotypes and Phenotypes.ExperimentPopulationDoublings in self.phenotypes:
+        if Phenotypes.Monotonicity in self and Phenotypes.ExperimentPopulationDoublings in self:
             growth_filter = [
                 ((plate[..., Phenotypes.Monotonicity.value] < self._no_growth_monotonicity_threshold) |
                  (np.isfinite(plate[..., Phenotypes.Monotonicity.value]) == np.False_)) &
@@ -1587,12 +1588,12 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                   self._no_growth_pop_doublings_threshold) |
                  (np.isfinite(plate[..., Phenotypes.ExperimentPopulationDoublings.value]) == np.False_))
                 for plate in self._phenotypes]
-        elif Phenotypes.Monotonicity in self.phenotypes:
+        elif Phenotypes.Monotonicity in self:
             growth_filter = [
                 ((plate[..., Phenotypes.Monotonicity.value] < self._no_growth_monotonicity_threshold) |
                  (np.isfinite(plate[..., Phenotypes.Monotonicity.value]) == np.False_))
                 for plate in self._phenotypes]
-        elif Phenotypes.ExperimentPopulationDoublings in self.phenotypes:
+        elif Phenotypes.ExperimentPopulationDoublings in self:
             growth_filter = [
                 ((plate[..., Phenotypes.ExperimentPopulationDoublings.value] <
                   self._no_growth_pop_doublings_threshold) |
@@ -1602,6 +1603,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             growth_filter = [[] for _ in range(self._phenotypes.shape[0])]
 
         for phenotype in self.phenotypes:
+
+            if phenotype not in self:
+                continue
 
             phenotype_data = self._get_abs_phenotype(phenotype, False)
 
