@@ -81,6 +81,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     def _root():
         return send_from_directory(Paths().ui_root, Paths().ui_root_file)
 
+    @app.route("/ccc")
+    def _ccc():
+        return send_from_directory(Paths().ui_root, Paths().ui_ccc_file)
+
     @app.route("/help")
     def _help():
         return send_from_directory(Paths().ui_root, Paths().ui_help_file)
