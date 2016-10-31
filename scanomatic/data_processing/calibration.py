@@ -160,7 +160,7 @@ def load_data_file(file_path=None, label=''):
     return data_store
 
 
-def _get_calibration_optimization_function(degree=5):
+def get_calibration_optimization_function(degree=5, include_intercept=False):
 
     arr = np.zeros((degree + 1,), np.float)
 
@@ -169,7 +169,13 @@ def _get_calibration_optimization_function(degree=5):
         arr[0] = cn
         return tuple(v.sum() for v in np.polyval(arr, x))
 
-    return poly
+    def poly_with_intercept(x, m, c1, cn):
+        arr[-1] = m
+        arr[-2] = c1
+        arr[0] = cn
+        return tuple(v.sum() for v in np.polyval(arr, x))
+
+    return poly_with_intercept if include_intercept else poly
 
 
 def get_calibration_polynomial(coefficients_array):
@@ -225,7 +231,7 @@ def calculate_polynomial(data_store, degree=5):
 
     x, y, _, _ = _get_expanded_data(data_store)
 
-    poly = _get_calibration_optimization_function(degree)
+    poly = get_calibration_optimization_function(degree)
 
     p0 = np.zeros((2,), np.float)
 
