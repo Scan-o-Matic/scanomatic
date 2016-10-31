@@ -407,6 +407,10 @@
                             var key = $("#spLock").data("lock_key");
                             var addMetaDataUrl = baseUrl + "/api/results/meta_data/add/" + projectDetails.project + addKeyParameter(key);
                             var file = $("#meta_data")[0].files[0];
+                            if (!file) {
+                                alert("You need to select a valid file!");
+                                return;
+                            }
                             var extension = file.name.split('.').pop();
                             var formData = new FormData();
                             formData.append("meta_data", file);
@@ -419,7 +423,10 @@
                                 data: formData,
                                 processData: false,
                                 success: function (data) {
-                                    alert("success:" + data);
+                                    if(data.success == true)
+                                        alert("The data was uploaded successfully:");
+                                    else
+                                        alert("There was a problem with the upload: "+data.reason);
                                 },
                                 error: function (data) {
                                     alert("error:" + data.responseText);
@@ -638,7 +645,7 @@
                                 <td>Export Data</td>
                                 <td>
                                     <div class="dropup">
-                                        <button class="btn btn-default btn-xs dropdown-toggle" type="button" id="ddmSave" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Export<span style="margin-left:5px" class="caret"></span></button>
+                                        <button title ="Note: Dosent work on Firefox!"  class="btn btn-default btn-xs dropdown-toggle" type="button" id="ddmSave" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Export<span style="margin-left:5px" class="caret"></span></button>
                                         <ul class="dropdown-menu" aria-labelledby="ddmSave" id="ulExport">
                                         </ul>
                                     </div>
