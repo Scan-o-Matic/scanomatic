@@ -920,9 +920,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._logger.info("Smoothing Started")
         median_kernel = np.ones((1, self._median_kernel_size))
         times = self.times
+
         # This conversion is done to reflect that previous filter worked on
         # indices and expected ratio to hours is 1:3.
-        gauss_kwargs = {'sigma': self._gaussian_filter_sigma / 3.0}
+        gauss_kwargs = {
+            'sigma':
+                self._gaussian_filter_sigma / 3.0 if self._gaussian_filter_sigma == 5 else self._gaussian_filter_sigma}
+
         for plate in self._smooth_growth_data:
 
             if plate is None:
