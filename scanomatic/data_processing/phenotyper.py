@@ -195,6 +195,15 @@ def get_project_dates(directory_path):
     return analysis_date, phenotype_date, state_date
 
 
+class Smoothing(Enum):
+    Keep = 0
+    """:type : Smoothing"""
+    MedianGauss = 1
+    """:type : Smoothing"""
+    PolynomialGauss = 2
+    """:type : Smoothing"""
+
+
 class SaveData(Enum):
     """Types of data that can be exported to csv.
 
@@ -790,7 +799,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 self._logger.info("Removing filter undo history")
             self._phenotype_filter_undo = None
 
-    def extract_phenotypes(self, keep_filter=False, resmoothen=False):
+    def extract_phenotypes(self, keep_filter=False, smoothing=Smoothing.Keep, smoothing_coeffs={}):
         """Extract phenotypes given the current inclusion level
 
         Args:
@@ -798,9 +807,15 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 Optional, if previous log2_curve marks on phenotypes should
                 be kept or not. Default is to clear previous log2_curve
                 marks
-            resmoothen:
+            smoothing:
                 Optional, if smoothing should be redone.
-                Default is not to redo it.
+                Default is not to redo it/keep smoothing.
+                Alternatives are `Smoothing.MedianGauss` (as published in
+                original Scan-o-matic manuscript.
+                Or `Smoothing.PolynomialGauss`, new version of smoothing.
+            smoothing_coeffs:
+                Optional dict of key-value parameters for the smoothing
+                to override default values.
 
         See Also:
             Phenotyper.set_phenotype_inclusion_level:
@@ -814,8 +829,12 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._logger.info("Extracting phenotypes. This will take a while...")
 
-        if not self.has_smooth_growth_data or resmoothen:
+        if self.has_smooth_growth_data is None and smoothing is Smoothing.Keep:
             self._smoothen()
+        elif smoothing is Smoothing.MedianGauss:
+            self._smoothen()
+        elif smoothing is Smoothing.PolynomialGauss:
+            self._poly_smoothen_raw_growth(**smoothing_coeffs)
 
         for _ in self._calculate_phenotypes():
             pass
