@@ -10,7 +10,9 @@ import numpy as np
 from enum import Enum
 from scipy.ndimage import median_filter
 from scipy.stats import norm
+from scipy.optimize import curve_fit
 from scanomatic.io.pickler import unpickle, unpickle_with_unpickler
+from .calibration import get_calibration_optimization_function
 
 #
 #   INTERNAL DEPENDENCIES
@@ -838,6 +840,28 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                isinstance(self._normalized_phenotypes, np.ndarray) and \
                not all(plate is None or plate.size == 0 for plate in self._normalized_phenotypes) and \
                self._normalized_phenotypes.size > 0
+
+    def poly_smoothen_raw_growth_curve(self, data, power=2, time_delta=3):
+
+        assert power > 1, "Power must be 2 or greater"
+        data = np.log2(data)
+        times = self.times
+        time_diffs = np.subtract.outer(times, times)
+        filt = (time_diffs < time_delta) & (time_diffs > -time_delta)
+
+        for t, f in izip(times, filt):
+
+            x = times[f]
+            y = data[f]
+
+            poly = get_calibration_optimization_function(power, include_intercept=True)
+            p0 = np.zeros((3,), np.float)
+            (m, p1, pn), _ = curve_fit(poly, x, y, p0=p0)
+            p = np.zeros((power + 1,))
+            p[-1] = m
+            p[-2] = p1
+            p[0] = pn
+            yield np.power(2, np.poly1d(p)(t))
 
     def _smoothen(self):
 
