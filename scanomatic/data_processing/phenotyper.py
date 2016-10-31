@@ -860,9 +860,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                not all(plate is None or plate.size == 0 for plate in self._normalized_phenotypes) and \
                self._normalized_phenotypes.size > 0
 
-    def _poly_smoothen_raw_growth(self, power=3, time_delta=5):
+    def _poly_smoothen_raw_growth(self, power=3, time_delta=5, exclude_gauss=False):
 
         assert power > 1, "Power must be 2 or greater"
+
+        self._logger.info("Starting Polynomial & Gaussian smoothing")
 
         # This conversion is done to reflect that previous filter worked on
         # indices and expected ratio to hours is 1:3.
@@ -888,15 +890,19 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             self._logger.info("Plate {0} data polynomial smoothed".format(id_plate + 1))
 
-            smooth_plate[...] = tuple(merge_convolve(
-                    log2_curve,
-                    times,
-                    func_kwargs=gauss_kwargs) for log2_curve in smooth_plate)
+            if exclude_gauss is False:
+
+                smooth_plate[...] = tuple(merge_convolve(
+                        log2_curve,
+                        times,
+                        func_kwargs=gauss_kwargs) for log2_curve in smooth_plate)
 
             self._logger.info("Plate {0} data gauss smoothed".format(id_plate + 1))
             smooth_data.append(smooth_plate.reshape(plate.shape))
 
         self._smooth_growth_data = np.array(smooth_data)
+
+        self._logger.info("Completed Polynomial & Gaussian smoothing")
 
     def _poly_smoothen_raw_growth_curve(self, times, log2_data, power, filt):
 
@@ -904,15 +910,20 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             x = times[f]
             y = log2_data[f]
+            finites = np.isfinite(y)
 
             poly = get_calibration_optimization_function(power, include_intercept=True)
             p0 = np.zeros((3,), np.float)
-            (m, p1, pn), _ = curve_fit(poly, x, y, p0=p0)
-            p = np.zeros((power + 1,))
-            p[-1] = m
-            p[-2] = p1
-            p[0] = pn
-            yield np.power(2, np.poly1d(p)(t))
+            try:
+                (m, p1, pn), _ = curve_fit(poly, x[finites], y[finites], p0=p0)
+            except TypeError:
+                yield np.nan
+            else:
+                p = np.zeros((power + 1,))
+                p[-1] = m
+                p[-2] = p1
+                p[0] = pn
+                yield np.power(2, np.poly1d(p)(t))
 
     def _smoothen(self):
 
