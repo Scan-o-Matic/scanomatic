@@ -897,7 +897,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                         times,
                         func_kwargs=gauss_kwargs) for log2_curve in smooth_plate)
 
-            self._logger.info("Plate {0} data gauss smoothed".format(id_plate + 1))
+                self._logger.info("Plate {0} data gauss smoothed".format(id_plate + 1))
+
             smooth_data.append(smooth_plate.reshape(plate.shape))
 
         self._smooth_growth_data = np.array(smooth_data)
@@ -938,9 +939,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             'sigma':
                 self._gaussian_filter_sigma / 3.0 if self._gaussian_filter_sigma == 5 else self._gaussian_filter_sigma}
 
-        for plate in self._smooth_growth_data:
+        for plate_id, plate in enumerate(self._smooth_growth_data):
 
             if plate is None:
+                self._logger.info("Plate {0} has no data, skipping".format(plate_id + 1))
                 continue
 
             plate_as_flat = np.lib.stride_tricks.as_strided(
@@ -954,6 +956,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             plate_as_flat[...] = tuple(
                 merge_convolve(v, times, func_kwargs=gauss_kwargs) for v in plate_as_flat
             )
+
+            self._logger.info("Smoothing of plate {0} done".format(plate_id + 1))
 
         self._logger.info("Smoothing Done")
 
