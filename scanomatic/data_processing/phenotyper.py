@@ -860,18 +860,50 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                not all(plate is None or plate.size == 0 for plate in self._normalized_phenotypes) and \
                self._normalized_phenotypes.size > 0
 
-    def poly_smoothen_raw_growth_curve(self, data, power=2, time_delta=3):
+    def _poly_smoothen_raw_growth(self, power=3, time_delta=5):
 
         assert power > 1, "Power must be 2 or greater"
-        data = np.log2(data)
+
+        # This conversion is done to reflect that previous filter worked on
+        # indices and expected ratio to hours is 1:3.
+        gauss_kwargs = {
+            'sigma':
+                self._gaussian_filter_sigma / 3.0 if self._gaussian_filter_sigma == 5 else self._gaussian_filter_sigma}
+
+        smooth_data = []
         times = self.times
         time_diffs = np.subtract.outer(times, times)
         filt = (time_diffs < time_delta) & (time_diffs > -time_delta)
 
+        for id_plate, plate in enumerate(self._raw_growth_data):
+            if plate is None:
+                smooth_data.append(None)
+                self._logger.info("Plate {0} has no data".format(id_plate + 1))
+                continue
+
+            log2_data = np.log2(plate).reshape(np.prod(plate.shape[:2]), plate.shape[-1])
+            smooth_plate = np.array(tuple(
+                tuple(self._poly_smoothen_raw_growth_curve(times, log2_curve, power, filt))
+                for log2_curve in log2_data))
+
+            self._logger.info("Plate {0} data polynomial smoothed".format(id_plate + 1))
+
+            smooth_plate[...] = tuple(merge_convolve(
+                    log2_curve,
+                    times,
+                    func_kwargs=gauss_kwargs) for log2_curve in smooth_plate)
+
+            self._logger.info("Plate {0} data gauss smoothed".format(id_plate + 1))
+            smooth_data.append(smooth_plate.reshape(plate.shape))
+
+        self._smooth_growth_data = np.array(smooth_data)
+
+    def _poly_smoothen_raw_growth_curve(self, times, log2_data, power, filt):
+
         for t, f in izip(times, filt):
 
             x = times[f]
-            y = data[f]
+            y = log2_data[f]
 
             poly = get_calibration_optimization_function(power, include_intercept=True)
             p0 = np.zeros((3,), np.float)
