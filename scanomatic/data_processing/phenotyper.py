@@ -10,9 +10,7 @@ import numpy as np
 from enum import Enum
 from scipy.ndimage import median_filter
 from scipy.stats import norm
-from scipy.optimize import curve_fit
 from scanomatic.io.pickler import unpickle, unpickle_with_unpickler
-from .calibration import get_calibration_optimization_function
 
 #
 #   INTERNAL DEPENDENCIES
@@ -200,7 +198,9 @@ class Smoothing(Enum):
     """:type : Smoothing"""
     MedianGauss = 1
     """:type : Smoothing"""
-    PolynomialGauss = 2
+    Polynomial = 2
+    """:type : Smoothing"""
+    PolynomialWeightedMulti = 3
     """:type : Smoothing"""
 
 
@@ -812,7 +812,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 Default is not to redo it/keep smoothing.
                 Alternatives are `Smoothing.MedianGauss` (as published in
                 original Scan-o-matic manuscript.
-                Or `Smoothing.PolynomialGauss`, new version of smoothing.
+                Or `Smoothing.Polynomial` for polynomial smoothing, or
+                `Smoothing.PolynomialWeightedMulti` if fancy weighting of
+                all relevant polynomials should be used.
             smoothing_coeffs:
                 Optional dict of key-value parameters for the smoothing
                 to override default values.
@@ -833,8 +835,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             self._smoothen()
         elif smoothing is Smoothing.MedianGauss:
             self._smoothen()
-        elif smoothing is Smoothing.PolynomialGauss:
+        elif smoothing is Smoothing.Polynomial:
             self._poly_smoothen_raw_growth(**smoothing_coeffs)
+        elif smoothing is Smoothing.PolynomialWeightedMulti:
+            self._poly_smoothen_raw_growth_weighted(**smoothing_coeffs)
 
         for _ in self._calculate_phenotypes():
             pass
@@ -860,17 +864,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                not all(plate is None or plate.size == 0 for plate in self._normalized_phenotypes) and \
                self._normalized_phenotypes.size > 0
 
-    def _poly_smoothen_raw_growth(self, power=3, time_delta=5, exclude_gauss=False):
+    def _poly_smoothen_raw_growth(self, power=3, time_delta=5):
 
         assert power > 1, "Power must be 2 or greater"
 
-        self._logger.info("Starting Polynomial & Gaussian smoothing")
-
-        # This conversion is done to reflect that previous filter worked on
-        # indices and expected ratio to hours is 1:3.
-        gauss_kwargs = {
-            'sigma':
-                self._gaussian_filter_sigma / 3.0 if self._gaussian_filter_sigma == 5 else self._gaussian_filter_sigma}
+        self._logger.info("Starting Polynomial smoothing")
 
         smooth_data = []
         times = self.times
@@ -890,40 +888,91 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             self._logger.info("Plate {0} data polynomial smoothed".format(id_plate + 1))
 
-            if exclude_gauss is False:
-
-                smooth_plate[...] = tuple(merge_convolve(
-                        log2_curve,
-                        times,
-                        func_kwargs=gauss_kwargs) for log2_curve in smooth_plate)
-
-                self._logger.info("Plate {0} data gauss smoothed".format(id_plate + 1))
-
             smooth_data.append(smooth_plate.reshape(plate.shape))
 
         self._smooth_growth_data = np.array(smooth_data)
 
-        self._logger.info("Completed Polynomial & Gaussian smoothing")
+        self._logger.info("Completed Polynomial smoothing")
+
+    def _poly_smoothen_raw_growth_weighted(self, power=3, time_delta=5.0, gauss_sigma=1.5):
+
+        assert power > 1, "Power must be 2 or greater"
+
+        self._logger.info("Starting Weighted Multi-Polynomial smoothing")
+
+        smooth_data = []
+        times = self.times
+        time_diffs = np.subtract.outer(times, times)
+        filt = (time_diffs < time_delta) & (time_diffs > -time_delta)
+
+        for id_plate, plate in enumerate(self._raw_growth_data):
+            if plate is None:
+                smooth_data.append(None)
+                self._logger.info("Plate {0} has no data".format(id_plate + 1))
+                continue
+
+            log2_data = np.log2(plate).reshape(np.prod(plate.shape[:2]), plate.shape[-1])
+            smooth_plate = [None] * log2_data.shape[0]
+            for id_curve, log2_curve in enumerate(log2_data):
+
+                p, r, r0 = zip(*self._poly_estimate_raw_growth_curve(times, log2_curve, power, filt))
+
+                smooth_plate[id_curve] = tuple(self._multi_poly_smooth(
+                    times, p, np.array(r), np.array(r0), filt, gauss_sigma))
+
+            self._logger.info("Plate {0} data polynomial smoothed".format(id_plate + 1))
+
+            smooth_data.append(np.array(smooth_plate).reshape(plate.shape))
+
+        self._smooth_growth_data = np.array(smooth_data)
+
+        self._logger.info("Completed Weighted Multi-Polynomial smoothing")
+
+    def _multi_poly_smooth(self, times, polys, r, r0, filt, gauss_sigma):
+
+        included = [v is not None for v in r]
+        for t, f in izip(times, filt):
+
+            f2 = f & included
+
+            w1 = norm.pdf(times[f2], loc=t, scale=gauss_sigma)
+            w2 = 1 - r[f2] / r0[f2]
+            w = w1 * w2
+            yield (w * tuple(np.power(2, p(t)) for p, i in izip(polys, f2) if i)).sum() / w.sum()
+
+    def _poly_estimate_raw_growth_curve(self, times, log2_data, power, filt):
+
+        finites = np.isfinite(log2_data)
+
+        for t, f in izip(times, filt):
+
+            f2 = f & finites
+            x = times[f2]
+            y = log2_data[f2]
+
+            try:
+                p, r, _, _, _ = np.polyfit(x, y, power, full=True)
+            except TypeError:
+                yield None, None, None
+            else:
+
+                yield np.poly1d(p), r[0] / f2.sum(), np.var(y)
 
     def _poly_smoothen_raw_growth_curve(self, times, log2_data, power, filt):
+
+        finites = np.isfinite(log2_data)
 
         for t, f in izip(times, filt):
 
             x = times[f]
             y = log2_data[f]
-            finites = np.isfinite(y)
+            fin = finites[f]
 
-            poly = get_calibration_optimization_function(power, include_intercept=True)
-            p0 = np.zeros((3,), np.float)
             try:
-                (m, p1, pn), _ = curve_fit(poly, x[finites], y[finites], p0=p0)
+                p = np.polyfit(x[fin], y[fin], power)
             except TypeError:
                 yield np.nan
             else:
-                p = np.zeros((power + 1,))
-                p[-1] = m
-                p[-2] = p1
-                p[0] = pn
                 yield np.power(2, np.poly1d(p)(t))
 
     def _smoothen(self):
