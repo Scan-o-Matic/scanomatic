@@ -894,7 +894,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._logger.info("Completed Polynomial smoothing")
 
-    def _poly_smoothen_raw_growth_weighted(self, power=3, time_delta=5.0, gauss_sigma=1.5):
+    def _poly_smoothen_raw_growth_weighted(self, power=3, time_delta=5.1, gauss_sigma=1.5):
 
         assert power > 1, "Power must be 2 or greater"
 
