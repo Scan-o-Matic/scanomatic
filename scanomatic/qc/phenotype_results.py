@@ -331,7 +331,7 @@ def plot_plate_phase_assigment_frequencies(phenotypes, plate):
 
 
 @_validate_input
-def plot_plate_phase_pop_size_variance_decomp(phenotypes, plate, relative=False):
+def plot_plate_phase_pop_size_variance_decomp(phenotypes, plate, relative=False, min_members=0):
 
     # Prepare the data
     log2_smooth = np.log2(phenotypes.smooth_growth_data[plate])
@@ -339,7 +339,8 @@ def plot_plate_phase_pop_size_variance_decomp(phenotypes, plate, relative=False)
     total_var = np.zeros((log2_smooth.shape[-1],))
 
     for id_time in range(log2_smooth.shape[-1]):
-        time_data = get_variance_decomposition_by_phase(log2_smooth[..., id_time], phenotypes, plate, id_time)
+        time_data = get_variance_decomposition_by_phase(
+            log2_smooth[..., id_time], phenotypes, plate, id_time, min_members=min_members)
         for phase in time_data:
             if phase is None:
                 total_var[id_time] = time_data[phase]
