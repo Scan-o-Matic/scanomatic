@@ -118,7 +118,7 @@ def convert_path_to_url(prefix, path):
     else:
         path = "/".join(os.path.relpath(path, Config().paths.projects_root).split(os.sep))
 
-    path = quote(path)
+    path = quote(path.encode('utf8'))
 
     if safe_directory_name(path):
         return path
