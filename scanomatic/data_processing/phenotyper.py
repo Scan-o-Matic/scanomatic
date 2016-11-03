@@ -430,7 +430,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def phenotype_names(self, normed=False):
 
-        return tuple(p.name for p in (self.phenotypes_that_normalize if normed else self.phenotypes))
+        return tuple(p.name for p in (self.phenotypes_that_normalize if normed else self.phenotypes) if p in self)
 
     @classmethod
     def LoadFromXML(cls, path, **kwargs):
