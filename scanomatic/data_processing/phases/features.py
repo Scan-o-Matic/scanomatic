@@ -389,7 +389,7 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
         lag[lag < 0] = np.nan
         return lag
 
-    elif meta_phenotype == CurvePhasePhenotypes.TimeBeforeMajorGrowth:
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.TimeBeforeMajorGrowth:
 
         flat_slope = filter_plate_custom_filter(
             plate, phase=CurvePhases.Flat, measure=CurvePhasePhenotypes.LinearModelSlope,
