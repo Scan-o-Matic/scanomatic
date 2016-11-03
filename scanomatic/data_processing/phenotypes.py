@@ -98,6 +98,7 @@ class PhenotypeDataType(Enum):
             CurvePhaseMetaPhenotypes.ModalitiesAlternativeModel,
             CurvePhaseMetaPhenotypes.Collapses,
             CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry,
+            CurvePhaseMetaPhenotypes.TimeBeforeMajorGrowth,
             VectorPhenotypes.PhasesPhenotypes,
             VectorPhenotypes.PhasesClassifications,
         )

@@ -58,23 +58,39 @@ class CurvePhaseMetaPhenotypes(Enum):
         filter_plate: Get one of these out of a plate of phase segmentation information
     """
     MajorImpulseYieldContribution = 0
+    """:type : CurvePhaseMetaPhenotypes """
     FirstMinorImpulseYieldContribution = 1
+    """:type : CurvePhaseMetaPhenotypes """
     MajorImpulseAveragePopulationDoublingTime = 5
+    """:type : CurvePhaseMetaPhenotypes """
     FirstMinorImpulseAveragePopulationDoublingTime = 6
+    """:type : CurvePhaseMetaPhenotypes """
     MajorImpulseFlankAsymmetry = 8
+    """:type : CurvePhaseMetaPhenotypes """
 
     InitialAccelerationAsymptoteAngle = 10
+    """:type : CurvePhaseMetaPhenotypes """
     FinalRetardationAsymptoteAngle = 11
+    """:type : CurvePhaseMetaPhenotypes """
     InitialAccelerationAsymptoteIntersect = 15
+    """:type : CurvePhaseMetaPhenotypes """
     FinalRetardationAsymptoteIntersect = 16
+    """:type : CurvePhaseMetaPhenotypes """
 
     InitialLag = 20
+    """:type : CurvePhaseMetaPhenotypes """
     InitialLagAlternativeModel = 22
+    """:type : CurvePhaseMetaPhenotypes """
+    TimeBeforeMajorGrowth = 23
+    """:type : CurvePhaseMetaPhenotypes """
 
     Modalities = 25
+    """:type : CurvePhaseMetaPhenotypes """
     ModalitiesAlternativeModel = 27
+    """:type : CurvePhaseMetaPhenotypes """
 
     Collapses = 26
+    """:type : CurvePhaseMetaPhenotypes """
 
 
 class VectorPhenotypes(Enum):
@@ -361,8 +377,31 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[0])
 
-        # TODO: Consider using major phase
         impulses_phase = _get_phase_id(plate, CurvePhases.Flat, CurvePhases.Impulse)
+
+        impulse_slope = filter_plate_on_phase_id(
+            plate, impulses_phase, measure=CurvePhasePhenotypes.LinearModelSlope)
+
+        impulse_intercept = filter_plate_on_phase_id(
+            plate, impulses_phase, measure=CurvePhasePhenotypes.LinearModelIntercept)
+
+        lag = (impulse_intercept - flat_intercept) / (flat_slope - impulse_slope)
+        lag[lag < 0] = np.nan
+        return lag
+
+    elif meta_phenotype == CurvePhasePhenotypes.TimeBeforeMajorGrowth:
+
+        flat_slope = filter_plate_custom_filter(
+            plate, phase=CurvePhases.Flat, measure=CurvePhasePhenotypes.LinearModelSlope,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases: phases[0])
+
+        flat_intercept = filter_plate_custom_filter(
+            plate, phase=CurvePhases.Flat, measure=CurvePhasePhenotypes.LinearModelIntercept,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases: phases[0])
+
+        impulses_phase = _np_ma_get_major_impulse_indices(plate)
 
         impulse_slope = filter_plate_on_phase_id(
             plate, impulses_phase, measure=CurvePhasePhenotypes.LinearModelSlope)

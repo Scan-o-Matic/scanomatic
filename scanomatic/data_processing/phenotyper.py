@@ -367,6 +367,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteIntersect,
             CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteAngle,
             CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteIntersect,
+            CurvePhaseMetaPhenotypes.TimeBeforeMajorGrowth,
         }
 
         self._reference_surface_positions = [Offsets.LowerRight() for _ in self.enumerate_plates]
