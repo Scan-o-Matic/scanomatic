@@ -903,12 +903,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._logger.info("Completed Polynomial smoothing")
 
-    def _poly_smoothen_raw_growth_weighted(self, power=3, time_delta=5.1, gauss_sigma=1.5):
+    def _poly_smoothen_raw_growth_weighted(self, power=3, time_delta=5.1, gauss_sigma=1.5, apply_median=False):
 
         assert power > 1, "Power must be 2 or greater"
 
         self._logger.info("Starting Weighted Multi-Polynomial smoothing")
 
+        median_kernel = np.ones((1, self._median_kernel_size))
         smooth_data = []
         times = self.times
         time_diffs = np.subtract.outer(times, times)
@@ -921,6 +922,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 continue
 
             log2_data = np.log2(plate).reshape(np.prod(plate.shape[:2]), plate.shape[-1])
+
+            if apply_median:
+                log2_data[...] = median_filter(log2_data, footprint=median_kernel, mode='reflect')
+
             smooth_plate = [None] * log2_data.shape[0]
             for id_curve, log2_curve in enumerate(log2_data):
 
