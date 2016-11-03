@@ -9,7 +9,7 @@ from subprocess import call
 import uuid
 from enum import Enum
 from glob import glob
-
+import re
 from scanomatic.data_processing import phenotyper
 from scanomatic.data_processing.phenotypes import get_sort_order, PhenotypeDataType, infer_phenotype_from_name
 from scanomatic.data_processing.norm import infer_offset, Offsets
@@ -542,14 +542,18 @@ def add_routes(app):
                 _remove_lock(path)
             return jsonify(**response)
 
-        urls = ["/api/results/phenotype/{0}/{1}".format(phenotype, project)
-                for phenotype in state.phenotype_names()]
+        phenotypes = sorted(state.phenotype_names())
 
-        sort_order = [get_sort_order(p) for p in state.phenotype_names()]
+        urls = ["/api/results/phenotype/{0}/{1}".format(phenotype, project)
+                for phenotype in phenotypes]
+
+        sort_order = [get_sort_order(p) for p in phenotypes]
+
+        pattern = re.compile(r'([a-z])([A-Z])')
 
         return jsonify(**json_response(
             ["phenotype_urls"],
-            dict(phenotypes=state.phenotype_names(),
+            dict(phenotypes=[pattern.sub(r'\1 \2', p) for p in phenotypes],
                  phenotype_sort_orders=sort_order,
                  phenotype_urls=urls,
                  **response)))
@@ -685,15 +689,17 @@ def add_routes(app):
                 _remove_lock(path)
             return jsonify(**response)
 
-        phenotypes = state.get_normalizable_phenotypes()
+        phenotypes = sorted(state.phenotype_names(normed=True))
 
-        urls = ["/api/results/normalized_phenotype/{0}/{1}".format(phenotype.name, project)
+        urls = ["/api/results/normalized_phenotype/{0}/{1}".format(phenotype, project)
                 for phenotype in phenotypes]
         sort_order = [get_sort_order(p) for p in phenotypes]
 
+        pattern = re.compile(r'([a-z])([A-Z])')
+
         return jsonify(**json_response(
             ["phenotype_urls"],
-            dict(phenotypes=[p.name for p in phenotypes],
+            dict(phenotypes=[pattern.sub(r'\1 \2', p) for p in phenotypes],
                  phenotype_sort_orders=sort_order,
                  phenotype_urls=urls,
                  **response)))
