@@ -3,7 +3,7 @@ import glob
 import os
 
 from collections import deque
-from itertools import izip, product
+from itertools import izip, product, chain
 from types import StringTypes
 import cPickle as pickle
 import numpy as np
@@ -430,7 +430,15 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def phenotype_names(self, normed=False):
 
-        return tuple(p.name for p in (self.phenotypes_that_normalize if normed else self.phenotypes) if p in self)
+        if normed:
+            if self._normalized_phenotypes is None:
+                return []
+            else:
+                return set(pheno.name for pheno in
+                           chain(*(plate.keys() for plate in self._normalized_phenotypes
+                                   if plate is not None)))
+        else:
+            return tuple(p.name for p in self.phenotypes if p in self)
 
     @classmethod
     def LoadFromXML(cls, path, **kwargs):
