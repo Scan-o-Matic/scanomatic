@@ -7,22 +7,28 @@ from enum import Enum
 from ConfigParser import Error as ConfigError
 
 from scanomatic.data_processing import phenotyper
-from scanomatic.image_analysis.grayscale import getGrayscales, getGrayscale
+
 from scanomatic.io.paths import Paths
+from scanomatic.io.logger import Logger
+from scanomatic.io.fixtures import Fixtures
+
 from scanomatic.image_analysis.support import save_image_as_png
 from scanomatic.image_analysis.image_grayscale import get_grayscale
-from scanomatic.io.logger import Logger
-from scanomatic.models.factories.fixture_factories import FixtureFactory
-from scanomatic.models.fixture_models import GrayScaleAreaModel
 from scanomatic.image_analysis.image_basics import Image_Transpose
 from scanomatic.image_analysis.grid_cell import GridCell
 from scanomatic.image_analysis.grid_array import get_calibration_polynomial_coeffs
+from scanomatic.image_analysis.grayscale import getGrayscales, getGrayscale
+from scanomatic.image_analysis.first_pass_image import FixtureImage
+
+from scanomatic.models.factories.fixture_factories import FixtureFactory
+from scanomatic.models.fixture_models import GrayScaleAreaModel
 from scanomatic.models.analysis_model import COMPARTMENTS, VALUES
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
     get_area_too_large_for_grayscale, get_grayscale_is_valid, usable_plates, image_is_allowed, \
-    get_fixture_image, convert_url_to_path, decorate_api_access_restriction, get_fixture_image_from_data
+    get_fixture_image, convert_url_to_path, decorate_api_access_restriction, get_fixture_image_from_data, \
+    get_2d_list
 
 
 _logger = Logger("Data API")
@@ -478,6 +484,58 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         FixtureFactory.serializer.dump(fixture_model, fixture_model.path)
         return jsonify(success=True)
+
+    @app.route("/api/data/fixture/calculate/<fixture_name>", methods=['POST'])
+    @decorate_api_access_restriction
+    def _get_transposed_fixture_coordinates(fixture_name):
+
+        markers = np.array(get_2d_list(request.values, 'markers'))
+
+        if markers.ndim != 2 and markers.shape[0] != 2 and markers.shape[1] < 3:
+            return jsonify(
+                success=False,
+                reason="Markers should be a 2D array with shape (2, 3) or greater for last dimension",
+                is_endpoint=True,
+            )
+
+        fixture_settings = Fixtures()[fixture_name]
+
+        if fixture_settings is None:
+            return jsonify(
+                success=False,
+                reason="Fixture '{0}' is not known".format(fixture_name),
+                is_endpoint=True,
+            )
+
+        fixture = FixtureImage(fixture_settings)
+        current_settings = fixture['current']
+        current_settings.model.orientation_marks_x = markers[0]
+        current_settings.model.orientation_marks_y = markers[1]
+        issues = {}
+        fixture.set_current_areas(issues)
+
+        return jsonify(
+            success=True,
+            is_endpoint=True,
+            plates=[
+                dict(
+                    index=plate.index,
+                    x1=plate.x1,
+                    x2=plate.x2,
+                    y1=plate.y1,
+                    y2=plate.y2
+                )
+                for plate in current_settings.model.plates
+            ],
+            grayscale_area=dict(
+                x1=current_settings.model.grayscale.x1,
+                x2=current_settings.model.grayscale.x2,
+                y1=current_settings.model.grayscale.y1,
+                y2=current_settings.model.grayscale.y2,
+            ),
+            grayscale_name=current_settings.model.grayscale.name,
+            report=issues,
+        )
 
     @app.route("/api/data/markers/detect/<fixture_name>", methods=['POST'])
     @decorate_api_access_restriction
