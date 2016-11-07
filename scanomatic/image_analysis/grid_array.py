@@ -146,6 +146,7 @@ class GridCellSizes(object):
         """
 
         :type item: tuple
+
         """
         if not isinstance(item, tuple):
             GridCellSizes._LOGGER.error("Grid formats can only be tuples {0}".format(type(item)))
@@ -196,6 +197,10 @@ class GridArray(object):
         self._features = AnalysisFeaturesFactory.create(index=self._identifier[-1], shape=tuple(pinning), data=set())
         self._first_analysis = True
 
+    def __getitem__(self, item):
+        """:rtype: scanomatic.image_analysis.grid_cell.GridCell"""
+        return self._grid_cells[item]
+
     @property
     def features(self):
         return self._features
@@ -203,6 +208,11 @@ class GridArray(object):
     @property
     def grid_cell_size(self):
         return self._grid_cell_size
+
+    @property
+    def grid(self):
+
+        return self._grid.tolist()
 
     @property
     def index(self):
@@ -305,11 +315,14 @@ class GridArray(object):
 
         if self._grid is None or np.isnan(spacings).any():
 
-            error_file = os.path.join(
-                self._analysis_model.output_directory,
-                self._paths.experiment_grid_error_image.format(self.index))
+            if self._analysis_model.output_directory:
 
-            np.save(error_file, im)
+                error_file = os.path.join(
+                    self._analysis_model.output_directory,
+                    self._paths.experiment_grid_error_image.format(self.index))
+
+                np.save(error_file, im)
+
             self._LOGGER.warning("Failed to detect grid on plate {0}".format(self.index))
 
             return False

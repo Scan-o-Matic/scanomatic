@@ -1,12 +1,13 @@
 import os
-from itertools import chain
+from itertools import chain, product
 from glob import glob
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response
 from scanomatic.io.paths import Paths
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import DefaultPinningFormats
-from .general import decorate_api_access_restriction
+from scanomatic.image_analysis.grid_array import GridArray
+from .general import decorate_api_access_restriction, get_image_data_as_array
 
 
 def add_routes(app):
@@ -31,6 +32,46 @@ def add_routes(app):
                 )
                 for pinning in DefaultPinningFormats
             ]
+        )
+
+    @app.route("/api/analysis/image/grid", methods=['POST'])
+    @decorate_api_access_restriction
+    def get_gridding():
+
+        pinning_format = request.values.get_list('pinning_format')
+        correction = request.values.get_list('gridding_correction', default=None)
+        im = get_image_data_as_array(request.files)
+
+        analysis_model = AnalysisModelFactory.create()
+        analysis_model.output_directory = ""
+        ga = GridArray((None, None), pinning_format, analysis_model)
+
+        if not ga.detect_grid(im, grid_correction=correction):
+            return jsonify(
+                success=False,
+                reason="Grid detection failed",
+                is_endpoint=True,
+            )
+
+        grid = ga.grid
+        inner = len(grid[0])
+        outer = len(grid)
+        xy1 = [([None] for _ in range(inner)) for _ in range(outer)]
+        xy2 = [([None] for _ in range(inner)) for _ in range(outer)]
+
+        for pos in product(range(outer), range(inner)):
+
+            o, i = pos
+            gc = ga[pos]
+            xy1[o][i] = gc.xy1
+            xy2[o][i] = gc.xy2
+
+        return jsonify(
+            success=True,
+            is_endpoint=True,
+            xy1=xy1,
+            xy2=xy2,
+            grid=grid
         )
 
     @app.route("/api/analysis/instructions", defaults={'project': ''})

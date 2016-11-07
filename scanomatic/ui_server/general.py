@@ -291,15 +291,20 @@ def get_fixture_image(name, image_path):
     return fixture
 
 
-def get_fixture_image_from_data(name, image_data):
+def get_image_data_as_array(image_data):
 
     bs = BytesIO()
     bs.write(image_data)
     bs.flush()
     bs.seek(0)
+    return imread(bs)
+
+
+def get_fixture_image_from_data(name, image_data):
+
     fixture = FixtureImage()
     fixture.name = name
-    fixture.set_image(image=imread(bs))
+    fixture.set_image(image=get_image_data_as_array(image_data))
     return fixture
 
 
