@@ -39,8 +39,10 @@ def add_routes(app):
     def get_gridding():
 
         pinning_format = request.values.get_list('pinning_format')
-        correction = request.values.get_list('gridding_correction', default=None)
-        im = get_image_data_as_array(request.files)
+        correction = request.values.getlist('gridding_correction')
+        if not correction:
+            correction = None
+        im = get_image_data_as_array(request.files.get('image'))
 
         analysis_model = AnalysisModelFactory.create()
         analysis_model.output_directory = ""
