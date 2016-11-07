@@ -5,7 +5,7 @@ from flask import Flask, jsonify
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response
 from scanomatic.io.paths import Paths
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.analysis_model import AnalysisModel
+from scanomatic.models.analysis_model import DefaultPinningFormats
 from .general import decorate_api_access_restriction
 
 
@@ -16,6 +16,22 @@ def add_routes(app):
      :type app: Flask
     :return:
     """
+
+    @app.route("/api/analysis/pinning/formats")
+    @decorate_api_access_restriction
+    def get_supported_pinning_formats():
+
+        return jsonify(
+            success=True,
+            is_endpoint=True,
+            pinning_formats=[
+                dict(
+                    name=pinning.human_readable(),
+                    value=pinning.value,
+                )
+                for pinning in DefaultPinningFormats
+            ]
+        )
 
     @app.route("/api/analysis/instructions", defaults={'project': ''})
     @app.route("/api/analysis/instructions/", defaults={'project': ''})

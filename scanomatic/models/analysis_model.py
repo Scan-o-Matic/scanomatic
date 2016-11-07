@@ -1,6 +1,24 @@
 from enum import Enum
 import scanomatic.generics.model as model
 import scanomatic
+import re
+
+
+class DefaultPinningFormats(Enum):
+
+    Format_96__8x12 = (8, 12)
+    """:type: DefaultPinningFormats"""
+    Format_384__16x24 = (16, 24)
+    """:type: DefaultPinningFormats"""
+    Format_1536__32x48 = (32, 48)
+    """:type: DefaultPinningFormats"""
+    Format_6144__64x96 = (64, 96)
+    """:type: DefaultPinningFormats"""
+
+    def human_readable(self):
+
+        return re.sub(r'Format_(\d+)__(\d+)x(\d+)', r'\2 x \3 (\1)', self.name)
+
 
 class IMAGE_ROTATIONS(Enum):
     Landscape = 0
