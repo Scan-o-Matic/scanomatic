@@ -22,7 +22,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFacto
 
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
     get_area_too_large_for_grayscale, get_grayscale_is_valid, usable_plates, image_is_allowed, \
-    get_fixture_image, convert_url_to_path, decorate_api_access_restriction
+    get_fixture_image, convert_url_to_path, decorate_api_access_restriction, get_fixture_image_from_data
 
 
 _logger = Logger("Data API")
@@ -484,6 +484,12 @@ def add_routes(app, rpc_client, is_debug_mode):
     def _markers_detect(fixture_name):
 
         markers = request.values.get('markers', default=3, type=int)
+
+        try:
+            save_fixture = bool(request.values.get('save', default=1))
+        except ValueError:
+            save_fixture = True
+
         image = request.files.get('image')
         name = os.path.basename(fixture_name)
         image_name, ext = os.path.splitext(image.filename)
@@ -495,23 +501,38 @@ def add_routes(app, rpc_client, is_debug_mode):
             fixture_file = Paths().get_fixture_path(name)
 
             path = os.path.extsep.join((fixture_file, ext.lstrip(os.path.extsep)))
-            image.save(path)
 
-            fixture = get_fixture_image(name, path)
-            fixture.run_marker_analysis(markings=markers)
+            if save_fixture:
+                image.save(path)
 
-            save_image_as_png(path)
+                fixture = get_fixture_image(name, path)
+                fixture.run_marker_analysis(markings=markers)
 
-            return jsonify(
-                success=True,
-                markers=json_data(fixture['current'].get_marker_positions()),
-                image=os.path.basename(fixture_file))
+                save_image_as_png(path)
+
+                return jsonify(
+                    success=True,
+                    is_endpoint=True,
+                    markers=json_data(fixture['current'].get_marker_positions()),
+                    image=os.path.basename(fixture_file))
+
+            else:
+
+                fixture = get_fixture_image_from_data(name, image)
+                fixture.run_marker_analysis(markings=markers)
+
+                return jsonify(
+                    success=True,
+                    is_endpoint=True,
+                    markers=json_data(fixture['current'].get_marker_positions())
+                )
 
         _logger.warning("Refused detection (keys files: {0} values: {1})".format(
             request.files.keys(), request.values.keys()))
 
         return jsonify(
             success=False,
+            is_endpoint=True,
             reason="No fixture image name" if image_is_allowed(ext) else "Image type not allowed")
 
     @app.route("/api/data/image/transform/grayscale", methods=['POST'])
