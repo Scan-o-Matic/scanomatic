@@ -2,6 +2,8 @@ import glob
 import os
 import re
 from StringIO import StringIO
+from io import BytesIO
+from scipy.misc import imread
 from itertools import chain
 from flask import send_file, request, send_from_directory, jsonify
 import numpy as np
@@ -286,6 +288,18 @@ def get_fixture_image(name, image_path):
     fixture = FixtureImage()
     fixture.name = name
     fixture.set_image(image_path=image_path)
+    return fixture
+
+
+def get_fixture_image_from_data(name, image_data):
+
+    bs = BytesIO()
+    bs.write(image_data)
+    bs.flush()
+    bs.seek(0)
+    fixture = FixtureImage()
+    fixture.name = name
+    fixture.set_image(image=imread(bs))
     return fixture
 
 
