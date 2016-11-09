@@ -963,30 +963,22 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             f2 = f & finites
             x = times[f2]
             y = log2_data[f2]
-            p_old = None
-            r_old = None
-            for pwr in range(power, 0, -1):
+            for pwr in range(power, -1, -1):
                 try:
                     p, r, _, _, _ = np.polyfit(x, y, power, full=True)
                 except TypeError:
                     yield None, None, None
                 if r.size > 1:
-                    if r_old is not None:
-                        p = p_old
-                        r = r_old
                     break
-                p_old = p
-                r_old = r
 
             try:
                 yield np.poly1d(p), r[0] / f2.sum(), np.var(y)
             except IndexError:
                 # This is invoked if only two measurements have finite data for the
-                # entire interval. The true residual is naturally null, but the
-                # purpose of the residual is to show trust in the constructed
-                # polynomial. In this case the polynomial trust will be
-                # heuristically set to 0.5 to limit the potential impact.
-                yield np.poly1d(p),  0.5 * np.var(y), np.var(y)
+                # entire interval and the values of these are identical.
+                # Heuristically the residuals are set so we have absolute confidence
+                # in this result
+                yield np.poly1d(p),  0, 1
 
     def _poly_smoothen_raw_growth_curve(self, times, log2_data, power, filt):
 
