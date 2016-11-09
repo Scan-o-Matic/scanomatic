@@ -970,7 +970,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 yield None, None, None
             else:
 
-                yield np.poly1d(p), r[0] / f2.sum(), np.var(y)
+                try:
+                    yield np.poly1d(p), r[0] / f2.sum(), np.var(y)
+                except IndexError:
+                    yield np.poly1d(p), 0, np.var(y)
 
     def _poly_smoothen_raw_growth_curve(self, times, log2_data, power, filt):
 
