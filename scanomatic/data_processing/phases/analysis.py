@@ -17,7 +17,8 @@ class CurvePhasePhenotypes(Enum):
     Attributes:
         CurvePhasePhenotypes.PopulationDoublingTime: The average population doubling time of the segment
         CurvePhasePhenotypes.Duration: The length of the segment in time.
-        CurvePhasePhenotypes.FractionYield: The proportion of population doublings for the entire experiment
+        CurvePhasePhenotypes.Yield: The gain in population size.
+        CurvePhasePhenotypes.PopulationDoublings: The population doublings for the entire experiment
             that this segment is responsible for
         CurvePhasePhenotypes.Start: Start time of the segment
         CurvePhasePhenotypes.LinearModelSlope: The slope of the linear model fitted to the segment
@@ -32,8 +33,6 @@ class CurvePhasePhenotypes(Enum):
     """type: CurvePhasePhenotypes"""
     Duration = 2
     """type: CurvePhasePhenotypes"""
-    FractionYield = 3
-    """type: CurvePhasePhenotypes"""
     Start = 4
     """type: CurvePhasePhenotypes"""
     LinearModelSlope = 5
@@ -43,6 +42,10 @@ class CurvePhasePhenotypes(Enum):
     AsymptoteAngle = 7
     """type: CurvePhasePhenotypes"""
     AsymptoteIntersection = 8
+    """type: CurvePhasePhenotypes"""
+    Yield = 9
+    """type: CurvePhasePhenotypes"""
+    PopulationDoublings = 10
     """type: CurvePhasePhenotypes"""
 
 
@@ -74,7 +77,8 @@ def get_phenotypes_tuple(phase):
         return (
             CurvePhasePhenotypes.Start,
             CurvePhasePhenotypes.Duration,
-            CurvePhasePhenotypes.FractionYield,
+            CurvePhasePhenotypes.Yield,
+            CurvePhasePhenotypes.PopulationDoublings,
             CurvePhasePhenotypes.LinearModelIntercept,
             CurvePhasePhenotypes.LinearModelSlope,
             CurvePhasePhenotypes.PopulationDoublingTime,
@@ -83,7 +87,8 @@ def get_phenotypes_tuple(phase):
         return (
             CurvePhasePhenotypes.Start,
             CurvePhasePhenotypes.Duration,
-            CurvePhasePhenotypes.FractionYield,
+            CurvePhasePhenotypes.Yield,
+            CurvePhasePhenotypes.PopulationDoublings,
             CurvePhasePhenotypes.AsymptoteAngle,
             CurvePhasePhenotypes.AsymptoteIntersection,
         )
@@ -91,7 +96,8 @@ def get_phenotypes_tuple(phase):
         return (
             CurvePhasePhenotypes.Start,
             CurvePhasePhenotypes.Duration,
-            CurvePhasePhenotypes.FractionYield,
+            CurvePhasePhenotypes.Yield,
+            CurvePhasePhenotypes.PopulationDoublings,
         )
 
 
@@ -138,13 +144,26 @@ def _phenotype_phases(model, doublings):
                 current_phase_phenotypes[CurvePhasePhenotypes.LinearModelIntercept] = intercept
 
             # C. Get duration
-            current_phase_phenotypes[CurvePhasePhenotypes.Duration] = time_right - time_left
+            current_phase_phenotypes[CurvePhasePhenotypes.Duration] = \
+                (model.times[right - 1] + model.times[min(right, model.log2_curve.size - 1)]) / 2 - \
+                (model.times[left] + model.times[max(0, left - 1)]) / 2
 
-            # D. Get fraction of doublings
-            current_phase_phenotypes[CurvePhasePhenotypes.FractionYield] = \
-                (model.log2_curve[right - 1] - model.log2_curve[left]) / doublings
+            # D. Get Population Doublings
+            current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublings] = \
+                ((model.log2_curve[right - 1] + model.log2_curve[min(right, model.log2_curve.size - 1)]) / 2 -
+                 (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
 
-            # E. Get start of phase
+            # E. Get Yield
+            current_phase_phenotypes[CurvePhasePhenotypes.Yield] = \
+                np.power(
+                    2,
+                    (model.log2_curve[right - 1] +
+                     model.log2_curve[min(right, model.log2_curve.size - 1)]) / 2) - \
+                np.power(
+                    2,
+                    (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
+
+            # F. Get start of phase
             current_phase_phenotypes[CurvePhasePhenotypes.Start] = time_left
 
             phenotypes.append((phase, current_phase_phenotypes))

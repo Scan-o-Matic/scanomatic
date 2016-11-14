@@ -17,7 +17,7 @@ class CurvePhaseMetaPhenotypes(Enum):
         CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution:
             The fraction of the total yield (in population doublings) that the
             `CurvePhases.Impulse` that contribute most to the total yield is
-            responsible for (`CurvePhasePhenotypes.FractionYield`).
+            responsible for (`CurvePhasePhenotypes.PopulationDoublings`).
 
         CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution:
             As with `CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution`
@@ -262,8 +262,9 @@ def _py_get_major_impulse_for_plate(phases):
     try:
 
         sort_order = np.argsort(tuple(
-            p_data[CurvePhasePhenotypes.FractionYield] if
-            p_data is not None and p_data[CurvePhasePhenotypes.FractionYield] else -np.inf for p_type, p_data in phases
+            p_data[CurvePhasePhenotypes.PopulationDoublings] if
+            p_data is not None and p_data[CurvePhasePhenotypes.PopulationDoublings] else -np.inf
+            for p_type, p_data in phases
         ))
 
         impulses = np.array(tuple(
@@ -342,12 +343,12 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
         return filter_plate_custom_filter(
             plate,
             phase=CurvePhases.Impulse,
-            measure=CurvePhasePhenotypes.FractionYield,
+            measure=CurvePhasePhenotypes.PopulationDoublings,
             phases_requirement=lambda phases: len(phases) >= phase_need,
             phase_selector=lambda phases:
             phases[np.argsort(tuple(
-                phase[CurvePhasePhenotypes.FractionYield] if
-                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[index]])
+                phase[CurvePhasePhenotypes.PopulationDoublings] if
+                phase[CurvePhasePhenotypes.PopulationDoublings] else -np.inf for phase in phases))[index]])
 
     elif (meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime or
             meta_phenotype == CurvePhaseMetaPhenotypes.FirstMinorImpulseAveragePopulationDoublingTime):
@@ -362,8 +363,8 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
             phases_requirement=lambda phases: len(phases) >= phase_need,
             phase_selector=lambda phases:
             phases[np.argsort(tuple(
-                phase[CurvePhasePhenotypes.FractionYield] if
-                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[index]])
+                phase[CurvePhasePhenotypes.PopulationDoublings] if
+                phase[CurvePhasePhenotypes.PopulationDoublings] else -np.inf for phase in phases))[index]])
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialLag:
 
@@ -422,8 +423,8 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases:
             phases[np.argsort(tuple(
-                phase[CurvePhasePhenotypes.FractionYield] if
-                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[-1]])
+                phase[CurvePhasePhenotypes.PopulationDoublings] if
+                phase[CurvePhasePhenotypes.PopulationDoublings] else -np.inf for phase in phases))[-1]])
 
         impulse_intercept = filter_plate_custom_filter(
             plate,
@@ -432,8 +433,8 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases:
             phases[np.argsort(tuple(
-                phase[CurvePhasePhenotypes.FractionYield] if
-                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[-1]])
+                phase[CurvePhasePhenotypes.PopulationDoublings] if
+                phase[CurvePhasePhenotypes.PopulationDoublings] else -np.inf for phase in phases))[-1]])
 
         impulse_start = filter_plate_custom_filter(
             plate,
@@ -442,8 +443,8 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases:
             phases[np.argsort(tuple(
-                phase[CurvePhasePhenotypes.FractionYield] if
-                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[-1]])
+                phase[CurvePhasePhenotypes.PopulationDoublings] if
+                phase[CurvePhasePhenotypes.PopulationDoublings] else -np.inf for phase in phases))[-1]])
 
         flat_slope = 0
         flat_intercept = phenotypes[..., growth_phenotypes.Phenotypes.ExperimentLowPoint.value]
