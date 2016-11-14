@@ -945,10 +945,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
     def _multi_poly_smooth(self, times, polys, r, r0, filt, gauss_sigma):
 
         included = [v is not None for v in r]
-        for t, f in izip(times, filt):
+        for f in filt:
 
             f2 = f & included
-
+            t = times[f2].mean()
             w1 = norm.pdf(times[f2], loc=t, scale=gauss_sigma)
             w2 = 1 - r[f2] / r0[f2]
             w = w1 * w2
