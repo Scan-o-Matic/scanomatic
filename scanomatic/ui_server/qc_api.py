@@ -549,11 +549,12 @@ def add_routes(app):
 
         sort_order = [get_sort_order(p) for p in phenotypes]
 
-        pattern = re.compile(r'([a-z])([A-Z])')
+        pattern = re.compile(r'([a-z])([A-Z0-9])')
 
         return jsonify(**json_response(
             ["phenotype_urls"],
-            dict(phenotypes=[pattern.sub(r'\1 \2', p) for p in phenotypes],
+            dict(phenotypes=phenotypes,
+                 names=[pattern.sub(r'\1 \2', p) for p in phenotypes],
                  phenotype_sort_orders=sort_order,
                  phenotype_urls=urls,
                  **response)))
@@ -695,11 +696,12 @@ def add_routes(app):
                 for phenotype in phenotypes]
         sort_order = [get_sort_order(p) for p in phenotypes]
 
-        pattern = re.compile(r'([a-z])([A-Z])')
+        pattern = re.compile(r'([a-z])([A-Z0-9])')
 
         return jsonify(**json_response(
             ["phenotype_urls"],
-            dict(phenotypes=[pattern.sub(r'\1 \2', p) for p in phenotypes],
+            dict(phenotypes=phenotypes,
+                 names=[pattern.sub(r'\1 \2', p) for p in phenotypes],
                  phenotype_sort_orders=sort_order,
                  phenotype_urls=urls,
                  **response)))
