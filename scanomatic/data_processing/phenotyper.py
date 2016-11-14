@@ -873,7 +873,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                not all(plate is None or plate.size == 0 for plate in self._normalized_phenotypes) and \
                self._normalized_phenotypes.size > 0
 
-    def _poly_smoothen_raw_growth(self, power=3, time_delta=5):
+    def _poly_smoothen_raw_growth(self, power=3, time_delta=5.1):
 
         assert power > 1, "Power must be 2 or greater"
 
