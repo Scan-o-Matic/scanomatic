@@ -36,7 +36,7 @@ def add_routes(app):
 
     @app.route("/api/analysis/image/grid", methods=['POST'])
     @decorate_api_access_restriction
-    def get_gridding():
+    def get_gridding_image():
 
         pinning_format = request.values.get_list('pinning_format')
         correction = request.values.getlist('gridding_correction')
