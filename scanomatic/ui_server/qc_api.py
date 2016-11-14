@@ -530,7 +530,7 @@ def add_routes(app):
         if not phenotyper.path_has_saved_project_state(path):
 
             return jsonify(**json_response(
-                ["urls"], dict(jsonify(is_project=False, **get_search_results(path, base_url)))))
+                ["urls"], dict(is_project=False, **get_search_results(path, base_url))))
 
         lock_key = request.values.get("lock_key")
         lock_state, response = _validate_lock_key(path, lock_key, request.remote_addr, require_claim=False)
