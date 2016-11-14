@@ -963,22 +963,28 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             f2 = f & finites
             x = times[f2]
             y = log2_data[f2]
+            p = None
+            yielded = False
             for pwr in range(power, -1, -1):
                 try:
                     p, r, _, _, _ = np.polyfit(x, y, power, full=True)
                 except TypeError:
+                    yielded = True
                     yield None, None, None
-                if r.size > 1:
                     break
+                else:
+                    if r.size > 1:
+                        break
 
-            try:
-                yield np.poly1d(p), r[0] / f2.sum(), np.var(y)
-            except IndexError:
-                # This is invoked if only two measurements have finite data for the
-                # entire interval and the values of these are identical.
-                # Heuristically the residuals are set so we have absolute confidence
-                # in this result
-                yield np.poly1d(p),  0, 1
+            if not yielded:
+                try:
+                    yield np.poly1d(p), r[0] / f2.sum(), np.var(y)
+                except IndexError:
+                    # This is invoked if only two measurements have finite data for the
+                    # entire interval and the values of these are identical.
+                    # Heuristically the residuals are set so we have absolute confidence
+                    # in this result
+                    yield np.poly1d(p),  0, 1
 
     def _poly_smoothen_raw_growth_curve(self, times, log2_data, power, filt):
 
