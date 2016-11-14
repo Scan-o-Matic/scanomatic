@@ -164,7 +164,8 @@ def _phenotype_phases(model, doublings):
                     (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
 
             # F. Get start of phase
-            current_phase_phenotypes[CurvePhasePhenotypes.Start] = time_left
+            current_phase_phenotypes[CurvePhasePhenotypes.Start] = \
+                (model.times[left] + model.times[max(0, left - 1)]) / 2
 
             phenotypes.append((phase, current_phase_phenotypes))
 
