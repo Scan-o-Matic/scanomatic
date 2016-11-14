@@ -1209,8 +1209,9 @@ def add_routes(app):
         colony_image = ["/api/compile/colony_image/{4}/{0}/{1}/{2}/{3}".format(plate, d1_row, d2_col, project, t)
                         for t, _ in enumerate(state.times)]
 
-        mark_all_urls = ["/api/results/mark/set/{0}/{1}/{2}/{3}/{4}".format(m.name, plate, d1_row, d2_col, project)
-                         for m in phenotyper.Filter]
+        mark_all_urls = [
+            "/api/results/curve_mark/set/{0}/{1}/{2}/{3}/{4}".format(m.name, plate, d1_row, d2_col, project)
+            for m in phenotyper.Filter]
 
         return jsonify(time_data=state.times.tolist(),
                        smooth_data=state.smooth_growth_data[plate][d1_row, d2_col].tolist(),
