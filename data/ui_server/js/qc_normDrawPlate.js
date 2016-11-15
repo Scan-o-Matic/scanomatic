@@ -615,7 +615,11 @@ d3.scanomatic.plateHeatmap = function () {
             var metaDataYield = well.attr("data-meta-yield");
             var coord = row + "," + col;
             var coordinate = "[" + coord + "]";
-            var exp = { id: id, coord: coord, metaDataGt: metaDataGt, metaDataGtWhen: metaDataGtWhen, metaDataYield: metaDataYield };
+            var phenotype = 0;
+            var fmt = d3.format(numberFormat);
+            well.attr("",
+                function (d) { phenotype = fmt(d.phenotype) });
+            var exp = { id: id, coord: coord, metaDataGt: metaDataGt, metaDataGtWhen: metaDataGtWhen, metaDataYield: metaDataYield, phenotype: phenotypeName };
             //deselect preavius selections
             var sel = g.selectAll("." + classExperimentSelected);
             sel.classed(classExperimentSelected, false);
@@ -630,7 +634,7 @@ d3.scanomatic.plateHeatmap = function () {
             //trigger click and send coordinate
             toolTipDiv.transition().duration(0).style("opacity", 0);
             d3.select("#sel").selectAll("*").remove();
-            d3.select("#sel").text("Experiment " + coordinate);
+            d3.select("#sel").text("Experiment " + coordinate + ", Value " + phenotype);
             dispatch[dispatcherSelectedExperiment](exp);
         };
 
@@ -644,7 +648,11 @@ d3.scanomatic.plateHeatmap = function () {
             var metaDataYield = well.attr("data-meta-yield");
             var coord = row + "," + col;
             var coordinate = "[" + coord + "]";
-            var exp = { id: id, coord: coord, metaDataGt: metaDataGt, metaDataGtWhen: metaDataGtWhen, metaDataYield: metaDataYield };
+            var phenotype = 0;
+            var fmt = d3.format(numberFormat);
+            well.attr("",
+                function (d) { phenotype = fmt(d.phenotype) });
+            var exp = { id: id, coord: coord, metaDataGt: metaDataGt, metaDataGtWhen: metaDataGtWhen, metaDataYield: metaDataYield, phenotype: phenotypeName };
             //deselect preavius selections
             var sel = g.selectAll("." + classExperimentSelected);
             sel.classed(classExperimentSelected, false);
@@ -659,7 +667,7 @@ d3.scanomatic.plateHeatmap = function () {
             //trigger click and send coordinate
             toolTipDiv.transition().duration(0).style("opacity", 0);
             d3.select("#sel").selectAll("*").remove();
-            d3.select("#sel").text("Experiment " + coordinate);
+            d3.select("#sel").text("Experiment " + coordinate + ", Value " + phenotype);
             dispatch[dispatcherSelectedExperiment](exp);
         }
 

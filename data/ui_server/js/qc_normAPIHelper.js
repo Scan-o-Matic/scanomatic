@@ -160,7 +160,7 @@ function GetRunPhenotypes(url, key, callback) {
         else {
             var phenotypes = [];
             for (var i = 0; i < json.phenotypes.length; i++) {
-                phenotypes.push({ name: json.phenotypes[i], url: json.phenotype_urls[i] });
+                phenotypes.push({ name: json.names[i], url: json.phenotype_urls[i] });
             }
             callback(phenotypes);
         }
@@ -175,7 +175,7 @@ function GetPhenotypesPlates(url, key, callback) {
         else {
             var plates = [];
             for (var i = 0; i < json.urls.length; i++) {
-                plates.push({ index: json.plate_indices[i], url: json.urls[i] });
+                plates.push({ index: json.plate_indices[i], url: json.urls[i]});
             }
             callback(plates);
         }

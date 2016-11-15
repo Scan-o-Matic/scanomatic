@@ -45,7 +45,7 @@
             .ready(function () {
                 //isDebug = document.location.hostname == "localhost";
                 //isDebug = false;
-                
+
                 var branchSymbol = "¤";
                 var qIndexQueue = [];
                 var qIndexCurrent = 0;
@@ -76,23 +76,24 @@
 
                 $("#divLockRemoving").hide();
                 $("#ckMarkExperiments").change(function () {
-                        $("#divMarkStates").toggle();
-                        if (this.checked) {
-                            setExperimentByQidx(qIdxOperations.Current);
-                        }
-                    });
+                    $("#divMarkStates").toggle();
+                    $("#qidxHint").toggle();
+                    if (this.checked) {
+                        setExperimentByQidx(qIdxOperations.Current);
+                    }
+                });
                 $("#ckNormalized").change(function () {
-                        $("#" + selRunNormPhenotypesName).toggle();
-                        $("#" + selRunPhenotypesName).toggle();
-                        if (this.checked) {
-                            $("#" + selRunNormPhenotypesName).prop('selectedIndex', 14);
-                            $("#" + selRunNormPhenotypesName).change();
-                            drawPhenotypePlatesSelection();
-                        }
-                    });
+                    $("#" + selRunNormPhenotypesName).toggle();
+                    $("#" + selRunPhenotypesName).toggle();
+                    if (this.checked) {
+                        $("#" + selRunNormPhenotypesName).prop('selectedIndex', 14);
+                        $("#" + selRunNormPhenotypesName).change();
+                        drawPhenotypePlatesSelection();
+                    }
+                });
                 $("#inMarkArea").change(function () {
-                        allowMarking = this.checked;
-                    });
+                    allowMarking = this.checked;
+                });
                 $("#btnNormalizeProject").click(function () {
                     if (confirm("This will overwrite any previous normalization data, are you sure?")) {
                         var project = $("#spProject").text();
@@ -131,22 +132,27 @@
                     });
                 });
                 $("#btnRefreshKey").click(function () {
-                        getLock(function () { });
-                    });
+                    getLock(function () { });
+                });
                 $("#btnMarkOK").click(function () {
-                        markExperiemnt(plateMetaDataType.OK);
-                    });
+                    markExperiemnt(plateMetaDataType.OK, false);
+                });
                 $("#btnMarkBad").click(function () {
-                        markExperiemnt(plateMetaDataType.BadData);
-                    });
+                    markExperiemnt(plateMetaDataType.BadData, false);
+                });
                 $("#btnMarkEmpty").click(function () {
-                        markExperiemnt(plateMetaDataType.Empty);
-                    });
+                    markExperiemnt(plateMetaDataType.Empty, true);
+                });
                 $("#btnMarkNoGrowth").click(function () {
-                        markExperiemnt(plateMetaDataType.NoGrowth);
-                    });
+                    markExperiemnt(plateMetaDataType.NoGrowth, true);
+                });
+                $("#btnQidxNext").click(function () {
+                    setExperimentByQidx(qIdxOperations.Prev);
+                });
+                $("#btnQidxPrev").click(function () {
+                    setExperimentByQidx(qIdxOperations.Next);
+                });
                 $("#cont").keypress(function (event) {
-                    if (!isQualityControlOn()) return;
                     var char = getChar(event).toLowerCase();
                     switch (char) {
                         case 'q':
@@ -160,6 +166,22 @@
                             break;
                         case 'r':
                             markExperiemnt(plateMetaDataType.NoGrowth);
+                            break;
+                        case '1':
+                            $("#btnPlate0").focus();
+                            document.getElementById("btnPlate0").click();
+                            break;
+                        case '2':
+                            $("#btnPlate1").focus();
+                            document.getElementById("btnPlate1").click();
+                            break;
+                        case '3':
+                            $("#btnPlate2").focus();
+                            document.getElementById("btnPlate2").click();
+                            break;
+                        case '4':
+                            $("#btnPlate3").focus();
+                            document.getElementById("btnPlate3").click();
                             break;
                     }
                 });
@@ -258,6 +280,8 @@
                             $(".loPlateSelection").hide();
                             $("#tbProjectDetails").hide();
                             $("#divMarkStates").hide();
+                            $("#qidxHint").hide();
+
                             break;
                         case "Phenotypes":
                             $(".loPhenotypeSelection").show();
@@ -271,14 +295,19 @@
                 }
 
                 //Mark Selected Experiment
-                function markExperiemnt(mark) {
+                function markExperiemnt(mark, all) {
+                    if (!isQualityControlOn()) return;
                     var plateIdx = $("#currentSelection").data("plateIdx");
                     var row = $("#currentSelection").data("row");
                     var col = $("#currentSelection").data("col");
                     var phenotype = $("#currentSelection").data("phenotype");
                     var project = $("#currentSelection").data("project");
                     // /api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>"
-                    var path = "/api/results/curve_mark/set/" + mark + "/" + phenotype + "/" + plateIdx + "/" + row + "/" + col + "/" + project;
+                    var path = "";
+                    if( all !== true)
+                        path = "/api/results/curve_mark/set/" + mark + "/" + phenotype + "/" + plateIdx + "/" + row + "/" + col + "/" + project;
+                    else
+                        path = "/api/results/curve_mark/set/" + mark + "/" + plateIdx + "/" + row + "/" + col + "/" + project;
                     var lockKey = getLock_key();
                     wait();
                     GetMarkExperiment(path, lockKey, function (gData) {
@@ -289,11 +318,10 @@
                                 setExperimentByQidx(qIdxOperations.Next);
                             else
                                 setExperimentByQidx(qIdxOperations.Current);
-                            stopWait();
                         }
                         else
                             alert(gData.success + " : " + gData.reason);
-
+                        stopWait();
                     });
                 }
 
@@ -328,45 +356,45 @@
                 function nodeExpand() {
                     var parentId = this.id;
                     BrowsePath(parentId, function (browse) {
-                            console.log("ParentID:" + parentId);
-                            console.log("is project:" + browse.isProject);
-                            console.log("paths len:" + browse.paths.length);
-                            var parentNode = $("#tblProjects").treetable("node", parentId);
-                            var nodeToAdd;
-                            var row;
-                            if (!browse.isProject && browse.paths.length === 0) {
-                                nodeToAdd = $("#tblProjects").treetable("node", "empty" + parentId);
-                                if (!nodeToAdd) {
-                                    row = '<tr data-tt-id="empty' + parentId + '" data-tt-parent-id="' + parentId + '" >';
-                                    row += "<td><span class='file'>This project is Empty ...</span></td>";
-                                    row += "</tr>";
-                                    $("#tblProjects").treetable("loadBranch", parentNode, row);
-                                }
-                            } else if (!browse.isProject) {
-                                var rows = "";
-                                $.each(browse.paths,
-                                    function (key, value) {
-                                        row = '<tr data-tt-id="' + branchSymbol + value.url + '" data-tt-parent-id="' + parentId + '" data-tt-branch="true" >';
-                                        row += "<td>" + value.name + "</td>";
-                                        row += "</tr>";
-                                        rows += row;
-                                    });
-                                $("#tblProjects").treetable("loadBranch", parentNode, rows);
-                                console.log("addedNodes rows:" + rows);
-                            } else if (browse.isProject) {
-                                nodeToAdd = $("#tblProjects").treetable("node", "project" + parentId);
-                                if (!nodeToAdd) {
-                                    row = '<tr data-tt-id="project' + parentId + '" data-tt-parent-id="' + parentId + '"  >';
-                                    console.log("button id: " + browse.projectDetails);
-                                    row += "<td><button id='" + browse.projectDetails.project + "'>Here is your project</button></td>";
-                                    row += "</tr>";
-                                    $("#tblProjects").treetable("loadBranch", parentNode, row);
-                                    var btn = $(document.getElementById(browse.projectDetails.project));
-                                    btn.on("click", function () { fillProjectDetails(browse.projectDetails); });
-                                    btn.attr("class", "attached");
-                                }
+                        console.log("ParentID:" + parentId);
+                        console.log("is project:" + browse.isProject);
+                        console.log("paths len:" + browse.paths.length);
+                        var parentNode = $("#tblProjects").treetable("node", parentId);
+                        var nodeToAdd;
+                        var row;
+                        if (!browse.isProject && browse.paths.length === 0) {
+                            nodeToAdd = $("#tblProjects").treetable("node", "empty" + parentId);
+                            if (!nodeToAdd) {
+                                row = '<tr data-tt-id="empty' + parentId + '" data-tt-parent-id="' + parentId + '" >';
+                                row += "<td><span class='file'>This project is Empty ...</span></td>";
+                                row += "</tr>";
+                                $("#tblProjects").treetable("loadBranch", parentNode, row);
                             }
-                        });
+                        } else if (!browse.isProject) {
+                            var rows = "";
+                            $.each(browse.paths,
+                                function (key, value) {
+                                    row = '<tr data-tt-id="' + branchSymbol + value.url + '" data-tt-parent-id="' + parentId + '" data-tt-branch="true" >';
+                                    row += "<td>" + value.name + "</td>";
+                                    row += "</tr>";
+                                    rows += row;
+                                });
+                            $("#tblProjects").treetable("loadBranch", parentNode, rows);
+                            console.log("addedNodes rows:" + rows);
+                        } else if (browse.isProject) {
+                            nodeToAdd = $("#tblProjects").treetable("node", "project" + parentId);
+                            if (!nodeToAdd) {
+                                row = '<tr data-tt-id="project' + parentId + '" data-tt-parent-id="' + parentId + '"  >';
+                                console.log("button id: " + browse.projectDetails);
+                                row += "<td><button id='" + browse.projectDetails.project + "'>Here is your project</button></td>";
+                                row += "</tr>";
+                                $("#tblProjects").treetable("loadBranch", parentNode, row);
+                                var btn = $(document.getElementById(browse.projectDetails.project));
+                                btn.on("click", function () { fillProjectDetails(browse.projectDetails); });
+                                btn.attr("class", "attached");
+                            }
+                        }
+                    });
                     console.log("Expanded: " + this.id);
                 }
 
@@ -397,7 +425,7 @@
                     $("#spLock").data("lock_path", projectDetails.add_lock);
                     $("#spLock").data("unLock_path", projectDetails.remove_lock);
                     $("#spQidx").data("qIdx", "");
-                    var inner ="";
+                    var inner = "";
                     inner += "<li><a href='" + baseUrl + "/api/results/export/phenotypes/Absolute/" + projectDetails.project + "'>Absolute</a></li>";
                     inner += "<li><a href='" + baseUrl + "/api/results/export/phenotypes/NormalizedRelative/" + projectDetails.project + "'>Normalized Relative</a></li>";
                     inner += "<li><a href='" + baseUrl + "/api/results/export/phenotypes/NormalizedAbsoluteBatched/" + projectDetails.project + "'>Normalized Absolute Batched</a></li>";
@@ -423,10 +451,10 @@
                                 data: formData,
                                 processData: false,
                                 success: function (data) {
-                                    if(data.success == true)
+                                    if (data.success == true)
                                         alert("The data was uploaded successfully:");
                                     else
-                                        alert("There was a problem with the upload: "+data.reason);
+                                        alert("There was a problem with the upload: " + data.reason);
                                 },
                                 error: function (data) {
                                     alert("error:" + data.responseText);
@@ -439,8 +467,6 @@
                         drawReferenceOffsetSelecton();
                     });
                 }
-
-
 
                 //draw Reference Offset selection
                 function drawReferenceOffsetSelecton() {
@@ -460,6 +486,7 @@
                         drawPhenotypePlatesSelection();
                     });
                 };
+
                 //draw run phenotypes selection
                 function drawRunPhenotypeSelection(path) {
                     projectSlelectionStage("Phenotypes");
@@ -474,7 +501,7 @@
                             .data(runPhenotypes)
                             .enter()
                             .append("option");
-                        options.attr("value", function (d) { return d.url; });
+                        options.attr("value", function(d) {return d.url;});
                         options.text(function (d) { return d.name; });
                         selPhen.on("change", drawPhenotypePlatesSelection);
                         $("#" + selRunPhenotypesName).selectedIndex = 0;
@@ -494,7 +521,7 @@
                             .data(runPhenotypes)
                             .enter()
                             .append("option");
-                        options.attr("value", function (d) { return d.url; });
+                        options.attr("value", function(d) {return d.url;});
                         options.text(function (d) { return d.name; });
                         selPhen.on("change", drawPhenotypePlatesSelection);
                         $("#" + selRunNormPhenotypesName).toggle();
@@ -559,8 +586,7 @@
                         qIndexQueue = data.plate_qIdxSort;
                         var plate = DrawPlate("#plate", plateData, growthMetaData, plateMetaData, phenotypeName, dispatch);
                         stopWait();
-                        plate.on("SelectedExperiment",
-                            function (datah) {
+                        plate.on("SelectedExperiment", function (datah) {
                                 console.log("dispatched:" + datah.coord);
                                 var arr = datah.coord.split(",");
                                 var row = arr[0];
@@ -569,16 +595,16 @@
                                 $("#currentSelection").data("plateIdx", plateIdx);
                                 $("#currentSelection").data("row", row);
                                 $("#currentSelection").data("col", col);
-                                $("#currentSelection").data("phenotype", $("#selRunPhenotypes option:selected").text());
+                                $("#currentSelection").data("phenotype", datah.phenotype);
                                 $("#currentSelection").data("project", $("#spProject").text());
                                 // e.g. /api/results/curves/1/31/0/Martin_wt1/analysis
                                 var expPath = "/api/results/curves/" + plateIdx + "/" + row + "/" + col + "/" + project;
                                 console.log("curve path:" + expPath);
                                 var lockKey = getLock_key();
-                                GetExperimentGrowthData(expPath, lockKey,function (gData) {
-                                        $("#graph").empty();
-                                        DrawCurves("#graph", gData, datah.metaDataGt, datah.metaDataGtWhen, datah.metaDataYield);
-                                    });
+                                GetExperimentGrowthData(expPath, lockKey, function (gData) {
+                                    $("#graph").empty();
+                                    DrawCurves("#graph", gData, datah.metaDataGt, datah.metaDataGtWhen, datah.metaDataYield);
+                                });
                             });
                     });
                 };
@@ -645,9 +671,8 @@
                                 <td>Export Data</td>
                                 <td>
                                     <div class="dropup">
-                                        <button title ="Note: Dosent work on Firefox!"  class="btn btn-default btn-xs dropdown-toggle" type="button" id="ddmSave" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Export<span style="margin-left:5px" class="caret"></span></button>
-                                        <ul class="dropdown-menu" aria-labelledby="ddmSave" id="ulExport">
-                                        </ul>
+                                        <button title="Note: Dosent work on Firefox!" class="btn btn-default btn-xs dropdown-toggle" type="button" id="ddmSave" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Export<span style="margin-left:5px" class="caret"></span></button>
+                                        <ul class="dropdown-menu" aria-labelledby="ddmSave" id="ulExport"></ul>
                                     </div>
                                 </td>
                             </tr>
@@ -689,23 +714,26 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <div>
                                 Mark experiemnts <input id="ckMarkExperiments" type="checkbox" data-toggle="toggle" data-size="mini">
                             </div>
                         </div>
-                        <div id="divMarkStates" class="col-md-7 ">
+                        <div id="divMarkStates" class="col-md-8">
                             <div id="currentSelection"></div>
-                            <span class="vcenter" style="padding-right: 8px;">Area selection <input class="vcenter" id="inMarkArea" type="checkbox" /></span>
-                            <button id="btnMarkOK" class="markButton vcenter"></button>
-                            <button id="btnMarkBad" class="markButton vcenter"></button>
-                            <button id="btnMarkEmpty" class="markButton vcenter"></button>
-                            <button id="btnMarkNoGrowth" class="markButton vcenter"></button>
+                            <span class="vcenter" style="padding-right: 8px;visibility:collapse">Area selection <input class="vcenter" id="inMarkArea" type="checkbox" /></span>
+                            <button id="btnMarkOK" class="markButton vcenter" title="Mark with metadata: OK [hotkey: q]"></button>
+                            <button id="btnMarkBad" class="markButton vcenter" title="Mark with metadata: Bad [hotkey: w]"></button>
+                            <button id="btnMarkEmpty" class="markButton vcenter" title="Mark with metadata: Empty [hotkey: e]"></button>
+                            <button id="btnMarkNoGrowth" class="markButton vcenter" title="Mark with metadata: NoGrowth [hotkey: r]"></button>
+                            <button id="btnQidxNext" style="margin-left:10px" class="btn btn-default btn-xs" title="Next in Qidx position [hotkey: <right>/<up>]"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span></button>
+                            <button id="btnQidxPrev" class="btn btn-default btn-xs" title="Back in Qidx position [hotkey: <left>/<down>]"><span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span></button>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-12">
                             <div id="plate"></div>
+                            <span id="qidxHint">Hint: Use the arrows to navigate the plate using the Qidx order.</span>
                         </div>
                     </div>
                 </div>
@@ -732,6 +760,10 @@
     <div id="text"></div>
 
 </body>
+
+
+
+
 
 
 
