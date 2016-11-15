@@ -1870,7 +1870,20 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 position_mark, phenotype))
             return False
 
-        self._set_position_mark(plate, positions, phenotype, position_mark, undoable)
+        if phenotype is None:
+
+            for phenotype in self.phenotypes:
+                self._set_position_mark(plate, positions, phenotype, position_mark, False)
+
+            if undoable:
+                self._logger.warning(
+                    "Undoing this mark will assume all phenotypes were previously marked {0}".format(
+                        Filter.OK))
+
+                self._add_undo(plate, positions, None, Filter.OK.value)
+
+        else:
+            self._set_position_mark(plate, positions, phenotype, position_mark, undoable)
 
         return True
 
@@ -1885,11 +1898,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._phenotype_filter[plate][phenotype][positions] = position_mark.value
 
         if undoable:
-            if phenotype is None:
-                self._logger.warning(
-                    "Undoing this mark will assume all phenotypes were previously marked {0}".format(
-                        Filter(previous_state)))
-
             self._add_undo(plate, positions, phenotype, previous_state)
 
     def _add_undo(self, plate, position_list, phenotype, previous_state):
