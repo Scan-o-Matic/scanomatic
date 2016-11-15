@@ -156,16 +156,16 @@
                     var char = getChar(event).toLowerCase();
                     switch (char) {
                         case 'q':
-                            markExperiemnt(plateMetaDataType.OK);
+                            markExperiemnt(plateMetaDataType.OK, false);
                             break;
                         case 'w':
-                            markExperiemnt(plateMetaDataType.BadData);
+                            markExperiemnt(plateMetaDataType.BadData, false);
                             break;
                         case 'e':
-                            markExperiemnt(plateMetaDataType.Empty);
+                            markExperiemnt(plateMetaDataType.Empty, true);
                             break;
                         case 'r':
-                            markExperiemnt(plateMetaDataType.NoGrowth);
+                            markExperiemnt(plateMetaDataType.NoGrowth, true);
                             break;
                         case '1':
                             $("#btnPlate0").focus();
