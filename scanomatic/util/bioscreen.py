@@ -6,6 +6,18 @@ import unicodedata
 import codecs
 from itertools import izip
 from scanomatic.data_processing.phenotyper import Phenotyper
+from enum import Enum
+
+
+class Preprocessing(Enum):
+
+    AsLoaded = (1, 0)
+    Warringer2003_S_cerevisae = (0.191, 0, 0.499, 1, 0)
+    Precog2016_S_cerevisiae = (0.82673123484708266, 0, 1, 0)
+
+    def __call__(self, data):
+
+        return np.poly1d(self.value)(data)
 
 
 def _count_row_lengths(data):
@@ -87,11 +99,13 @@ def parse(path, time_scale=36000):
     return ret, _parse_non_data(data, mode_length, include_until=i)
 
 
-def load(path=None, data=None, times=None, time_scale=36000, reshape=True):
+def load(path=None, data=None, times=None, time_scale=36000, reshape=True,
+         preprocess=Preprocessing.Precog2016_S_cerevisiae):
 
     if path:
         (_, times, data), _ = parse(path, time_scale=time_scale)
 
+    data = preprocess(data)
     data = data.T
     if data.shape[0] == 200:
         if reshape:
