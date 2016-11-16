@@ -840,7 +840,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._logger.info("Extracting phenotypes. This will take a while...")
 
-        if self.has_smooth_growth_data is None and smoothing is Smoothing.Keep:
+        if not self.has_smooth_growth_data and smoothing is Smoothing.Keep:
             self._smoothen()
         elif smoothing is Smoothing.MedianGauss:
             self._smoothen()
