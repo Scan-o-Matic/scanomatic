@@ -68,6 +68,14 @@ def _git_root_navigator(f):
     return _wrapped
 
 
+def _manual_git_branch_test():
+
+    try:
+        with open(os.path.join(".git", "HEAD")) as fh:
+            return fh.readline().split("/")[-1]
+    except (IOError, IndexError, TypeError):
+        return None
+
 @_git_root_navigator
 def is_under_git_control(path):
 
@@ -81,13 +89,18 @@ def is_under_git_control(path):
 @_git_root_navigator
 def get_active_branch(path):
 
-    p = Popen(['git', 'branch', '--list'], stdout=PIPE)
-    o, _ = p.communicate()
-    branch = "master"
-    for l in o.split("\n"):
-        if l.startswith("*"):
-            branch = l.strip("* ")
-            break
+    branch = None
+    try:
+        p = Popen(['git', 'branch', '--list'], stdout=PIPE)
+        o, _ = p.communicate()
+    except OSError:
+        branch = _manual_git_branch_test()
+    else:
+        branch = "master"
+        for l in o.split("\n"):
+            if l.startswith("*"):
+                branch = l.strip("* ")
+                break
 
     return branch
 
@@ -228,13 +241,32 @@ def highest_version(v1, v2):
     return None
 
 
-def is_newest_version(branch='master'):
+def is_newest_version(branch=None):
     global _logger
+    if branch is None:
+        branch = get_source_information(True)['branch']
+        if branch is None:
+            _logger.warning("No branch version so comparing with master")
+            branch = 'master'
     current = parse_version()
     online_version = git_version(branch=branch)
     if current == highest_version(current, parse_version(online_version)):
-        _logger.info("Already using most recent version {0}".format(get_version()))
+        _logger.info("Already using most recent version {0} (Branch {1})".format(get_version(), branch))
         return True
     else:
-        _logger.info("There's a new version on the branch {0} available.".format(branch))
+        _logger.info("There's a new version ({1}) on the branch {0} available (you have installed {2}).".format(
+            branch, get_version(), online_version))
         return False
+
+
+def next_subversion(branch, current=None):
+
+    online_version = git_version(branch=branch)
+    version = list(parse_version(highest_version(online_version, current if current is not None else get_version())))
+
+    if len(version) == 2:
+        version += [1]
+    else:
+        version[-1] += 1
+
+    return version

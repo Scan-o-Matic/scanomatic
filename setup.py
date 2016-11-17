@@ -173,7 +173,10 @@ _logger.info("Scan-o-Matic is setup on system")
 # POST-INSTALL
 #
 
-from setup_tools import install_data_files, install_launcher
+from setup_tools import install_data_files, install_launcher, update_init_file
+
+# update_init_file()
+
 _logger.info("Copying data and configuration files")
 install_data_files(silent=silent_install)
 install_launcher()

@@ -5,7 +5,8 @@ import sys
 import glob
 import stat
 from subprocess import PIPE, call
-
+from scanomatic import get_version
+from scanomatic.io import source
 
 class MiniLogger(object):
 
@@ -52,6 +53,26 @@ Comment=Large-scale high-quality phenomics platform
 Exec={executable_path}
 Categories=Science;
 """
+
+
+def update_init_file():
+    data = source.get_source_information(True)
+    data['version'] = source.next_subversion(str(data['branch']) if data['branch'] else None, get_version())
+    if data['branch'] is None:
+        data['branch'] = "++UNKNOWN BRANCH++"
+
+    lines = []
+    with open(os.path.join("scanomatic", "__init__.py")) as fh:
+        for line in fh:
+            if line.startswith("__version__ = "):
+                lines.append("__version__ = \"v{0}\"\n".format(".".join((str(v) for v in data['version']))))
+            elif line.startswith("__branch = "):
+                lines.append("__branch = \"{0}\"\n".format(data['branch']))
+            else:
+                lines.append(line)
+
+    with open(os.path.join("scanomatic", "__init__.py"), 'w') as fh:
+        fh.writelines(lines)
 
 
 def _clone_all_files_in(path):
