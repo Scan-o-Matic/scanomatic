@@ -4,9 +4,12 @@ import shutil
 import sys
 import glob
 import stat
+from hashlib  import sha256
 from subprocess import PIPE, call
 from scanomatic import get_version
 from scanomatic.io import source
+from itertools import chain
+
 
 class MiniLogger(object):
 
@@ -53,6 +56,38 @@ Comment=Large-scale high-quality phenomics platform
 Exec={executable_path}
 Categories=Science;
 """
+
+
+def get_package_hash(packages, pattern="*.py", **kwargs):
+
+    return get_hash((p.replace(".", os.sep) for p in packages), pattern=pattern, **kwargs)
+
+
+def get_hash_all_files(root, depth=4, **kwargs):
+
+    pattern = ["**"] * depth
+    return get_hash(
+        ("{0}{1}{2}{1}*".format(root, os.sep, os.sep.join(pattern[:d])) for d in range(depth)), **kwargs)
+
+
+def get_hash(paths, pattern=None, hasher=None, buffsize=65536):
+
+    if hasher is None:
+        hasher = sha256()
+
+    files = chain(*(glob.iglob(os.path.join(path, pattern) if pattern else path) for path in paths))
+    for file in files:
+        try:
+            # _logger.info("Hashing {0} {1}".format(hasher.hexdigest(), file))
+            with open(file, 'rb') as f:
+                buff = f.read(buffsize)
+                while buff:
+                    hasher.update(buff)
+                    buff = f.read(buffsize)
+        except IOError:
+            pass
+
+    return hasher
 
 
 def update_init_file():
