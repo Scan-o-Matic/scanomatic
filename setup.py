@@ -138,7 +138,7 @@ if len(sys.argv) > 1:
     hasher = get_package_hash(packages)
     get_hash(scripts, hasher=hasher)
     get_hash(["setup.py", "setup_tools.py"], hasher=hasher)
-    get_hash_all_files("data")
+    get_hash_all_files("data", depth=5, hasher=hasher)
     cur_hash = hasher.hexdigest()
 
     try:
@@ -158,7 +158,7 @@ if len(sys.argv) > 1:
         hasher = get_package_hash(packages)
         get_hash(scripts, hasher=hasher)
         get_hash(["setup.py", "setup_tools.py"], hasher=hasher)
-        get_hash_all_files("data")
+        get_hash_all_files("data", depth=5, hasher=hasher)
         cur_hash = hasher.hexdigest()
 
         with open("version.hash", 'wb') as fh:
