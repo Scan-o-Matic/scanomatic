@@ -6,6 +6,22 @@ import unicodedata
 import codecs
 from itertools import izip
 from scanomatic.data_processing.phenotyper import Phenotyper
+from enum import Enum
+
+
+class Preprocessing(Enum):
+
+    AsLoaded = (1, 0)
+    Warringer2003_S_cerevisae = (0.191, 0, 0.499, 1, 0)
+    Precog2016_S_cerevisiae = (0.82673123484708266, 0, 1, 0)
+    Precog2016_E_coli = (0.75389848795692815, 0, 1, 0)
+    Precog2016_Sz_pombe = (0.64672463774234579, 0, 1, 0)
+    Precog2016_P_pastori = (0.5653284345804932, 0, 1, 0)
+    Precog2016_C_albicans = (0.5790256635480614, 0, 1, 0)
+
+    def __call__(self, data):
+
+        return np.poly1d(self.value)(data)
 
 
 def _count_row_lengths(data):
@@ -87,11 +103,26 @@ def parse(path, time_scale=36000):
     return ret, _parse_non_data(data, mode_length, include_until=i)
 
 
-def load(path=None, data=None, times=None, time_scale=36000, reshape=True):
+def load(path=None, data=None, times=None, time_scale=36000, reshape=True,
+         preprocess=Preprocessing.Precog2016_S_cerevisiae):
+    """Loads a phenotyper object for a bioscreen experiment
 
+    :param path: Path to the bioscreen data file
+    :param data: If not path is supplied, data should be the growth data
+    :param times: If not path is supplied, should be times-vector in hours
+    :param time_scale: How many units per hour time is reported if not in hours
+    :param reshape: If data should be reshaped as 2 ten by ten plates.
+    :param preprocess: If imported data should have their values transformed.
+        Typically by some polynomial. For standard options use one of the
+        `Preprocessing` values. You can also supply your own function that
+        takes the element-wise value and returns a corresponding pre-processed value:
+        ```yprim = f(y)```
+    :return:
+    """
     if path:
         (_, times, data), _ = parse(path, time_scale=time_scale)
 
+    data = preprocess(data)
     data = data.T
     if data.shape[0] == 200:
         if reshape:
