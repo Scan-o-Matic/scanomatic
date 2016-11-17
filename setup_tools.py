@@ -4,7 +4,9 @@ import shutil
 import sys
 import glob
 import stat
-from hashlib  import sha256
+import re
+from io import BytesIO
+from hashlib import sha256
 from subprocess import PIPE, call
 from scanomatic import get_version
 from scanomatic.io import source
@@ -123,6 +125,13 @@ def _clone_all_files_in(path):
 
 def install_data_files(target_base=None, source_base=None, install_list=None, silent=False):
 
+    p = re.compile(r'ver=_-_VERSIONTAG_-_')
+    buff_size = 65536
+    replacement = r'ver={0}'.format(".".join(
+        (str(v) for v in source.parse_version(source.get_source_information(True)['version']))))
+
+    _logger.info("Data gets installed as {0}".format(replacement))
+
     if target_base is None:
         target_base = os.path.join(home_dir, installPath)
 
@@ -168,7 +177,18 @@ def install_data_files(target_base=None, source_base=None, install_list=None, si
                     "Copying file: {0} => {1}".format(
                         source_path, target_path))
 
-                shutil.copy(source_path, target_path)
+                b = BytesIO()
+
+                with open(source_path, 'rb') as fh:
+
+                    buff = fh.read()
+                    b.write(p.sub(replacement, buff))
+
+                b.flush()
+                b.seek(0)
+                with open(target_path, 'wb') as fh:
+                    fh.write(b.read())
+
                 os.chmod(target_path, defaltPermission)
 
 

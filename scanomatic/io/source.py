@@ -13,6 +13,20 @@ import json
 _logger = Logger("Source Checker")
 
 
+def _read_source_version(base_path):
+
+    try:
+        with open(os.path.join(base_path, "scanomatic", "__init__.py")) as fh:
+            for line in fh:
+                if line.startswith("__version__"):
+                    return line.split("=")[1].strip()
+
+    except (TypeError, IOError, IndexError):
+        pass
+
+    return None
+
+
 def _load_source_information():
 
     try:
@@ -33,6 +47,7 @@ def _load_source_information():
 def get_source_information(test_info=False):
 
     data = _load_source_information()
+    data['version'] = _read_source_version(data['location'])
 
     if test_info:
         if not has_source(data['location']):
