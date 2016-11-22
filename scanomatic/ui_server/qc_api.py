@@ -542,7 +542,9 @@ def add_routes(app):
                 _remove_lock(path)
             return jsonify(**response)
 
+        prepends = ["GenerationTime", "GrowthLag", "ExperimentGrowthYield"]
         phenotypes = sorted(state.phenotype_names())
+        phenotypes = [p for p in prepends if p in phenotypes] + [p for p in phenotypes if p not in prepends]
 
         urls = ["/api/results/phenotype/{0}/{1}".format(phenotype, project)
                 for phenotype in phenotypes]
