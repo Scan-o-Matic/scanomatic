@@ -141,6 +141,11 @@ def load(path=None, data=None, times=None, time_scale=36000, reshape=True,
                              data[100:].reshape(10, 10, *data.shape[1:])])
         else:
             data = np.array([[data[:100]], [data[100:]]])
+    elif data.shape[0] == 100:
+        if reshape:
+            data = np.array([data.reshape(10, 10, *data.shape[1:])])
+        else:
+            data = np.array([data])
     else:
         data = data.reshape((1, ) * (4 - data.ndim) + data.shape)
 
