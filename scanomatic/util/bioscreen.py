@@ -24,11 +24,16 @@ class Preprocessing(Enum):
         return np.poly1d(self.value)(data)
 
 
+def _get_row_length(row):
+
+    return len(tuple(e for e in row if e and e != ' '))
+
+
 def _count_row_lengths(data):
 
     counts = defaultdict(int)
     for i in data:
-        counts[len(data[i])] += 1
+        counts[_get_row_length(data[i])] += 1
     return counts
 
 
@@ -46,13 +51,17 @@ def _get_count_mode(counts):
 
 def _parse_non_data(data, mode, include_until=-1):
 
-    return tuple(data[i] for i in data if len(data[i]) != mode or i < include_until)
+    return tuple(data[i] for i in data if _get_row_length(data[i]) < mode or i < include_until)
 
 
-def _parse_data(data, mode, time_scale, start_row=-1):
+def _parse_data(data, mode, time_scale, start_row=0):
 
-    all_data = tuple(data[i] for i in data if len(data[i]) == mode and i > start_row)
+    all_data = tuple(data[i][:mode] for i in data if _get_row_length(data[i]) >= mode and i >= start_row)
     data = np.array(all_data[1:], dtype=np.object)
+
+    if data.size == 0:
+        print("No data to parse")
+        raise ValueError("No data")
 
     try:
         time = data[:, 0].astype(np.float) / time_scale
@@ -65,9 +74,11 @@ def _parse_data(data, mode, time_scale, start_row=-1):
         print("Failed parsing data {0}".format(data))
         raise
 
-    colstart = max(1, data.shape[1] - 200)
+    column_start = max(1, data.shape[1] - 200)
 
-    return all_data[0][colstart:], time.astype(np.float), data[:, colstart:].astype(np.float)
+    return all_data[0][column_start:], \
+           time.astype(np.float), \
+           data[:, column_start:].astype(np.float)
 
 
 def csv_loader(path):
