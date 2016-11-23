@@ -1,7 +1,7 @@
 import pandas as pd
 from functools import wraps
 from types import StringTypes
-from itertools import chain, izip
+from itertools import chain, izip, product
 import re
 
 import matplotlib
@@ -499,6 +499,35 @@ def plot_plate_heatmap(
         fig.savefig(save_target)
 
     return fig
+
+
+@_validate_input
+def plot_all_curves_and_smoothing(phenotyper_object, id_plate, f=None,
+                                  smoothing_label="Smoothed", smoothing_color=None,
+                                  plot_raw=True):
+
+    if f is None:
+        f = plt.figure("Plate {0} curves".format(id_plate + 1))
+
+    plate = phenotyper_object.smooth_growth_data[id_plate]
+    plate_shape = plate.shape[:2]
+    times = phenotyper_object.times
+    if smoothing_color is None:
+        smoothing_color = PHASE_PLOTTING_COLORS['smooth']
+
+    for i, (id1, id2) in enumerate(product(range(plate_shape[0]), range(plate_shape[1]))):
+        print (id1, id2)
+        ax = f.add_subplot(plate_shape[0], plate_shape[1], i + 1)
+        ax.set_title("({0}, {1})".format(id1, id2))
+        if plot_raw:
+            curve = phenotyper_object.raw_growth_data[id_plate][id1, id2]
+            ax.semilogy(times, curve, '+', basey=2, ms=2, label="Raw data", color=PHASE_PLOTTING_COLORS['raw'])
+        curve = plate[id1, id2]
+        ax.semilogy(times, curve, '+', basey=2, ms=2, label=smoothing_label, color=smoothing_color)
+        if i == 0:
+            ax.legend(loc="lower right", fontsize='xx-small', numpoints=1)
+
+    return f
 
 
 @_validate_input
