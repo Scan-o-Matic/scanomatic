@@ -504,7 +504,7 @@ def plot_plate_heatmap(
 @_validate_input
 def plot_all_curves_and_smoothing(phenotyper_object, id_plate, f=None,
                                   smoothing_label="Smoothed", smoothing_color=None,
-                                  plot_raw=True):
+                                  plot_raw=True, set_title=True):
 
     if f is None:
         f = plt.figure("Plate {0} curves".format(id_plate + 1))
@@ -516,16 +516,30 @@ def plot_all_curves_and_smoothing(phenotyper_object, id_plate, f=None,
         smoothing_color = PHASE_PLOTTING_COLORS['smooth']
 
     for i, (id1, id2) in enumerate(product(range(plate_shape[0]), range(plate_shape[1]))):
-        print (id1, id2)
+
         ax = f.add_subplot(plate_shape[0], plate_shape[1], i + 1)
-        ax.set_title("({0}, {1})".format(id1, id2))
+        if set_title:
+            ax.set_title("({0}, {1})".format(id1, id2))
         if plot_raw:
             curve = phenotyper_object.raw_growth_data[id_plate][id1, id2]
             ax.semilogy(times, curve, '+', basey=2, ms=2, label="Raw data", color=PHASE_PLOTTING_COLORS['raw'])
         curve = plate[id1, id2]
-        ax.semilogy(times, curve, '+', basey=2, ms=2, label=smoothing_label, color=smoothing_color)
+        ax.semilogy(times, curve, basey=2, label=smoothing_label, color=smoothing_color)
+
         if i == 0:
             ax.legend(loc="lower right", fontsize='xx-small', numpoints=1)
+        else:
+            ax.set_xticklabels(["" for _ in ax.get_xticklabels()])
+
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+
+    if set_title:
+        f.tight_layout(w_pad=0.01)
+    else:
+        f.tight_layout(h_pad=0.01, w_pad=0.01)
 
     return f
 

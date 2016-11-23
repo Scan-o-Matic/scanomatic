@@ -907,7 +907,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         assert power > 1, "Power must be 2 or greater"
 
-        self._logger.info("Starting Weighted Multi-Polynomial smoothing")
+        self._logger.info(
+            "Starting Weighted Multi-Polynomial smoothing (Power {0}; Time delta {1}h; Gauss sigma {2}h; {3}".format(
+                power, time_delta, gauss_sigma, "Median filter" if apply_median else "No median filter"
+            ))
 
         median_kernel = np.ones((1, self._median_kernel_size))
         smooth_data = []
