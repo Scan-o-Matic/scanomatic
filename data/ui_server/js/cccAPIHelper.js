@@ -1,0 +1,114 @@
+﻿//var baseUrl = "http://localhost:5000";
+var baseUrl = "";
+var GetFixtruesPath = baseUrl + "/api/data/fixture/names";
+var GetPinningFormatsPath = baseUrl + "/api/analysis/pinning/formats";
+
+var lock;
+
+function GetFixtures(callback) {
+    var path = GetFixtruesPath;
+
+    d3.json(path, function(error, json) {
+        if (error) console.warn(error);
+        else {
+            var fixtrues = json.fixtures;
+            callback(fixtrues);
+        }
+    });
+};
+
+function GetPinningFormats(callback) {
+    var path = GetPinningFormatsPath;
+
+    d3.json(path, function (error, json) {
+        if (error) console.warn(error);
+        else {
+            var fixtrues = json.pinning_formats;
+            callback(fixtrues);
+        }
+    });
+};
+
+function GetMarkers(path, file, successCallback, errorCallback) {
+
+    var formData = new FormData();
+    formData.append("image", file);
+    formData.append("save", "false");
+    $.ajax({
+        url: path,
+        type: "POST",
+        contentType: false,
+        enctype: 'multipart/form-data',
+        data: formData,
+        processData: false,
+        success: successCallback,
+        error: errorCallback
+    });
+}
+
+function GetTransposedMarkers(path, markers, successCallback, errorCallback) {
+
+    var formData = new FormData();
+    formData.append("markers", markers);
+    $.ajax({
+        url: path,
+        type: "POST",
+        contentType: false,
+        enctype: 'multipart/form-data',
+        data: formData,
+        processData: false,
+        success: successCallback,
+        error: errorCallback
+    });
+}
+
+function GetAPILock(url, callback) {
+    if (url) {
+        var path = baseUrl + url+"/" + addCacheBuster(true);
+        d3.json(path, function (error, json) {
+            if (error) return console.warn(error);
+            else {
+                var permissionText;
+                var lock;
+                if (json.success == true) {
+                    lock = json.lock_key;
+                    permissionText = "Read/Write";
+                }
+                else {
+                    permissionText = "Read Only";
+                    lock = null;
+                }
+                var lockData = {
+                    lock_key: lock,
+                    lock_state: permissionText
+                }
+                callback(lockData);
+            }
+        });
+    }
+};
+
+function addCacheBuster(fisrt) {
+    if(fisrt===true)
+        return "?buster=" + Math.random().toString(36).substring(7);
+    return "&buster=" + Math.random().toString(36).substring(7);
+}
+
+function addKeyParameter(key) {
+    if (key)
+        return "?lock_key=" + key + addCacheBuster();
+    else
+        return "";
+}
+
+function RemoveLock(url, key, callback) {
+    var path = baseUrl + url + addKeyParameter(key);
+
+    d3.json(path, function (error, json) {
+        if (error) return console.warn(error);
+        else {
+            callback(json.success);
+        }
+    });
+};
+
