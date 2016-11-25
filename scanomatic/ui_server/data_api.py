@@ -492,16 +492,19 @@ def add_routes(app, rpc_client, is_debug_mode):
         markers = get_2d_list(request.values, 'markers')
         if not markers and isinstance(request.values.get('markers', default=None), StringTypes):
             _logger.warning("Attempting fallback string parsing of markers as text")
-            markers = string_parse_2d_list(request.values['markers'])
+            markers = string_parse_2d_list(request.values.get('markers', ""))
         if not markers:
             _logger.warning("Assuming markers have been sent as flat list")
-            markers = request.values['markers']
+            markers = request.values.get('markers', [])
             if len(markers) == 6:
                 markers = [[float(m) for m in markers[:3]],
                            [float(m) for m in markers[3:]]]
+                _logger.info("Markers successfully reshaped {0}".format(markers))
+            else:
+                _logger.error("Unexpected number of markers {0} ({1})".format(len(markers), markers))
 
         markers = np.array(markers)
-
+        print(markers)
         if markers.ndim != 2 and markers.shape[0] != 2 and markers.shape[1] < 3:
             return jsonify(
                 success=False,
