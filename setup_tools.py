@@ -77,7 +77,7 @@ def get_hash(paths, pattern=None, hasher=None, buffsize=65536):
     if hasher is None:
         hasher = sha256()
 
-    files = chain(*(glob.iglob(os.path.join(path, pattern) if pattern else path) for path in paths))
+    files = chain(*(sorted(glob.iglob(os.path.join(path, pattern)) if pattern else path) for path in paths))
     for file in files:
         try:
             # _logger.info("Hashing {0} {1}".format(hasher.hexdigest(), file))
