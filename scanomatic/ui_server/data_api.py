@@ -496,7 +496,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not markers:
             _logger.warning("Assuming markers have been sent as flat list")
             markers = request.values['markers']
-            if len(markers == 6):
+            if len(markers) == 6:
                 markers = [[float(m) for m in markers[:3]],
                            [float(m) for m in markers[3:]]]
 
