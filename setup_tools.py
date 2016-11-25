@@ -86,6 +86,7 @@ def get_hash(paths, pattern=None, hasher=None, buffsize=65536):
                 while buff:
                     hasher.update(buff)
                     buff = f.read(buffsize)
+
         except IOError:
             pass
 

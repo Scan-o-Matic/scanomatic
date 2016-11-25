@@ -75,6 +75,17 @@ if branch_info:
     branch = sys.argv[branch_info + 1] if len(sys.argv) > branch_info + 1 else None
     sys.argv = sys.argv[:branch_info] + sys.argv[branch_info + 2:]
 
+
+#
+# Parsing and removing version upgrade in argument
+#
+
+version_update = {i: v for i, v in enumerate(sys.argv) if v.lower().startswith("--version")}
+if version_update:
+    id_argument = version_update.keys()[0]
+    sys.argv = sys.argv[:id_argument] + sys.argv[id_argument + 1:]
+    version_update = version_update[id_argument]
+
 #
 # Python-setup
 #
@@ -127,33 +138,15 @@ if len(sys.argv) > 1:
     _logger.info("Non python dependencies done")
     _logger.info("Preparing setup parameters")
 
-    #
-    # PRE-INSTALL VERSIONING
-    #
+    if version_update:
 
-    from setup_tools import get_hash_all_files, get_package_hash, get_hash, update_init_file
+        #
+        # PRE-INSTALL VERSIONING
+        #
 
-    _logger.info("Checking for local changes")
+        from setup_tools import get_hash_all_files, get_package_hash, get_hash, update_init_file
 
-    hasher = get_package_hash(packages)
-    get_hash(scripts, hasher=hasher)
-    get_hash(["setup.py", "setup_tools.py"], hasher=hasher)
-    get_hash_all_files("data", depth=5, hasher=hasher)
-    cur_hash = hasher.hexdigest()
-
-    try:
-        with open("version.hash", 'rb') as fh:
-            prev_hash = fh.read()
-    except IOError:
-        prev_hash = None
-
-    if prev_hash != cur_hash:
-
-        _logger.info("Local changes detected")
-
-        update_init_file()
-
-        _logger.info("Updated version")
+        _logger.info("Checking for local changes")
 
         hasher = get_package_hash(packages)
         get_hash(scripts, hasher=hasher)
@@ -161,13 +154,34 @@ if len(sys.argv) > 1:
         get_hash_all_files("data", depth=5, hasher=hasher)
         cur_hash = hasher.hexdigest()
 
-        with open("version.hash", 'wb') as fh:
-            fh.write(cur_hash)
+        try:
+            with open("version.hash", 'rb') as fh:
+                prev_hash = fh.read()
+        except IOError:
+            prev_hash = None
 
+        if prev_hash != cur_hash:
+
+            _logger.info("Local changes detected")
+
+            update_init_file()
+
+            _logger.info("Updated version")
+
+            hasher = get_package_hash(packages)
+            get_hash(scripts, hasher=hasher)
+            get_hash(["setup.py", "setup_tools.py"], hasher=hasher)
+            get_hash_all_files("data", depth=5, hasher=hasher)
+            cur_hash = hasher.hexdigest()
+
+            with open("version.hash", 'wb') as fh:
+                fh.write(cur_hash)
+
+        else:
+
+            _logger.info("No local changes detected!")
     else:
-
-        _logger.info("No local changes detected")
-
+        _logger.info("Skipping checking changes to current version")
     #
     # INSTALLING SCAN-O-MATIC
     #
