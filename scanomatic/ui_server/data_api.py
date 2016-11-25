@@ -490,6 +490,7 @@ def add_routes(app, rpc_client, is_debug_mode):
     def _get_transposed_fixture_coordinates(fixture_name):
 
         markers = np.array(get_2d_list(request.values, 'markers'))
+        print(markers)
 
         if markers.ndim != 2 and markers.shape[0] != 2 and markers.shape[1] < 3:
             return jsonify(
