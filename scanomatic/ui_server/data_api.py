@@ -1,5 +1,5 @@
 from flask import request, Flask, jsonify, send_from_directory
-from types import ListType, DictType
+from types import ListType, DictType, StringTypes
 import numpy as np
 import os
 import shutil
@@ -28,7 +28,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFacto
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
     get_area_too_large_for_grayscale, get_grayscale_is_valid, usable_plates, image_is_allowed, \
     get_fixture_image, convert_url_to_path, decorate_api_access_restriction, get_fixture_image_from_data, \
-    get_2d_list
+    get_2d_list, string_parse_2d_list
 
 
 _logger = Logger("Data API")
@@ -489,10 +489,18 @@ def add_routes(app, rpc_client, is_debug_mode):
     @decorate_api_access_restriction
     def _get_transposed_fixture_coordinates(fixture_name):
 
-        print (request.values.keys())
-        print (request.values["markers"])
-        markers = np.array(get_2d_list(request.values, 'markers'))
-        print(markers)
+        markers = get_2d_list(request.values, 'markers')
+        if not markers and isinstance(request.values.get('markers', default=None), StringTypes):
+            _logger.warning("Attempting fallback string parsing of markers as text")
+            markers = string_parse_2d_list(request.values['markers'])
+        if not markers:
+            _logger.warning("Assuming markers have been sent as flat list")
+            markers = request.values['markers']
+            if len(markers == 6):
+                markers = [[float(m) for m in markers[:3]],
+                           [float(m) for m in markers[3:]]]
+
+        markers = np.array(markers)
 
         if markers.ndim != 2 and markers.shape[0] != 2 and markers.shape[1] < 3:
             return jsonify(
