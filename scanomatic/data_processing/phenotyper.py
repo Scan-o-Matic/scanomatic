@@ -107,6 +107,38 @@ def edge_condition(arr, mode=EdgeCondition.Reflect, kernel_size=3):
         pass
 
 
+def get_edge_condition_timed_filter(times, half_window, edge_condition):
+
+    left = times < (times[0] + half_window)
+    right = times > (times[-1] - half_window)
+
+    if edge_condition is EdgeCondition.Symmetric:
+        return left, right
+    else:
+        left[0] = False
+        right[-1] = False
+        return left, right
+
+
+def filter_edge_condition(y, left_filt, right_filt, mode, extrapolate_values=False, logger=None):
+
+    if mode is EdgeCondition.Valid:
+        return y
+    elif mode is EdgeCondition.Symmetric or mode is EdgeCondition.Reflect:
+        return np.hstack((
+            y[0] - y[left_filt][::-1] if extrapolate_values else y[left_filt][::-1],
+            y,
+            y[-1] + y[right_filt][::-1] if extrapolate_values else y[right_filt][::-1]))
+
+    elif mode is EdgeCondition.Nearest:
+        return np.hstack(([y[0]] * left_filt.sum(), y, y[-1] * right_filt.sum()))
+    else:
+
+        if logger is not None:
+            logger.warning("Unsupported edge condition {0}, will use `Valid`".format(edge_condition.name))
+        return y
+
+
 def merge_convolve(arr1, arr2, edge_condition_mode=EdgeCondition.Reflect, kernel_size=5,
                    func=time_based_gaussian_weighted_mean, func_kwargs=None):
 
@@ -903,18 +935,30 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._logger.info("Completed Polynomial smoothing")
 
-    def _poly_smoothen_raw_growth_weighted(self, power=3, time_delta=5.1, gauss_sigma=1.5, apply_median=False):
+    def _poly_smoothen_raw_growth_weighted(self, power=3, time_delta=5.1, gauss_sigma=1.5, apply_median=True,
+                                           edge_condition=EdgeCondition.Reflect):
 
         assert power > 1, "Power must be 2 or greater"
 
         self._logger.info(
-            "Starting Weighted Multi-Polynomial smoothing (Power {0}; Time delta {1}h; Gauss sigma {2}h; {3}".format(
-                power, time_delta, gauss_sigma, "Median filter" if apply_median else "No median filter"
-            ))
+            "Starting Weighted Multi-Polynomial smoothing"
+            " (Power {0}; Time delta {1}h; Gauss sigma {2}h; {3}; {4}".format(
+                power, time_delta, gauss_sigma, "Median filter" if apply_median else "No median filter",
+                edge_condition
+        ))
 
         median_kernel = np.ones((1, self._median_kernel_size))
         smooth_data = []
         times = self.times
+        left_filt, right_filt = get_edge_condition_timed_filter(times, time_delta, edge_condition)
+        left = left_filt.sum()
+        right = right_filt.sum()
+
+        times = filter_edge_condition(times, left_filt, right_filt, edge_condition,
+                                      extrapolate_values=True,
+                                      logger=self._logger)
+
+        self._logger.info("Data with edge condition has length {0}, ({1} {2})".format(times.size, left, right))
         time_diffs = np.subtract.outer(times, times)
         filt = (time_diffs < time_delta) & (time_diffs > -time_delta)
 
@@ -932,12 +976,16 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             smooth_plate = [None] * log2_data.shape[0]
             for id_curve, log2_curve in enumerate(log2_data):
 
+                log2_curve = filter_edge_condition(
+                    log2_curve, left_filt, right_filt, edge_condition, logger=self._logger)
+
                 p, r, r0 = zip(*self._poly_estimate_raw_growth_curve(times, log2_curve, power, filt))
 
                 smooth_plate[id_curve] = tuple(self._multi_poly_smooth(
-                    times, p, np.array(r), np.array(r0), filt, gauss_sigma))
+                    times, p, np.array(r), np.array(r0), filt, gauss_sigma))[left: -right if right else None]
 
-            self._logger.info("Plate {0} data polynomial smoothed".format(id_plate + 1))
+            self._logger.info("Plate {0} data polynomial smoothed ({1} curves, {2} data-points per curve)".format(
+                id_plate + 1, len(smooth_plate), len(smooth_plate[0])))
 
             smooth_data.append(np.array(smooth_plate).reshape(plate.shape))
 
@@ -945,7 +993,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._logger.info("Completed Weighted Multi-Polynomial smoothing")
 
-    def _multi_poly_smooth(self, times, polys, r, r0, filt, gauss_sigma):
+    @staticmethod
+    def _multi_poly_smooth(times, polys, r, r0, filt, gauss_sigma):
 
         included = [v is not None for v in r]
         for f in filt:
@@ -957,7 +1006,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             w = w1 * w2
             yield (w * tuple(np.power(2, p(t)) for p, i in izip(polys, f2) if i)).sum() / w.sum()
 
-    def _poly_estimate_raw_growth_curve(self, times, log2_data, power, filt):
+    @staticmethod
+    def _poly_estimate_raw_growth_curve(times, log2_data, power, filt):
 
         finites = np.isfinite(log2_data)
 
@@ -989,7 +1039,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                     # in this result
                     yield np.poly1d(p),  0, 1
 
-    def _poly_smoothen_raw_growth_curve(self, times, log2_data, power, filt):
+    @staticmethod
+    def _poly_smoothen_raw_growth_curve(times, log2_data, power, filt):
 
         finites = np.isfinite(log2_data)
 
