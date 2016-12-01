@@ -65,9 +65,10 @@ function GetMarkers(fixtureName, file, successCallback, errorCallback) {
     });
 }
 
-function GetTransposedMarkers(fixtureName, markers, successCallback, errorCallback) {
+function GetTransposedMarkers(fixtureName, markers, file, successCallback, errorCallback) {
     var path = GetTranposedMarkerPath + fixtureName;
     var formData = new FormData();
+    formData.append("image", file);
     formData.append("markers", markers);
     $.ajax({
         url: path,

@@ -166,7 +166,7 @@
                             var uploadedFile = Uploads[0];
                             uploadedFile.markers = data.markers;
                             var postMarkers = processMarkers(data.markers);
-                            GetTransposedMarkers(fixtureName, postMarkers, getTransposedMarkersSucess, getTransposedMarkersError);
+                            GetTransposedMarkers(fixtureName, postMarkers, file, getTransposedMarkersSucess, getTransposedMarkersError);
                         } else
                             alert("There was a problem with the upload: " + data.reason);
                     },
