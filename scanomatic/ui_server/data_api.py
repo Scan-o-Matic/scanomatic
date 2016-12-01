@@ -28,7 +28,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFacto
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
     get_area_too_large_for_grayscale, get_grayscale_is_valid, usable_plates, image_is_allowed, \
     get_fixture_image, convert_url_to_path, decorate_api_access_restriction, get_fixture_image_from_data, \
-    get_2d_list, string_parse_2d_list
+    get_2d_list, string_parse_2d_list, get_image_data_as_array
 
 
 _logger = Logger("Data API")
@@ -231,7 +231,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
 
         grayscale_area_model = GrayScaleAreaModel(
             name=grayscale_name,
@@ -489,6 +490,8 @@ def add_routes(app, rpc_client, is_debug_mode):
     @decorate_api_access_restriction
     def _get_transposed_fixture_coordinates(fixture_name):
 
+        image = get_image_data_as_array(request.files.get('image', default=np.array([])))
+
         markers = get_2d_list(request.values, 'markers')
         if not markers and isinstance(request.values.get('markers', default=None), StringTypes):
             _logger.warning("Attempting fallback string parsing of markers as text")
@@ -537,7 +540,9 @@ def add_routes(app, rpc_client, is_debug_mode):
                     x1=plate.x1,
                     x2=plate.x2,
                     y1=plate.y1,
-                    y2=plate.y2
+                    y2=plate.y2,
+                    data=None if image.size == 0 else image[plate.y1: plate.y2, plate.x1: plate.y2].tolist(),
+                    shape=[plate.y2 - plate.y1, plate.x2 - plate.x1]
                 )
                 for plate in current_settings.model.plates
             ],
@@ -546,6 +551,14 @@ def add_routes(app, rpc_client, is_debug_mode):
                 x2=current_settings.model.grayscale.x2,
                 y1=current_settings.model.grayscale.y1,
                 y2=current_settings.model.grayscale.y2,
+                data=None if image.size == 0 else image[
+                    current_settings.model.grayscale.y1:
+                    current_settings.model.grayscale.y2,
+                    current_settings.model.grayscale.x1:
+                    current_settings.model.grayscale.y2].tolist(),
+
+                shape=[current_settings.model.grayscale.y2 - current_settings.model.grayscale.y1,
+                       current_settings.model.grayscale.x2 - current_settings.model.grayscale.x1]
             ),
             grayscale_name=current_settings.model.grayscale.name,
             report=issues,
@@ -563,6 +576,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             save_fixture = True
 
         image = request.files.get('image')
+
         name = os.path.basename(fixture_name)
         image_name, ext = os.path.splitext(image.filename)
         _logger.info("Working on detecting marker for fixture {0} using image {1} ({2})".format(
@@ -636,7 +650,9 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
+
         grayscale_values = np.array(data_object.get("grayscale_values", []))
         grayscale_targets = np.array(data_object.get("grayscale_targets", []))
 
@@ -677,7 +693,9 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
+
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
         gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
@@ -722,7 +740,9 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
+
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
         gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
@@ -768,7 +788,9 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
+
         background_filter = np.array(data_object.get("background_filter"))
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
@@ -795,8 +817,10 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
-        filt = np.array(data_object.get("filter", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
+        filt = get_image_data_as_array(data_object.get("filter", default=[[]]),
+                                       reshape=data_object.get("shape", default=None))
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
