@@ -10,6 +10,7 @@
         <script src="js/spin.js"></script>
         <script src="js/jquery.modal.js"></script>
         <script src="js/cccAPIHelper.js"></script>
+        <script src="js/CCCHelper.js"></script>
 
         <link href="style/ccc.css" rel="stylesheet"/>
         <link href="style/bootstrap.css" rel="stylesheet"/>
@@ -49,6 +50,7 @@
                     trail: 40, // Afterglow percentage
                     className: 'spinner' // The CSS class to assign to the spinner
                 };
+                var Uploads = [];
                 var target = document.getElementById("divLoading");
                 var spinner = new Spinner(opts).spin(target);
                 var dispatch = d3.dispatch("setExp", "reDrawExp");
@@ -85,22 +87,6 @@
                 }
 
                 function processMarkers(markers) {
-                    
-                    var markerXcoords = "";
-                    var markerYcoords = "";
-                    for (var i = 0; i < markers.length; i++) {
-                        markerXcoords += markers[i][0] + ",";
-                        markerYcoords += markers[i][1] + ",";
-                    }
-                    markerXcoords = markerXcoords.slice(0, -1);
-                    markerYcoords = markerYcoords.slice(0, -1);
-                    var postMarkers = [];
-                    postMarkers.push(markerXcoords);
-                    postMarkers.push(markerYcoords);
-                    return postMarkers;
-                }
-
-                function processMarkersV2(markers) {
                     var markerXcoords = [];
                     var markerYcoords = [];
                     for (var i = 0; i < markers.length; i++) {
@@ -110,39 +96,83 @@
                     var postMarkers = [];
                     postMarkers.push(markerXcoords);
                     postMarkers.push(markerYcoords);
-                    return postMarkers;
+                    return JSON.stringify(postMarkers);
                 }
+                
+                function renderDataUriToCanvas(dataUri, canvasId) {
+                    var img = new Image();
+                    img.src = dataUri;
+                    img.onload = function () {
+                        var canvas = $("#" + canvasId);
+                        var ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0);
+                    };
+                }
+
+                function renderFileBlobToImage(imageId, file) {
+                    var fr = new FileReader();
+                    fr.onload = function () {
+                        $("#" + imageId).src = fr.result;
+                    }
+                    fr.readAsDataURL(file);
+                };
+
+                function getGrayScaleAnalysisSuccess(data){
+                    alert("Sucess: GrayScaleAnalysis)");
+                };
+
+                function getGrayScaleAnalysisError(data){
+                    alert("error: " + data.responseText);
+                };
+
+                function getTransposedMarkersSucess(data) {
+                    if (data.success == true) {
+                        var grayScale = { area: data.grayscale_area, name: data.grayscale_name };
+                        var plates = data.plates;
+
+                        var uploadedFile = Uploads[0];
+                        uploadedFile.plates = plates;
+                        uploadedFile.grayScale = grayScale;
+
+                        var img = new Image;
+                        img.src = URL.createObjectURL(uploadedFile.file);
+                        img.onload = function () {
+                            var dataUri = sliceImageUp(grayScale.area.x1, grayScale.area.y1, grayScale.area.x2, grayScale.area.y2, img);
+                            //var dataUri = sliceImageUp(plates[0].x1, plates[0].y1, plates[0].x2, plates[0].y2, img);
+                            var blob = dataURItoBlob(dataUri);
+                            GetGrayScaleAnalysis(grayScale.name, dataUri, getGrayScaleAnalysisSuccess, getGrayScaleAnalysisError);
+                            $("#imgSlice").attr("src", dataUri);
+                        };
+                    } else
+                        alert("There was a problem with the tranposing: " + data.reason);
+                }
+
+                function getTransposedMarkersError(data){
+                    alert("error:" + data.responseText);
+                };
 
                 $("#btnUploadImage").click(function () {
                     var fixtureName = $("#" + selFixtureName + " option:selected").text();
-                    var getMarkersUrl = baseUrl + "/api/data/markers/detect/" + fixtureName;
                     var file = $("#imageUpload")[0].files[0];
                     if (!file) {
                         alert("You need to select a valid file!");
                         return;
                     }
-                    GetMarkers(getMarkersUrl, file, function(data) {
-                            if (data.success == true) {
-                                alert("The marker data was uploaded successfully:");
-                                var postMarkers = processMarkersV2(data.markers);
-                                var getTranposedMarkersUrl = baseUrl + "/api/data/fixture/calculate/" + fixtureName;
-                                GetTransposedMarkers(getTranposedMarkersUrl, postMarkers,
-                                    function(data) {
-                                        if (data.success == true) {
-                                            alert("The data was transposed successfully:");
-                                        } else
-                                            alert("There was a problem with the tranposing: " + data.reason);
-                                    },
-                                    function(data) {
-                                        alert("error:" + data.responseText);
-                                    });
-                            }
-                            else
-                                alert("There was a problem with the upload: " + data.reason);
-                        },
-                        function(data) {
-                            alert("error:" + data.responseText);
-                        });
+                    var uploadedFile = { file: file, markers: {}, plates: {}, grayScale: {} };
+                    Uploads.push(uploadedFile);
+                    GetMarkers(fixtureName, file, function (data) {
+                        if (data.success == true) {
+                            alert("The marker data was uploaded successfully:");
+                            var uploadedFile = Uploads[0];
+                            uploadedFile.markers = data.markers;
+                            var postMarkers = processMarkers(data.markers);
+                            GetTransposedMarkers(fixtureName, postMarkers, getTransposedMarkersSucess, getTransposedMarkersError);
+                        } else
+                            alert("There was a problem with the upload: " + data.reason);
+                    },
+                    function (data) {
+                        alert("error:" + data.responseText);
+                    });
                 });
 
                 //draw Project selection
@@ -215,6 +245,13 @@
                     </div>
                 </div>
             </div>
+            <table>
+                <tr>
+                    <td>Image Slice</td>
+                    <td><img id="imgSlice" /></td>
+                </tr>
+            </table>
+            
             
         </div>
     </div>

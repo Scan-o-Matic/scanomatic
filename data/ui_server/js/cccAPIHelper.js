@@ -2,6 +2,9 @@
 var baseUrl = "";
 var GetFixtruesPath = baseUrl + "/api/data/fixture/names";
 var GetPinningFormatsPath = baseUrl + "/api/analysis/pinning/formats";
+var GetMarkersPath = baseUrl + "/api/data/markers/detect/";
+var GetTranposedMarkerPath = baseUrl + "/api/data/fixture/calculate/";
+var GetGrayScaleAnalysisPath = baseUrl + "/api/data/grayscale/image/";
 
 var lock;
 
@@ -29,8 +32,24 @@ function GetPinningFormats(callback) {
     });
 };
 
-function GetMarkers(path, file, successCallback, errorCallback) {
+function GetGrayScaleAnalysis(grayScaleName, imageData, successCallback, errorCallback) {
+    var path = GetGrayScaleAnalysisPath + grayScaleName;
+    var formData = new FormData();
+    formData.append("image", imageData);
+    $.ajax({
+        url: path,
+        type: "POST",
+        contentType: false,
+        enctype: 'multipart/form-data',
+        data: formData,
+        processData: false,
+        success: successCallback,
+        error: errorCallback
+    });
+}
 
+function GetMarkers(fixtureName, file, successCallback, errorCallback) {
+    var path = GetMarkersPath + fixtureName;
     var formData = new FormData();
     formData.append("image", file);
     formData.append("save", "false");
@@ -46,8 +65,8 @@ function GetMarkers(path, file, successCallback, errorCallback) {
     });
 }
 
-function GetTransposedMarkers(path, markers, successCallback, errorCallback) {
-
+function GetTransposedMarkers(fixtureName, markers, successCallback, errorCallback) {
+    var path = GetTranposedMarkerPath + fixtureName;
     var formData = new FormData();
     formData.append("markers", markers);
     $.ajax({
