@@ -231,7 +231,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
 
         grayscale_area_model = GrayScaleAreaModel(
             name=grayscale_name,
@@ -649,7 +650,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
 
         grayscale_values = np.array(data_object.get("grayscale_values", []))
         grayscale_targets = np.array(data_object.get("grayscale_targets", []))
@@ -691,7 +693,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
@@ -737,7 +740,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
@@ -784,7 +788,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
 
         background_filter = np.array(data_object.get("background_filter"))
 
@@ -812,8 +817,10 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]))
-        filt = get_image_data_as_array(data_object.get("filter", default=[[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]),
+                                        reshape=data_object.get("shape", default=None))
+        filt = get_image_data_as_array(data_object.get("filter", default=[[]]),
+                                       reshape=data_object.get("shape", default=None))
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 

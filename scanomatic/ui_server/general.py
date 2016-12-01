@@ -332,7 +332,7 @@ def remove_pad_decode_base64(data):
     return base64.decodestring(data[:-remainder if remainder else 4])
 
 
-def get_image_data_as_array(image_data):
+def get_image_data_as_array(image_data, reshape=None):
 
     if isinstance(image_data, StringTypes):
         stream = io.StringIO()
@@ -351,7 +351,11 @@ def get_image_data_as_array(image_data):
             stream.flush()
             stream.seek(0)
             return imread(stream)
-
+    elif isinstance(image_data, list):
+        if reshape is None:
+            return np.array(image_data)
+        else:
+            return np.array(image_data).reshape(reshape)
     else:
         return image_data
 
