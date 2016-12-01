@@ -2,13 +2,15 @@ import glob
 import os
 import re
 from StringIO import StringIO
-from io import BytesIO
+import io
 from scipy.misc import imread
 from itertools import chain
 from flask import send_file, request, send_from_directory, jsonify
 import numpy as np
 import zipfile
 from urllib import unquote, quote
+from types import StringTypes
+import base64
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -43,7 +45,7 @@ def string_parse_2d_list(data_string):
     p2 = re.compile(r'(\d+\.?\d*|\.\d+)')
 
     parsed = [p2.findall(f) for f in p1.findall(data_string)]
-    if all(len(p)==len(parsed[0]) for p in parsed):
+    if all(len(p) == len(parsed[0]) for p in parsed):
         try:
             return [[float(v) for v in l] for l in parsed]
         except ValueError:
@@ -304,13 +306,54 @@ def get_fixture_image(name, image_path):
     return fixture
 
 
+def pad_decode_base64(data):
+    """Decode base64, padding being optional.
+
+    :param data: Base64 data as an ASCII byte string
+    :returns: The decoded byte string.
+
+    """
+    if isinstance(data, unicode):
+        data = data.encode("utf-8")
+
+    missing_padding = len(data) % 4
+    if missing_padding != 0:
+        data += b'=' * (4 - missing_padding)
+
+    return base64.decodestring(data)
+
+
+def remove_pad_decode_base64(data):
+
+    if isinstance(data, unicode):
+        data = data.encode("utf-8")
+
+    remainder = len(data) % 4
+    return base64.decodestring(data[:-remainder if remainder else 4])
+
+
 def get_image_data_as_array(image_data):
 
-    bs = BytesIO()
-    bs.write(image_data)
-    bs.flush()
-    bs.seek(0)
-    return imread(bs)
+    if isinstance(image_data, StringTypes):
+        stream = io.StringIO()
+        stream.write(image_data)
+        stream.flush()
+        stream.seek(0)
+        try:
+            return imread(stream)
+        except IOError:
+            try:
+                s = pad_decode_base64(image_data)
+            except:
+                s = remove_pad_decode_base64(image_data)
+            stream = io.StringIO()
+            stream.write(s)
+            stream.flush()
+            stream.seek(0)
+            return imread(stream)
+
+    else:
+        return image_data
 
 
 def get_fixture_image_from_data(name, image_data):

@@ -28,7 +28,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFacto
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
     get_area_too_large_for_grayscale, get_grayscale_is_valid, usable_plates, image_is_allowed, \
     get_fixture_image, convert_url_to_path, decorate_api_access_restriction, get_fixture_image_from_data, \
-    get_2d_list, string_parse_2d_list
+    get_2d_list, string_parse_2d_list, get_image_data_as_array
 
 
 _logger = Logger("Data API")
@@ -231,7 +231,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]))
 
         grayscale_area_model = GrayScaleAreaModel(
             name=grayscale_name,
@@ -562,7 +562,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         except ValueError:
             save_fixture = True
 
-        image = request.files.get('image')
+        image = get_image_data_as_array(request.files.get('image'))
+
         name = os.path.basename(fixture_name)
         image_name, ext = os.path.splitext(image.filename)
         _logger.info("Working on detecting marker for fixture {0} using image {1} ({2})".format(
@@ -636,7 +637,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]))
+
         grayscale_values = np.array(data_object.get("grayscale_values", []))
         grayscale_targets = np.array(data_object.get("grayscale_targets", []))
 
@@ -677,7 +679,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]))
+
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
         gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
@@ -722,7 +725,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]))
+
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
         gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
@@ -768,7 +772,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]))
+
         background_filter = np.array(data_object.get("background_filter"))
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
@@ -795,8 +800,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
-        filt = np.array(data_object.get("filter", [[]]))
+        image = get_image_data_as_array(data_object.get("image", default=[[]]))
+        filt = get_image_data_as_array(data_object.get("filter", default=[[]]))
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
