@@ -490,6 +490,7 @@ def add_routes(app, rpc_client, is_debug_mode):
     @decorate_api_access_restriction
     def _get_transposed_fixture_coordinates(fixture_name):
 
+
         image = get_image_data_as_array(request.files.get('image', default=np.array([])))
 
         markers = get_2d_list(request.values, 'markers')
@@ -507,7 +508,9 @@ def add_routes(app, rpc_client, is_debug_mode):
                 _logger.error("Unexpected number of markers {0} ({1})".format(len(markers), markers))
 
         markers = np.array(markers)
-        print(markers)
+
+        _logger.info("Using markers {0}".format(markers))
+
         if markers.ndim != 2 and markers.shape[0] != 2 and markers.shape[1] < 3:
             return jsonify(
                 success=False,

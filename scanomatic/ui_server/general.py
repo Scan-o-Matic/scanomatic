@@ -6,6 +6,7 @@ import io
 from scipy.misc import imread
 from itertools import chain
 from flask import send_file, request, send_from_directory, jsonify
+from werkzeug.datastructures import FileStorage
 import numpy as np
 import zipfile
 from urllib import unquote, quote
@@ -356,8 +357,7 @@ def get_image_data_as_array(image_data, reshape=None):
             return np.array(image_data)
         else:
             return np.array(image_data).reshape(reshape)
-    elif isinstance(image_data, file):
-
+    elif isinstance(image_data, file) or isinstance(image_data, FileStorage):
         return imread(image_data)
 
     else:
