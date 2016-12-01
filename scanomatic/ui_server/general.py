@@ -356,6 +356,10 @@ def get_image_data_as_array(image_data, reshape=None):
             return np.array(image_data)
         else:
             return np.array(image_data).reshape(reshape)
+    elif isinstance(image_data, file):
+
+        return imread(image_data)
+
     else:
         return image_data
 
