@@ -489,6 +489,8 @@ def add_routes(app, rpc_client, is_debug_mode):
     @decorate_api_access_restriction
     def _get_transposed_fixture_coordinates(fixture_name):
 
+        image = get_image_data_as_array(request.files.get('image', default=np.array([])))
+
         markers = get_2d_list(request.values, 'markers')
         if not markers and isinstance(request.values.get('markers', default=None), StringTypes):
             _logger.warning("Attempting fallback string parsing of markers as text")
@@ -537,7 +539,9 @@ def add_routes(app, rpc_client, is_debug_mode):
                     x1=plate.x1,
                     x2=plate.x2,
                     y1=plate.y1,
-                    y2=plate.y2
+                    y2=plate.y2,
+                    data=None if image.size == 0 else image[plate.y1: plate.y2, plate.x1: plate.y2].tolist(),
+                    shape=[plate.y2 - plate.y1, plate.x2 - plate.x1]
                 )
                 for plate in current_settings.model.plates
             ],
@@ -546,6 +550,14 @@ def add_routes(app, rpc_client, is_debug_mode):
                 x2=current_settings.model.grayscale.x2,
                 y1=current_settings.model.grayscale.y1,
                 y2=current_settings.model.grayscale.y2,
+                data=None if image.size == 0 else image[
+                    current_settings.model.grayscale.y1:
+                    current_settings.model.grayscale.y2,
+                    current_settings.model.grayscale.x1:
+                    current_settings.model.grayscale.y2].tolist(),
+
+                shape=[current_settings.model.grayscale.y2 - current_settings.model.grayscale.y1,
+                       current_settings.model.grayscale.x2 - current_settings.model.grayscale.x1]
             ),
             grayscale_name=current_settings.model.grayscale.name,
             report=issues,
@@ -562,7 +574,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         except ValueError:
             save_fixture = True
 
-        image = get_image_data_as_array(request.files.get('image'))
+        image = request.files.get('image')
 
         name = os.path.basename(fixture_name)
         image_name, ext = os.path.splitext(image.filename)
