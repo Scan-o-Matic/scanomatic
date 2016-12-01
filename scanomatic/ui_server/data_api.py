@@ -490,7 +490,6 @@ def add_routes(app, rpc_client, is_debug_mode):
     @decorate_api_access_restriction
     def _get_transposed_fixture_coordinates(fixture_name):
 
-
         image = get_image_data_as_array(request.files.get('image', default=np.array([])))
 
         markers = get_2d_list(request.values, 'markers')
