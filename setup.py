@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-__version__ = "v1.4"
+
 
 #
 # DEPENDENCIES
@@ -187,12 +187,12 @@ if len(sys.argv) > 1:
     #
 
     from distutils.core import setup
-
+    from scanomatic.__init__ import get_version
     _logger.info("Setting up Scan-o-Matic on the system")
 
     setup(
         name="Scan-o-Matic",
-        version=__version__,
+        version=get_version(),
         description="High Throughput Solid Media Image Phenotyping Platform",
         long_description="""Scan-o-Matic is a high precision phenotyping platform
         that uses scanners to obtain images of yeast colonies growing on solid
