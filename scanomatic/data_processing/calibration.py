@@ -10,10 +10,12 @@ from datetime import datetime
 from dateutil import tz
 from scipy.stats import linregress
 import re
-from hashlib import sha256
-
+from uuid import uuid1
+from glob import iglob
+from types import StringTypes
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
+
 
 """ Data structure for CCC-jsons
 {
@@ -170,7 +172,7 @@ def get_empty_ccc(species, reference):
         CellCountCalibration.species: species,
         CellCountCalibration.reference: reference,
         CellCountCalibration.images: [],
-        CellCountCalibration.edit_access_token: sha256().hexdigest(),
+        CellCountCalibration.edit_access_token: uuid1().hex,
         CellCountCalibration.polynomial: None,
         CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
         CellCountCalibration.independent_data: []
@@ -178,6 +180,9 @@ def get_empty_ccc(species, reference):
 
 
 def _get_ccc_identifier(species, reference):
+
+    if not species or not reference:
+        return None
 
     if any(True for ccc in __CCC.itervalues() if
            ccc[CellCountCalibration.species] == species and
@@ -190,6 +195,60 @@ def _get_ccc_identifier(species, reference):
         candidate += "qwxz"[np.random.randint(0, 4)]
 
     return candidate
+
+
+def load_cccs():
+
+    for ccc_path in iglob(Paths().ccc_file_pattern.format("*")):
+
+        with open(ccc_path, mode='rb') as fh:
+            data = json.load(fh)
+
+        data = _parse_ccc(data)
+
+        if data is None or CellCountCalibration.identifier not in data or not data[CellCountCalibration.identifier]:
+            _logger.error("Data file '{0}' is corrupt.".format(ccc_path))
+        elif data[CellCountCalibration.identifier] in __CCC:
+            _logger.error("Duplicated idenifier {0} is not allowed!".format(data[CellCountCalibration.identifier]))
+        else:
+            __CCC[data[CellCountCalibration.identifier]] = data
+
+
+def _parse_ccc(data):
+
+    data = {_decode_ccc_enum(k): _decode_ccc_enum(v) for k, v in data.iteritems()}
+    for ccc_data_type in CellCountCalibration:
+        if ccc_data_type not in data:
+            _logger.error("Corrupt CCC-data, missing {0}".format(ccc_data_type))
+            return None
+    return data
+
+
+__DECODABLE_ENUMS = {
+    "CellCountCalibration": CellCountCalibration,
+    "CalibrationEntryStatus": CalibrationEntryStatus,
+    "CCCImage": CCCImage,
+    "CCCMeasurement": CCCMeasurement,
+    "CCCPlate": CCCPlate,
+}
+
+
+def _decode_ccc_enum(val):
+    if isinstance(val, StringTypes):
+        try:
+            enum_name, enum_value = val.split(".")
+            return __DECODABLE_ENUMS[enum_name][enum_value]
+        except (ValueError, KeyError):
+            pass
+    return val
+
+
+def _encode_ccc_enum(val):
+
+    if type(val) in __DECODABLE_ENUMS.values():
+        return "{0}.{1}".format(str(val).split(".")[-2], val.name)
+    else:
+        return val
 
 
 def validate_polynomial(data, poly):

@@ -120,6 +120,9 @@ class Paths(SingeltonOneInit):
         self.analysis_graycsales = os.path.join(
             self.config, "grayscales.cfg")
 
+        self.ccc_folder = os.path.join(self.config, "ccc")
+        self.ccc_file_pattern = os.path.join(self.ccc_folder, "{0}.ccc")
+
         self.analysis_run_log = 'analysis.log'
         self.analysis_model_file = 'analysis.model'
 
