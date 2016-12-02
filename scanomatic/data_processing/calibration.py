@@ -209,9 +209,39 @@ def load_cccs():
         if data is None or CellCountCalibration.identifier not in data or not data[CellCountCalibration.identifier]:
             _logger.error("Data file '{0}' is corrupt.".format(ccc_path))
         elif data[CellCountCalibration.identifier] in __CCC:
-            _logger.error("Duplicated idenifier {0} is not allowed!".format(data[CellCountCalibration.identifier]))
+            _logger.error("Duplicated identifier {0} is not allowed!".format(data[CellCountCalibration.identifier]))
         else:
             __CCC[data[CellCountCalibration.identifier]] = data
+
+
+def save_ccc_to_disk(identifier):
+
+    if identifier in __CCC and \
+            __CCC[identifier][CellCountCalibration.status] is CalibrationEntryStatus.UnderConstruction:
+        _save_ccc_to_disk(__CCC[identifier])
+    elif identifier not in __CCC:
+        _logger.error("Unknown CCC identifier {0}".format(identifier))
+    else:
+        _logger.error("Can only save changes to CCC:s that are under construction")
+
+
+def _save_ccc_to_disk(data):
+
+    def _encode_val(v):
+        if isinstance(v, dict):
+            return _encode_dict(v)
+        if isinstance(v, list) or isinstance(v, tuple):
+            return type(v)(_encode_val(e) for e in v)
+        else:
+            return _decode_ccc_enum(v)
+
+    def _encode_dict(d):
+        return {_encode_ccc_enum(k): _encode_val(v) for k, v in d.iteritems()}
+
+    identifier = data[CellCountCalibration.identifier]
+    os.makedirs(os.path.dirname(Paths().ccc_file_pattern.format(identifier)))
+    with open(Paths().ccc_file_pattern.format(identifier), 'wb') as fh:
+        json.dump(data, fh)
 
 
 def _parse_ccc(data):
