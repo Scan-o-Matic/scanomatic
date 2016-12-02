@@ -214,6 +214,15 @@ def load_cccs():
             __CCC[data[CellCountCalibration.identifier]] = data
 
 
+def add_ccc(ccc):
+
+    if ccc[CellCountCalibration.identifier] and ccc[CellCountCalibration.identifier] not in __CCC:
+        __CCC[ccc[CellCountCalibration.identifier]] = ccc
+        save_ccc_to_disk(ccc[CellCountCalibration.identifier])
+    else:
+        _logger.error("'{0}' is not a valid new CCC identifier".format(ccc[CellCountCalibration.identifier]))
+
+
 def save_ccc_to_disk(identifier):
 
     if identifier in __CCC and \
