@@ -14,8 +14,114 @@ from scipy.stats import linregress
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
 
+""" Data structure for CCC-jsons
+{
+    CellCountCalibration.status: CalibrationEntryStatus,  # One of UnderConstruction, Active, Deleted
+    CellCountCalibration.edit_access_token:  # During CalibrationEntryStatus.UnderConstruction this is needed to edit.
+    CellCountCalibration.species: string,  # The species & possibly strain, combo of this and reference must be unique.
+    CellCountCalibration.reference: string,  # Typically publication reference or contact info i.e. email
+    CellCountCalibration.identifier: string,  # Unique ID of CCC
+    CellCountCalibration.images:  # The images in sequence added, must correspond to order in reference data (below)
+        [
+            {
+            CCCImage.identifier: string,  # How to find the saved image
+            CCCImage.plates:
+                {
+                int :  # plate index (get valid from fixture),
+                    {
+                    CCCPlate.gs_transformed_image_identifier: string,  # How to find numpy-array of transformed plate
+                    CCCPlate.grid_shape: (16, 24),  # Number of rows and columns of colonies on plate
+                    CCCPlate.grid_cell_size: (52.5, 53.1),  # Number of pixels for each colony (yes is in decimal)
+                    CCCPlate.grid_data_identifier: string,  # How to find numpy-array of grid positions on plate
+                    CCCPlate.compressed_ccc_data:  # Row, column info on CCC analysis of each colony
+                        [
+                            [
+                                {
+                                    CCCMeasurement.included: bool,  # If included
+                                    CCCMeasurement.source_values: [123.1, 10.4, ...],  # GS transf pixel transparencies
+                                    CCCMeasurement.source_value_counts: [100, 1214, ...],  # Num of corresponding pixels
+                                },
+                                ...
+                            ],
+                            ...
+                        ],
+                    }
+                },
+            CCCImage.grayscale_name: string,
+            CCCImage.grayscale_source_values: [123, 2.14, ...],  # reference values
+            CCCImage.grayscale_target_values: [123, 12412, ...], # Analysis values
+            CCCImage.fixture: string,
+            },
+            ...
+        ],
+    CellCountCalibration.reference_data:
+        [12300, 121258, 1241240, 141410, ...],  # Continuous list of measurements of population sizes from OD or FACS
+    CellCountCalibration.polynomial:
+        [0, 1.12, 0, 46.21, 127.0],  # The polynomial coefficients of the calibration
+}
+
+"""
+
 
 _logger = Logger("Calibration")
+
+
+class CellCountCalibration(Enum):
+
+    status = 0
+    """:type : CellCountCalibration"""
+    species = 1
+    """:type : CellCountCalibration"""
+    reference = 2
+    """:type : CellCountCalibration"""
+    identifier = 3
+    """:type : CellCountCalibration"""
+    images = 4
+    """:type : CellCountCalibration"""
+    reference_data = 5
+    """:type : CellCountCalibration"""
+    polynomial = 6
+    """:type : CellCountCalibration"""
+    edit_access_token = 7
+    """:type : CellCountCalibration"""
+
+
+class CCCImage(Enum):
+
+    identifier = 0
+    """:type : CCCImage"""
+    plates = 1
+    """:type : CCCImage"""
+    grayscale_name = 2
+    """:type : CCCImage"""
+    grayscale_source_values = 3
+    """:type : CCCImage"""
+    grayscale_target_values = 4
+    """:type : CCCImage"""
+    fixture = 5
+    """:type : CCCImage"""
+
+
+class CCCPlate(Enum):
+    gs_transformed_image_identifier = 0
+    """:type : CCCPlate"""
+    grid_shape = 1
+    """:type : CCCPlate"""
+    grid_cell_size = 2
+    """:type : CCCPlate"""
+    grid_data_identifier = 3
+    """:type : CCCPlate"""
+    compressed_ccc_data = 4
+    """:type : CCCPlate"""
+
+
+class CCCMeasurement(Enum):
+    included = 0
+    """:type : CCCMeasurement"""
+    source_values = 1
+    """:type : CCCMeasurement"""
+    source_value_counts = 2
+    """:type : CCCMeasurement"""
 
 
 class CalibrationEntry(Enum):
@@ -29,6 +135,16 @@ class CalibrationEntry(Enum):
     """:type : CalibrationEntry"""
     source_value_counts = (3, 1)
     """:type : CalibrationEntry"""
+
+
+class CalibrationEntryStatus(Enum):
+
+    UnderConstruction = 0
+    """:type: CalibrationEntryStatus"""
+    Active = 1
+    """:type: CalibrationEntryStatus"""
+    Deleted = 2
+    """:type: CalibrationEntryStatus"""
 
 
 class CalibrationValidation(Enum):
