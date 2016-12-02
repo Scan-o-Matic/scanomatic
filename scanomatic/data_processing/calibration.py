@@ -9,7 +9,8 @@ import time
 from datetime import datetime
 from dateutil import tz
 from scipy.stats import linregress
-
+import re
+from hashlib import sha256
 
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
@@ -54,7 +55,7 @@ from scanomatic.io.paths import Paths
             },
             ...
         ],
-    CellCountCalibration.reference_data:
+    CellCountCalibration.independent_data:
         [12300, 121258, 1241240, 141410, ...],  # Continuous list of measurements of population sizes from OD or FACS
     CellCountCalibration.polynomial:
         [0, 1.12, 0, 46.21, 127.0],  # The polynomial coefficients of the calibration
@@ -62,8 +63,9 @@ from scanomatic.io.paths import Paths
 
 """
 
+__CCC = {}
 
-_logger = Logger("Calibration")
+_logger = Logger("Cell Count Calibration")
 
 
 class CellCountCalibration(Enum):
@@ -78,7 +80,7 @@ class CellCountCalibration(Enum):
     """:type : CellCountCalibration"""
     images = 4
     """:type : CellCountCalibration"""
-    reference_data = 5
+    independent_data = 5
     """:type : CellCountCalibration"""
     polynomial = 6
     """:type : CellCountCalibration"""
@@ -156,6 +158,38 @@ class CalibrationValidation(Enum):
     """:type : CalibrationValidation"""
     BadStatistics = 3
     """:type : CalibrationValidation"""
+
+
+def get_empty_ccc(species, reference):
+    ccc_id = _get_ccc_identifier(species, reference)
+    if ccc_id is None:
+        return None
+
+    return {
+        CellCountCalibration.identifier: ccc_id,
+        CellCountCalibration.species: species,
+        CellCountCalibration.reference: reference,
+        CellCountCalibration.images: [],
+        CellCountCalibration.edit_access_token: sha256().hexdigest(),
+        CellCountCalibration.polynomial: None,
+        CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
+        CellCountCalibration.independent_data: []
+    }
+
+
+def _get_ccc_identifier(species, reference):
+
+    if any(True for ccc in __CCC.itervalues() if
+           ccc[CellCountCalibration.species] == species and
+           ccc[CellCountCalibration.reference] == reference):
+
+        return None
+
+    candidate = re.sub(r'[^A-Z]', r'', species.upper())[:6]
+    while any(True for ccc in __CCC.itervalues() if ccc[CellCountCalibration.identifier] == candidate):
+        candidate += "qwxz"[np.random.randint(0, 4)]
+
+    return candidate
 
 
 def validate_polynomial(data, poly):
