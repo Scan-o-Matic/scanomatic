@@ -7,9 +7,12 @@ import zipfile
 import time
 import os
 
+from scanomatic.data_processing import calibration
+
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
     get_data_file_path
+
 from .general import decorate_api_access_restriction
 
 _VALID_CHARACTERS = letters + "-._1234567890"
@@ -22,6 +25,19 @@ def add_routes(app):
      :type app: Flask
     :return:
     """
+
+    @app.route("/api/calibration/active")
+    @decorate_api_access_restriction
+    def get_active_calibrations():
+
+        try:
+            identifiers, cccs = zip(calibration.get_active_cccs().iteritems())
+            return jsonify(success=True, is_endpoint=True, identifiers=identifiers,
+                           species=[ccc[calibration.CellCountCalibration.species] for ccc in cccs],
+                           references=[ccc[calibration.CellCountCalibration.reference] for ccc in cccs])
+        except ValueError:
+            return jsonify(success=False, is_endpoint=True,
+                           reason="There are no registered CCC, Scan-o-Matic won't work before at least one is added")
 
     @app.route("/api/calibration/compress")
     @decorate_api_access_restriction
