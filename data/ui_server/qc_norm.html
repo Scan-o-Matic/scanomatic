@@ -14,6 +14,7 @@
         <script src="js/bootstrap-toggle.min.js"></script>
         <script src="js/spin.js"></script>
         <script src="js/jquery.modal.js"></script>
+        <script src="js/jquery-ui.js"></script>
 
         <link href="style/qc_norm.css" rel="stylesheet"/>
         <link href="style/bootstrap.css" rel="stylesheet"/>
@@ -22,6 +23,8 @@
         <link href="style/jquery.treetable.theme.default.css" rel="stylesheet" />
         <link href="style/bootstrap-toggle.min.css" rel="stylesheet" />
         <link href="style/jquery.modal.css" rel="stylesheet" />
+        <link href="style/jquery-ui.css" rel="stylesheet" />
+        
 
     </head>
 <body>
@@ -152,7 +155,7 @@
                 $("#btnQidxPrev").click(function () {
                     setExperimentByQidx(qIdxOperations.Next);
                 });
-                $("#cont").keypress(function (event) {
+                $(document).keypress(function (event) {
                     var char = getChar(event).toLowerCase();
                     switch (char) {
                         case 'q':
@@ -185,7 +188,7 @@
                             break;
                     }
                 });
-                $("#cont").keydown(function (e) {
+                $(document).keydown(function (e) {
                     if (!isQualityControlOn()) return;
                     switch (e.which) {
                         case 37: // left
@@ -276,6 +279,7 @@
                 function projectSlelectionStage(level) {
                     switch (level) {
                         case "project":
+                            $("#dialogGrid").hide();
                             $(".loPhenotypeSelection").hide();
                             $(".loPlateSelection").hide();
                             $("#tbProjectDetails").hide();
@@ -540,6 +544,7 @@
                     console.log("plates: " + path);
                     var lockKey = getLock_key();
                     GetPhenotypesPlates(path, lockKey, function (phenotypePlates) {
+                        //plate buttons
                         d3.selectAll(".plateSelectionButton").remove();
                         var selPlates = d3.select("#divPhenotypePlatesSelecton");
                         var buttons = selPlates.selectAll("buttonPlaceholders")
@@ -555,9 +560,23 @@
                         });
                         buttons.on("click", function (d) { renderPlate(d) });;
                         buttons.text(function (d) { return "Plate " + (d.index + 1); });
+                        //griding buton
+                        $("#divPhenotypePlatesSelecton")
+                            .append("<a type='button' class='btn btn-default btn-xs plateSelectionButton' id='btnShowGrid' href='#' role='button'>Show Grid</a>");
+                        $("#btnShowGrid").click(showGrid);
+                        //load plate 0 by default
                         $("#btnPlate0").focus();
                         document.getElementById("btnPlate0").click();
                     });
+                };
+
+                function showGrid() {
+                    var plateIdx = $("#currentSelection").data("plateIdx");
+                    var project = $("#currentSelection").data("project");
+                    var path = "/api/results/gridding/" + plateIdx + "/" + project;
+                    $("#imgGridding").attr("src", baseUrl + path);
+                    $("#dialogGrid").show();
+                    $("#dialogGrid").dialog();
                 };
 
                 //draw plate
@@ -567,6 +586,9 @@
                     var project = $("#spProject").text();
                     currentSelectedPlate = plateIdx;
                     console.log("experiment: " + path);
+                    $("#currentSelection").data("plateIdx", plateIdx);
+                    $("#currentSelection").data("project", project);
+                    $("#spnPlateIdx").text((plateIdx+1));
                     wait();
                     // e.g. /api/results/phenotype/GenerationTimeWhen/1/by4742_h/analysis
                     var isNormalized = $("#ckNormalized").is(':checked');
@@ -710,7 +732,7 @@
                 <div class="col-md-7">
                     <div class="row">
                         <div class="col-md-7">
-                            <h2 style="float: left">Plate</h2>
+                            <h2 style="float: left">Plate <span id="spnPlateIdx">n</span></h2>
                         </div>
                     </div>
                     <div class="row">
@@ -758,6 +780,9 @@
         </div>
     </div>
     <div id="text"></div>
+    <div id="dialogGrid" title="Gridding">
+        <img id="imgGridding" src="#" alt="Grid" />
+    </div>
 
 </body>
 
