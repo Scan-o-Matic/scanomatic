@@ -250,18 +250,29 @@ def _save_ccc_to_disk(data):
     identifier = data[CellCountCalibration.identifier]
     os.makedirs(os.path.dirname(Paths().ccc_file_pattern.format(identifier)))
     with open(Paths().ccc_file_pattern.format(identifier), 'wb') as fh:
-        json.dump(data, fh)
+        json.dump(_encode_dict(data), fh)
 
 
 def _parse_ccc(data):
 
-    data = {_decode_ccc_enum(k): _decode_ccc_enum(v) for k, v in data.iteritems()}
+    def _decode_val(v):
+        if isinstance(v, dict):
+            return _decode_dict(v)
+        if isinstance(v, list) or isinstance(v, tuple):
+            return type(v)(_decode_val(e) for e in v)
+        else:
+            return _decode_ccc_enum(v)
+
+    def _decode_dict(d):
+        return {_decode_ccc_enum(k): _decode_val(v) for k, v in d.iteritems()}
+
+    data = _decode_dict(data)
+
     for ccc_data_type in CellCountCalibration:
         if ccc_data_type not in data:
             _logger.error("Corrupt CCC-data, missing {0}".format(ccc_data_type))
             return None
     return data
-
 
 __DECODABLE_ENUMS = {
     "CellCountCalibration": CellCountCalibration,
