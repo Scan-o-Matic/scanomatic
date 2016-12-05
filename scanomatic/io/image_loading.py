@@ -66,7 +66,7 @@ def slice_im(plate_im, colony_position, colony_size):
     if (ubound - lbound != colony_size).any():
         ubound += colony_size - (ubound - lbound)
 
-    return plate_im[lbound[0]: ubound[0], lbound[1]:ubound[1]]
+    return plate_im[lbound[0]: ubound[0], lbound[1]: ubound[1]]
 
 
 def _load_grid_info(analysis_directory, plate):
