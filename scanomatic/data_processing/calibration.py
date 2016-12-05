@@ -452,6 +452,25 @@ def _get_im_slice(im, model):
 
     return im[model.y1: model.y2, model.x1: model.x2]
 
+
+def get_grayscale_slice(identifier, image_identifier):
+
+    try:
+        return np.load(Paths().ccc_image_gs_slice_pattern.format(identifier, image_identifier))
+    except IOError:
+        return None
+
+
+def get_plate_slice(identifier, image_identifier, id_plate, gs_transformed=False):
+
+    if gs_transformed:
+        pass
+    else:
+        try:
+            return np.load(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, id_plate))
+        except IOError:
+            return None
+
 ########################################
 ########################################
 ########################################
