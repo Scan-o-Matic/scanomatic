@@ -242,6 +242,12 @@ def load_cccs():
             __CCC[data[CellCountCalibration.identifier]] = data
 
 
+def get_active_cccs():
+
+    return {identifier: ccc for identifier, ccc in __CCC.iteritems()
+            if ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active}
+
+
 def add_ccc(ccc):
 
     if ccc[CellCountCalibration.identifier] and ccc[CellCountCalibration.identifier] not in __CCC:
