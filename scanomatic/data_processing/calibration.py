@@ -242,7 +242,7 @@ def _save_ccc_to_disk(data):
         if isinstance(v, list) or isinstance(v, tuple):
             return type(v)(_encode_val(e) for e in v)
         else:
-            return _decode_ccc_enum(v)
+            return _encode_ccc_enum(v)
 
     def _encode_dict(d):
         return {_encode_ccc_enum(k): _encode_val(v) for k, v in d.iteritems()}
