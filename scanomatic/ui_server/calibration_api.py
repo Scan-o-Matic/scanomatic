@@ -39,6 +39,28 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=True,
                            reason="There are no registered CCC, Scan-o-Matic won't work before at least one is added")
 
+    @app.route("/api/calibration/initiate_new")
+    @decorate_api_access_restriction
+    def initiate_new_ccc():
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        species = data_object.get("species")
+        reference = data_object.get("reference")
+        ccc = calibration.get_empty_ccc(species, reference)
+        if ccc is None:
+            return jsonify(success=False, is_endpoint=True, reason="Combination of species and reference not unique")
+
+        calibration.add_ccc(ccc)
+
+        return jsonify(
+            success=True,
+            is_endpoint=True,
+            identifier=ccc[calibration.CellCountCalibration.identifier],
+            access_token=ccc[calibration.CellCountCalibration.edit_access_token])
+
     @app.route("/api/calibration/compress")
     @decorate_api_access_restriction
     def calibration_compress():
