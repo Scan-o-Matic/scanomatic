@@ -251,6 +251,16 @@ def add_ccc(ccc):
         _logger.error("'{0}' is not a valid new CCC identifier".format(ccc[CellCountCalibration.identifier]))
 
 
+@_validate_ccc_edit_request
+def activate_ccc(identifier, access_token):
+
+    ccc = __CCC[identifier]
+    ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
+    ccc[CellCountCalibration.edit_access_token] = uuid1().hex
+    save_ccc_to_disk(identifier)
+    return True
+
+
 def save_ccc_to_disk(identifier):
 
     if identifier in __CCC and \
