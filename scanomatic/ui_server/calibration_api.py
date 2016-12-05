@@ -53,13 +53,37 @@ def add_routes(app):
         if ccc is None:
             return jsonify(success=False, is_endpoint=True, reason="Combination of species and reference not unique")
 
-        calibration.add_ccc(ccc)
+        success = calibration.add_ccc(ccc)
+
+        if not success:
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Possibly someone just beat you to that combination of species and reference!")
 
         return jsonify(
             success=True,
             is_endpoint=True,
             identifier=ccc[calibration.CellCountCalibration.identifier],
             access_token=ccc[calibration.CellCountCalibration.edit_access_token])
+
+    @app.route("/api/calibration/<ccc_identifier>/image/add")
+    @decorate_api_access_restriction
+    def upload_ccc_image(ccc_identifier):
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        image = request.files.get('image', default=None)
+        if image is None:
+            return jsonify(success=False, is_endpoint=True, reason="Didn't get any image")
+
+        image_identifier = calibration.add_image_to_ccc(
+            ccc_identifier, image, access_token=data_object.get("access_token"))
+
+        if not image_identifier:
+            return jsonify(success=False, is_endpoint=True, reason="Refused to save image, probably bad access token")
+
+        return jsonify(success=True, is_endpoint=True, image_identifier=image_identifier)
 
     @app.route("/api/calibration/compress")
     @decorate_api_access_restriction

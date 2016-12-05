@@ -165,7 +165,7 @@ class CalibrationValidation(Enum):
 
 def _validate_ccc_edit_request(f):
 
-    def wrapped(identifier, access_token, *args, **kwargs):
+    def wrapped(identifier, access_token=None, *args, **kwargs):
 
         if identifier in __CCC:
 
@@ -175,7 +175,7 @@ def _validate_ccc_edit_request(f):
 
                 if ccc[CellCountCalibration.status] == CalibrationEntryStatus.UnderConstruction:
 
-                    return f(identifier, access_token, *args, **kwargs)
+                    return f(identifier, *args, **kwargs)
 
                 else:
 
@@ -254,9 +254,10 @@ def add_ccc(ccc):
     if ccc[CellCountCalibration.identifier] and ccc[CellCountCalibration.identifier] not in __CCC:
         __CCC[ccc[CellCountCalibration.identifier]] = ccc
         save_ccc_to_disk(ccc[CellCountCalibration.identifier])
+        return True
     else:
         _logger.error("'{0}' is not a valid new CCC identifier".format(ccc[CellCountCalibration.identifier]))
-
+        return False
 
 @_validate_ccc_edit_request
 def activate_ccc(identifier, access_token):
@@ -368,13 +369,12 @@ def _encode_ccc_enum(val):
 
 
 @_validate_ccc_edit_request
-def add_image_to_ccc(identifier, access_token, image_data):
+def add_image_to_ccc(identifier, image):
 
     ccc = __CCC[identifier]
     im_json = _get_new_image_json(ccc)
     im_identifier = im_json[CCCImage.identifier]
-    with open(Paths().ccc_image_pattern.format(identifier, im_identifier), 'wb') as fh:
-        fh.write(image_data)
+    image.save(Paths().ccc_image_pattern.format(identifier, im_identifier))
 
     ccc[CellCountCalibration.images].append(im_json)
     _save_ccc_to_disk(ccc)
@@ -383,7 +383,7 @@ def add_image_to_ccc(identifier, access_token, image_data):
 
 
 @_validate_ccc_edit_request
-def set_image_info(identifier, access_token, image_identifier, **kwargs):
+def set_image_info(identifier, image_identifier, **kwargs):
 
     ccc = __CCC[identifier]
     im_json = get_image_json_from_ccc(identifier, image_identifier)
@@ -434,7 +434,7 @@ def _get_new_image_identifier(ccc):
 
 
 @_validate_ccc_edit_request
-def save_plate_slices(identifier, access_token, image_identifier, grayscale_slice=None, plate_slices=None):
+def save_plate_slices(identifier, image_identifier, grayscale_slice=None, plate_slices=None):
 
     im = load_image_to_numpy(Paths().ccc_image_pattern.format(identifier, image_identifier), dtype=np.uint8)
     if grayscale_slice:
@@ -480,7 +480,7 @@ def get_plate_slice(identifier, image_identifier, id_plate, gs_transformed=False
 
 
 @_validate_ccc_edit_request
-def transform_plate_slice(identifier, access_token, image_identifier, plate_id):
+def transform_plate_slice(identifier, image_identifier, plate_id):
 
     im_json = get_image_json_from_ccc(identifier, image_identifier)
     if not im_json:
