@@ -123,6 +123,8 @@ class Paths(SingeltonOneInit):
         self.ccc_folder = os.path.join(self.config, "ccc")
         self.ccc_file_pattern = os.path.join(self.ccc_folder, "{0}.ccc")
         self.ccc_image_pattern = os.path.join(self.ccc_folder, "{0}.{1}.tiff")
+        self.ccc_image_plate_slice_pattern = os.path.join(self.ccc_folder, "{0}.{1}.plate_{2}.npy")
+        self.ccc_image_gs_slice_pattern = os.path.join(self.ccc_folder, "{0}.{1}.gs.npy")
 
         self.analysis_run_log = 'analysis.log'
         self.analysis_model_file = 'analysis.model'

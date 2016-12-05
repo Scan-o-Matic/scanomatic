@@ -15,6 +15,7 @@ from glob import iglob
 from types import StringTypes
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
+from scipy.misc import imread
 
 
 """ Data structure for CCC-jsons
@@ -431,6 +432,25 @@ def _get_new_image_identifier(ccc):
 
     return "CalibIm_{0}".format(len(ccc[CellCountCalibration.images]))
 
+
+@_validate_ccc_edit_request
+def save_plate_slices(identifier, access_token, image_identifier, grayscale_slice=None, plate_slices=None):
+
+    im = imread(Paths().ccc_image_pattern.format(identifier, image_identifier))
+
+    if grayscale_slice:
+        np.save(Paths().ccc_image_gs_slice_pattern.format(identifier, image_identifier),
+                _get_im_slice(im, grayscale_slice))
+
+    if plate_slices:
+        for id_plate, plate_dict in plate_slices.iteritems():
+            np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, id_plate),
+                    _get_im_slice(im, plate_dict))
+
+
+def _get_im_slice(im, model):
+
+    return im[model.y1: model.y2, model.x1: model.x2]
 
 ########################################
 ########################################
