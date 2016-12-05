@@ -105,6 +105,10 @@ class CCCImage(Enum):
     """:type : CCCImage"""
     fixture = 5
     """:type : CCCImage"""
+    marker_x = 6
+    """:type : CCCImage"""
+    marker_y = 7
+    """:type : CCCImage"""
 
 
 class CCCPlate(Enum):
@@ -397,6 +401,7 @@ def set_image_info(identifier, image_identifier, **kwargs):
         except (KeyError, TypeError):
 
             _logger.error("{0} is not a known property of images".format(key))
+            return False
 
     _save_ccc_to_disk(ccc)
     return True
@@ -424,6 +429,8 @@ def _get_new_image_json(ccc):
         CCCImage.grayscale_name: None,
         CCCImage.grayscale_source_values: None,
         CCCImage.grayscale_target_values: None,
+        CCCImage.marker_x: None,
+        CCCImage.marker_y: None,
         CCCImage.fixture: None,
     }
 

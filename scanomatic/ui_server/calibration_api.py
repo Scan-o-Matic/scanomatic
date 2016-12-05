@@ -26,7 +26,7 @@ def add_routes(app):
     :return:
     """
 
-    @app.route("/api/calibration/active")
+    @app.route("/api/calibration/active", methods=['GET'])
     @decorate_api_access_restriction
     def get_active_calibrations():
 
@@ -39,7 +39,7 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=True,
                            reason="There are no registered CCC, Scan-o-Matic won't work before at least one is added")
 
-    @app.route("/api/calibration/initiate_new")
+    @app.route("/api/calibration/initiate_new", methods=['POST'])
     @decorate_api_access_restriction
     def initiate_new_ccc():
 
@@ -65,7 +65,7 @@ def add_routes(app):
             identifier=ccc[calibration.CellCountCalibration.identifier],
             access_token=ccc[calibration.CellCountCalibration.edit_access_token])
 
-    @app.route("/api/calibration/<ccc_identifier>/image/add")
+    @app.route("/api/calibration/<ccc_identifier>/image/add", methods=['POST'])
     @decorate_api_access_restriction
     def upload_ccc_image(ccc_identifier):
 
@@ -84,6 +84,54 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=True, reason="Refused to save image, probably bad access token")
 
         return jsonify(success=True, is_endpoint=True, image_identifier=image_identifier)
+
+    @app.route("/api/calibration/<ccc_identifier>/image/set/<image_identifier>/data", methods=['GET', 'POST'])
+    @decorate_api_access_restriction
+    def set_ccc_image_data(ccc_identifier, image_identifier):
+        """ Sets any of the allowed image data fields
+
+        Most easy way to find out which these are is to look at
+        /api/calibration/<ccc_identifier>/image/get/<image_identifier>/data
+
+        Note: The request must contain an access_token
+
+        Args:
+            ccc_identifier: The ccc identifier
+            image_identifier: The image identifier
+
+        Returns:
+
+        """
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        data_update = {}
+        for data_type in calibration.CCCImage:
+            if data_type is calibration.CCCImage.identifier:
+                continue
+            val = data_object.get(data_type.name, None)
+            if val:
+                data_update[data_type.name] = val
+
+        success = calibration.set_image_info(
+            ccc_identifier, image_identifier, access_token=data_object.get("access_token"), **data_update)
+
+        if not success:
+            return jsonify(success=False, is_endpoint=True, reason="Update refused, probably bad access token")
+
+        return jsonify(success=True)
+
+    @app.route("/api/calibration/<ccc_identifier>/image/get/<image_identifier>/data", methods=['GET'])
+    @decorate_api_access_restriction
+    def get_ccc_image_data(ccc_identifier, image_identifier):
+
+        data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        if data is None:
+            return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
+
+        return jsonify(success=True, is_endpoint=True,
+                       **{k.name: val for k, val in data.iteritems() if k is not calibration.CCCImage.plates})
 
     @app.route("/api/calibration/compress")
     @decorate_api_access_restriction
