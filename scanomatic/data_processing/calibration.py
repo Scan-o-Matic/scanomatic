@@ -261,6 +261,26 @@ def activate_ccc(identifier, access_token):
     return True
 
 
+def delete_ccc(identifier):
+
+    if identifier in __CCC:
+
+        ccc = __CCC[identifier]
+        if ccc[CellCountCalibration.status] != CalibrationEntryStatus.Deleted:
+
+            ccc[CellCountCalibration.status] = CalibrationEntryStatus.Deleted
+            ccc[CellCountCalibration.edit_access_token] = uuid1().hex
+            save_ccc_to_disk(identifier)
+            return True
+
+        else:
+
+            _logger.info("The CCC {0} was already deleted".format(identifier))
+
+    else:
+
+        _logger.info("The CCC {0} was not known".format(identifier))
+
 def save_ccc_to_disk(identifier):
 
     if identifier in __CCC and \
