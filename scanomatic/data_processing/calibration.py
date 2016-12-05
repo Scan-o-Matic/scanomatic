@@ -464,7 +464,11 @@ def get_grayscale_slice(identifier, image_identifier):
 def get_plate_slice(identifier, image_identifier, id_plate, gs_transformed=False):
 
     if gs_transformed:
-        pass
+        try:
+            return np.load(Paths().ccc_image_plate_transformed_slice_pattern.format(
+                identifier, image_identifier, id_plate))
+        except IOError:
+            return None
     else:
         try:
             return np.load(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, id_plate))
