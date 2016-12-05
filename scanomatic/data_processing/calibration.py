@@ -287,6 +287,7 @@ def delete_ccc(identifier):
 
         _logger.info("The CCC {0} was not known".format(identifier))
 
+
 def save_ccc_to_disk(identifier):
 
     if identifier in __CCC and \
@@ -363,6 +364,77 @@ def _encode_ccc_enum(val):
         return "{0}.{1}".format(str(val).split(".")[-2], val.name)
     else:
         return val
+
+
+@_validate_ccc_edit_request
+def add_image_to_ccc(identifier, access_token, image_data):
+
+    ccc = __CCC[identifier]
+    im_json = _get_new_image_json(ccc)
+    im_identifier = im_json[CCCImage.identifier]
+    with open(Paths().ccc_image_pattern.format(identifier, im_identifier), 'wb') as fh:
+        fh.write(image_data)
+
+    ccc[CellCountCalibration.images].append(im_json)
+    _save_ccc_to_disk(ccc)
+
+    return im_identifier
+
+
+@_validate_ccc_edit_request
+def set_image_info(identifier, access_token, image_identifier, **kwargs):
+
+    ccc = __CCC[identifier]
+    im_json = get_image_json_from_ccc(identifier, image_identifier)
+
+    for key in kwargs:
+
+        try:
+
+            im_json[CCCImage(key)] = kwargs[key]
+
+        except (KeyError, TypeError):
+
+            _logger.error("{0} is not a known property of images".format(key))
+
+    _save_ccc_to_disk(ccc)
+    return True
+
+
+def get_image_json_from_ccc(identifier, image_identifier):
+
+    if identifier in __CCC:
+
+        ccc = __CCC[identifier]
+
+        for im_json in ccc[CellCountCalibration.images]:
+
+            if im_json[CCCImage.identifier] == image_identifier:
+
+                return im_json
+    return None
+
+
+def _get_new_image_json(ccc):
+
+    return {
+        CCCImage.identifier: _get_new_image_identifier(ccc),
+        CCCImage.plates: {},
+        CCCImage.grayscale_name: None,
+        CCCImage.grayscale_source_values: None,
+        CCCImage.grayscale_target_values: None,
+        CCCImage.fixture: None,
+    }
+
+
+def _get_new_image_identifier(ccc):
+
+    return "CalibIm_{0}".format(len(ccc[CellCountCalibration.images]))
+
+
+########################################
+########################################
+########################################
 
 
 def validate_polynomial(data, poly):
