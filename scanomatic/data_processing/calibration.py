@@ -15,7 +15,7 @@ from glob import iglob
 from types import StringTypes
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
-from scipy.misc import imread
+from scanomatic.image_analysis.image_basics import load_image_to_numpy, Image_Transpose
 
 
 """ Data structure for CCC-jsons
@@ -436,8 +436,7 @@ def _get_new_image_identifier(ccc):
 @_validate_ccc_edit_request
 def save_plate_slices(identifier, access_token, image_identifier, grayscale_slice=None, plate_slices=None):
 
-    im = imread(Paths().ccc_image_pattern.format(identifier, image_identifier))
-
+    im = load_image_to_numpy(Paths().ccc_image_pattern.format(identifier, image_identifier), dtype=np.uint8)
     if grayscale_slice:
         np.save(Paths().ccc_image_gs_slice_pattern.format(identifier, image_identifier),
                 _get_im_slice(im, grayscale_slice))
@@ -468,12 +467,51 @@ def get_plate_slice(identifier, image_identifier, id_plate, gs_transformed=False
             return np.load(Paths().ccc_image_plate_transformed_slice_pattern.format(
                 identifier, image_identifier, id_plate))
         except IOError:
+            _logger.error("Problem loading: {0}".format(Paths().ccc_image_plate_transformed_slice_pattern.format(
+                identifier, image_identifier, id_plate)))
             return None
     else:
         try:
             return np.load(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, id_plate))
         except IOError:
+            _logger.error("Problem loading: {0}".format(Paths().ccc_image_plate_slice_pattern.format(
+                identifier, image_identifier, id_plate)))
             return None
+
+
+@_validate_ccc_edit_request
+def transform_plate_slice(identifier, access_token, image_identifier, plate_id):
+
+    im_json = get_image_json_from_ccc(identifier, image_identifier)
+    if not im_json:
+        _logger.error("CCC {0} Image {1} has not been setup, you must first add the image before working on it.".format(
+            identifier, image_identifier))
+
+    plate = get_plate_slice(identifier, image_identifier, plate_id, gs_transformed=False)
+    if plate is None:
+        _logger.error("No plate slice has been saved for {0}:{1}: plate {2}".format(
+            identifier, image_identifier, plate_id))
+        return False
+
+    grayscale_values = im_json[CCCImage.grayscale_source_values]
+    grayscale_targets = im_json[CCCImage.grayscale_target_values]
+
+    if not grayscale_targets or not grayscale_values:
+        _logger.error("The gray-scale values have not been setup")
+
+    transpose_polynomial = Image_Transpose(
+        sourceValues=grayscale_values,
+        targetValues=grayscale_targets)
+
+    try:
+        np.save(Paths().ccc_image_plate_transformed_slice_pattern.format(identifier, image_identifier, plate_id),
+                transpose_polynomial(plate))
+        return True
+    except IOError:
+        _logger.error("Problem saving: {0}".format(Paths().ccc_image_plate_transformed_slice_pattern.format(
+            identifier, image_identifier, plate_id)))
+        return False
+
 
 ########################################
 ########################################
