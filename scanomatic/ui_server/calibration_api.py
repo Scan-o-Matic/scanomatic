@@ -65,7 +65,7 @@ def add_routes(app):
             identifier=ccc[calibration.CellCountCalibration.identifier],
             access_token=ccc[calibration.CellCountCalibration.edit_access_token])
 
-    @app.route("/api/calibration/<ccc_identifier>/image/add", methods=['POST'])
+    @app.route("/api/calibration/<ccc_identifier>/add_image", methods=['POST'])
     @decorate_api_access_restriction
     def upload_ccc_image(ccc_identifier):
 
@@ -85,7 +85,7 @@ def add_routes(app):
 
         return jsonify(success=True, is_endpoint=True, image_identifier=image_identifier)
 
-    @app.route("/api/calibration/<ccc_identifier>/image/set/<image_identifier>/data", methods=['GET', 'POST'])
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/data/set", methods=['POST'])
     @decorate_api_access_restriction
     def set_ccc_image_data(ccc_identifier, image_identifier):
         """ Sets any of the allowed image data fields
@@ -122,7 +122,7 @@ def add_routes(app):
 
         return jsonify(success=True)
 
-    @app.route("/api/calibration/<ccc_identifier>/image/get/<image_identifier>/data", methods=['GET'])
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/data/get", methods=['GET'])
     @decorate_api_access_restriction
     def get_ccc_image_data(ccc_identifier, image_identifier):
 
@@ -132,6 +132,35 @@ def add_routes(app):
 
         return jsonify(success=True, is_endpoint=True,
                        **{k.name: val for k, val in data.iteritems() if k is not calibration.CCCImage.plates})
+
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/set", methods=['POST'])
+    @decorate_api_access_restriction
+    def slice_ccc_image(ccc_identifier, image_identifier):
+
+        data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        if data is None:
+            return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
+
+        return jsonify(success=False, reason="Not implemented")
+
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/get/<slice>", methods=['GET'])
+    @decorate_api_access_restriction
+    def get_ccc_image_slice(ccc_identifier, image_identifier, slice):
+
+        return jsonify(success=False, reason="Not implemented")
+
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/grayscale/analyse", methods=['POST'])
+    @decorate_api_access_restriction
+    def get_ccc_image_grayscale_analyse(ccc_identifier, image_identifier):
+
+        return jsonify(success=False, reason="Not implemented")
+
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<plate>/transform", methods=['POST'])
+    @decorate_api_access_restriction
+    def get_ccc_image_plate_transform(ccc_identifier, image_identifier, plate):
+
+        return jsonify(success=False, reason="Not implemented")
+
 
     @app.route("/api/calibration/compress")
     @decorate_api_access_restriction
