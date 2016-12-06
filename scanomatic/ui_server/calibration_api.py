@@ -9,12 +9,12 @@ import os
 
 from scanomatic.data_processing import calibration
 from scanomatic.io.fixtures import Fixtures
-
+from scanomatic.image_analysis.image_grayscale import get_grayscale_image_analysis
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
     get_data_file_path
-
-from .general import decorate_api_access_restriction, serve_numpy_as_image
+from scanomatic.image_analysis.grayscale import getGrayscale
+from .general import decorate_api_access_restriction, serve_numpy_as_image, get_grayscale_is_valid
 
 _VALID_CHARACTERS = letters + "-._1234567890"
 
@@ -186,9 +186,23 @@ def add_routes(app):
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/grayscale/analyse", methods=['POST'])
     @decorate_api_access_restriction
-    def get_ccc_image_grayscale_analyse(ccc_identifier, image_identifier):
+    def get_ccc_image_grayscale_analysis(ccc_identifier, image_identifier):
 
-        return jsonify(success=False, reason="Not implemented")
+        gs_image = calibration.get_grayscale_slice(ccc_identifier, image_identifier)
+        gs_name = gs_image[calibration.CCCImage.grayscale_name]
+
+        _, values = get_grayscale_image_analysis(gs_image, gs_name, debug=False)
+        grayscale_object = getGrayscale(gs_name)
+        valid = get_grayscale_is_valid(values, grayscale_object)
+        if not valid:
+            return jsonify(success=True, is_endpoint=True, reason='Grayscale results are not valid')
+
+        calibration.CCCImage.grayscale_target_values
+        calibration.set_image_info(ccc_identifier, image_identifier,
+                                   grayscale_source_values=values,
+                                   grayscale_target_values=grayscale_object['targets'])
+
+        return jsonify(success=True, is_endpoint=True, source_values=values, target_values=grayscale_object['targets'])
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<plate>/transform", methods=['POST'])
     @decorate_api_access_restriction
