@@ -120,7 +120,7 @@ def add_routes(app):
         if not success:
             return jsonify(success=False, is_endpoint=True, reason="Update refused, probably bad access token")
 
-        return jsonify(success=True)
+        return jsonify(success=True, is_endpoint=True)
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/data/get", methods=['GET'])
     @decorate_api_access_restriction
@@ -137,11 +137,25 @@ def add_routes(app):
     @decorate_api_access_restriction
     def slice_ccc_image(ccc_identifier, image_identifier):
 
-        data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
-        if data is None:
-            return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
 
-        return jsonify(success=False, reason="Not implemented")
+        data = calibration.get_local_fixture_for_image(ccc_identifier, image_identifier)
+        if data is None:
+            return jsonify(success=False, is_endpoint=True,
+                           reason="The image or CCC don't exist or not enough info set to do slice")
+
+        success = calibration.save_image_slices(
+            ccc_identifier, image_identifier,
+            grayscale_slice=data["grayscale"],
+            plates=data['plates'],
+            access_token=data_object.get("access_token"))
+
+        if not success:
+            return jsonify(success=False, is_endpoint=True, reason="Probably not the correct access token.")
+
+        return jsonify(success=True, is_endpoint=True)
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/get/<slice>", methods=['GET'])
     @decorate_api_access_restriction

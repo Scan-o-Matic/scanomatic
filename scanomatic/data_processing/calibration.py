@@ -16,7 +16,8 @@ from types import StringTypes
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
 from scanomatic.image_analysis.image_basics import load_image_to_numpy, Image_Transpose
-
+from scanomatic.io.fixtures import Fixtures
+from scanomatic.image_analysis.first_pass_image import FixtureImage
 
 """ Data structure for CCC-jsons
 {
@@ -440,8 +441,32 @@ def _get_new_image_identifier(ccc):
     return "CalibIm_{0}".format(len(ccc[CellCountCalibration.images]))
 
 
+def get_local_fixture_for_image(identifier, image_identifier):
+
+    im_json = get_image_json_from_ccc(identifier, image_identifier)
+    if im_json is None:
+        return None
+
+    fixture_settings = Fixtures()[im_json[CCCImage.Fixture]]
+    if fixture_settings is None:
+        return None
+
+    fixture = FixtureImage(fixture_settings)
+    current_settings = fixture['current']
+    current_settings.model.orientation_marks_x = im_json[CCCImage.marker_x]
+    current_settings.model.orientation_marks_y = im_json[CCCImage.marker_y]
+    issues = {}
+    fixture.set_current_areas(issues)
+
+    return dict(
+        plates=current_settings.model.plates,
+        grayscale=current_settings.model.grayscale,
+        issues=issues,
+    )
+
+
 @_validate_ccc_edit_request
-def save_plate_slices(identifier, image_identifier, grayscale_slice=None, plate_slices=None):
+def save_image_slices(identifier, image_identifier, grayscale_slice=None, plate_slices=None):
 
     im = load_image_to_numpy(Paths().ccc_image_pattern.format(identifier, image_identifier), dtype=np.uint8)
     if grayscale_slice:
