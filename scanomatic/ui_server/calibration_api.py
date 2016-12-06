@@ -8,6 +8,7 @@ import time
 import os
 
 from scanomatic.data_processing import calibration
+from scanomatic.io.fixtures import Fixtures
 
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
@@ -113,6 +114,13 @@ def add_routes(app):
             val = data_object.get(data_type.name, None)
             if val:
                 data_update[data_type.name] = val
+
+                if data_type is calibration.CCCImage.fixture and \
+                        calibration.CCCImage.grayscale_name.name not in data_object.keys():
+
+                    fixture_settings = Fixtures()[val]
+                    if fixture_settings is not None:
+                        data_update[calibration.CCCImage.grayscale_name.name] = fixture_settings.model.grayscale.name
 
         success = calibration.set_image_info(
             ccc_identifier, image_identifier, access_token=data_object.get("access_token"), **data_update)
