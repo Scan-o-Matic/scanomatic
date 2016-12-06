@@ -13,7 +13,7 @@ from scanomatic.data_processing.calibration import add_calibration, CalibrationE
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
     get_data_file_path
 
-from .general import decorate_api_access_restriction
+from .general import decorate_api_access_restriction, serve_numpy_as_image
 
 _VALID_CHARACTERS = letters + "-._1234567890"
 
@@ -146,8 +146,21 @@ def add_routes(app):
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/get/<slice>", methods=['GET'])
     @decorate_api_access_restriction
     def get_ccc_image_slice(ccc_identifier, image_identifier, slice):
+        """
 
-        return jsonify(success=False, reason="Not implemented")
+        :param ccc_identifier:
+        :param image_identifier:
+        :param slice: either 'gs' for grayscale or the plate index 0-3
+        :return:
+        """
+        if slice.lower() == 'gs':
+            im = calibration.get_grayscale_slice(ccc_identifier, image_identifier)
+        else:
+            im = calibration.get_plate_slice(ccc_identifier, image_identifier, slice, gs_transformed=False)
+
+        if im is None:
+            return jsonify(success=False, is_endpoint=True, reason="No such image slice exists, has it been sliced?")
+        return serve_numpy_as_image(im)
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/grayscale/analyse", methods=['POST'])
     @decorate_api_access_restriction
