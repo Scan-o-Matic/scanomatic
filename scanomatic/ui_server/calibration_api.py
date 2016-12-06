@@ -208,8 +208,12 @@ def add_routes(app):
     @decorate_api_access_restriction
     def get_ccc_image_plate_transform(ccc_identifier, image_identifier, plate):
 
-        return jsonify(success=False, reason="Not implemented")
+        success = calibration.transform_plate_slice(ccc_identifier, image_identifier, plate)
+        if not success:
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Probably bad access token or not having sliced image and analysed grayscale first")
 
+        return jsonify(success=True, is_endpoint=True)
 
     @app.route("/api/calibration/compress")
     @decorate_api_access_restriction
