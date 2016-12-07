@@ -387,6 +387,17 @@ def add_image_to_ccc(identifier, image):
     return im_identifier
 
 
+def get_image_identifiers_in_ccc(identifier):
+
+    if identifier in __CCC:
+
+        ccc = __CCC[identifier]
+
+        return [im_json[CCCImage.identifier] for im_json in ccc]
+
+    return False
+
+
 @_validate_ccc_edit_request
 def set_image_info(identifier, image_identifier, **kwargs):
 

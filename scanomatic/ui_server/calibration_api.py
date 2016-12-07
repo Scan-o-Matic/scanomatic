@@ -86,6 +86,16 @@ def add_routes(app):
 
         return jsonify(success=True, is_endpoint=True, image_identifier=image_identifier)
 
+    @app.route("/api/calibration/<ccc_identifier>/image_list", methods=['POST'])
+    @decorate_api_access_restriction
+    def upload_ccc_image(ccc_identifier):
+
+        image_list = calibration.get_image_identifiers_in_ccc(ccc_identifier)
+        if image_list is False:
+            return jsonify(success=False, is_endpoint=True, reason="No such ccc known")
+
+        return jsonify(success=True, is_endpoint=True, image_identifiers=image_list)
+
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/data/set", methods=['POST'])
     @decorate_api_access_restriction
     def set_ccc_image_data(ccc_identifier, image_identifier):
