@@ -9,7 +9,7 @@ import re
 
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
-
+from scanomatic.io.pickler import unpickle_with_unpickler
 #
 #
 #
@@ -82,7 +82,7 @@ class ImageData(object):
                             cell_features.index,
                             plate_features.index))
                 else:
-                    ImageData._LOGGER.info("Missing compartment for colony position {0}, palte {1}".format(
+                    ImageData._LOGGER.info("Missing compartment for colony position {0}, plate {1}".format(
                         cell_features.index,
                         plate_features.index
                     ))
@@ -143,7 +143,7 @@ class ImageData(object):
         ImageData._LOGGER.info("Reading times from {0}".format(
             path))
         if os.path.isfile(path):
-            return np.load(path)
+            return unpickle_with_unpickler(np.load, path)
         else:
             ImageData._LOGGER.warning("Times data file not found")
             return np.array([], dtype=np.float)
@@ -152,7 +152,7 @@ class ImageData(object):
     def read_image(path):
 
         if os.path.isfile(path):
-            return np.load(path)
+            return unpickle_with_unpickler(np.load, path)
         else:
             return None
 
@@ -274,7 +274,7 @@ class ImageData(object):
 
             try:
                 time_indices.append(int(re.findall(r"\d+", p)[-1]))
-                data.append(np.load(p))
+                data.append(unpickle_with_unpickler(np.load, p))
             except AttributeError:
                 ImageData._LOGGER.warning(
                     "File '{0}' has no index number in it, need that!".format(

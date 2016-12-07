@@ -14,6 +14,7 @@ import grid
 from grid_cell import GridCell
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
+from scanomatic.io.pickler import unpickle_with_unpickler
 import image_basics
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.image_analysis.grayscale import getGrayscale
@@ -36,6 +37,12 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semapho
     save_extra_data = grid_cell.save_extra_data
 
     grid_cell.source = _get_image_slice(im, grid_cell).astype(np.float64)
+    if grid_cell.source is None:
+        GridArray._LOGGER.error("Tried to analyse grid cell that doesn't have any area")
+        if semaphore is not None:
+            semaphore.release()
+        return
+
     grid_cell.image_index = image_index
 
     if save_extra_data:
@@ -73,12 +80,16 @@ def _get_image_slice(im, grid_cell):
 
     """
 
-    :type grid_cell: scanomatic.imageAnalysis.grid_cell.GridCell
+    :type grid_cell: scanomatic.imageAnalysis.grid_cell.GridCell or None
     """
+
     xy1 = grid_cell.xy1
     xy2 = grid_cell.xy2
 
-    return im[xy1[0]: xy2[0], xy1[1]: xy2[1]].copy()
+    if len(xy1) == 2 and len(xy2) == 2:
+        return im[xy1[0]: xy2[0], xy1[1]: xy2[1]].copy()
+    else:
+        return None
 
 
 def _create_grid_array_identifier(identifier):
@@ -135,6 +146,7 @@ class GridCellSizes(object):
         """
 
         :type item: tuple
+
         """
         if not isinstance(item, tuple):
             GridCellSizes._LOGGER.error("Grid formats can only be tuples {0}".format(type(item)))
@@ -185,6 +197,10 @@ class GridArray(object):
         self._features = AnalysisFeaturesFactory.create(index=self._identifier[-1], shape=tuple(pinning), data=set())
         self._first_analysis = True
 
+    def __getitem__(self, item):
+        """:rtype: scanomatic.image_analysis.grid_cell.GridCell"""
+        return self._grid_cells[item]
+
     @property
     def features(self):
         return self._features
@@ -192,6 +208,11 @@ class GridArray(object):
     @property
     def grid_cell_size(self):
         return self._grid_cell_size
+
+    @property
+    def grid(self):
+
+        return self._grid.tolist()
 
     @property
     def index(self):
@@ -214,7 +235,7 @@ class GridArray(object):
             return self.detect_grid(im, analysis_directory=analysis_directory, grid_correction=offset)
 
         try:
-            grid = np.load(grid)
+            grid = unpickle_with_unpickler(np.load, grid)
         except IOError:
             self._LOGGER.error("No grid file named '{0}'".format(grid))
             self._LOGGER.info("Invoking grid detection instead")
@@ -294,11 +315,14 @@ class GridArray(object):
 
         if self._grid is None or np.isnan(spacings).any():
 
-            error_file = os.path.join(
-                self._analysis_model.output_directory,
-                self._paths.experiment_grid_error_image.format(self.index))
+            if self._analysis_model.output_directory:
 
-            np.save(error_file, im)
+                error_file = os.path.join(
+                    self._analysis_model.output_directory,
+                    self._paths.experiment_grid_error_image.format(self.index))
+
+                np.save(error_file, im)
+
             self._LOGGER.warning("Failed to detect grid on plate {0}".format(self.index))
 
             return False

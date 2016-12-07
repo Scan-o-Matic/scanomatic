@@ -4,10 +4,10 @@ import scanomatic.generics.model as model
 class SegmentationModel(model.Model):
 
     def __init__(self, dydt=None, dydt_ranks=None, dydt_signs=None, d2yd2t=None,
-                 d2yd2t_signs=None, phases=None, offset=0, curve=None, times=None,
+                 d2yd2t_signs=None, phases=None, offset=0, log2_curve=None, times=None,
                  plate=None, pos=None):
 
-        self.curve = curve
+        self.log2_curve = log2_curve
         """:type : numpy.ndarray"""
         self.times = times
         """:type : numpy.ndarray"""

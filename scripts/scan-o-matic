@@ -35,8 +35,12 @@ if __name__ == "__main__":
         "--port", type=int, dest="port", help="Manual override of default port")
 
     parser.add_argument(
-        '--local', action='store_true',
-        dest="local", help="Manual override if only to serve locally")
+        '--local', action='store_true', default=None,
+        dest="local", help="Manual override settings and only serve to the LAN")
+
+    parser.add_argument(
+        '--global', action='store_false',
+        dest="local", help="Manual override settings and serve to anyone on the Internet")
 
     parser.add_argument(
         '--host', type=str, dest="host", help="Manually setting host address of server")
@@ -51,7 +55,6 @@ if __name__ == "__main__":
         help="Run in debug-mode (requires --local)."
     )
 
-
     parser.add_argument(
         "--service-relaunch", dest="relaunch", default=False, action='store_true',
         help="Shortcut for `--kill --no-browser` and ensuring `--no-launch` is not set."
@@ -60,6 +63,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.relaunch:
+        _logger.infO("Invoking `--kill --no-launch --no_browser`")
         args.kill = True
         args.no_launch = False
         args.no_browser = True

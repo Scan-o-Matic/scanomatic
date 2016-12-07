@@ -1,5 +1,6 @@
 var gridplates = null;
-var localFixture = false;
+var localFixture = true;
+var path = "";
 
 function toggleLocalFixture(caller) {
     localFixture = $(caller).prop("checked");
@@ -133,6 +134,7 @@ function get_regridding_setting(i) {
 function get_dir() {
     return $("#compilation").val().replace(/\/[^\/]*$/,"");
 }
+
 function set_regridding_source_directory(input) {
     path = get_dir();
     get_path_suggestions(

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+	<link rel="stylesheet" type="text/css" href="/style/logs.css">
+	<title>Scan-o-Matic</title>
+</head>
+<body>
+    <div class="log-div">
+        <h1>{{ title }}</h1>
+
+        <div class="log-group" id="log-records">
+        {% for entry in records %}
+        <div class="log-entry-{{ loop.cycle('odd', 'even') }}">
+            <div class="log-entry-header">
+                <span class="log-time">{{ entry['time'] }}</span>&nbsp;/&nbsp;
+                <span class="log-date">{{ entry['date'] }}</span>
+                <span class="log-status">{{ entry['status'] }}</span>
+            </div>
+            <div class="log-entry-contents">
+                <span class="log-source">{{ entry['source'] }}</span>
+                <span class="log-message">
+                {% for line in entry['message'] %}
+                    {{ line }}
+                    <br>
+                {% endfor %}
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+
+        <div class="log-group" id="log-records-unparsed">
+        {% for entry in garbage %}
+        <div class="log-entry-{{ loop.cycle('odd', 'even') }}">
+            {{entry}}
+        </div>
+        {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

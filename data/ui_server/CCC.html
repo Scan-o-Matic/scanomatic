@@ -1,0 +1,260 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <title>Cell Count Calibration</title>
+	    <meta charset="utf-8" />
+        <script src="js/jquery-2.2.3.js"></script>
+        <script src="js/bootstrap.js"></script>
+        <script src="js/d3.js"></script>
+        <script src="js/bootstrap-toggle.min.js"></script>
+        <script src="js/spin.js"></script>
+        <script src="js/jquery.modal.js"></script>
+        <script src="js/cccAPIHelper.js"></script>
+        <script src="js/CCCHelper.js"></script>
+
+        <link href="style/ccc.css" rel="stylesheet"/>
+        <link href="style/bootstrap.css" rel="stylesheet"/>
+        <link href="style/main.css" rel="stylesheet"/>
+        <link href="style/bootstrap-toggle.min.css" rel="stylesheet" />
+        <link href="style/jquery.modal.css" rel="stylesheet" />
+
+    </head>
+<body>
+    <script>
+        $(window)
+            .unload(function () {
+                var lock_key = $("#spLock").data("lock_key");
+                var unlockPath = $("#spLock").data("unLock_path");
+                if (unlockPath) {
+                    $("#divLockRemoving").show();
+                    RemoveLock(unlockPath,
+                        lock_key,
+                        function (success) {
+                            $("#spLock").text("Read/Write");
+                            $("#divLockRemoving").hide();
+                        });
+                };
+            });
+
+        $(document)
+            .ready(function () {
+                var selFixtureName = "selFixtures";
+                var selPinFormatsName = "selPinFormats";
+                var opts = {
+                    lines: 9, // The number of lines to draw
+                    length: 9, // The length of each line
+                    width: 5, // The line thickness
+                    radius: 20, // The radius of the inner circle
+                    color: '#000000', // #rgb or #rrggbb or array of colors
+                    speed: 1.9, // Rounds per second
+                    trail: 40, // Afterglow percentage
+                    className: 'spinner' // The CSS class to assign to the spinner
+                };
+                var Uploads = [];
+                var target = document.getElementById("divLoading");
+                var spinner = new Spinner(opts).spin(target);
+                var dispatch = d3.dispatch("setExp", "reDrawExp");
+                spinner.stop();
+
+                function wait() {
+                    $("#divLoading").modal({ escapeClose: false, clickClose: false, showClose: false });
+                    spinner.spin(target);
+                }
+
+                function stopWait() {
+                    spinner.stop();
+                    $.modal.close();
+                }
+
+                function getLock_key() {
+                    return $("#spLock").data("lock_key");
+                }
+
+                function getLock(callback) {
+                    var lockPath = $("#spLock").data("lock_path");
+                    wait();
+                    GetAPILock(lockPath,
+                        function (lockData) {
+                            if (lockData != null) {
+                                var lock = lockData.lock_key;
+                                var permisssionText = lockData.lock_state;
+                                $("#spLock").text(permisssionText);
+                                $("#spLock").data("lock_key", lock);
+                                callback();
+                                stopWait();
+                            }
+                        });
+                }
+
+                function processMarkers(markers) {
+                    var markerXcoords = [];
+                    var markerYcoords = [];
+                    for (var i = 0; i < markers.length; i++) {
+                        markerXcoords.push(markers[i][0]);
+                        markerYcoords.push(markers[i][1]);
+                    }
+                    var postMarkers = [];
+                    postMarkers.push(markerXcoords);
+                    postMarkers.push(markerYcoords);
+                    return JSON.stringify(postMarkers);
+                }
+                
+                function renderDataUriToCanvas(dataUri, canvasId) {
+                    var img = new Image();
+                    img.src = dataUri;
+                    img.onload = function () {
+                        var canvas = $("#" + canvasId);
+                        var ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0);
+                    };
+                }
+
+                function renderFileBlobToImage(imageId, file) {
+                    var fr = new FileReader();
+                    fr.onload = function () {
+                        $("#" + imageId).src = fr.result;
+                    }
+                    fr.readAsDataURL(file);
+                };
+
+                function getGrayScaleAnalysisSuccess(data){
+                    alert("Sucess: GrayScaleAnalysis)");
+                };
+
+                function getGrayScaleAnalysisError(data){
+                    alert("error: " + data.responseText);
+                };
+
+                function getTransposedMarkersSucess(data) {
+                    if (data.success == true) {
+                        var grayScale = { area: data.grayscale_area, name: data.grayscale_name };
+                        var plates = data.plates;
+
+                        var uploadedFile = Uploads[0];
+                        uploadedFile.plates = plates;
+                        uploadedFile.grayScale = grayScale;
+
+                        var img = new Image;
+                        img.src = URL.createObjectURL(uploadedFile.file);
+                        img.onload = function () {
+                            var dataUri = sliceImageUp(grayScale.area.x1, grayScale.area.y1, grayScale.area.x2, grayScale.area.y2, img);
+                            //var dataUri = sliceImageUp(plates[0].x1, plates[0].y1, plates[0].x2, plates[0].y2, img);
+                            var blob = dataURItoBlob(dataUri);
+                            GetGrayScaleAnalysis(grayScale.name, dataUri, getGrayScaleAnalysisSuccess, getGrayScaleAnalysisError);
+                            $("#imgSlice").attr("src", dataUri);
+                        };
+                    } else
+                        alert("There was a problem with the tranposing: " + data.reason);
+                }
+
+                function getTransposedMarkersError(data){
+                    alert("error:" + data.responseText);
+                };
+
+                $("#btnUploadImage").click(function () {
+                    var fixtureName = $("#" + selFixtureName + " option:selected").text();
+                    var file = $("#imageUpload")[0].files[0];
+                    if (!file) {
+                        alert("You need to select a valid file!");
+                        return;
+                    }
+                    var uploadedFile = { file: file, markers: {}, plates: {}, grayScale: {} };
+                    Uploads.push(uploadedFile);
+                    GetMarkers(fixtureName, file, function (data) {
+                        if (data.success == true) {
+                            alert("The marker data was uploaded successfully:");
+                            var uploadedFile = Uploads[0];
+                            uploadedFile.markers = data.markers;
+                            var postMarkers = processMarkers(data.markers);
+                            GetTransposedMarkers(fixtureName, postMarkers, file, getTransposedMarkersSucess, getTransposedMarkersError);
+                        } else
+                            alert("There was a problem with the upload: " + data.reason);
+                    },
+                    function (data) {
+                        alert("error:" + data.responseText);
+                    });
+                });
+
+                //draw Project selection
+                function ini()
+                {
+                    GetFixtures(function (fixtures) {
+                        if (fixtures == null) {
+                            alert("ERROR: There was a problem with the API while fecthing fixtures!");
+                            return;
+                        }
+                        var elementName = selFixtureName;
+                        d3.select("#" + elementName).remove();
+                        var selPhen = d3.select("#divFixtureSelector")
+                            .append("select")
+                            .attr("id", elementName);
+                        var options = selPhen.selectAll("optionPlaceholders")
+                            .data(fixtures)
+                            .enter()
+                            .append("option");
+                        options.attr("value", function (d) { return d; });
+                        options.text(function (d) { return d; });
+                        $("#" + elementName).selectedIndex = 0;
+                    });
+
+                    GetPinningFormats(function (formats) {
+                        if (formats == null) {
+                            alert("ERROR: There was a problem with the API while fetching pinnnig formats! ");
+                            return;
+                        }
+                        var elementName = selPinFormatsName;
+                        d3.select("#" + elementName).remove();
+                        var selPhen = d3.select("#divPinningFormatsSelector")
+                            .append("select")
+                            .attr("id", elementName);
+                        var options = selPhen.selectAll("optionPlaceholders")
+                            .data(formats)
+                            .enter()
+                            .append("option");
+                        options.attr("value", function (d) { return d.value; });
+                        options.text(function (d) { return d.name; });
+                        $("#" + elementName).selectedIndex = 0;
+                    });
+                };
+
+                ini();
+                
+            });
+    </script>
+
+    <div id="divLoading" class="modal">
+        <p>Talking to server ... </p>
+    </div>
+    <div id="cont" class="container QCCont">
+        <h1>Cell Count Calibration</h1>
+        <h2>Selection</h2>
+        <div class="section-frame">
+            <div class="row">
+                <div class="col-md-12 " style="height: 100%; width: 100%">
+                    <div class="floating-box" style="width: 20%; horiz-align: center">
+                        <div style="margin-left: 10px; float: left" id="divFixtureSelector"></div>
+                        <div style="margin-left: 10px; float: left" id="divPinningFormatsSelector"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="section-frame">
+                <div class="row">
+                    <div class="col-md-12">
+                        <input type="file" name="imageUpload" id="imageUpload" accept="image/*" />
+                        <button id="btnUploadImage" class="btn btn-default btn-xs">Upload</button>
+                    </div>
+                </div>
+            </div>
+            <table>
+                <tr>
+                    <td>Image Slice</td>
+                    <td><img id="imgSlice" /></td>
+                </tr>
+            </table>
+            
+            
+        </div>
+    </div>
+</body>
+
+</html>

@@ -2,13 +2,13 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-	<link rel="stylesheet" type="text/css" href="style/main.css">
-	<link rel="stylesheet" type="text/css" href="style/analysis.css">
+	<link rel="stylesheet" type="text/css" href="style/main.css?ver=_-_VERSIONTAG_-_">
+	<link rel="stylesheet" type="text/css" href="style/analysis.css?ver=_-_VERSIONTAG_-_">
     <script src="/js/jquery-2.1.4.min.js"></script>
     <script src="/js/jquery-ui.min.js"></script>
-    <script src="/js/helpers.js"></script>
-    <script src="/js/fixtures.js"></script>
-    <script src="/js/analysis.js"></script>
+    <script src="/js/helpers.js?ver=_-_VERSIONTAG_-_"></script>
+    <script src="/js/fixtures.js?ver=_-_VERSIONTAG_-_"></script>
+    <script src="/js/analysis.js?ver=_-_VERSIONTAG_-_"></script>
     <script>
         current_fixture_id = "#current-fixture";
     </script>
@@ -63,6 +63,7 @@
                     <label for="manual-regridding-source-folder">Previous gridding folder (local)</label>
                     <input id="manual-regridding-source-folder"
                            title="This only has affect if manual gridding is activated."
+                           value="analysis"
                            onchange="set_regridding_source_directory(this);"
                            onfocus="set_regridding_source_directory(this);"
                            onkeyup="set_regridding_source_directory(this);" disabled>
@@ -90,6 +91,7 @@
                         <br>
                         <div class="error-message" id="fixture-error-message">No fixture selected ^^</div>
                         <br>
+                        <div id="manual-regridding-image"></div>
                         <div id="manual-regridding-plates"></div>
                         <div class="indented"><em>
                             Positive offsetting implies moving away from the grid origin (circled position)
@@ -97,7 +99,7 @@
                             Second offset moves along the short axis.
                             REGRIDDING WITHOUT USING IDENTICAL FIXTURE SETTINGS AS ORIGINAL MAKES NO SENSE.
                         </em></div>
-                        <div id="manual-regridding-image"></div>
+
                     </div>
                 </div>
 
@@ -115,6 +117,8 @@
 
             </form>
         </div>
+
+
         <h2>Feature extraction</h2>
         <div class="section-frame">
             <form>
@@ -137,7 +141,6 @@
         get_fixtures();
         InputEnabled($("#submit-button2"), false);
         toggleManualRegridding($("#manual-regridding"));
-
     </script>
 </body>
 </html>

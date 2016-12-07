@@ -117,11 +117,17 @@ class XML_Writer(object):
 
             """Fallback solution will try to get mac from a combination
             of ping and arp"""
-            IP = socket.gethostbyname(socket.gethostname())
-            p = Popen(["ping", '-c', '1', IP], stdout=PIPE)
-            p.communicate()
-            p = Popen(["arp", '-n', IP], stdout=PIPE)
-            s = p.communicate()[0]
+            try:
+                IP = socket.gethostbyname(socket.gethostname())
+                p = Popen(["ping", '-c', '1', IP], stdout=PIPE)
+                p.communicate()
+                p = Popen(["arp", '-n', IP], stdout=PIPE)
+                s = p.communicate()[0]
+
+            except socket.gaierror:
+                self._logger.warning("Can't find IP with socked")
+                s = ""
+
             try:
                 mac = re.search(r"(([a-f\d]{1,2}\:){3,8}[a-f\d]{1,2})", s).groups()[0]
             except AttributeError:
@@ -167,7 +173,6 @@ class XML_Writer(object):
 
         if mac is None:
             mac = self._get_mac_str_from_long(uuid.getnode())
-
 
         try:
             with  open(self._paths.config_mac, 'w') as fh:

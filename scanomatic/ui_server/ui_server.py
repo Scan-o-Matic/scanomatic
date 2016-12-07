@@ -6,11 +6,11 @@ import webbrowser
 from flask import Flask, request, send_from_directory, redirect, jsonify, render_template
 
 from socket import error
-from threading import Thread
+from threading import Thread, Timer
 from types import StringTypes
 
 from scanomatic.io.app_config import Config
-from scanomatic.io.logger import Logger
+from scanomatic.io.logger import Logger, LOG_RECYCLE_TIME, parse_log_file
 from scanomatic.io.paths import Paths
 from scanomatic.io.power_manager import POWER_MANAGER_TYPE
 from scanomatic.io.rpc_client import get_client
@@ -19,6 +19,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.io.backup import backup_file
 
 from . import qc_api
 from . import analysis_api
@@ -28,16 +29,28 @@ from . import scan_api
 from . import management_api
 from . import tools_api
 from . import data_api
-from .general import get_2d_list
+from .general import get_2d_list, decorate_access_restriction, set_local_app, is_local_ip, get_app_is_local
 
 _url = None
 _logger = Logger("UI-server")
+_debug_mode = None
+
+
+def init_logging():
+
+    _logger.pause()
+    backup_file(Paths().log_ui_server)
+    _logger.set_output_target(
+        Paths().log_ui_server,
+        catch_stdout=_debug_mode is False, catch_stderr=_debug_mode is False)
+    _logger.surpress_prints = _debug_mode is False
+    _logger.resume()
 
 
 def launch_server(is_local=None, port=None, host=None, debug=False):
 
-    global _url
-
+    global _url, _debug_mode
+    _debug_mode = debug
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
 
     rpc_client = get_client(admin=True)
@@ -49,6 +62,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         port = Config().ui_server.port
 
     if is_local is True or (Config().ui_server.local and is_local is None):
+        set_local_app()
         host = "localhost"
         is_local = True
     elif host is None:
@@ -56,19 +70,27 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         is_local = False
 
     _url = "http://{host}:{port}".format(host=host, port=port)
-
+    init_logging()
     _logger.info("Requested to launch UI-server at {0} being local={1} and debug={2}".format(
         _url, is_local, debug))
+
+    app.log_recycler = Timer(LOG_RECYCLE_TIME, init_logging)
+    app.log_recycler.start()
 
     @app.route("/")
     def _root():
         return send_from_directory(Paths().ui_root, Paths().ui_root_file)
+
+    @app.route("/ccc")
+    def _ccc():
+        return send_from_directory(Paths().ui_root, Paths().ui_ccc_file)
 
     @app.route("/help")
     def _help():
         return send_from_directory(Paths().ui_root, Paths().ui_help_file)
 
     @app.route("/qc_norm")
+    @decorate_access_restriction
     def _qc_norm():
         return send_from_directory(Paths().ui_root, Paths().ui_qc_norm_file)
 
@@ -77,6 +99,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return redirect("https://github.com/local-minimum/scanomatic/wiki")
 
     @app.route("/maintain")
+    @decorate_access_restriction
     def _maintain():
         return send_from_directory(Paths().ui_root, Paths().ui_maintain_file)
 
@@ -100,8 +123,43 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if font:
             return send_from_directory(Paths().ui_font, font)
 
+    @app.route("/home")
+    def _show_homescreen():
+
+        if not get_app_is_local() or is_local_ip(request.remote_addr):
+            return redirect("/status")
+        return ""
+
+    @app.route("/logs/system/<log>")
+    def _logs(log):
+        """
+        Args:
+            log:
+
+        Returns:
+
+        """
+        if log == 'server':
+            what = Paths().log_server
+        elif log == "ui_server":
+            what = Paths().log_ui_server
+
+        data = parse_log_file(what)
+        data['garbage'] = [l.replace("\n", "<br>") for l in data['garbage']]
+        for e in data['records']:
+            e['message'] = e['message'].split("\n")
+
+        if data:
+            return render_template(
+                Paths().ui_log_template,
+                title=log.replace("_", " ").capitalize(),
+                **data)
+        else:
+            return ""
+
     @app.route("/status")
     @app.route("/status/<status_type>")
+    @decorate_access_restriction
     def _status(status_type=""):
 
         if status_type != "" and not rpc_client.online:
@@ -122,6 +180,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return jsonify(succes=False, reason='Unknown status request')
 
     @app.route("/settings", methods=['get', 'post'])
+    @decorate_access_restriction
     def _config():
 
         app_conf = Config()
@@ -155,6 +214,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return render_template(Paths().ui_settings_template, **app_conf.model_copy())
 
     @app.route("/analysis", methods=['get', 'post'])
+    @decorate_access_restriction
     def _analysis():
 
         action = request.args.get("action")
@@ -220,6 +280,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_analysis_file)
 
     @app.route("/experiment", methods=['get', 'post'])
+    @decorate_access_restriction
     def _experiment():
 
         if request.args.get("enqueue"):
@@ -271,6 +332,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
 
     @app.route("/compile", methods=['get', 'post'])
+    @decorate_access_restriction
     def _compile():
 
         if request.args.get("run"):
@@ -311,6 +373,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
 
     @app.route("/scanners/<scanner_query>")
+    @decorate_access_restriction
     def _scanners(scanner_query=None):
         if scanner_query is None or scanner_query.lower() == 'all':
             return jsonify(scanners=rpc_client.get_scanner_status(), success=True)
@@ -327,6 +390,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     scanner_query))
 
     @app.route("/fixtures", methods=['post', 'get'])
+    @decorate_access_restriction
     def _fixtures():
 
         return send_from_directory(Paths().ui_root, Paths().ui_fixture_file)

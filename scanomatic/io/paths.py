@@ -71,6 +71,7 @@ class Paths(SingeltonOneInit):
         self.ui_templates = os.path.join(self.ui_root, "templates")
         self.ui_help_file = "help.html"
         self.ui_qc_norm_file = "qc_norm.html"
+        self.ui_access_restricted = "access_restricted.html"
         self.ui_maintain_file = "maintain.html"
         self.ui_fixture_file = "fixture.html"
         self.ui_root_file = 'root.html'
@@ -79,6 +80,8 @@ class Paths(SingeltonOneInit):
         self.ui_status_file = 'status.html'
         self.ui_analysis_file = 'analysis.html'
         self.ui_settings_template = 'settings.html'
+        self.ui_log_template = 'log.html'
+        self.ui_ccc_file = 'CCC.html'
 
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
         self.martin = os.path.join(self.images, "martin3.png")
@@ -116,6 +119,14 @@ class Paths(SingeltonOneInit):
             self.config, "{0}calibration.data")
         self.analysis_graycsales = os.path.join(
             self.config, "grayscales.cfg")
+
+        self.ccc_folder = os.path.join(self.config, "ccc")
+        self.ccc_file_pattern = os.path.join(self.ccc_folder, "{0}.ccc")
+        self.ccc_image_pattern = os.path.join(self.ccc_folder, "{0}.{1}.tiff")
+        self.ccc_image_plate_slice_pattern = os.path.join(self.ccc_folder, "{0}.{1}.plate_{2}.npy")
+        self.ccc_image_plate_transformed_slice_pattern = \
+            os.path.join(self.ccc_folder, "{0}.{1}.plate_{2}.transformed.npy")
+        self.ccc_image_gs_slice_pattern = os.path.join(self.ccc_folder, "{0}.{1}.gs.npy")
 
         self.analysis_run_log = 'analysis.log'
         self.analysis_model_file = 'analysis.model'

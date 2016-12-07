@@ -412,7 +412,7 @@ class FixtureImage(object):
         :type offset: tuple(int)
         """
 
-        if rotation:
+        if rotation and np.abs(rotation) > 0.01:
             self._logger.warning("Not supporting rotations yet (got {0})".format(rotation))
             # area.x1, area.y1 = _get_rotated_vector(area.x1, area.y1, rotation)
             # area.x2, area.y2 = _get_rotated_vector(area.x2, area.y2, rotation)

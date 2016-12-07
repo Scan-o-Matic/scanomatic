@@ -4,7 +4,13 @@ import shutil
 import sys
 import glob
 import stat
+import re
+from io import BytesIO
+from hashlib import sha256
 from subprocess import PIPE, call
+from scanomatic import get_version
+from scanomatic.io import source
+from itertools import chain
 
 
 class MiniLogger(object):
@@ -54,6 +60,59 @@ Categories=Science;
 """
 
 
+def get_package_hash(packages, pattern="*.py", **kwargs):
+
+    return get_hash((p.replace(".", os.sep) for p in packages), pattern=pattern, **kwargs)
+
+
+def get_hash_all_files(root, depth=4, **kwargs):
+
+    pattern = ["**"] * depth
+    return get_hash(
+        ("{0}{1}{2}{1}*".format(root, os.sep, os.sep.join(pattern[:d])) for d in range(depth)), **kwargs)
+
+
+def get_hash(paths, pattern=None, hasher=None, buffsize=65536):
+
+    if hasher is None:
+        hasher = sha256()
+
+    files = chain(*(sorted(glob.iglob(os.path.join(path, pattern)) if pattern else path) for path in paths))
+    for file in files:
+        try:
+            # _logger.info("Hashing {0} {1}".format(hasher.hexdigest(), file))
+            with open(file, 'rb') as f:
+                buff = f.read(buffsize)
+                while buff:
+                    hasher.update(buff)
+                    buff = f.read(buffsize)
+
+        except IOError:
+            pass
+
+    return hasher
+
+
+def update_init_file():
+    data = source.get_source_information(True)
+    data['version'] = source.next_subversion(str(data['branch']) if data['branch'] else None, get_version())
+    if data['branch'] is None:
+        data['branch'] = "++UNKNOWN BRANCH++"
+
+    lines = []
+    with open(os.path.join("scanomatic", "__init__.py")) as fh:
+        for line in fh:
+            if line.startswith("__version__ = "):
+                lines.append("__version__ = \"v{0}\"\n".format(".".join((str(v) for v in data['version']))))
+            elif line.startswith("__branch = "):
+                lines.append("__branch = \"{0}\"\n".format(data['branch']))
+            else:
+                lines.append(line)
+
+    with open(os.path.join("scanomatic", "__init__.py"), 'w') as fh:
+        fh.writelines(lines)
+
+
 def _clone_all_files_in(path):
 
     for child in glob.glob(os.path.join(path, "*")):
@@ -66,6 +125,13 @@ def _clone_all_files_in(path):
 
 
 def install_data_files(target_base=None, source_base=None, install_list=None, silent=False):
+
+    p = re.compile(r'ver=_-_VERSIONTAG_-_')
+    buff_size = 65536
+    replacement = r'ver={0}'.format(".".join(
+        (str(v) for v in source.parse_version(source.get_source_information(True)['version']))))
+
+    _logger.info("Data gets installed as {0}".format(replacement))
 
     if target_base is None:
         target_base = os.path.join(home_dir, installPath)
@@ -112,7 +178,18 @@ def install_data_files(target_base=None, source_base=None, install_list=None, si
                     "Copying file: {0} => {1}".format(
                         source_path, target_path))
 
-                shutil.copy(source_path, target_path)
+                b = BytesIO()
+
+                with open(source_path, 'rb') as fh:
+
+                    buff = fh.read()
+                    b.write(p.sub(replacement, buff))
+
+                b.flush()
+                b.seek(0)
+                with open(target_path, 'wb') as fh:
+                    fh.write(b.read())
+
                 os.chmod(target_path, defaltPermission)
 
 

@@ -4,6 +4,7 @@ import numpy as np
 from scanomatic.io.paths import Paths
 from scanomatic.image_analysis.image_basics import load_image_to_numpy
 from scanomatic.io.logger import Logger
+from scanomatic.io.pickler import unpickle_with_unpickler
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 from scanomatic.generics.purge_importing import ExpiringModule
 
@@ -44,7 +45,7 @@ def produce_grid_images(path=".", image=None, mark_position=None):
     for plate in plates:
 
         plate_image = image[plate.y1: plate.y2, plate.x1: plate.x2]
-        grid = np.load(os.path.join(path, Paths().grid_pattern.format(plate.index)))
+        grid = unpickle_with_unpickler(np.load, os.path.join(path, Paths().grid_pattern.format(plate.index)))
         make_grid_im(plate_image, grid, os.path.join(path, Paths().experiment_grid_image_pattern.format(plate.index)),
                      marked_position=mark_position)
 

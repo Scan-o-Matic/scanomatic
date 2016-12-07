@@ -71,7 +71,7 @@ class DataLoader(object):
 
     def _get_empty_headers(self):
 
-        return [None for _ in self._columns[self._sheet]]
+        return [None for _ in range(self._columns[self._sheet])]
 
     def get_headers(self, plate_size):
 

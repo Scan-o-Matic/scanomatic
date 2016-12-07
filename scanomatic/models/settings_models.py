@@ -51,8 +51,7 @@ class UIServerModel(model.Model):
 
         self.port = port
 
-        self.local = local if local is not None else (
-            True if host is None or host in ['127.0.0.1', 'localhost'] else False)
+        self.local = local if local is not None else True
 
         self.host = host
         self.master_key = master_key if master_key else str(uuid1())

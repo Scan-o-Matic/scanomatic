@@ -2,11 +2,14 @@ from flask import request, Flask, jsonify
 from itertools import product, chain
 import os
 import glob
+from urllib import unquote
 
 from scanomatic.ui_server.general import safe_directory_name
 from scanomatic.io.app_config import Config
-from scanomatic.io.logger import Logger
+from scanomatic.io.logger import Logger, parse_log_file
+from scanomatic.io.paths import Paths
 from scanomatic.data_processing.phenotyper import path_has_saved_project_state
+from .general import convert_url_to_path, json_response, decorate_api_access_restriction
 
 _logger = Logger("Tools API")
 
@@ -23,8 +26,67 @@ def add_routes(app):
         app (Flask): The flask app to decorate
     """
 
+    @app.route("/api/tools/system_logs")
+    @app.route("/api/tools/system_logs/<what>/<detail>")
+    @app.route("/api/tools/system_logs/<what>")
+    @decorate_api_access_restriction
+    def system_log_view(what=None, detail=None):
+
+        base_url = "/api/tools/system_logs"
+        if what == 'server':
+            what = Paths().log_server
+        elif what == "ui_server":
+            what = Paths().log_ui_server
+        elif what == "scanner_error":
+            if detail is None:
+                return jsonify(success=False, is_endpoint=True,
+                               reason="{0} needs to know what scanner log detail".format(what))
+            what = Paths().log_scanner_err.format(detail)
+        elif what == "scanner":
+            if detail is None:
+                return jsonify(success=False, is_endpoint=True,
+                               reason="{0} needs to know what scanner log detail".format(what))
+            what = Paths().log_scanner_out.format(detail)
+        else:
+
+            return jsonify(**json_response(
+                ['urls'],
+                dict(
+                    urls=["{0}/{1}".format(base_url, w) for w in ('server', 'ui_server', 'scanner', 'scanner_error')]
+                )
+            ))
+
+        try:
+            data = parse_log_file(what)
+        except IOError:
+            return jsonify(success=False, is_endpoint=True, reason="No log-file found with that name")
+
+        return jsonify(success=True, is_endpoint=True, **{k: v for k, v in data.iteritems() if k not in ('file',)})
+
+    @app.route("/api/tools/logs")
+    @app.route("/api/tools/logs/<filter_status>/<path:project>")
+    @app.route("/api/tools/logs/<int:n_records>/<path:project>")
+    @app.route("/api/tools/logs/<filter_status>/<int:n_records>/<path:project>")
+    @app.route("/api/tools/logs/<int:start_at>/<int:n_records>/<path:project>")
+    @app.route("/api/tools/logs/<filter_status>/<int:start_at>/<int:n_records>/<path:project>")
+    @decorate_api_access_restriction
+    def log_view(project='', filter_status=None, n_records=-1, start_at=0):
+
+        # base_url = "/api/tools/logs"
+        path = convert_url_to_path(project)
+        if n_records == 0:
+            n_records = -1
+
+        try:
+            data = parse_log_file(path, seek=start_at, max_records=n_records, filter_status=filter_status)
+        except IOError:
+            return jsonify(success=False, is_endpoint=True, reason="No log-file found with that name")
+
+        return jsonify(success=True, is_endpoint=True, **{k: v for k, v in data.iteritems() if k not in ('file',)})
+
     @app.route("/api/tools/selection", methods=['POST'])
     @app.route("/api/tools/selection/<operation>", methods=['POST'])
+    @decorate_api_access_restriction
     def tools_create_selection(operation='rect'):
         """Converts selection ranges to api-understood selections.
 
@@ -79,6 +141,7 @@ def add_routes(app):
 
     @app.route("/api/tools/coordinates", methods=['POST'])
     @app.route("/api/tools/coordinates/<operation>", methods=['POST'])
+    @decorate_api_access_restriction
     def tools_coordinates(operation='create'):
         """Conversion between coordinates and api selections.
 
@@ -115,12 +178,14 @@ def add_routes(app):
     @app.route("/api/tools/path/<command>", methods=['get', 'post'])
     @app.route("/api/tools/path/<command>/", methods=['get', 'post'])
     @app.route("/api/tools/path/<command>/<path:sub_path>", methods=['get', 'post'])
+    @decorate_api_access_restriction
     def _experiment_commands(command=None, sub_path=""):
 
         if command is None:
             command = 'root'
 
-        sub_path = sub_path.split("/")
+        sub_path = unquote(sub_path).split("/")
+
         try:
             is_directory = bool(request.values.get('isDirectory', type=int, default=True))
         except ValueError:

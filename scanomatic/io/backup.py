@@ -14,7 +14,7 @@ def get_backup_name(path_to_original, max_backups=10, pattern="{0}.{1}.tar.gz"):
 
         s = os.stat(path)
         t = max(s.st_atime, s.st_mtime, s.st_ctime)
-        if t_prev is not None and t_prev < t:
+        if t_prev is not None and t_prev > t:
             return path
         t_prev = t
 
