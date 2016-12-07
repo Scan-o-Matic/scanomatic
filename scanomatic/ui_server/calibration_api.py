@@ -87,7 +87,7 @@ def add_routes(app):
 
         return jsonify(success=True, is_endpoint=True, image_identifier=image_identifier)
 
-    @app.route("/api/calibration/<ccc_identifier>/image_list", methods=['POST'])
+    @app.route("/api/calibration/<ccc_identifier>/image_list", methods=['GET'])
     @decorate_api_access_restriction
     def list_ccc_images(ccc_identifier):
 
@@ -97,7 +97,7 @@ def add_routes(app):
 
         return jsonify(success=True, is_endpoint=True, image_identifiers=image_list)
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/get", methods=['POST'])
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/get", methods=['GET'])
     @decorate_api_access_restriction
     def download_ccc_image(ccc_identifier, image_identifier):
 
