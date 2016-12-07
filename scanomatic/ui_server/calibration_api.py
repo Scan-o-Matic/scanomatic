@@ -7,6 +7,7 @@ import zipfile
 import time
 import os
 
+from scanomatic.io.paths import Paths
 from scanomatic.data_processing import calibration
 from scanomatic.io.fixtures import Fixtures
 from scanomatic.image_analysis.image_grayscale import get_grayscale_image_analysis
@@ -96,6 +97,12 @@ def add_routes(app):
 
         return jsonify(success=True, is_endpoint=True, image_identifiers=image_list)
 
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/get", methods=['POST'])
+    @decorate_api_access_restriction
+    def download_ccc_image(ccc_identifier, image_identifier):
+
+        im_path = Paths().ccc_image_pattern.format(ccc_identifier, image_identifier)
+        return send_file(im_path, mimetype='Image/Tiff')
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/data/set", methods=['POST'])
     @decorate_api_access_restriction
