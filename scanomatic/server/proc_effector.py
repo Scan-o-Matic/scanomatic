@@ -209,7 +209,10 @@ class ProcessEffector(object):
 
             try:
                 if not model.email:
-                    self._logger.info("No mail registered with job, can't mail problem")
+                    self._logger.info(
+                        "No mail registered with job, so can't send:\n{0}\n\n{1}".format(
+                            title, message
+                        ))
                     return
 
                 if AppConfig().mail.server:
