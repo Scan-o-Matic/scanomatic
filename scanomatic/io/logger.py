@@ -93,7 +93,8 @@ class Logger(object):
 
         file = self._active_log_file
         if file is None:
-            self.error("Attempting to pause logging while not having any log file")
+            self.warning("Attempting to pause logging while not having any log file has no effect."
+                         " This is most probably not a problem, even intended.")
         else:
             file.pause()
 
@@ -101,7 +102,8 @@ class Logger(object):
 
         file = self._active_log_file
         if file is None:
-            self.error("Attempting to resume logging while not having any log file")
+            self.warning("Attempting to resume logging while not having any log file."
+                         " This has no effect, but should not be a problem either.")
         else:
             file.resume()
 
