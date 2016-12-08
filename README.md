@@ -1,4 +1,4 @@
-# scanomatic (python module) and Scan-o-matic (program
+# Scan-o-matic (program) and scanomatic (python module)
 
 This project contains the code for the massive microbial phenotyping platform Scan-o-matic.
 
