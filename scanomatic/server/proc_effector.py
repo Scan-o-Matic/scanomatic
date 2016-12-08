@@ -228,7 +228,7 @@ class ProcessEffector(object):
                     title, message))
             except socket.error:
                 self._logger.warning(
-                    "Mailing message '{0}' to '{1}' failed to send, probably sendmail is not installed".format(
-                        title.format(**model), model.email))
+                    "Failed to send '{0}' to '{1}'. Probably `sendmail` is not installed. Mail body:\n{2}".format(
+                        title.format(**model), model.email, message.format(**model)))
 
         Thread(target=_do_mail, args=(title_template, message_template, data_model)).start()
