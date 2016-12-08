@@ -161,7 +161,8 @@ class Paths(SingeltonOneInit):
         self.image_analysis_img_data = "image_{0}_data.npy"
         self.image_analysis_time_series = "time_data.npy"
 
-        self.project_settings_file_pattern = "{0}.project.settings"
+        self.project_compilation_from_scanning_pattern_old = "{0}.project.settings"
+        self.project_compilation_from_scanning_pattern = "{0}.project.compilation.original"
         self.project_compilation_pattern = "{0}.project.compilation"
         self.project_compilation_instructions_pattern = "{0}.project.compilation.instructions"
         self.project_compilation_log_pattern = "{0}.project.compilation.log"
@@ -200,9 +201,9 @@ class Paths(SingeltonOneInit):
 
         return fixture.capitalize().replace("_", " ")
 
-    def get_project_settings_path_from_scan_model(self, scan_model):
+    def get_original_compilation_path_from_scan_model(self, scan_model):
 
-        return self.project_settings_file_pattern.format(
+        return self.project_compilation_from_scanning_pattern.format(
             os.path.join(scan_model.directory_containing_project, scan_model.project_name, scan_model.project_name))
 
     def get_project_compile_path_from_compile_model(self, compile_model):

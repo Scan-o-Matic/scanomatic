@@ -109,7 +109,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
             compile_action=COMPILE_ACTION.Initiate if self._scanning_job.number_of_scans > 1
             else COMPILE_ACTION.InitiateAndSpawnAnalysis,
-            path=paths_object.get_project_settings_path_from_scan_model(self._scanning_job),
+            path=paths_object.get_original_compilation_path_from_scan_model(self._scanning_job),
             fixture_type=FIXTURE.Global,
             fixture_name=self._scanning_job.fixture)
 

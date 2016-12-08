@@ -1,4 +1,4 @@
-# scanomatic (python module) and Scan-o-matic (program
+# Scan-o-matic (program) and scanomatic (python module)
 
 This project contains the code for the massive microbial phenotyping platform Scan-o-matic.
 
@@ -8,64 +8,18 @@ Please refer to the [Wiki](https://github.com/local-minimum/scanomatic/wiki) for
 
 If you are considering setting up Scan-o-matic at your lab, we would be very happy and would love to hear from you. But, before you decide on this, the Faculty of Science at University of Gothenburg has included Scan-o-matic among its high-throughput phenomics infrastructure and it is our expressed interest that external researchers come to us. If you are interested there's some more information and contact information here: [The center for large scale cell based screeening](http://cmb.gu.se/english/research/microbiology/center-for-large-scale-cell-based-screening). It is yet to become listed on the page, but don't worry, it will be part of the list.
 
+## Current focus
 
-__The rest of this file should probably be maintained in another way.__
+High attention is currently being focused on the new QC to make sure it has all it needs and works even better than the previous version.
 
-# Features that would be nice if included
+The ability to add new Cell Count Calibrations via UI is being developed.
 
-## UI
+## Reporting issues
 
-### Feature extraction
+If you have a problem please create and issue here on the git repository.
+If it relates to a specific project please include the relevant log-files for that project.
+There are also a set of files that probably is relevant: `.project.settings`, `.project.compilation`, `.project.compilation.instructions`, `.scan.instructions`, `.analysis.instructions`...
+Please also include the server and ui-server log files (those will be localized to a hidden folder called `.scan-o-matic/logs` in your users directory.
 
-* If there's a state/previous extraction, we can allow (a) loading this state and
-  if the user uses this option allow (a.1) keeping previous filter and/or (a.2) keep smoothed data.
-* Make feature extraction of bioscreen data available.
-
-### Admin stuff
-
-* :star: Ability to calibrate and add a new grayscale with using old as reference.
-* Validation of that a grayscale is producing acceptable values in a scanner over time
-
-### Troubleshooting and QC
-
-* Showing of gridding in Status and QC-view. (API exists, viewing in re-gridding exists)
-* :star: Showing of log-files for a project at various stages and views (API exists).
-* Showing of the instructions given at various stages to Scan-o-matic (API exists).
-* Regridding grid image may not work if less than 4 images on 4 plate fixture...
-* :star: Be able to specify what images to be included for each plate at the analysis stage.
-  If one plate has problems towards the end of experiment, only this one should skip last
-  couple of images.
-* QC be able to know what phenotypes been extracted and normed
-
-### Fixtures
-
-* :star: Fixture creation image selection should allow to select file on server as well as uploading image
-
-## CLI
-
-* `scan-o-matic_as_service_check` script should allow for reboots as well
-* Uninstall
-
-## Code
-
-* Scan.instructions could include more scanner information such as actual `scanimage` argument string used.
-
-### Image analysis
-
-* Gridding could attempt to use heuristics or history about grids to assist gridding and/or warn users
-* Add 16 BIT image scanning?
-
-### Data/Features/QC
-
-* :star: Adding meta-data to QC should trigger suggesting certain positions as Empty based on missing info in meta data.
-
-### Logging
-
-* Log parsing should be able to add non-formatted strings to current log item
-* Logs can be lost when swapping outputs
-
-### API
-
-* Be able to email logs.
-* :star: Server should say if it reaches the power manager.
-* QC be able to know what phenotypes been extracted and normed
+Do however please note, that if you are doing something super secret, the files will contain some information on what you are doing and it may be needed that you go through them before uploading them publically.
+In this case, only redact the sensitive information, but keep general systematic parts of these lines as intact as possible.
