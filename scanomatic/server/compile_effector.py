@@ -230,7 +230,9 @@ Scan-o-Matic""", self._compile_job)
                        """This is an automated email, please don't reply!
 
 The project '{path}' on """ + AppConfig().computer_human_name +
-                       """ has completed. Downstream analysis was refused.
+                       """ has completed.
+
+*** Downstream analysis was refused. ***
 
 All the best,
 

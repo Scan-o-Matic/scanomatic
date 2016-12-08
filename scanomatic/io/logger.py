@@ -93,7 +93,8 @@ class Logger(object):
 
         file = self._active_log_file
         if file is None:
-            self.error("Attempting to pause logging while not having any log file")
+            self.warning("Attempting to pause logging while not having any log file has no effect."
+                         " This is most probably not a problem, even intended.")
         else:
             file.pause()
 
@@ -101,7 +102,8 @@ class Logger(object):
 
         file = self._active_log_file
         if file is None:
-            self.error("Attempting to resume logging while not having any log file")
+            self.warning("Attempting to resume logging while not having any log file."
+                         " This has no effect, but should not be a problem either.")
         else:
             file.resume()
 
@@ -286,28 +288,33 @@ class Logger(object):
                 else:
                     msg = (self._decorate(lvl) + unicode(msg),)
 
-                self._log_file.writelines(msg)
+                output.writelines(msg)
 
             elif not self._suppressPrints:
 
-                print self._decorate(lvl) + str(msg)
+                print(self._decorate(lvl) + str(msg))
 
     def set_output_target(
             self, target, catch_stdout=False, catch_stderr=False,
             mode='w', buffering=None):
 
         if self._log_file is not None:
-            self._log_file.close()
+            cache = self._log_file.close()
+        else:
+            cache = []
 
         if target is not None:
             self._log_file = _ExtendedFileObject(target, mode, buffering=512 if buffering is None else buffering)
+            self._log_file.writelines(*cache)
         else:
-            if self._log_file is not None:
-                self._log_file.close()
             self._log_file = None
 
         self.catch_stdout = catch_stdout
         self.catch_stderr = catch_stderr
+
+        if target is None and not self._suppressPrints:
+            for msg in cache:
+                print(msg)
 
     def traceback(self, lvl=None):
 
