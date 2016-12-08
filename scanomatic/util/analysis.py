@@ -14,8 +14,16 @@ _logger = Logger("Analysis Utils")
 def produce_grid_images(path=".", image=None, mark_position=None):
 
     project_path = os.path.join(os.path.dirname(os.path.abspath(path)))
-    compilations = glob.glob(os.path.join(os.path.dirname(os.path.abspath(path)),
-                                          Paths().project_compilation_pattern.format("*")))
+
+    for compilation_pattern in (Paths().project_compilation_pattern,
+                                Paths().project_compilation_from_scanning_pattern,
+                                Paths().project_compilation_from_scanning_pattern_old):
+
+        compilations = glob.glob(
+            os.path.join(os.path.dirname(os.path.abspath(path)), compilation_pattern.format("*")))
+
+        if compilations:
+            break
 
     if not compilations:
         raise ValueError("There are no compilations in the parent directory")
