@@ -1,7 +1,7 @@
 import time
 import os
 from types import StringTypes
-
+import socket
 #
 # INTERNAL DEPENDENCIES
 #
@@ -209,6 +209,7 @@ class ProcessEffector(object):
 
             try:
                 if not model.email:
+                    self._logger.info("No mail registered with job, can't mail problem")
                     return
 
                 if AppConfig().mail.server:
@@ -222,7 +223,12 @@ class ProcessEffector(object):
                           title.format(**model),
                           message.format(**model),
                           server=server)
-            except:
-                self._logger.warning("Mailing message '{0}' to '{1}' failed".format(title, model.email))
+            except KeyError:
+                self._logger.error("Malformed message template, model is lacking requested keys:\n{1}\n\n{0}".format(
+                    title, message))
+            except socket.error:
+                self._logger.warning(
+                    "Mailing message '{0}' to '{1}' failed to send, probably sendmail is not installed".format(
+                        title.format(**model), model.email))
 
         Thread(target=_do_mail, args=(title_template, message_template, data_model)).start()
