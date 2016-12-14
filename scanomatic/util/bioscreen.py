@@ -89,7 +89,14 @@ def csv_loader(path):
         data = unicodedata.normalize('NFKD', data).encode('ascii', 'ignore')
 
     dialect = csv.Sniffer().sniff(data)
+
     data = data.split(dialect.lineterminator)
+
+    if len(data) == 1:
+        for linedelim in ('\r\n', '\n\r', '\n', '\r'):
+            data = data[0].split(linedelim)
+            if len(data) > 1:
+                break
 
     # Sniffing has to be repeated to not become confused by non-commented comment lines
     dialect = csv.Sniffer().sniff(data[10])
