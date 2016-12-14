@@ -29,6 +29,11 @@ def _get_row_length(row):
     return len(tuple(e for e in row if e and e != ' '))
 
 
+def _get_row_is_possible_at_length(row, length):
+
+    return any(e.strip() for e in row) and len(row) >= length
+
+
 def _count_row_lengths(data):
 
     counts = defaultdict(int)
@@ -56,7 +61,7 @@ def _parse_non_data(data, mode, include_until=-1):
 
 def _parse_data(data, mode, time_scale, start_row=0):
 
-    all_data = tuple(data[i][:mode] for i in data if _get_row_length(data[i]) >= mode and i >= start_row)
+    all_data = tuple(data[i][:mode] for i in data if _get_row_is_possible_at_length(data[i], mode) and i >= start_row)
     data = np.array(all_data[1:], dtype=np.object)
 
     if data.size == 0:
@@ -69,16 +74,27 @@ def _parse_data(data, mode, time_scale, start_row=0):
         def f(v):
             return sum(float(a) * b for a, b in izip(v.split(":"), (1, 1/60., 1/3600.)))
 
+        print("Failed direct parsing for time in decimal format, attempting clock format")
         time = np.frompyfunc(f, 1, 1)(data[:, 0])
+
     except IndexError:
         print("Failed parsing data {0}".format(data))
         raise
 
     column_start = max(1, data.shape[1] - 200)
 
-    return all_data[0][column_start:], \
-           time.astype(np.float), \
-           data[:, column_start:].astype(np.float)
+    headers = all_data[0][column_start:]
+
+    try:
+        data = data[:, column_start:].astype(np.float)
+    except ValueError:
+        try:
+            data = np.array([[val if val else None for val in row[column_start:]] for row in data], dtype=np.float)
+        except ValueError:
+            print("Failed to interpret data ({0} rows, type ({1})) as floats".format(len(data), data.dtype))
+            raise
+
+    return headers, time.astype(np.float), data
 
 
 def csv_loader(path):
@@ -138,7 +154,11 @@ def load(path=None, data=None, times=None, time_scale=36000, reshape=True,
     :return:
     """
     if path:
-        (_, times, data), _ = parse(path, time_scale=time_scale)
+        try:
+            (_, times, data), _ = parse(path, time_scale=time_scale)
+        except TypeError:
+            print("*** Could not parse data***")
+            return None
 
     data = preprocess(data)
     data = data.T
