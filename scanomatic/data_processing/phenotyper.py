@@ -985,7 +985,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 if any(r0val < epsilon for r0val in r0):
 
                     self._logger.warning(
-                        "Curve {0} has long stretches of (near) identical data, as is probably corrupt".format(
+                        "Curve {0} has long stretches of (near) identical data and is probably corrupt".format(
                             np.unravel_index(id_curve, plate.shape[:2])
                         ))
 
