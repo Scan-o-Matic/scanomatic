@@ -246,6 +246,7 @@ def add_routes(app):
 
         return jsonify(success=True, is_endpoint=True)
 
+'''
     @app.route("/api/calibration/compress")
     @decorate_api_access_restriction
     def calibration_compress():
@@ -349,3 +350,4 @@ def add_routes(app):
             name = 'default'
 
         return send_file(memory_file, attachment_filename='calibration.{0}.zip'.format(name), as_attachment=True)
+'''

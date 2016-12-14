@@ -68,7 +68,6 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
 """
 
 __CCC = {}
-
 _logger = Logger("Cell Count Calibration")
 
 
@@ -231,7 +230,7 @@ def _get_ccc_identifier(species, reference):
     return candidate
 
 
-def load_cccs():
+def __load_cccs():
 
     for ccc_path in iglob(Paths().ccc_file_pattern.format("*")):
 
@@ -312,21 +311,28 @@ def save_ccc_to_disk(identifier):
         _logger.error("Can only save changes to CCC:s that are under construction")
 
 
+def _encode_val(v):
+    if isinstance(v, dict):
+        return _encode_dict(v)
+    if isinstance(v, list) or isinstance(v, tuple):
+        return type(v)(_encode_val(e) for e in v)
+    else:
+        return _encode_ccc_enum(v)
+
+
+def _encode_dict(d):
+    return {_encode_ccc_enum(k): _encode_val(v) for k, v in d.iteritems()}
+
+
 def _save_ccc_to_disk(data):
 
-    def _encode_val(v):
-        if isinstance(v, dict):
-            return _encode_dict(v)
-        if isinstance(v, list) or isinstance(v, tuple):
-            return type(v)(_encode_val(e) for e in v)
-        else:
-            return _encode_ccc_enum(v)
-
-    def _encode_dict(d):
-        return {_encode_ccc_enum(k): _encode_val(v) for k, v in d.iteritems()}
-
     identifier = data[CellCountCalibration.identifier]
-    os.makedirs(os.path.dirname(Paths().ccc_file_pattern.format(identifier)))
+
+    try:
+        os.makedirs(os.path.dirname(Paths().ccc_file_pattern.format(identifier)))
+    except os.error:
+        pass
+
     with open(Paths().ccc_file_pattern.format(identifier), 'wb') as fh:
         json.dump(_encode_dict(data), fh)
 
@@ -348,8 +354,9 @@ def _parse_ccc(data):
 
     for ccc_data_type in CellCountCalibration:
         if ccc_data_type not in data:
-            _logger.error("Corrupt CCC-data, missing {0}".format(ccc_data_type))
+            _logger.error("Corrupt CCC-data, missing {0} in {1}".format(ccc_data_type, data))
             return None
+
     return data
 
 __DECODABLE_ENUMS = {
@@ -562,6 +569,9 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
         return False
 
 
+if not __CCC:
+    __load_cccs()
+
 ########################################
 ########################################
 ########################################
@@ -618,6 +628,7 @@ def _valid_entry(entry):
     return CalibrationEntry.target_value in entry and CalibrationEntry.source_value_counts in entry and CalibrationEntry.source_values in entry
 
 
+'''
 def _jsonify_entry(entry):
 
     return {k.name: v for k, v in entry.iteritems()}
@@ -683,6 +694,7 @@ def load_data_file(file_path=None, label=''):
         raise IOError("File at {0} not found".format(file_path))
 
     return data_store
+'''
 
 
 def get_calibration_optimization_function(degree=5, include_intercept=False):
