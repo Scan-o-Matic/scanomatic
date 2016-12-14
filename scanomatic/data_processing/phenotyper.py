@@ -991,7 +991,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 if any(rval == 0 for rval in r):
                     self._logger.warning(
-                        "Curve {0} is probably overfitted somewhere because polynomail residual was 0".format(
+                        "Curve {0} is probably overfitted somewhere because polynomial residual was 0".format(
                             np.unravel_index(id_curve, plate.shape[:2])
                     ))
 
