@@ -969,6 +969,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 continue
 
             log2_data = np.log2(plate).reshape(np.prod(plate.shape[:2]), plate.shape[-1])
+            epsilon = np.finfo(log2_data.dtype).eps
 
             if apply_median:
                 log2_data[...] = median_filter(log2_data, footprint=median_kernel, mode='reflect')
@@ -980,6 +981,19 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                     log2_curve, left_filt, right_filt, edge_condition, logger=self._logger)
 
                 p, r, r0 = zip(*self._poly_estimate_raw_growth_curve(times, log2_curve, power, filt))
+
+                if any(r0val < epsilon for r0val in r0):
+
+                    self._logger.warning(
+                        "Curve {0} has long stretches of (near) identical data, as is probably corrupt".format(
+                            np.unravel_index(id_curve, plate.shape[:2])
+                        ))
+
+                if any(rval == 0 for rval in r):
+                    self._logger.warning(
+                        "Curve {0} is probably overfitted somewhere because polynomail residual was 0".format(
+                            np.unravel_index(id_curve, plate.shape[:2])
+                    ))
 
                 smooth_plate[id_curve] = tuple(self._multi_poly_smooth(
                     times, p, np.array(r), np.array(r0), filt, gauss_sigma))[left: -right if right else None]
@@ -1006,8 +1020,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             w = w1 * w2
             yield (w * tuple(np.power(2, p(t)) for p, i in izip(polys, f2) if i)).sum() / w.sum()
 
-    @staticmethod
-    def _poly_estimate_raw_growth_curve(times, log2_data, power, filt):
+    def _poly_estimate_raw_growth_curve(self, times, log2_data, power, filt):
 
         finites = np.isfinite(log2_data)
 
@@ -1037,6 +1050,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                     # entire interval and the values of these are identical.
                     # Heuristically the residuals are set so we have absolute confidence
                     # in this result
+                    self._logger.warning(
+                        "Encountered large gap in data ({0}/{1} have values)".format(f2.sum(), f.sum()))
+
                     yield np.poly1d(p),  0, 1
 
     @staticmethod
