@@ -254,6 +254,12 @@ def get_active_cccs():
             if ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active}
 
 
+def get_under_construction_cccs():
+
+    return {identifier: ccc for identifier, ccc in __CCC.iteritems()
+            if ccc[CellCountCalibration.status] == CalibrationEntryStatus.UnderConstruction}
+
+
 def add_ccc(ccc):
 
     if ccc[CellCountCalibration.identifier] and ccc[CellCountCalibration.identifier] not in __CCC:
