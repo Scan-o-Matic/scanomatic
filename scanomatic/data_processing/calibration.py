@@ -628,7 +628,6 @@ def _valid_entry(entry):
     return CalibrationEntry.target_value in entry and CalibrationEntry.source_value_counts in entry and CalibrationEntry.source_values in entry
 
 
-'''
 def _jsonify_entry(entry):
 
     return {k.name: v for k, v in entry.iteritems()}
@@ -694,7 +693,6 @@ def load_data_file(file_path=None, label=''):
         raise IOError("File at {0} not found".format(file_path))
 
     return data_store
-'''
 
 
 def get_calibration_optimization_function(degree=5, include_intercept=False):
