@@ -504,18 +504,24 @@ def plot_plate_heatmap(
 @_validate_input
 def plot_all_curves_and_smoothing(phenotyper_object, id_plate, f=None,
                                   smoothing_label="Smoothed", smoothing_color=None,
-                                  plot_raw=True, set_title=True):
+                                  plot_raw=True, set_title=True, plot_from_pos=None, plot_to_pos=None):
 
     if f is None:
         f = plt.figure("Plate {0} curves".format(id_plate + 1))
 
     plate = phenotyper_object.smooth_growth_data[id_plate]
-    plate_shape = plate.shape[:2]
+    if not plot_from_pos:
+        plot_from_pos = (0, 0)
+    if not plot_to_pos:
+        plot_to_pos = plate.shape[:2]
+
+    plate_shape = (plot_to_pos[0] - plot_from_pos[0], plot_to_pos[1] - plot_from_pos[1])
     times = phenotyper_object.times
     if smoothing_color is None:
         smoothing_color = PHASE_PLOTTING_COLORS['smooth']
 
-    for i, (id1, id2) in enumerate(product(range(plate_shape[0]), range(plate_shape[1]))):
+    for i, (id1, id2) in enumerate(product(range(plot_from_pos[0], plot_to_pos[0]),
+                                           range(plot_from_pos[1], plot_to_pos[1]))):
 
         ax = f.add_subplot(plate_shape[0], plate_shape[1], i + 1)
         if set_title:
@@ -527,6 +533,9 @@ def plot_all_curves_and_smoothing(phenotyper_object, id_plate, f=None,
         ax.semilogy(times, curve, basey=2, label=smoothing_label, color=smoothing_color)
 
         if i == 0:
+            if ax.legend_:
+                ax.legend_.remove()
+
             ax.legend(loc="lower right", fontsize='xx-small', numpoints=1)
         else:
             ax.set_xticklabels(["" for _ in ax.get_xticklabels()])
@@ -731,7 +740,7 @@ def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1,
 
     ax.set_xlim(xmin=times[0], xmax=times[-1])
     ax.set_xlabel("Time [h]")
-    ax.set_ylabel("Population Size [cells]")
+    ax.set_ylabel("Population Size [Cells, log2]")
 
     ax.legend(loc=loc, handles=list(legend.values()))
 
