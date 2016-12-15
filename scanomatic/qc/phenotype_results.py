@@ -42,7 +42,8 @@ PHASE_PLOTTING_COLORS = {
     CurvePhases.Undetermined: "#ffffff",
 
     "raw": "#3f040d",
-    "smooth": "#849b88"
+    "smooth": "#849b88",
+    "derivative": "k",
 }
 
 
@@ -689,7 +690,7 @@ def animate_plate_over_time(save_target, plate, truncate_value_encoding=False, i
 
 @_setup_figure
 def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, colors=None, save_target=None,
-                loc="lower right"):
+                loc="lower right", plot_deriv=False):
 
     if not isinstance(phenotypes, Phenotyper):
         phenotypes = Phenotyper.LoadFromState(phenotypes)
@@ -697,7 +698,8 @@ def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, c
     model = get_data_needed_for_segmentation(phenotypes, plate, position, DEFAULT_THRESHOLDS)
     model.phases = phenotypes.get_curve_phases(plate, position[0], position[1])
 
-    plot_phases_from_model(model, ax=ax, colors=colors, segment_alpha=segment_alpha, loc=loc)
+    plot_phases_from_model(model, ax=ax, colors=colors, segment_alpha=segment_alpha, loc=loc,
+                           plot_deriv=plot_deriv)
 
     ax.set_title("Curve phases for plate {0}, position ({1}, {2})".format(plate, *position))
 
@@ -708,7 +710,8 @@ def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, c
 
 
 @_setup_figure
-def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1, loc="lower right"):
+def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1, loc="lower right",
+                           plot_deriv=False):
 
     if colors is None:
         colors = PHASE_PLOTTING_COLORS
@@ -737,6 +740,10 @@ def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1,
                 legend[phase] = span
 
     ax.plot(times, log2_curve, "-", color=colors["smooth"], lw=2)
+    if plot_deriv:
+        tax = ax.twinx()
+        tax.plot(times, model.d2yd2t, "--", color=colors["derivative"], lw=2)
+        tax.set_ylabel("dY/dt used for phases")
 
     ax.set_xlim(xmin=times[0], xmax=times[-1])
     ax.set_xlabel("Time [h]")
