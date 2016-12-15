@@ -315,6 +315,19 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
     return model
 
 
+def get_curve_classification_in_steps(phenotyper, plate, position, thresholds=None):
+    if thresholds is None:
+        thresholds = DEFAULT_THRESHOLDS
+
+    model = get_data_needed_for_segmentation(phenotyper, plate, position, thresholds)
+    states = [model.phases.copy()]
+    for _ in segment(model, thresholds):
+        if not (model.phases == states[-1]).all():
+            states.append(model.phases.copy())
+
+    return states, model
+
+
 def _get_flanks(phases, filt):
 
     n = filt.sum()
