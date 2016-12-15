@@ -742,7 +742,7 @@ def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1,
     ax.plot(times, log2_curve, "-", color=colors["smooth"], lw=2)
     if plot_deriv:
         tax = ax.twinx()
-        tax.plot(times, model.d2yd2t, "--", color=colors["derivative"], lw=2)
+        tax.plot(times, model.dydt, "--", color=colors["derivative"], lw=2)
         tax.set_ylabel("dY/dt used for phases")
 
     ax.set_xlim(xmin=times[0], xmax=times[-1])
