@@ -15,7 +15,7 @@ import scipy.cluster.hierarchy as sch
 
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
 from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS, \
-    get_data_needed_for_segmentation
+    get_data_needed_for_segmentation, get_curve_classification_in_steps
 from scanomatic.data_processing.phases.features import get_phase_assignment_frequencies, CurvePhasePhenotypes, \
     get_variance_decomposition_by_phase
 from scanomatic.data_processing.phenotyper import Phenotyper
@@ -43,7 +43,7 @@ PHASE_PLOTTING_COLORS = {
 
     "raw": "#3f040d",
     "smooth": "#849b88",
-    "derivative": "k",
+    "derivative": "#849b88",
 }
 
 
@@ -713,14 +713,22 @@ def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, c
 def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1, loc="lower right",
                            plot_deriv=False):
 
+    times = model.times
+    phases = model.phases
+    log2_curve = model.log2_curve
+    return plot_phases_from_data(times, log2_curve, phases, ax=ax, f=f, colors=colors, segment_alpha=segment_alpha,
+                                 loc=loc, deriv=model.dydt if plot_deriv else None)
+
+
+@_setup_figure
+def plot_phases_from_data(times, log2_curve, phases, ax=None, f=None, colors=None, segment_alpha=1, loc="lower right",
+                               deriv=None):
+
     if colors is None:
         colors = PHASE_PLOTTING_COLORS
 
     legend = {}
 
-    times = model.times
-    phases = model.phases
-    log2_curve = model.log2_curve
 
     # noinspection PyTypeChecker
     for phase in CurvePhases:
@@ -740,15 +748,34 @@ def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1,
                 legend[phase] = span
 
     ax.plot(times, log2_curve, "-", color=colors["smooth"], lw=2)
-    if plot_deriv:
+    if deriv is not None:
         tax = ax.twinx()
-        tax.plot(times, model.dydt, "--", color=colors["derivative"], lw=2)
+        tax.plot(times, deriv, "--", color=colors["derivative"], lw=2)
         tax.set_ylabel("dY/dt used for phases")
 
     ax.set_xlim(xmin=times[0], xmax=times[-1])
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Population Size [Cells, log2]")
 
-    ax.legend(loc=loc, handles=list(legend.values()))
+    if legend:
+        ax.legend(loc=loc, handles=list(legend.values()))
+
+    return f
+
+
+def plot_phase_segmentation_in_steps(phenotyper, plate, position, plot_deriv=True, **kwargs):
+
+    steps, model = get_curve_classification_in_steps(phenotyper, plate, position)
+    plots = len(steps)
+
+    f = plt.figure("curve_{0}_{1}_{2}_segmentation_steps".format(plate, *position))
+    cols = int(np.ceil(np.sqrt(plots)))
+    rows = int(np.ceil(float(plots) / cols))
+
+    for i in range(plots):
+        ax = f.add_subplot(rows, cols, i + 1)
+        ax.set_title("Step {0}".format(i))
+        plot_phases_from_data(model.times, model.log2_curve, steps[i], ax=ax, f=f, deriv=model.dydt if plot_deriv else None,
+                              **kwargs)
 
     return f
