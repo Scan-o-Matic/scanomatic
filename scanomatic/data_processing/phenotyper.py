@@ -337,6 +337,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                  base_name=None, run_extraction=False, phenotypes=None,
                  phenotypes_inclusion=PhenotypeDataType.Trusted):
 
+        self._logger = logger.Logger("Phenotyper")
         self._paths = paths.Paths()
 
         self._raw_growth_data = raw_growth_data
@@ -365,8 +366,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._phenotype_filter = None
         self._phenotype_filter_undo = None
-
-        self._logger = logger.Logger("Phenotyper")
 
         assert median_kernel_size % 2 == 1, "Median kernel size must be odd"
         self._median_kernel_size = median_kernel_size
@@ -1610,6 +1609,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         if isinstance(value, np.ndarray) is False:
             value = np.array(value, dtype=np.float)
+
+        diffs = np.diff(value)
+        diffs = np.round(diffs / np.median(diffs)).astype(int)
+        if not (diffs == 1).all():
+            diffs_where = np.where(diffs > 1)[0]
+            self._logger.warning("There are gaps in the time series at times: {0}".format(
+                ", ".join(["{0} - {1}".format(a, b) for a, b in zip(value[diffs_where], value[diffs_where + 1])])))
 
         self._times_data = value
 
