@@ -124,15 +124,15 @@ class PhaseEdge(Enum):
 
 
 DEFAULT_THRESHOLDS = {
-    Thresholds.LinearModelExtension: 0.0175,
+    Thresholds.LinearModelExtension: 0.017,
     Thresholds.PhaseMinimumLength: 3,
-    Thresholds.NonFlatLinearMinimumLength: 14,
+    Thresholds.NonFlatLinearMinimumLength: 7,
     Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.UniformityThreshold: 0.4,
     Thresholds.UniformityTestMinSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5,
     Thresholds.NonFlatLinearMinimumYield: 0.175,
-    Thresholds.NonFlatLinearMergeLengthMax: 15}
+    Thresholds.NonFlatLinearMergeLengthMax: 3}
 
 
 def is_detected_non_linear(phase_type):
@@ -487,16 +487,33 @@ def classifier_nonflat_linear(model, thresholds, filt):
         print loc
 
     # Update filt to allow extension into undetermined positions
-    filt |= model.phases == CurvePhases.Undetermined.value
+    filt = filt | (model.phases == CurvePhases.Undetermined.value) | (model.phases == CurvePhases.UndeterminedNonFlat.value)
+
+    filt, _ = label(filt)
+    filt = filt == filt[loc]
+
+    if model.pos == (8, 3):
+        print filt.sum()
 
     # Determine comparison operator for first derivative
     phase = CurvePhases.Collapse if loc_slope < 0 else CurvePhases.Impulse
 
     candidates = get_tangent_proximity(model, loc, thresholds)
+
+    if model.pos == (8, 3):
+        print candidates.sum()
+
     candidates &= filt
 
+    if model.pos == (8, 3):
+        print candidates.sum()
+
+    # TODO: Expands candidates
     candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
+
+    if model.pos == (8, 3):
+       print candidates.sum()
 
     # Verify that there's actually still a candidate at the peak value
     if n_found == 0 or not candidates[loc]:
@@ -845,3 +862,78 @@ def get_linear_non_flat_extension_per_position(model, thresholds):
         extension_borders[loc] = elected  # (e_where[0], e_where[-1] + 1)
 
     return extension_lengths, extension_borders
+
+
+def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
+
+    filt = model.phases != CurvePhases.Flat.value
+    model.phases[filt] = CurvePhases.UndeterminedNonFlat.value
+
+    peaks = np.hstack(([0], signal.convolve(extenstion_lengths, [-1, 2, -1], mode='valid'), [0]))
+    peaks = peaks > 2 * peaks.std()
+
+    slopes = np.hstack(([0], signal.convolve(extenstion_lengths, [1, 0, -1], mode='valid'), [0]))
+
+    peak_directions = slopes[peaks]
+
+    if peak_directions.size == 0:
+        return model
+
+    positions = np.where(peaks)[0]
+
+    lfilt, _ = label(filt)
+
+    def check_peaks(pvals, ppos):
+        old = 0
+        for i, (pv, pp) in enumerate(zip(pvals, ppos)):
+
+            if i == 0:
+                yield pv, pp
+            elif np.sign(pv) != np.sign(old):
+                yield pv, pp
+            old = pv
+
+    peak_directions, positions = zip(*check_peaks(peak_directions, positions))
+
+    # Check if segment started with linear phase
+    if peak_directions[0] < 0:
+
+        positions = np.hstack((np.where(lfilt == lfilt[positions[0]])[0][0], positions))
+
+    if peak_directions[-1] > 0:
+
+        positions = np.hstack((positions, np.where(lfilt == lfilt[positions[-1]])[0][-1]))
+
+    positions = np.array(positions)
+
+    assert positions.size % 2 == 0, "Faulty number of segmentation borders"
+
+    arange = np.arange(filt.size)
+
+    for i in range(0, positions.size, 2):
+
+        if not filt[positions[i]] or not filt[positions[i + 1]]:
+            print("***Colliding segment {0}: {1}".format(positions[i], positions[i + 1]))
+            continue
+
+        cur_filt = filt & (arange >= positions[i]) & (arange <= positions[i + 1])
+        attempt = 0
+        # print cur_filt.astype(int)
+        print model.phases.data
+
+        while cur_filt.any():
+            print("Segment {0}: {1}".format(positions[i], positions[i + 1] + 1))
+            phase, elected, valid = classifier_nonflat_linear(model, thresholds, cur_filt)
+            if valid:
+                model.phases[elected] = phase.value
+                # Expand so that two segments may not collide
+                filt[signal.convolve(elected, [1, 1, 1], mode='same').astype(bool)] = False
+                break
+            else:
+                cur_filt = cur_filt & (model.phases == CurvePhases.UndeterminedNonFlat.value)
+                # print("***Invalid segment, filt now {0}".format(cur_filt.astype(int)))
+            attempt += 1
+            if attempt > 100:
+                break
+
+    return model
