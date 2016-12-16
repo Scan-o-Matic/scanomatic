@@ -124,14 +124,14 @@ class PhaseEdge(Enum):
 
 
 DEFAULT_THRESHOLDS = {
-    Thresholds.LinearModelExtension: 0.015,
+    Thresholds.LinearModelExtension: 0.0175,
     Thresholds.PhaseMinimumLength: 3,
     Thresholds.NonFlatLinearMinimumLength: 14,
     Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.UniformityThreshold: 0.4,
     Thresholds.UniformityTestMinSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5,
-    Thresholds.NonFlatLinearMinimumYield: 0.2,
+    Thresholds.NonFlatLinearMinimumYield: 0.175,
     Thresholds.NonFlatLinearMergeLengthMax: 15}
 
 

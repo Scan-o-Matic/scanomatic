@@ -10,6 +10,7 @@ import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.lines import Line2D
 from matplotlib.font_manager import FontProperties
+from matplotlib import patches as mpatches
 from scipy.ndimage import label
 import scipy.cluster.hierarchy as sch
 
@@ -722,13 +723,12 @@ def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1,
 
 @_setup_figure
 def plot_phases_from_data(times, log2_curve, phases, ax=None, f=None, colors=None, segment_alpha=1, loc="lower right",
-                               deriv=None):
+                          deriv=None, plot_legend=True, set_labels=True):
 
     if colors is None:
         colors = PHASE_PLOTTING_COLORS
 
     legend = {}
-
 
     # noinspection PyTypeChecker
     for phase in CurvePhases:
@@ -751,14 +751,24 @@ def plot_phases_from_data(times, log2_curve, phases, ax=None, f=None, colors=Non
     if deriv is not None:
         tax = ax.twinx()
         tax.plot(times, deriv, "--", color=colors["derivative"], lw=2)
-        tax.set_ylabel("dY/dt used for phases")
+        if set_labels:
+                tax.set_ylabel("dY/dt used for phases")
+        else:
+            tax.set_yticks([])
 
     ax.set_xlim(xmin=times[0], xmax=times[-1])
-    ax.set_xlabel("Time [h]")
-    ax.set_ylabel("Population Size [Cells, log2]")
 
-    if legend:
+    if set_labels:
+        ax.set_xlabel("Time [h]")
+        ax.set_ylabel("Pop Size [Cells, log2]")
+    else:
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    if plot_legend and legend:
         ax.legend(loc=loc, handles=list(legend.values()))
+
+    f.subplots_adjust(hspace=0.3, wspace=0.15, top=0.95)
 
     return f
 
@@ -768,14 +778,42 @@ def plot_phase_segmentation_in_steps(phenotyper, plate, position, plot_deriv=Tru
     steps, model = get_curve_classification_in_steps(phenotyper, plate, position)
     plots = len(steps)
 
-    f = plt.figure("curve_{0}_{1}_{2}_segmentation_steps".format(plate, *position))
-    cols = int(np.ceil(np.sqrt(plots)))
-    rows = int(np.ceil(float(plots) / cols))
+    if 'colors' in kwargs:
+        colors = kwargs['colors']
+    else:
+        colors = PHASE_PLOTTING_COLORS
+
+    if 'f' in kwargs:
+        f = kwargs['f']
+        del kwargs['f']
+        f.clf()
+    else:
+        f = plt.figure("curve_{0}_{1}_{2}_segmentation_steps".format(plate, *position))
+
+    legend_space = 2
+    cols = int(np.ceil(np.sqrt(plots + legend_space)))
+    rows = int(np.ceil(float(plots + legend_space) / cols))
 
     for i in range(plots):
         ax = f.add_subplot(rows, cols, i + 1)
         ax.set_title("Step {0}".format(i))
-        plot_phases_from_data(model.times, model.log2_curve, steps[i], ax=ax, f=f, deriv=model.dydt if plot_deriv else None,
+        plot_phases_from_data(model.times, model.log2_curve, steps[i], ax=ax, f=f,
+                              deriv=model.dydt if plot_deriv else None,
+                              plot_legend=False, set_labels=i==0,
                               **kwargs)
 
+    ax = f.add_subplot(rows, cols, plots + 1)
+    ax.axis("off")
+
+    legend = []
+    for phase in CurvePhases:
+        if phase is CurvePhases.Multiple:
+            continue
+
+        legend.append(mpatches.Patch(color=colors[phase], label=re.sub(r'([a-z])([A-Z])', r'\1 \2', phase.name)))
+
+    plt.legend(handles=legend, loc='center', fontsize='small',
+               markerscale=0.66, ncol=2, bbox_to_anchor=(0., 0., 2., 1.), borderaxespad=0)
+
+    f.tight_layout(h_pad=0.01, w_pad=0.01)
     return f
