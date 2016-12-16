@@ -407,6 +407,21 @@ def _set_flat_segments(model, thresholds):
             model.phases[left: right] = CurvePhases.Flat.value
 
 
+def get_tangent_proximity(model, loc, thresholds):
+
+    # Getting back the sign and values for linear model
+    loc_slope = model.dydt[loc]
+    loc_value = model.log2_curve[loc]
+    loc_time = model.times[loc]
+
+    # Tangent at max
+    tangent = (model.times - loc_time) * loc_slope + loc_value
+
+    # Find all candidates
+    return (np.abs(model.log2_curve - tangent) <
+            np.abs(thresholds[Thresholds.LinearModelExtension] * loc_value)).filled(False)
+
+
 def classifier_nonflat_linear(model, thresholds, filt):
     """
 
@@ -466,6 +481,9 @@ def classifier_nonflat_linear(model, thresholds, filt):
         # Since no segment was detected there are no bordering segments
         return CurvePhases.Undetermined, np.zeros_like(filt).astype(bool), False
 
+    # Determine comparison operator for first derivative
+    phase = CurvePhases.Collapse if loc_slope < 0 else CurvePhases.Impulse
+
     # Determine value and position of steepest slope
     loc_slope = np.abs(model.dydt[filt]).max()
     loc = np.where((np.abs(model.dydt) == loc_slope) & filt)[0][0]
@@ -475,21 +493,7 @@ def classifier_nonflat_linear(model, thresholds, filt):
     # Update filt to allow extension into undetermined positions
     filt |= model.phases == CurvePhases.Undetermined.value
 
-    # Getting back the sign and values for linear model
-    loc_slope = model.dydt[loc]
-    loc_value = model.log2_curve[loc]
-    loc_time = model.times[loc]
-
-    # Tangent at max
-    tangent = (model.times - loc_time) * loc_slope + loc_value
-
-    # Determine comparison operator for first derivative
-    phase = CurvePhases.Collapse if loc_slope < 0 else CurvePhases.Impulse
-
-    # Find all candidates
-    candidates = (np.abs(model.log2_curve - tangent) <
-                  np.abs(thresholds[Thresholds.LinearModelExtension] * loc_value)).filled(False)
-
+    candidates = get_tangent_proximity(model, loc, thresholds)
     candidates &= filt
 
     candidates = _bridge_canditates(candidates)
