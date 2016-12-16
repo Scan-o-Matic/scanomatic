@@ -422,6 +422,41 @@ def get_tangent_proximity(model, loc, thresholds):
             np.abs(thresholds[Thresholds.LinearModelExtension] * loc_value)).filled(False)
 
 
+def _validate_linear_non_flat_phase(model, elected, phase, thresholds):
+    if phase is CurvePhases.Undetermined or elected.sum() < thresholds[Thresholds.NonFlatLinearMinimumLength]:
+        if model.pos == (8, 3):
+            print("***Failed phase, too short ({3}, {4}) {0} / {1} < {2}".format(
+                phase, elected.sum(), thresholds[Thresholds.NonFlatLinearMinimumLength], model.plate, model.pos))
+        return False
+
+    # Get first and last index of elected stretch
+    left, right = np.where(elected)[0][0::elected.sum() - 1]
+    if model.offset:
+
+        if (model.log2_curve[model.offset: -model.offset][right] -
+                model.log2_curve[model.offset: -model.offset][left]) * \
+                (-1 if phase is CurvePhases.Collapse else 1) < \
+                thresholds[Thresholds.NonFlatLinearMinimumYield]:
+            print("***Failed phase ({2}, {3}): {0:.2f}".format(
+                np.abs(model.log2_curve[left] - model.log2_curve[right]), None, model.plate, model.pos))
+
+            return False
+    else:
+
+        if (model.log2_curve[right] - model.log2_curve[left]) * (-1 if phase is CurvePhases.Collapse else 1) < \
+                thresholds[Thresholds.NonFlatLinearMinimumYield]:
+            print("***Failed phase ({2}, {3}): {0:.2f}".format(
+                np.abs(model.log2_curve[left] - model.log2_curve[right]), None, model.plate, model.pos))
+
+            return False
+
+    """
+    print("*Good phase ({2}, {3}): {0:.2f}, {1:.2f}".format(
+        model.log2_curve[left], model.log2_curve[right], model.plate, model.pos))
+    """
+    return True
+
+
 def classifier_nonflat_linear(model, thresholds, filt):
     """
 
@@ -436,42 +471,6 @@ def classifier_nonflat_linear(model, thresholds, filt):
     Returns:
 
     """
-
-    def _validate_phase():
-        if phase is CurvePhases.Undetermined or elected.sum() < thresholds[Thresholds.NonFlatLinearMinimumLength]:
-            if model.pos == (8, 3):
-                print("***Failed phase, too short ({3}, {4}) {0} / {1} < {2}".format(
-                    phase, elected.sum(), thresholds[Thresholds.NonFlatLinearMinimumLength], model.plate, model.pos))
-            return False
-
-        # Get first and last index of elected stretch
-        left, right = np.where(elected)[0][0::elected.sum() - 1]
-        if model.offset:
-
-            if (model.log2_curve[model.offset: -model.offset][right] -
-                    model.log2_curve[model.offset: -model.offset][left]) * \
-                    (-1 if phase is CurvePhases.Collapse else 1) < \
-                    thresholds[Thresholds.NonFlatLinearMinimumYield]:
-
-                print("***Failed phase ({2}, {3}): {0:.2f}".format(
-                    np.abs(model.log2_curve[left] - model.log2_curve[right]), None, model.plate, model.pos))
-
-                return False
-        else:
-
-            if (model.log2_curve[right] - model.log2_curve[left]) * (-1 if phase is CurvePhases.Collapse else 1) < \
-                    thresholds[Thresholds.NonFlatLinearMinimumYield]:
-
-                print("***Failed phase ({2}, {3}): {0:.2f}".format(
-                    np.abs(model.log2_curve[left] - model.log2_curve[right]), None, model.plate, model.pos))
-
-                return False
-
-        """
-        print("*Good phase ({2}, {3}): {0:.2f}, {1:.2f}".format(
-            model.log2_curve[left], model.log2_curve[right], model.plate, model.pos))
-        """
-        return True
 
     # Verify that there's data
     if model.dydt[filt].any() in (np.ma.masked, False):
@@ -509,7 +508,7 @@ def classifier_nonflat_linear(model, thresholds, filt):
 
     elected = candidates == candidates[loc]
 
-    if not _validate_phase():
+    if not _validate_linear_non_flat_phase(model, elected, phase, thresholds):
 
         if elected.sum() < thresholds[Thresholds.NonFlatLinearMergeLengthMax]:
             # If flanking is consistent and elected not too long
@@ -812,3 +811,37 @@ def _custom_filt(v, max_gap=3, min_length=3):
     padded = np.hstack([(0,), filted, (0,)]).astype(int)
     diff = np.diff(padded)
     return (np.where(diff < 0)[0] - np.where(diff > 0)[0]).max() >= min_length
+
+
+def get_linear_non_flat_extension_per_position(model, thresholds):
+
+    filt = model.phases != CurvePhases.Flat.value
+
+    extension_lengths = np.zeros_like(filt, dtype=np.int)
+    extension_borders = {}
+
+    for loc in range(extension_lengths.size):
+
+        if not filt[loc]:
+            continue
+
+        candidates = get_tangent_proximity(model, loc, thresholds)
+        candidates &= filt
+
+        candidates = _bridge_canditates(candidates)
+        candidates, n_found = label(candidates)
+
+        # Verify that there's actually still a candidate at the peak value
+        if n_found == 0 or not candidates[loc]:
+            continue
+
+        elected = candidates == candidates[loc]
+
+        # Count length of linear phase
+        extension_lengths[loc] = elected.sum()
+
+        #
+        # e_where = np.where(extension_lengths)[0]
+        extension_borders[loc] = elected  # (e_where[0], e_where[-1] + 1)
+
+    return extension_lengths, extension_borders
