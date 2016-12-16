@@ -481,9 +481,6 @@ def classifier_nonflat_linear(model, thresholds, filt):
         # Since no segment was detected there are no bordering segments
         return CurvePhases.Undetermined, np.zeros_like(filt).astype(bool), False
 
-    # Determine comparison operator for first derivative
-    phase = CurvePhases.Collapse if loc_slope < 0 else CurvePhases.Impulse
-
     # Determine value and position of steepest slope
     loc_slope = np.abs(model.dydt[filt]).max()
     loc = np.where((np.abs(model.dydt) == loc_slope) & filt)[0][0]
@@ -492,6 +489,9 @@ def classifier_nonflat_linear(model, thresholds, filt):
 
     # Update filt to allow extension into undetermined positions
     filt |= model.phases == CurvePhases.Undetermined.value
+
+    # Determine comparison operator for first derivative
+    phase = CurvePhases.Collapse if loc_slope < 0 else CurvePhases.Impulse
 
     candidates = get_tangent_proximity(model, loc, thresholds)
     candidates &= filt
