@@ -337,6 +337,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                  base_name=None, run_extraction=False, phenotypes=None,
                  phenotypes_inclusion=PhenotypeDataType.Trusted):
 
+        self._logger = logger.Logger("Phenotyper")
         self._paths = paths.Paths()
 
         self._raw_growth_data = raw_growth_data
@@ -365,8 +366,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._phenotype_filter = None
         self._phenotype_filter_undo = None
-
-        self._logger = logger.Logger("Phenotyper")
 
         assert median_kernel_size % 2 == 1, "Median kernel size must be odd"
         self._median_kernel_size = median_kernel_size
@@ -969,6 +968,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 continue
 
             log2_data = np.log2(plate).reshape(np.prod(plate.shape[:2]), plate.shape[-1])
+            epsilon = np.finfo(log2_data.dtype).eps
 
             if apply_median:
                 log2_data[...] = median_filter(log2_data, footprint=median_kernel, mode='reflect')
@@ -980,6 +980,19 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                     log2_curve, left_filt, right_filt, edge_condition, logger=self._logger)
 
                 p, r, r0 = zip(*self._poly_estimate_raw_growth_curve(times, log2_curve, power, filt))
+
+                if any(r0val < epsilon for r0val in r0):
+
+                    self._logger.warning(
+                        "Curve {0} has long stretches of (near) identical data and is probably corrupt".format(
+                            np.unravel_index(id_curve, plate.shape[:2])
+                        ))
+
+                if any(rval == 0 for rval in r):
+                    self._logger.warning(
+                        "Curve {0} is probably overfitted somewhere because polynomial residual was 0".format(
+                            np.unravel_index(id_curve, plate.shape[:2])
+                    ))
 
                 smooth_plate[id_curve] = tuple(self._multi_poly_smooth(
                     times, p, np.array(r), np.array(r0), filt, gauss_sigma))[left: -right if right else None]
@@ -1006,8 +1019,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             w = w1 * w2
             yield (w * tuple(np.power(2, p(t)) for p, i in izip(polys, f2) if i)).sum() / w.sum()
 
-    @staticmethod
-    def _poly_estimate_raw_growth_curve(times, log2_data, power, filt):
+    def _poly_estimate_raw_growth_curve(self, times, log2_data, power, filt):
 
         finites = np.isfinite(log2_data)
 
@@ -1037,6 +1049,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                     # entire interval and the values of these are identical.
                     # Heuristically the residuals are set so we have absolute confidence
                     # in this result
+                    self._logger.warning(
+                        "Encountered large gap in data ({0}/{1} have values)".format(f2.sum(), f.sum()))
+
                     yield np.poly1d(p),  0, 1
 
     @staticmethod
@@ -1407,6 +1422,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 self._logger.info("{0} had not been extracted, so skipping it".format(phenotype))
                 continue
 
+            data = [None if plate is None else plate.filled() for plate in data]
+
             for id_plate, plate in enumerate(get_normalized_data(data, self._reference_surface_positions)):
                 self._normalized_phenotypes[id_plate][phenotype] = plate
 
@@ -1447,8 +1464,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 The phenotype, either a `scanomatic.data_processing.growth_phenotypes.Phenotypes`
                 or a `scanomatic.data_processing.curve_phase_phenotypes.CurvePhasePhenotypes`
             filtered:
-                Optional, if the log2_curve-markings should be present or not on the returned object.
-                Defaults to including log2_curve markings.
+                Optional, if the curve-markings should be present or not on the returned object.
+                Defaults to including curve markings.
             norm_state:
                 Optional, the type of data-state to return.
                 If `NormState.NormalizedAbsoluteNonBatched`, then `reference_values` must be supplied.
@@ -1594,6 +1611,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         if isinstance(value, np.ndarray) is False:
             value = np.array(value, dtype=np.float)
+
+        diffs = np.diff(value)
+        diffs = np.round(diffs / np.median(diffs)).astype(int)
+        if not (diffs == 1).all():
+            diffs_where = np.where(diffs > 1)[0]
+            self._logger.warning("There are gaps in the time series at times: {0}".format(
+                ", ".join(["{0} - {1}".format(a, b) for a, b in zip(value[diffs_where], value[diffs_where + 1])])))
 
         self._times_data = value
 

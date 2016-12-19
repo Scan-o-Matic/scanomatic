@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import shutil
 import sys
 import glob
 import stat
@@ -8,9 +7,11 @@ import re
 from io import BytesIO
 from hashlib import sha256
 from subprocess import PIPE, call
-from scanomatic import get_version
-from scanomatic.io import source
 from itertools import chain
+import importlib
+
+get_version = importlib.import_module("scanomatic", package=".").get_version
+source = importlib.import_module("scanomatic.io.source", package=".")
 
 
 class MiniLogger(object):
@@ -95,7 +96,12 @@ def get_hash(paths, pattern=None, hasher=None, buffsize=65536):
 
 def update_init_file():
     data = source.get_source_information(True)
-    data['version'] = source.next_subversion(str(data['branch']) if data['branch'] else None, get_version())
+    try:
+        data['version'] = source.next_subversion(str(data['branch']) if data['branch'] else None, get_version())
+    except:
+        _logger.warning("Can reach GitHub to verify version")
+        data['version'] = source.increase_version(source.parse_version(data['version']))
+
     if data['branch'] is None:
         data['branch'] = "++UNKNOWN BRANCH++"
 

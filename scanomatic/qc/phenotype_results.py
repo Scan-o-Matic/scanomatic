@@ -10,12 +10,13 @@ import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.lines import Line2D
 from matplotlib.font_manager import FontProperties
+from matplotlib import patches as mpatches
 from scipy.ndimage import label
 import scipy.cluster.hierarchy as sch
 
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
 from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS, \
-    get_data_needed_for_segmentation
+    get_data_needed_for_segmentation, get_curve_classification_in_steps
 from scanomatic.data_processing.phases.features import get_phase_assignment_frequencies, CurvePhasePhenotypes, \
     get_variance_decomposition_by_phase
 from scanomatic.data_processing.phenotyper import Phenotyper
@@ -42,7 +43,8 @@ PHASE_PLOTTING_COLORS = {
     CurvePhases.Undetermined: "#ffffff",
 
     "raw": "#3f040d",
-    "smooth": "#849b88"
+    "smooth": "#849b88",
+    "derivative": "#849b88",
 }
 
 
@@ -504,18 +506,24 @@ def plot_plate_heatmap(
 @_validate_input
 def plot_all_curves_and_smoothing(phenotyper_object, id_plate, f=None,
                                   smoothing_label="Smoothed", smoothing_color=None,
-                                  plot_raw=True, set_title=True):
+                                  plot_raw=True, set_title=True, plot_from_pos=None, plot_to_pos=None):
 
     if f is None:
         f = plt.figure("Plate {0} curves".format(id_plate + 1))
 
     plate = phenotyper_object.smooth_growth_data[id_plate]
-    plate_shape = plate.shape[:2]
+    if not plot_from_pos:
+        plot_from_pos = (0, 0)
+    if not plot_to_pos:
+        plot_to_pos = plate.shape[:2]
+
+    plate_shape = (plot_to_pos[0] - plot_from_pos[0], plot_to_pos[1] - plot_from_pos[1])
     times = phenotyper_object.times
     if smoothing_color is None:
         smoothing_color = PHASE_PLOTTING_COLORS['smooth']
 
-    for i, (id1, id2) in enumerate(product(range(plate_shape[0]), range(plate_shape[1]))):
+    for i, (id1, id2) in enumerate(product(range(plot_from_pos[0], plot_to_pos[0]),
+                                           range(plot_from_pos[1], plot_to_pos[1]))):
 
         ax = f.add_subplot(plate_shape[0], plate_shape[1], i + 1)
         if set_title:
@@ -527,6 +535,9 @@ def plot_all_curves_and_smoothing(phenotyper_object, id_plate, f=None,
         ax.semilogy(times, curve, basey=2, label=smoothing_label, color=smoothing_color)
 
         if i == 0:
+            if ax.legend_:
+                ax.legend_.remove()
+
             ax.legend(loc="lower right", fontsize='xx-small', numpoints=1)
         else:
             ax.set_xticklabels(["" for _ in ax.get_xticklabels()])
@@ -680,7 +691,7 @@ def animate_plate_over_time(save_target, plate, truncate_value_encoding=False, i
 
 @_setup_figure
 def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, colors=None, save_target=None,
-                loc="lower right"):
+                loc="lower right", plot_deriv=False):
 
     if not isinstance(phenotypes, Phenotyper):
         phenotypes = Phenotyper.LoadFromState(phenotypes)
@@ -688,7 +699,8 @@ def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, c
     model = get_data_needed_for_segmentation(phenotypes, plate, position, DEFAULT_THRESHOLDS)
     model.phases = phenotypes.get_curve_phases(plate, position[0], position[1])
 
-    plot_phases_from_model(model, ax=ax, colors=colors, segment_alpha=segment_alpha, loc=loc)
+    plot_phases_from_model(model, ax=ax, colors=colors, segment_alpha=segment_alpha, loc=loc,
+                           plot_deriv=plot_deriv)
 
     ax.set_title("Curve phases for plate {0}, position ({1}, {2})".format(plate, *position))
 
@@ -699,16 +711,24 @@ def plot_phases(phenotypes, plate, position, segment_alpha=1, f=None, ax=None, c
 
 
 @_setup_figure
-def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1, loc="lower right"):
+def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1, loc="lower right",
+                           plot_deriv=False):
+
+    times = model.times
+    phases = model.phases
+    log2_curve = model.log2_curve
+    return plot_phases_from_data(times, log2_curve, phases, ax=ax, f=f, colors=colors, segment_alpha=segment_alpha,
+                                 loc=loc, deriv=model.dydt if plot_deriv else None)
+
+
+@_setup_figure
+def plot_phases_from_data(times, log2_curve, phases, ax=None, f=None, colors=None, segment_alpha=1, loc="lower right",
+                          deriv=None, plot_legend=True, set_labels=True):
 
     if colors is None:
         colors = PHASE_PLOTTING_COLORS
 
     legend = {}
-
-    times = model.times
-    phases = model.phases
-    log2_curve = model.log2_curve
 
     # noinspection PyTypeChecker
     for phase in CurvePhases:
@@ -728,11 +748,72 @@ def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1,
                 legend[phase] = span
 
     ax.plot(times, log2_curve, "-", color=colors["smooth"], lw=2)
+    if deriv is not None:
+        tax = ax.twinx()
+        tax.plot(times, deriv, "--", color=colors["derivative"], lw=2)
+        if set_labels:
+                tax.set_ylabel("dY/dt used for phases")
+        else:
+            tax.set_yticks([])
 
     ax.set_xlim(xmin=times[0], xmax=times[-1])
-    ax.set_xlabel("Time [h]")
-    ax.set_ylabel("Population Size [cells]")
 
-    ax.legend(loc=loc, handles=list(legend.values()))
+    if set_labels:
+        ax.set_xlabel("Time [h]")
+        ax.set_ylabel("Pop Size [Cells, log2]")
+    else:
+        ax.set_xticks([])
+        ax.set_yticks([])
 
+    if plot_legend and legend:
+        ax.legend(loc=loc, handles=list(legend.values()))
+
+    f.subplots_adjust(hspace=0.3, wspace=0.15, top=0.95)
+
+    return f
+
+
+def plot_phase_segmentation_in_steps(phenotyper, plate, position, plot_deriv=True, **kwargs):
+
+    steps, model = get_curve_classification_in_steps(phenotyper, plate, position)
+    plots = len(steps)
+
+    if 'colors' in kwargs:
+        colors = kwargs['colors']
+    else:
+        colors = PHASE_PLOTTING_COLORS
+
+    if 'f' in kwargs:
+        f = kwargs['f']
+        del kwargs['f']
+        f.clf()
+    else:
+        f = plt.figure("curve_{0}_{1}_{2}_segmentation_steps".format(plate, *position))
+
+    legend_space = 2
+    cols = int(np.ceil(np.sqrt(plots + legend_space)))
+    rows = int(np.ceil(float(plots + legend_space) / cols))
+
+    for i in range(plots):
+        ax = f.add_subplot(rows, cols, i + 1)
+        ax.set_title("Step {0}".format(i))
+        plot_phases_from_data(model.times, model.log2_curve, steps[i], ax=ax, f=f,
+                              deriv=model.dydt if plot_deriv else None,
+                              plot_legend=False, set_labels=i==0,
+                              **kwargs)
+
+    ax = f.add_subplot(rows, cols, plots + 1)
+    ax.axis("off")
+
+    legend = []
+    for phase in CurvePhases:
+        if phase is CurvePhases.Multiple:
+            continue
+
+        legend.append(mpatches.Patch(color=colors[phase], label=re.sub(r'([a-z])([A-Z])', r'\1 \2', phase.name)))
+
+    plt.legend(handles=legend, loc='center', fontsize='small',
+               markerscale=0.66, ncol=2, bbox_to_anchor=(0., 0., 2., 1.), borderaxespad=0)
+
+    f.tight_layout(h_pad=0.01, w_pad=0.01)
     return f

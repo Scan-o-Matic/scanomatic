@@ -221,11 +221,16 @@ class ProcessEffector(object):
                 else:
                     server = None
 
-                mail.mail(AppConfig().mail.user,
-                          model.email,
-                          title.format(**model),
-                          message.format(**model),
-                          server=server)
+                if not mail.mail(
+                        AppConfig().mail.user,
+                        model.email,
+                        title.format(**model),
+                        message.format(**model),
+                        server=server):
+
+                    self._logger.error("Problem getting access to mail server, mail not sent:\n{0}\n\n{1}".format(
+                        title.format(**model), message.format(**model)
+                    ))
             except KeyError:
                 self._logger.error("Malformed message template, model is lacking requested keys:\n{1}\n\n{0}".format(
                     title, message))

@@ -41,6 +41,19 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=True,
                            reason="There are no registered CCC, Scan-o-Matic won't work before at least one is added")
 
+    @app.route("/api/calibration/under_construction", methods=['GET'])
+    @decorate_api_access_restriction
+    def get_under_construction_calibrations():
+
+        try:
+            identifiers, cccs = zip(calibration.get_active_cccs().iteritems())
+            return jsonify(success=True, is_endpoint=True, identifiers=identifiers,
+                           species=[ccc[calibration.CellCountCalibration.species] for ccc in cccs],
+                           references=[ccc[calibration.CellCountCalibration.reference] for ccc in cccs])
+        except ValueError:
+            return jsonify(success=False, is_endpoint=True,
+                           reason="There are no registered CCC, Scan-o-Matic won't work before at least one is added")
+
     @app.route("/api/calibration/initiate_new", methods=['POST'])
     @decorate_api_access_restriction
     def initiate_new_ccc():
@@ -232,6 +245,10 @@ def add_routes(app):
                            reason="Probably bad access token or not having sliced image and analysed grayscale first")
 
         return jsonify(success=True, is_endpoint=True)
+
+    """
+    DEPRECATION WARNING BELOW
+    """
 
     @app.route("/api/calibration/compress")
     @decorate_api_access_restriction

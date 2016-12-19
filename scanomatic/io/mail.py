@@ -1,5 +1,5 @@
 import scanomatic.io.logger as logger
-
+from scanomatic.io.app_config import Config as AppConfig
 from types import StringTypes
 import smtplib
 import socket
@@ -89,9 +89,23 @@ def get_server(host=None, smtp_port=0, tls=False, login=None, password=None):
 
         server.login(login, password)
     else:
-        server.connect()
+        try:
+            server.connect()
+        except socket.error:
+            return None
 
     return server
+
+
+def can_get_server_with_current_settings():
+
+    if AppConfig().mail.server:
+        server = mail.get_server(AppConfig().mail.server, smtp_port=AppConfig().mail.port,
+                                 login=AppConfig().mail.user, password=AppConfig().mail.password)
+    else:
+        server = None
+
+    return server is not None
 
 
 def mail(sender, receiver, subject, message, final_message=True, server=None):
@@ -118,7 +132,7 @@ def mail(sender, receiver, subject, message, final_message=True, server=None):
         server = get_server()
 
     if server is None:
-        return
+        return False
 
     if not sender:
         sender = get_default_email()
@@ -148,6 +162,8 @@ def mail(sender, receiver, subject, message, final_message=True, server=None):
             server.quit()
         except:
             pass
+
+    return True
 
 
 def get_host_name():
