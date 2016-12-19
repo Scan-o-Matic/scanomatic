@@ -8,9 +8,11 @@ import re
 from io import BytesIO
 from hashlib import sha256
 from subprocess import PIPE, call
+from itertools import chain
+
+# importlib.import_module("scanomatic.io.source", package=".")
 from scanomatic import get_version
 from scanomatic.io import source
-from itertools import chain
 
 
 class MiniLogger(object):
