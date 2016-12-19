@@ -1422,6 +1422,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 self._logger.info("{0} had not been extracted, so skipping it".format(phenotype))
                 continue
 
+            data = [None if plate is None else plate.filled() for plate in data]
+
             for id_plate, plate in enumerate(get_normalized_data(data, self._reference_surface_positions)):
                 self._normalized_phenotypes[id_plate][phenotype] = plate
 
@@ -1462,8 +1464,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 The phenotype, either a `scanomatic.data_processing.growth_phenotypes.Phenotypes`
                 or a `scanomatic.data_processing.curve_phase_phenotypes.CurvePhasePhenotypes`
             filtered:
-                Optional, if the log2_curve-markings should be present or not on the returned object.
-                Defaults to including log2_curve markings.
+                Optional, if the curve-markings should be present or not on the returned object.
+                Defaults to including curve markings.
             norm_state:
                 Optional, the type of data-state to return.
                 If `NormState.NormalizedAbsoluteNonBatched`, then `reference_values` must be supplied.
