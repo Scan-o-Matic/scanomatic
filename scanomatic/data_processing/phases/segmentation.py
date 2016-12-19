@@ -126,7 +126,7 @@ class PhaseEdge(Enum):
 DEFAULT_THRESHOLDS = {
     Thresholds.LinearModelExtension: 0.017,
     Thresholds.PhaseMinimumLength: 3,
-    Thresholds.NonFlatLinearMinimumLength: 7,
+    Thresholds.NonFlatLinearMinimumLength: 5,
     Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.UniformityThreshold: 0.4,
     Thresholds.UniformityTestMinSize: 7,
@@ -189,6 +189,7 @@ def segment(segmentation_model, thresholds=None):
 
     yield None
 
+    """
     while (segmentation_model.phases == CurvePhases.UndeterminedNonFlat.value).any():
 
         # Mark linear slope
@@ -220,8 +221,15 @@ def segment(segmentation_model, thresholds=None):
                 flanking[filt] = False
 
                 yield None
+    """
 
-    segmentation_model.phases[segmentation_model.phases == CurvePhases.Undetermined.value] = \
+    extensions, _ = get_linear_non_flat_extension_per_position(segmentation_model, thresholds)
+
+    set_nonflat_linearity_segments(segmentation_model, extensions, thresholds)
+
+    segmentation_model.phases[
+        (segmentation_model.phases == CurvePhases.Undetermined.value) |
+        (segmentation_model.phases == CurvePhases.UndeterminedNonFlat.value)] = \
         CurvePhases.UndeterminedNonLinear.value
 
     # Try to classify remaining positions as non linear phases
@@ -919,10 +927,10 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
         cur_filt = filt & (arange >= positions[i]) & (arange <= positions[i + 1])
         attempt = 0
         # print cur_filt.astype(int)
-        print model.phases.data
+        # print model.phases.data
 
         while cur_filt.any():
-            print("Segment {0}: {1}".format(positions[i], positions[i + 1] + 1))
+            # print("Segment {0}: {1}".format(positions[i], positions[i + 1] + 1))
             phase, elected, valid = classifier_nonflat_linear(model, thresholds, cur_filt)
             if valid:
                 model.phases[elected] = phase.value
