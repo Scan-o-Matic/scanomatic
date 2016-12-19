@@ -124,14 +124,14 @@ class PhaseEdge(Enum):
 
 
 DEFAULT_THRESHOLDS = {
-    Thresholds.LinearModelExtension: 0.017,
+    Thresholds.LinearModelExtension: 0.015,
     Thresholds.PhaseMinimumLength: 3,
     Thresholds.NonFlatLinearMinimumLength: 5,
     Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.UniformityThreshold: 0.4,
     Thresholds.UniformityTestMinSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5,
-    Thresholds.NonFlatLinearMinimumYield: 0.175,
+    Thresholds.NonFlatLinearMinimumYield: 0.1,
     Thresholds.NonFlatLinearMergeLengthMax: 3}
 
 
@@ -491,8 +491,8 @@ def classifier_nonflat_linear(model, thresholds, filt):
     # Determine value and position of steepest slope
     loc_slope = np.abs(model.dydt[filt]).max()
     loc = np.where((np.abs(model.dydt) == loc_slope) & filt)[0][0]
-    if model.pos == (8, 3):
-        print loc
+    # if model.pos == (8, 3):
+    #     print loc
 
     # Update filt to allow extension into undetermined positions
     filt = filt | (model.phases == CurvePhases.Undetermined.value) | (model.phases == CurvePhases.UndeterminedNonFlat.value)
@@ -500,28 +500,28 @@ def classifier_nonflat_linear(model, thresholds, filt):
     filt, _ = label(filt)
     filt = filt == filt[loc]
 
-    if model.pos == (8, 3):
-        print filt.sum()
+    # if model.pos == (8, 3):
+    #     print filt.sum()
 
     # Determine comparison operator for first derivative
     phase = CurvePhases.Collapse if loc_slope < 0 else CurvePhases.Impulse
 
     candidates = get_tangent_proximity(model, loc, thresholds)
 
-    if model.pos == (8, 3):
-        print candidates.sum()
+    # if model.pos == (8, 3):
+    #    print candidates.sum()
 
     candidates &= filt
 
-    if model.pos == (8, 3):
-        print candidates.sum()
+    # if model.pos == (8, 3):
+    #    print candidates.sum()
 
     # TODO: Expands candidates
     candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
 
-    if model.pos == (8, 3):
-       print candidates.sum()
+    # if model.pos == (8, 3):
+    #   print candidates.sum()
 
     # Verify that there's actually still a candidate at the peak value
     if n_found == 0 or not candidates[loc]:
@@ -922,7 +922,7 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
 
         if not filt[positions[i]] or not filt[positions[i + 1]]:
             print("***Colliding segment {0}: {1}".format(positions[i], positions[i + 1]))
-            continue
+            # continue
 
         cur_filt = filt & (arange >= positions[i]) & (arange <= positions[i + 1])
         attempt = 0
@@ -939,7 +939,8 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
                 break
             else:
                 cur_filt = cur_filt & (model.phases == CurvePhases.UndeterminedNonFlat.value)
-                # print("***Invalid segment, filt now {0}".format(cur_filt.astype(int)))
+                print("***Invalid segment, filt now {0}".format(cur_filt.astype(int)))
+
             attempt += 1
             if attempt > 100:
                 break
