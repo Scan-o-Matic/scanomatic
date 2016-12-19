@@ -934,12 +934,20 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
             phase, elected, valid = classifier_nonflat_linear(model, thresholds, cur_filt)
             if valid:
                 model.phases[elected] = phase.value
+
                 # Expand so that two segments may not collide
-                filt[signal.convolve(elected, [1, 1, 1], mode='same').astype(bool)] = False
+                ext_elected = signal.convolve(elected, [1, 1, 1], mode='same').astype(bool)
+                elected_padding = (ext_elected.astype(int) - elected.astype(int)) > 0
+                filt[ext_elected] = False
+
+                model.phases[elected_padding] = CurvePhases.UndeterminedNonLinear.value
+
+                print("***{1} Found segment, phases now {0}".format(model.phases.data, model.pos))
+
                 break
             else:
                 cur_filt = cur_filt & (model.phases == CurvePhases.UndeterminedNonFlat.value)
-                print("***Invalid segment, filt now {0}".format(cur_filt.astype(int)))
+                # print("***Invalid segment, filt now {0}".format(cur_filt.astype(int)))
 
             attempt += 1
             if attempt > 100:
