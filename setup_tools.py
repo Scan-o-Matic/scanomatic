@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import shutil
 import sys
 import glob
 import stat
@@ -9,10 +8,10 @@ from io import BytesIO
 from hashlib import sha256
 from subprocess import PIPE, call
 from itertools import chain
+import importlib
 
-# importlib.import_module("scanomatic.io.source", package=".")
-from scanomatic import get_version
-from scanomatic.io import source
+get_version = importlib.import_module("scanomatic", package=".").get_version
+source = importlib.import_module("scanomatic.io.source", package=".")
 
 
 class MiniLogger(object):
