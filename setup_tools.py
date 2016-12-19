@@ -95,7 +95,12 @@ def get_hash(paths, pattern=None, hasher=None, buffsize=65536):
 
 def update_init_file():
     data = source.get_source_information(True)
-    data['version'] = source.next_subversion(str(data['branch']) if data['branch'] else None, get_version())
+    try:
+        data['version'] = source.next_subversion(str(data['branch']) if data['branch'] else None, get_version())
+    except:
+        _logger.warning("Can reach GitHub to verify version")
+        data['version'] = source.increase_version(source.parse_version(data['version']))
+
     if data['branch'] is None:
         data['branch'] = "++UNKNOWN BRANCH++"
 

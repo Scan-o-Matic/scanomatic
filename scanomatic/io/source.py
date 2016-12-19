@@ -277,11 +277,17 @@ def is_newest_version(branch=None):
 def next_subversion(branch, current=None):
 
     online_version = git_version(branch=branch)
-    version = list(parse_version(highest_version(online_version, current if current is not None else get_version())))
+    version = parse_version(highest_version(online_version, current if current is not None else get_version()))
 
+    return increase_version(version)
+
+
+def increase_version(version):
+
+    version = list(version)
     if len(version) == 2:
         version += [1]
     else:
         version[-1] += 1
 
-    return version
+        return tuple(version)
