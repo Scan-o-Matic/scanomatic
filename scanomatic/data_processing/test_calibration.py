@@ -57,11 +57,11 @@ def test_expanded_vector_sum():
 
 def test_calibration_opt_func():
 
-    poly = calibration._get_calibration_optimization_function(2)
+    poly = calibration.get_calibration_optimization_function(2)
     assert poly([2], 1, 1)[0] == 6
     assert poly([2], 2, 0)[0] == 4
     assert poly([2], 0, 2)[0] == 8
-    poly = calibration._get_calibration_optimization_function(4)
+    poly = calibration.get_calibration_optimization_function(4)
     assert poly([1], 1, 1)[0] == 2
     assert poly([1], 2, 0)[0] == 2
     assert poly([1], 0, 2)[0] == 2

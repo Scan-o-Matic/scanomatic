@@ -72,9 +72,12 @@ class FilterArray(object):
 
         return np.ma.MaskedArray(self.__dict__["__numpy_data"], mask=self.mask).filled(fill_value=fill_value)
 
-    def tojson(self):
+    def tojson(self, use_filled=False):
 
-        val = self.filled()
+        if use_filled:
+            val = self.filled()
+        else:
+            val = self.data
         filt = np.isnan(val)
         val = val.astype(np.object)
         val[filt] = None

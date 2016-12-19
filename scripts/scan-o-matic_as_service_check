@@ -71,11 +71,11 @@ if __name__ == "__main__":
 
         # Starting shit that needs starting
         if not som_server:
-            backup_file(Paths().log_server)
-            daemon("scan-o-matic_server", std_out=Paths().log_server, shell=False)
+
+            daemon("scan-o-matic_server", shell=False)
             _logger.info("Started SoM server")
 
         if not som_ui_server:
             backup_file(Paths().log_ui_server)
-            daemon("scan-o-matic", std_out=Paths().log_ui_server, daemon_args=("--no-browser",), shell=False)
+            daemon("scan-o-matic", daemon_args=("--no-browser",), shell=False)
             _logger.info("Started UI server")

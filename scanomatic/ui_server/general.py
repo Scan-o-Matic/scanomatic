@@ -2,9 +2,16 @@ import glob
 import os
 import re
 from StringIO import StringIO
+import io
+from scipy.misc import imread
 from itertools import chain
-from flask import send_file
+from flask import send_file, request, send_from_directory, jsonify
+from werkzeug.datastructures import FileStorage
 import numpy as np
+import zipfile
+from urllib import unquote, quote
+from types import StringTypes
+import base64
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -15,7 +22,7 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
 from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
 from scanomatic.image_analysis.image_grayscale import is_valid_grayscale
 
-_safe_dir = re.compile(r"^[A-Za-z_0-9./]*$")
+_safe_dir = re.compile(r"^[A-Za-z_0-9.%/ \\]*$" if os.sep == "\\" else r"^[A-Za-z_0-9.%/ ]*$")
 _no_super = re.compile(r"/?\.{2}/")
 _logger = Logger("UI API helpers")
 _ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.tiff'}
@@ -31,6 +38,19 @@ def image_is_allowed(ext):
     """
     global _ALLOWED_EXTENSIONS
     return ext.lower() in _ALLOWED_EXTENSIONS
+
+
+def string_parse_2d_list(data_string):
+
+    p1 = re.compile(r'\[[^\]\[]+\]')
+    p2 = re.compile(r'(\d+\.?\d*|\.\d+)')
+
+    parsed = [p2.findall(f) for f in p1.findall(data_string)]
+    if all(len(p) == len(parsed[0]) for p in parsed):
+        try:
+            return [[float(v) for v in l] for l in parsed]
+        except ValueError:
+            return []
 
 
 def get_2d_list(data, key, **kwargs):
@@ -105,7 +125,7 @@ def convert_url_to_path(url):
     if url is None:
         url = ""
     else:
-        url = url.split("/")
+        url = unquote(url).split("/")
     root = Config().paths.projects_root
     return os.path.abspath(os.path.join(*chain([root], url)))
 
@@ -115,6 +135,8 @@ def convert_path_to_url(prefix, path):
         path = "/".join(chain([prefix], os.path.relpath(path, Config().paths.projects_root).split(os.sep)))
     else:
         path = "/".join(os.path.relpath(path, Config().paths.projects_root).split(os.sep))
+
+    path = quote(path.encode('utf8'))
 
     if safe_directory_name(path):
         return path
@@ -209,6 +231,56 @@ def json_response(exits, data, success=True):
     return data
 
 
+def get_common_root_and_relative_paths(*file_list):
+
+    dir_list = set(tuple(os.path.dirname(f) if os.path.isfile(f) else f for f in file_list))
+    common_test = zip(*(os.path.split(p) for p in dir_list))
+    root = ""
+    for d_list in common_test:
+        if all(d == d_list[0] for d in d_list):
+            root = os.path.join(root, d_list[0])
+        else:
+            break
+
+    root += os.path.sep
+    start_at = len(root)
+    return root, tuple(f[start_at:] for f in file_list)
+
+
+def serve_zip_file(zip_name, *file_list):
+    """Serves a zip-file created from a file list
+
+    Code inspired by:
+    http://stackoverflow.com/questions/2463770/python-in-memory-zip-library#2463818
+
+    The filesystem in the zip will use the deepest common denominator in the filelist
+    as its root.
+
+    :param file_list: local paths
+    :return: Flask sending of data
+    """
+
+    # file_list = tuple(str(f) for f in file_list)
+    data_buffer = StringIO()
+    zf = zipfile.ZipFile(data_buffer, 'a', zipfile.ZIP_DEFLATED, False)
+    root, local_names = get_common_root_and_relative_paths(*file_list)
+    for local_file in local_names:
+        print("{0}  {1}".format(local_file, os.path.join(root, local_file)))
+        zf.write(os.path.join(root, local_file), local_file)
+
+    for zfile in zf.filelist:
+        zfile.create_system = 0
+
+    zf.close()
+
+    data_buffer.seek(0)
+
+    return send_file(data_buffer,
+                     mimetype='application/zip, application/octet-stream',
+                     as_attachment=True,
+                     attachment_filename=str(zip_name))
+
+
 def serve_pil_image(pil_img):
     img_io = StringIO()
     pil_img.save(img_io, 'JPEG', quality=70)
@@ -232,6 +304,71 @@ def get_fixture_image(name, image_path):
     fixture = FixtureImage()
     fixture.name = name
     fixture.set_image(image_path=image_path)
+    return fixture
+
+
+def pad_decode_base64(data):
+    """Decode base64, padding being optional.
+
+    :param data: Base64 data as an ASCII byte string
+    :returns: The decoded byte string.
+
+    """
+    if isinstance(data, unicode):
+        data = data.encode("utf-8")
+
+    missing_padding = len(data) % 4
+    if missing_padding != 0:
+        data += b'=' * (4 - missing_padding)
+
+    return base64.decodestring(data)
+
+
+def remove_pad_decode_base64(data):
+
+    if isinstance(data, unicode):
+        data = data.encode("utf-8")
+
+    remainder = len(data) % 4
+    return base64.decodestring(data[:-remainder if remainder else 4])
+
+
+def get_image_data_as_array(image_data, reshape=None):
+
+    if isinstance(image_data, StringTypes):
+        stream = io.StringIO()
+        stream.write(image_data)
+        stream.flush()
+        stream.seek(0)
+        try:
+            return imread(stream)
+        except IOError:
+            try:
+                s = pad_decode_base64(image_data)
+            except:
+                s = remove_pad_decode_base64(image_data)
+            stream = io.StringIO()
+            stream.write(s)
+            stream.flush()
+            stream.seek(0)
+            return imread(stream)
+    elif isinstance(image_data, list):
+        if reshape is None:
+            return np.array(image_data)
+        else:
+            return np.array(image_data).reshape(reshape)
+    elif isinstance(image_data, file) or isinstance(image_data, FileStorage):
+        return imread(image_data)
+
+    else:
+        return image_data
+
+
+def get_fixture_image_from_data(name, image_data):
+
+    fixture = FixtureImage()
+    fixture.name = name
+    fixture.set_image(image=get_image_data_as_array(image_data))
     return fixture
 
 
@@ -285,3 +422,102 @@ def split_areas_into_grayscale_and_plates(areas):
             _logger.warning("Bad data: '{0}' does not have the expected area attributes".format(area))
 
     return gs, plates
+
+
+_app_runs_locally = False
+
+
+def set_local_app():
+    global _app_runs_locally
+    _app_runs_locally = True
+
+
+def get_app_is_local():
+    return _app_runs_locally
+
+__ip_memory = {}
+
+
+def memoize_ip(f):
+
+    def _inner(ip):
+        if ip in __ip_memory:
+            return __ip_memory[ip]
+        else:
+            val = f(ip)
+            if len(__ip_memory) > 1000:
+                del __ip_memory[__ip_memory.keys()[-1]]
+
+            __ip_memory[ip] = val
+
+            return val
+
+    return _inner
+
+
+@memoize_ip
+def is_local_ip(ip):
+
+    # TODO: Only handles IPv4
+
+    if ip is None:
+        return False
+
+    if ip == '127.0.0.1':
+        return True
+
+    if ip.startswith('10.') or ip.startswith('192.168.') or ip.startswith('169.254.'):
+        return True
+
+    iplist = ip.split(".")
+    if ip.startswith('172.'):
+
+        if len(iplist) == 4 and iplist[1] in ('16', '17', '18', '19', '20',
+                                              '21', '22', '23', '24', '25',
+                                              '26', '27', '28', '29', '30', '31'):
+
+            return True
+
+    return False
+
+
+def decorate_access_restriction(restricted_route):
+
+    class Restrictor(object):
+
+        def __getattribute__(self, item):
+
+            def restrictor(*args, **kwargs):
+                if not _app_runs_locally or is_local_ip(request.remote_addr):
+                    return restricted_route(*args, **kwargs)
+                else:
+                    _logger.warning("Illegal access attempt to {0} from {1}".format(restricted_route, request.remote_addr))
+                    return send_from_directory(Paths().ui_root, Paths().ui_access_restricted)
+
+            ret = restrictor
+            ret.func_name = "{0}_{1}".format(ret.func_name, item)
+            return ret
+
+    return getattr(Restrictor(), restricted_route.__name__)
+
+
+def decorate_api_access_restriction(restricted_route):
+
+    class Restrictor(object):
+
+        def __getattribute__(self, item):
+
+            def restrictor(*args, **kwargs):
+
+                if not _app_runs_locally or is_local_ip(request.remote_addr):
+                    return restricted_route(*args, **kwargs)
+                else:
+                    _logger.warning("Illegal access attempt to {0} from {1}".format(
+                        restricted_route, request.remote_addr))
+                    return jsonify(success=False, is_endpoint=True, reason="Your IP is not white-listed, access denied")
+
+            ret = restrictor
+            ret.func_name = "{0}_{1}".format(ret.func_name, item)
+            return ret
+
+    return getattr(Restrictor(), restricted_route.__name__)

@@ -2,7 +2,7 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-	<link rel="stylesheet" type="text/css" href="style/main.css">
+    <link rel="stylesheet" type="text/css" href="style/main.css?ver=_-_VERSIONTAG_-_">
     <script src="/js/jquery-2.1.4.min.js"></script>
 
 	<title>Scan-o-Matic</title>
@@ -14,18 +14,19 @@
                 <a href="/experiment" target="page">Experiment</a>
                 <a href="/compile" target="page">Compile</a>
                 <a href="/analysis" target="page">Analysis</a>
-                <span>QC & Norm</span>
+                <a href="/qc_norm" target="page">QC & Norm</a>
                 |
                 <a href="/status" target="page">Status</a>
                 |
                 <a href="/fixtures" target="page">Fixtures</a>
                 |
                 <a href="/settings" target="page">Settings</a>
-                <a href="/help" target="page">Help</a>
+                <!-- <a href="/help" target="page">Help</a> -->
                 <a href="/wiki" target="_blank">Wiki</a>
 
+                <span>ver=_-_VERSIONTAG_-_</span>
             </nav>
-            <iframe id="page" name="page"></iframe>
+            <iframe id="page" name="page" src="/home"></iframe>
         </div>
         <script>
             $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });

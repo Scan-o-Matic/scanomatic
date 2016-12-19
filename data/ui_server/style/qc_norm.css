@@ -1,0 +1,204 @@
+﻿/* Data Selection*/
+
+.SelectedExperiment {
+    stroke: black;
+    stroke-width:2
+}
+
+.loProjectSelection,
+.loPhenotypeSelection,
+.loPlateSelection {
+    overflow: hidden;
+ }
+
+/*.loProjectSelection div,*/
+.loPhenotypeSelection div,
+.loPlateSelection div {
+    padding: 3px;
+}
+
+.loPlateSelection button {
+    margin: 5px;
+}
+
+.QCCont select{
+    color: black;
+}
+
+/*Plate HeatMap*/
+
+.PlateHeatMap {
+    border: 0px solid black;
+    background: #e7d2b7;
+    margin: 0px;
+}
+
+.HeatMapLegendAxis path   {
+    display: none;
+}
+
+.HeatMapLegendAxis   {
+    font-size:10px;
+}
+
+div.tooltip {	
+    position: absolute;			
+    text-align: center;
+    padding: 2px;				
+    font: 12px sans-serif;
+    color: white;
+    background: black;	
+    border: 0px;		
+    border-radius: 3px;			
+    pointer-events: none;			
+}
+
+rect.selection {
+    stroke          : black;
+    stroke-dasharray: 10px;
+    fill            : transparent;
+    stroke-width    : 3;
+    stroke-opacity  : 1;
+}
+
+g.expNode.selected circle {
+    stroke:black;
+    stroke-width: 1;
+}
+
+g.expNode.selected rect {
+    stroke:black;
+    stroke-width: 1;
+}
+
+  /* disable text selection */
+svg *::selection {
+    background : transparent;
+}
+
+svg *::-moz-selection {
+    background:transparent;
+}
+
+svg *::-webkit-selection {
+    background:transparent;
+}
+
+/*Growth chart*/
+.growthChart {
+    background: #e7d2b7;
+    margin: 0px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  }
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 8px;
+			}
+
+.series .raw {
+  fill: none;
+  stroke: red;
+  stroke-width: 2px;
+}
+
+.series .smooth {
+  fill: none;
+  stroke: black;
+  stroke-width: 2px;
+}
+
+/* Project Selection */
+.floating-box {
+    float: left;
+    margin: 0px 5px 0px 0px;
+}
+
+/* Project Selection tree */
+#tblProjects {
+    height: 100%;
+    width: 100%;
+}
+
+#tblProjects td {
+    color: black;
+}
+#tblProjects a {
+    background-color: transparent;
+}
+
+/* plates selection*/
+a.plateSelectionButton:focus
+{
+    background:olive;
+}
+
+/*mark button*/
+.markButton {
+    height: 22px;
+    height: 22px;
+   
+}
+
+/*general*/
+.vcenter {
+    display: inline-block;
+    vertical-align: middle;
+    float: none;
+}
+
+body > .modal {
+      display: none;
+    }
+
+/*Toggle button*/
+.qc_norm_toggle {
+    position: relative; width: 65px;
+    -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+}
+.qc_norm_toggle-checkbox {
+    display: none;
+}
+.qc_norm_toggle-label {
+    display: block; overflow: hidden; cursor: pointer;
+    border: 2px solid #999999; border-radius: 20px;
+}
+.qc_norm_toggle-inner {
+    display: block; width: 200%; margin-left: -100%;
+    transition: margin 0.3s ease-in 0s;
+}
+.qc_norm_toggle-inner:before, .qc_norm_toggle-inner:after {
+    display: block; float: left; width: 50%; height: 18px; padding: 0; line-height: 18px;
+    font-size: 14px; color: white; font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
+    box-sizing: border-box;
+}
+.qc_norm_toggle-inner:before {
+    content: "ON";
+    padding-left: 10px;
+    background-color: #F8E03E; color: #541f0f;
+}
+.qc_norm_toggle-inner:after {
+    content: "OFF";
+    padding-right: 10px;
+    background-color: #EEEEEE; color: #999999;
+    text-align: right;
+}
+.qc_norm_toggle-switch {
+    display: block; width: 18px; margin: 0px;
+    background: #FFFFFF;
+    position: absolute; top: 0; bottom: 0;
+    right: 43px;
+    border: 2px solid #999999; border-radius: 20px;
+    transition: all 0.3s ease-in 0s; 
+}
+.qc_norm_toggle-checkbox:checked + .qc_norm_toggle-label .qc_norm_toggle-inner {
+    margin-left: 0;
+}
+.qc_norm_toggle-checkbox:checked + .qc_norm_toggle-label .qc_norm_toggle-switch {
+    right: 0px; 
+}

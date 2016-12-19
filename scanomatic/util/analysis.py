@@ -4,6 +4,7 @@ import numpy as np
 from scanomatic.io.paths import Paths
 from scanomatic.image_analysis.image_basics import load_image_to_numpy
 from scanomatic.io.logger import Logger
+from scanomatic.io.pickler import unpickle_with_unpickler
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 from scanomatic.generics.purge_importing import ExpiringModule
 
@@ -13,8 +14,16 @@ _logger = Logger("Analysis Utils")
 def produce_grid_images(path=".", image=None, mark_position=None):
 
     project_path = os.path.join(os.path.dirname(os.path.abspath(path)))
-    compilations = glob.glob(os.path.join(os.path.dirname(os.path.abspath(path)),
-                                          Paths().project_compilation_pattern.format("*")))
+
+    for compilation_pattern in (Paths().project_compilation_pattern,
+                                Paths().project_compilation_from_scanning_pattern,
+                                Paths().project_compilation_from_scanning_pattern_old):
+
+        compilations = glob.glob(
+            os.path.join(os.path.dirname(os.path.abspath(path)), compilation_pattern.format("*")))
+
+        if compilations:
+            break
 
     if not compilations:
         raise ValueError("There are no compilations in the parent directory")
@@ -44,7 +53,7 @@ def produce_grid_images(path=".", image=None, mark_position=None):
     for plate in plates:
 
         plate_image = image[plate.y1: plate.y2, plate.x1: plate.x2]
-        grid = np.load(os.path.join(path, Paths().grid_pattern.format(plate.index)))
+        grid = unpickle_with_unpickler(np.load, os.path.join(path, Paths().grid_pattern.format(plate.index)))
         make_grid_im(plate_image, grid, os.path.join(path, Paths().experiment_grid_image_pattern.format(plate.index)),
                      marked_position=mark_position)
 

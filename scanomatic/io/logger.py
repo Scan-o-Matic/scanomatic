@@ -5,7 +5,9 @@ import threading
 import time
 from functools import partial
 import warnings
+import re
 
+LOG_RECYCLE_TIME = 60 * 60 * 24
 
 #
 # CLASSES
@@ -22,6 +24,8 @@ class Logger(object):
     DEBUG = 5
 
     _LOGFORMAT = "%Y-%m-%d %H:%M:%S -- {lvl}\t**{name}** "
+    LOG_PARSING_EXPRESSION = re.compile(
+        r"(\d{4}-\d{1,2}-\d{1,2}) (\d{1,2}:\d{1,2}:\d{1,2}) -- (\w+)\t\*{2}([^\*]+)\*{2}(.*)")
 
     _DEFAULT_LOGFILE = None
     _DEFAULT_CATCH_OUT = False
@@ -85,6 +89,34 @@ class Logger(object):
 
         self._output(5, msg)
 
+    def pause(self):
+
+        file = self._active_log_file
+        if file is None:
+            self.warning("Attempting to pause logging while not having any log file has no effect."
+                         " This is most probably not a problem, even intended.")
+        else:
+            file.pause()
+
+    def resume(self):
+
+        file = self._active_log_file
+        if file is None:
+            self.warning("Attempting to resume logging while not having any log file."
+                         " This has no effect, but should not be a problem either.")
+        else:
+            file.resume()
+
+    def close_output(self):
+
+        file = self._active_log_file
+        if file is not None:
+            file.close()
+            if file is self._log_file:
+                self._log_file = None
+            else:
+                self._DEFAULT_LOGFILE = None
+
     @classmethod
     def set_global_log_levels(cls, log_levels=None):
 
@@ -110,6 +142,7 @@ class Logger(object):
             cls,  target, catch_stdout=False, catch_stderr=False,
             mode='w', buffering=None):
 
+        # TODO: Problem if waiting...fix some day
         if cls._DEFAULT_LOGFILE is not None:
             cls._DEFAULT_LOGFILE.close()
 
@@ -245,38 +278,43 @@ class Logger(object):
         if (self._active and lvl <= self._level and
                 lvl in self._LOGLEVELS_TO_TEXT):
 
-            output = (self._usePrivateOutput and self._log_file or
-                      self._DEFAULT_LOGFILE)
+            output = self._active_log_file
 
             if output is not None:
                 if isinstance(msg, list) or isinstance(msg, tuple):
                     msg = list(msg)
-                    msg[0] = self._decorate(lvl) + msg[0]
+                    msg[0] = self._decorate(lvl) + unicode(msg[0])
+                    msg = tuple(msg)
                 else:
-                    msg = self._decorate(lvl) + msg
+                    msg = (self._decorate(lvl) + unicode(msg),)
 
-                self._log_file.writelines(msg)
+                output.writelines(msg)
 
             elif not self._suppressPrints:
 
-                print self._decorate(lvl) + str(msg)
+                print(self._decorate(lvl) + str(msg))
 
     def set_output_target(
             self, target, catch_stdout=False, catch_stderr=False,
             mode='w', buffering=None):
 
         if self._log_file is not None:
-            self._log_file.close()
+            cache = self._log_file.close()
+        else:
+            cache = []
 
         if target is not None:
             self._log_file = _ExtendedFileObject(target, mode, buffering=512 if buffering is None else buffering)
+            self._log_file.writelines(*cache)
         else:
-            if self._log_file is not None:
-                self._log_file.close()
             self._log_file = None
 
         self.catch_stdout = catch_stdout
         self.catch_stderr = catch_stderr
+
+        if target is None and not self._suppressPrints:
+            for msg in cache:
+                print(msg)
 
     def traceback(self, lvl=None):
 
@@ -305,42 +343,135 @@ class Logger(object):
 
         output(txt)
 
+    @property
+    def _active_log_file(self):
+        if self._log_file is not None and self._usePrivateOutput:
+            return self._log_file
+        elif self._DEFAULT_LOGFILE is not None:
+            return self._DEFAULT_LOGFILE
+        else:
+            return self._log_file
+
 
 class _ExtendedFileObject(file):
+    # TODO: Regain buffer and release threads while closing
 
     def __init__(self, path, mode, buffering=None):
 
         super(_ExtendedFileObject, self).__init__(path, mode, buffering=buffering)
         self._semaphor = False
         self._buffer = []
+        self._flush_buffer = False
+        self._cache = []
 
-    def write(self, s):
+    def pause(self):
 
-        self._buffer.append(s)
-        self._write()
-
-    def writelines(self, *lines):
-
-        lines = list(lines)
-        for i in range(len(lines)):
-            if lines[i][-1] != "\n":
-                lines[i] = str(lines[-1]) + "\n"
-        self._buffer += lines
-        self._write()
-
-    def _write(self):
-
-        t = threading.Thread(target=self._write_to_file)
-        t.start()
-
-    def _write_to_file(self):
+        if -1 not in self._buffer:
+            self._buffer.insert(0, -1)
 
         while self._semaphor:
             time.sleep(0.01)
 
-        self._semaphor = True
-        length = len(self._buffer)
-        super(_ExtendedFileObject, self).writelines(self._buffer[:length])
-        for i in range(length):
+    def close(self):
+
+        if self._buffer and not self._buffer[0] == -1:
+            self.pause()
+        super(_ExtendedFileObject, self).close()
+        self._flush_buffer = True
+        self.resume()
+        while self._buffer:
+            time.sleep(0.01)
+        return self._cache
+
+    def resume(self):
+
+        if self._buffer and self._buffer[0] == -1:
             self._buffer.pop(0)
+
+    def write(self, s):
+        self._write((s,))
+
+    def writelines(self, *lines):
+
+        if len(lines) == 1 and (isinstance(lines[0], list) or isinstance(lines[0], tuple)):
+            lines = lines[0]
+
+        self._write(lines)
+
+    def _write(self, obj):
+
+        id = hash(obj)
+        self._buffer.append(id)
+        t = threading.Thread(target=self._write_to_file, args=(id, obj))
+        t.start()
+
+    def _write_to_file(self, id, obj):
+
+        while self._semaphor and id != self._buffer[0]:
+            time.sleep(0.01)
+
+        if self._flush_buffer:
+            for l in obj:
+                self._cache.append(obj)
+            self._buffer.remove(id)
+            return
+
+        self._semaphor = True
+        self._buffer.remove(id)
+
+        super(_ExtendedFileObject, self).writelines([l if l.endswith(u"\n") else l + u"\n" for l in obj])
         self._semaphor = False
+
+
+def parse_log_file(path, seek=0, max_records=-1, filter_status=None):
+
+    with open(path, 'r') as fh:
+
+        if seek:
+            fh.seek(seek)
+
+        n = 0
+        pattern = Logger.LOG_PARSING_EXPRESSION
+
+        records = []
+        tell = fh.tell()
+        garbage = []
+        record = {}
+        eof = False
+        while n < max_records or max_records < 0:
+
+            line = fh.readline()
+            if tell == fh.tell():
+                eof = True
+                break
+            else:
+                tell = fh.tell()
+
+            match = pattern.match(line)
+
+            if match:
+
+                if record and (filter_status is None or record['status'] in filter_status):
+                    records.append(record)
+                    n += 1
+                groups = match.groups()
+                record = {
+                    'date': groups[0],
+                    'time': groups[1],
+                    'status': groups[2],
+                    'source': groups[3],
+                    'message': groups[4].strip()
+                }
+            elif record:
+                record['message'] += '\n{0}'.format(line.rstrip())
+            else:
+                garbage.append(line.rstrip())
+
+        return {
+            'file': path,
+            'start_position': seek,
+            'end_position': tell,
+            'end_of_file': eof,
+            'records': records,
+            'garbage': garbage
+        }

@@ -1,0 +1,64 @@
+.log-frame {
+    width: 590px;
+    height: 420px;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.log-div {
+    background: #aaaaaa;
+}
+
+.log-div h1 {
+    width: auto;
+    padding-top: 10px;
+    text-align: center;
+    font-family: mono;
+    letter-spacing: 5px;
+}
+
+.log-group {
+    width: 550px;
+    margin-bottom: 10px;
+}
+
+.log-status {
+    right: 10px;
+    font-weight: bold;
+    float: right;
+    margin-right: 5px;
+}
+
+.log-entry-odd {
+    background: #aabbbb;
+    margin-bottom: 2px;
+    padding: 4px;
+}
+
+.log-entry-even {
+    background: #bbaabb;
+    margin-bottom: 2px;
+    padding: 4px;
+}
+
+.log-entry-header {
+    font-size: large;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 3px;
+}
+
+.log-source {
+    font-weight: bold;
+    margin-right: 10px;
+    margin-left: 5px;
+    margin-bottom: 2px;
+    margin-top: 4px;
+    text-decoration: underline;
+    display: block;
+    font-family: mono;
+}
+
+.log-message {
+  font-family: mono;
+  font-size: small;
+}

@@ -71,6 +71,7 @@ class Paths(SingeltonOneInit):
         self.ui_templates = os.path.join(self.ui_root, "templates")
         self.ui_help_file = "help.html"
         self.ui_qc_norm_file = "qc_norm.html"
+        self.ui_access_restricted = "access_restricted.html"
         self.ui_maintain_file = "maintain.html"
         self.ui_fixture_file = "fixture.html"
         self.ui_root_file = 'root.html'
@@ -79,6 +80,8 @@ class Paths(SingeltonOneInit):
         self.ui_status_file = 'status.html'
         self.ui_analysis_file = 'analysis.html'
         self.ui_settings_template = 'settings.html'
+        self.ui_log_template = 'log.html'
+        self.ui_ccc_file = 'CCC.html'
 
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
         self.martin = os.path.join(self.images, "martin3.png")
@@ -117,6 +120,14 @@ class Paths(SingeltonOneInit):
         self.analysis_graycsales = os.path.join(
             self.config, "grayscales.cfg")
 
+        self.ccc_folder = os.path.join(self.config, "ccc")
+        self.ccc_file_pattern = os.path.join(self.ccc_folder, "{0}.ccc")
+        self.ccc_image_pattern = os.path.join(self.ccc_folder, "{0}.{1}.tiff")
+        self.ccc_image_plate_slice_pattern = os.path.join(self.ccc_folder, "{0}.{1}.plate_{2}.npy")
+        self.ccc_image_plate_transformed_slice_pattern = \
+            os.path.join(self.ccc_folder, "{0}.{1}.plate_{2}.transformed.npy")
+        self.ccc_image_gs_slice_pattern = os.path.join(self.ccc_folder, "{0}.{1}.gs.npy")
+
         self.analysis_run_log = 'analysis.log'
         self.analysis_model_file = 'analysis.model'
 
@@ -150,7 +161,8 @@ class Paths(SingeltonOneInit):
         self.image_analysis_img_data = "image_{0}_data.npy"
         self.image_analysis_time_series = "time_data.npy"
 
-        self.project_settings_file_pattern = "{0}.project.settings"
+        self.project_compilation_from_scanning_pattern_old = "{0}.project.settings"
+        self.project_compilation_from_scanning_pattern = "{0}.project.compilation.original"
         self.project_compilation_pattern = "{0}.project.compilation"
         self.project_compilation_instructions_pattern = "{0}.project.compilation.instructions"
         self.project_compilation_log_pattern = "{0}.project.compilation.log"
@@ -189,9 +201,9 @@ class Paths(SingeltonOneInit):
 
         return fixture.capitalize().replace("_", " ")
 
-    def get_project_settings_path_from_scan_model(self, scan_model):
+    def get_original_compilation_path_from_scan_model(self, scan_model):
 
-        return self.project_settings_file_pattern.format(
+        return self.project_compilation_from_scanning_pattern.format(
             os.path.join(scan_model.directory_containing_project, scan_model.project_name, scan_model.project_name))
 
     def get_project_compile_path_from_compile_model(self, compile_model):

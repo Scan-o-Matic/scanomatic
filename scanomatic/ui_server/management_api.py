@@ -7,7 +7,7 @@ from subprocess import Popen, PIPE
 from threading import Thread
 from scanomatic import get_version
 from scanomatic.io.source import parse_version, upgrade, git_version, highest_version, get_source_information
-
+from .general import decorate_api_access_restriction
 _GIT_INFO = None
 _GIT_INFO_RECHECK = 3600 * 24
 
@@ -33,6 +33,7 @@ def shutdown_server():
 def add_routes(app, rpc_client):
 
     @app.route("/api/server/<action>", methods=['post', 'get'])
+    @decorate_api_access_restriction
     def _server_actions(action=None):
 
         if action == 'reboot':
@@ -101,14 +102,17 @@ def add_routes(app, rpc_client):
             return jsonify(success=True)
 
     @app.route("/api/app/<action>", methods=['post', 'get'])
+    @decorate_api_access_restriction
     def _app_actions(action=None):
 
         if action == 'reboot':
+            app.log_recycler.cancel()
             shutdown_server()
             Thread(target=relaunch).start()
             return jsonify(success=True)
 
         elif action == 'shutdown':
+            app.log_recycler.cancel()
             shutdown_server()
             return jsonify(success=True)
 
@@ -156,6 +160,7 @@ def add_routes(app, rpc_client):
             return jsonify(success=False, reason="Unknown action '{0}'".format(action))
 
     @app.route("/api/job/<job_id>/<job_command>")
+    @decorate_api_access_restriction
     def _communicate_with_job(job_id="", job_command=""):
 
         if rpc_client.online:

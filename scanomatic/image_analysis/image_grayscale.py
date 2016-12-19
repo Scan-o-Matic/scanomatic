@@ -134,9 +134,14 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
 
 
 def get_grayscale(fixture, grayscale_area_model, debug=False):
-    global DEBUG_DETECTION
-    gs = getGrayscale(grayscale_area_model.name)
     im = fixture.get_grayscale_im_section(grayscale_area_model)
+    return get_grayscale_image_analysis(im, grayscale_area_model.name, debug=debug)
+
+
+def get_grayscale_image_analysis(im, grayscale_name, debug=False):
+    global DEBUG_DETECTION
+
+    gs = getGrayscale(grayscale_name)
     if not im.size:
         return None, None
     im_o = get_ortho_trimmed_slice(im, gs)
@@ -162,7 +167,7 @@ def is_valid_grayscale(calibration_target_values, image_values, pixel_depth=8):
     poly = np.poly1d(fit)
     data = poly(np.arange(2*pixel_depth))
 
-    # Analytical derivative over the value span ensuring that the curve is continuously increasing or decreasing
+    # Analytical derivative over the value span ensuring that the log2_curve is continuously increasing or decreasing
     poly_is_ok = np.unique(np.sign(data[1:] - data[:-1])).size == 1
     if not poly_is_ok:
         _logger.warning("Polynomial fit failed required monotonous test")

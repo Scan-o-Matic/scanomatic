@@ -52,47 +52,56 @@ class PhenotypeDataType(Enum):
 
     def __call__(self, phenotype=None):
 
-        _vectors = (VectorPhenotypes.PhasesClassifications,
-                    VectorPhenotypes.PhasesPhenotypes,
-                    Phenotypes.GrowthVelocityVector)
+        _vectors = (
+            VectorPhenotypes.PhasesClassifications,
+            VectorPhenotypes.PhasesPhenotypes,
+            Phenotypes.GrowthVelocityVector,
+        )
 
-        _phases = (VectorPhenotypes.PhasesClassifications,
-                   VectorPhenotypes.PhasesPhenotypes)
+        _phases = (
+            VectorPhenotypes.PhasesClassifications,
+            VectorPhenotypes.PhasesPhenotypes,
+        )
 
-        _trusted = (Phenotypes.GenerationTime,
-                    Phenotypes.ChapmanRichardsFit,
-                    Phenotypes.ColonySize48h,
-                    Phenotypes.InitialValue,
-                    Phenotypes.ExperimentBaseLine,
-                    Phenotypes.ExperimentGrowthYield,
-                    Phenotypes.ExperimentPopulationDoublings,
-                    Phenotypes.GenerationTimeWhen,
-                    Phenotypes.ExperimentEndAverage,
-                    Phenotypes.GenerationTimeStErrOfEstimate)
+        _trusted = (
+            Phenotypes.GenerationTime,
+            Phenotypes.ChapmanRichardsFit,
+            Phenotypes.ColonySize48h,
+            Phenotypes.InitialValue,
+            Phenotypes.ExperimentBaseLine,
+            Phenotypes.ExperimentGrowthYield,
+            Phenotypes.ExperimentPopulationDoublings,
+            Phenotypes.GenerationTimeWhen,
+            Phenotypes.ExperimentEndAverage,
+            Phenotypes.GenerationTimeStErrOfEstimate,
+        )
 
-        _under_development = (Phenotypes.GenerationTimePopulationSize,
-                              Phenotypes.GrowthLag,
-                              Phenotypes.ExperimentLowPoint,
-                              Phenotypes.ExperimentLowPointWhen,
-                              CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution,
-                              CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime,
-                              CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution,
-                              CurvePhaseMetaPhenotypes.FirstMinorImpulseAveragePopulationDoublingTime,
-                              CurvePhaseMetaPhenotypes.InitialLag,
-                              CurvePhaseMetaPhenotypes.InitialLagAlternativeModel,
-                              CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle,
-                              CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteAngle,
-                              CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteIntersect,
-                              CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteIntersect,
-                              CurvePhaseMetaPhenotypes.Modalities,
-                              CurvePhaseMetaPhenotypes.ModalitiesAlternativeModel,
-                              CurvePhaseMetaPhenotypes.Collapses,
-                              CurvePhaseMetaPhenotypes.ExperimentDoublings,
-                              CurvePhaseMetaPhenotypes.ResidualGrowth,
-                              CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry,
-                              VectorPhenotypes.PhasesPhenotypes,
-                              VectorPhenotypes.PhasesClassifications,
-                              VectorPhenotypes)
+        _under_development = (
+            Phenotypes.GenerationTimePopulationSize,
+            Phenotypes.GrowthLag,
+            Phenotypes.Monotonicity,
+            Phenotypes.ExperimentLowPoint,
+            Phenotypes.ExperimentLowPointWhen,
+            Phenotypes.ResidualGrowth,
+            Phenotypes.ResidualGrowthAsPopulationDoublings,
+            CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution,
+            CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime,
+            CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution,
+            CurvePhaseMetaPhenotypes.FirstMinorImpulseAveragePopulationDoublingTime,
+            CurvePhaseMetaPhenotypes.InitialLag,
+            CurvePhaseMetaPhenotypes.InitialLagAlternativeModel,
+            CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle,
+            CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteAngle,
+            CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteIntersect,
+            CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteIntersect,
+            CurvePhaseMetaPhenotypes.Modalities,
+            CurvePhaseMetaPhenotypes.ModalitiesAlternativeModel,
+            CurvePhaseMetaPhenotypes.Collapses,
+            CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry,
+            CurvePhaseMetaPhenotypes.TimeBeforeMajorGrowth,
+            VectorPhenotypes.PhasesPhenotypes,
+            VectorPhenotypes.PhasesClassifications,
+        )
 
         if self is PhenotypeDataType.Scalar:
 
@@ -124,9 +133,9 @@ class PhenotypeDataType(Enum):
         elif self is PhenotypeDataType.UnderDevelopment:
 
             if phenotype is None:
-                return _under_development
+                return set(chain(_under_development, _trusted))
 
-            return phenotype in _trusted or phenotype in _under_development
+            return phenotype in _trusted or phenotype in set(chain(_under_development, _trusted))
 
         elif self is PhenotypeDataType.Other:
 
@@ -171,5 +180,7 @@ def get_sort_order(phenotype):
     :param phenotype: the phenotype name
     :return:
     """
-    # TODO: Add the inverse exceptions
+    # TODO: Add more inverse exceptions
+    if phenotype in (Phenotypes.ExperimentGrowthYield,):
+        return -1
     return 1

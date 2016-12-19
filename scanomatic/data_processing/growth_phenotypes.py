@@ -89,12 +89,33 @@ def curve_end_average(curve_smooth_growth_data, *args, **kwargs):
         return np.nan
 
 
+def curve_monotonicity(curve_smooth_growth_data, *args, **kwargs):
+    return (np.diff(curve_smooth_growth_data[curve_smooth_growth_data.mask == np.False_]) > 0).astype(float).sum() / \
+           (curve_smooth_growth_data.size - 1)
+
+
 def growth_yield(curve_smooth_growth_data, *args, **kwargs):
     return curve_end_average(curve_smooth_growth_data) - curve_baseline(curve_smooth_growth_data)
 
 
 def growth_curve_doublings(curve_smooth_growth_data, *args, **kwargs):
     return np.log2(curve_end_average(curve_smooth_growth_data)) - np.log2(curve_baseline(curve_smooth_growth_data))
+
+
+def residual_growth(curve_smooth_growth_data, *args, **kwargs):
+    return curve_end_average(curve_smooth_growth_data) - \
+           population_size_at_generation_time(
+               curve_smooth_growth_data=curve_smooth_growth_data,
+               index=_get_generation_time_index(kwargs['derivative_values_log2'], 0),
+               **kwargs)
+
+
+def residual_growth_as_population_doublings(curve_smooth_growth_data, *args, **kwargs):
+    return np.log2(curve_end_average(curve_smooth_growth_data)) - \
+           np.log2(population_size_at_generation_time(
+               curve_smooth_growth_data=curve_smooth_growth_data,
+               index=_get_generation_time_index(kwargs['derivative_values_log2'], 0),
+               **kwargs))
 
 
 def growth_48h(curve_smooth_growth_data, index48h, *args, **kwargs):
@@ -105,7 +126,7 @@ def growth_48h(curve_smooth_growth_data, index48h, *args, **kwargs):
 
 
 def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
-    """Reterns a Chapman-Ritchards 4 parameter curve exteneded with a
+    """Reterns a Chapman-Ritchards 4 parameter log2_curve exteneded with a
     Y-axis offset D parameter.
 
     ''Note: The parameters b0, b1, b2 and b3 have been transposed so
@@ -136,13 +157,13 @@ def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
 
                         ``np.power(np.e, b3) / (np.power(np.e, b3) + 1)``
 
-        D (float):  Any real number, used as the offset of the curve,
+        D (float):  Any real number, used as the offset of the log2_curve,
                     no transformation applied.
 
     Returns:
 
         np.array.       An array of matching size as X with the
-                        Chapman-Ritchards extended curve for the
+                        Chapman-Ritchards extended log2_curve for the
                         parameter set.
 
     """
@@ -273,41 +294,79 @@ class Phenotypes(Enum):
     Each attribute can be called to perform that calculation given that sufficient data is supplied.
 
     Attributes:
-        InitialValue: The first measurement
-        ExperimentFirstTwoAverage: Average of first two measurements
-        ExperimentBaseLine: Part of `GrowthLag` and `GrowthYield` calculations,
+        Phenotypes.InitialValue:
+            The first measurement
+        Phenotypes.ExperimentFirstTwoAverage:
+            Average of first two measurements
+        Phenotypes.ExperimentBaseLine:
+            Part of `GrowthLag` and `GrowthYield` calculations,
             the average value of first three measurements.
-        ExperimentLowPoint: The minimum of first three measurements.
-        ExperimentEndAverage: The average of the last three measurements. Part of `GrowthYield` calculations.
+        Phenotypes.ExperimentLowPoint:
+            The minimum of first three measurements.
+        Phenotypes.ExperimentEndAverage:
+            The average of the last three measurements.
+            Part of `GrowthYield` calculations.
 
-        ExperimentGrowthYield: The yield of the experiment, difference between beginning and end in population size.
-        GrowthLag: The duration of how long it took before growth started. Intercept between `InitialValue` and
-            the tangent at `GenterationTimeWhen` on log2-scale.
+        Phenotypes.ExperimentGrowthYield:
+            The yield of the experiment, difference between beginning
+            and end in population size.
+        Phenotypes.GrowthLag:
+            The duration of how long it took before growth started.
+            Intercept between `InitialValue` and the tangent at
+            `Phenotypes.GenerationTimeWhen` on log2-scale.
 
-        GenerationTime48h: The generation time at 48h after experiment start
-        ColonySize48h: The size of the population at 48h after experiment start
+        Phenotypes.GenerationTime48h:
+            The generation time at 48h after experiment start
+        Phenotypes.ColonySize48h:
+            The size of the population at 48h after experiment start
 
-        GenerationTime: The minimum time of population doubling
-        GenerationTimeStErrOfEstimate: The standard error of the estimate of the linear regression that
-            is the basis of `GenerationTime`
-        GenerationTimeWhen: When during the experiment `GenerationTime` occurred.
-        GenerationTimePopulationSize: The population size when `GenerationTime` occurred.
+        Phenotypes.GenerationTime:
+            The minimum time of population doubling
+        Phenotypes.GenerationTimeStErrOfEstimate:
+            The standard error of the estimate of the linear
+            regression that is the basis of `GenerationTime`.
+        Phenotypes.GenerationTimeWhen:
+            When during the experiment `GenerationTime` occurred.
+        Phenotypes.GenerationTimePopulationSize:
+            The population size when `GenerationTime` occurred.
 
-        GenerationTime2: The second shortest time of population doubling
-        GenerationTime2StErrOfEstimate: The standard error of the estimate of the linear regression that
-            is the basis of `GenerationTime2`
-        GenerationTime2When: When during the experiment `GenerationTime2` occurred.
+        Phenotypes.GenerationTime2:
+            The second shortest time of population doubling
+        Phenotypes.GenerationTime2StErrOfEstimate:
+            The standard error of the estimate of the linear
+            regression that is the basis of
+            `Phenotypes.GenerationTime2`.
+        Phenotypes.GenerationTime2When:
+            When during the experiment `GenerationTime2` occurred.
 
-        ChapmanRichardsFit: How well the Chapman-Richards growth model fit the data
-        ChapmanRichardsParam1: The first parameter of the model
-        ChapmanRichardsParam2: The second parameter of the model
-        ChapmanRichardsParam3: The third parameter of the model
-        ChapmanRichardsParam4: The fourth parameter of the model
-        ChapmanRichardsParamXtra: The additional parameter (population size at start of experiment).
+        Phenotypes.ChapmanRichardsFit:
+            How well the Chapman-Richards growth model fit the data
+        Phenotypes.ChapmanRichardsParam1:
+            The first parameter of the model
+        Phenotypes.ChapmanRichardsParam2:
+            The second parameter of the model
+        Phenotypes.ChapmanRichardsParam3:
+            The third parameter of the model
+        Phenotypes.ChapmanRichardsParam4:
+            The fourth parameter of the model
+        Phenotypes.ChapmanRichardsParamXtra:
+            The additional parameter (population size at start of
+            experiment).
 
-        ExperimentPopulationDoublings: The `GrowthYield` recalculated as population size doublings.
-            _NOTE_: This does not directly imply number of cell divisions or generations (death exisits!).
-        GrowthVelocityVector: The derivative of the growth data.
+        Phenotypes.ExperimentPopulationDoublings:
+            The `GrowthYield` recalculated as population size
+            doublings.
+            _NOTE_: This does not directly imply number of cell
+            divisions or generations (death exisits!).
+
+        Phenotypes.ResidualGrowth:
+            The amount of growth that happens after time of maximum
+            growth (`Phenotypes.GenerationTimeWhen`).
+        Phenotypes.ResidualGrowthAsPopulationDoublings:
+            The number of times the population doubles after time
+            of maximum growth (`Phenotypes.GenerationTimeWhen`).
+        Phenotypes.GrowthVelocityVector:
+            The derivative of the growth data.
 
     """
     InitialValue = 12
@@ -365,6 +424,14 @@ class Phenotypes(Enum):
     ExperimentPopulationDoublings = 22
     """:type Phenotypes"""
 
+    ResidualGrowth = 24
+    """:type Phenotypes"""
+    ResidualGrowthAsPopulationDoublings = 25
+    """:type Phenotypes"""
+
+    Monotonicity = 26
+    """:type Phenotypes"""
+
     GrowthVelocityVector = 1000
     """:type Phenotypes"""
 
@@ -393,6 +460,12 @@ class Phenotypes(Enum):
 
         elif self is Phenotypes.ExperimentPopulationDoublings:
             return growth_curve_doublings(**kwargs)
+
+        elif self is Phenotypes.ResidualGrowth:
+            return residual_growth(**kwargs)
+
+        elif self is Phenotypes.ResidualGrowthAsPopulationDoublings:
+            return residual_growth_as_population_doublings(**kwargs)
 
         elif self is Phenotypes.ExperimentLowPoint:
             return curve_low_point(**kwargs)
@@ -445,3 +518,5 @@ class Phenotypes(Enum):
         elif self is Phenotypes.GrowthVelocityVector:
             return growth_velocity_vector(**kwargs)
 
+        elif self is Phenotypes.Monotonicity:
+            return curve_monotonicity(**kwargs)
