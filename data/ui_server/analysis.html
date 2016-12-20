@@ -136,6 +136,18 @@
             </form>
         </div>
 
+        <h2>Bioscreen feature extraction</h2>
+        <div class="section-frame">
+            <form>
+
+                <label for="bioscreen_extract">Biocreen file</label>
+                <input name="extract" id="bioscreen_extract" class="long" value="root/">
+
+                <div class="indented"><em>For now you have to know the exact path, and keep
+                    <code>root/</code> or it won't work. A folder will be created in which the output is stored</em></div>
+                <button type="button" id="submit-button3" onclick="BioscreenExtract(this);">Run Feature Extraction</button>
+            </form>
+        </div>
     </div>
     <script>
         get_fixtures();

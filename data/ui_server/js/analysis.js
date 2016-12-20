@@ -259,3 +259,26 @@ function Extract(button) {
 
     });
 }
+
+function BioscreenExtract(button) {
+    InputEnabled($(button), false)
+
+    $.ajax({
+        url: '?action=bioscreen_extract',
+        data: {
+            bioscreen_file: $("#bioscreen_extract").val()
+               },
+        method: 'POST',
+        success: function(data) {
+            if (data.success) {
+                Dialogue("Feature Extraction", "Extraction Enqueued", "", "/status");
+            } else {
+                Dialogue("Feature Extraction", "Extraction refused", data.reason ? data.reason : "Unknown reason", false, button);
+            }
+        },
+        error: function(data) {
+            Dialogue("Feature Extraction", "Error", "An error occurred processing request", false, button);
+        }
+
+    });
+}

@@ -272,7 +272,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 if success:
                     return jsonify(success=success)
                 else:
-                    return jsonify(success=success, reason="The follwoing has bad data: {0}".format(", ".join(
+                    return jsonify(success=success, reason="The following has bad data: {0}".format(", ".join(
                         FeaturesFactory.get_invalid_names(model))) if not FeaturesFactory.validate(model) else
                         "Refused by the server, check logs.")
 
@@ -287,7 +287,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     os.makedirs(output, exist_ok=True)
                 else:
                     return jsonify(success=False, reason="No such file")
-
 
                 preprocess = request.values.get("bioscreen_preprocess", default=None)
 
@@ -313,7 +312,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 if success:
                     return jsonify(success=success)
                 else:
-                    return jsonify(success=success, reason="The follwoing has bad data: {0}".format(", ".join(
+                    return jsonify(success=success, reason="The following has bad data: {0}".format(", ".join(
                         FeaturesFactory.get_invalid_names(model))) if not FeaturesFactory.validate(model) else
                         "Refused by the server, check logs.")
 
