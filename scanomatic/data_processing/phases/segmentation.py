@@ -883,17 +883,42 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
     peaks = np.hstack(([0], signal.convolve(extenstion_lengths, [-1, 2, -1], mode='valid'), [0]))
     peaks = (peaks > thresholds[Thresholds.LinearityPeakSigmaCoeff] * peaks.std()) & filt
 
-    slopes = np.hstack(([0], signal.convolve(extenstion_lengths, [1, 0, -1], mode='valid'), [0]))
+    # slopes = np.hstack(([0], signal.convolve(extenstion_lengths, [1, 0, -1], mode='valid'), [0]))
+    # peak_directions = slopes[peaks]
 
-    peak_directions = slopes[peaks]
-
-    if peak_directions.size == 0:
+    if not peaks.any():
         return model
 
     positions = np.where(peaks)[0]
 
-    lfilt, _ = label(filt)
+    if len(positions) > 1:
 
+        lefts = positions[::2]
+        rigths = positions[1::2]
+
+    else:
+
+        lefts = [None]
+        rigths = positions
+
+    arange = np.arange(filt.size)
+    in_out_filt = np.zeros_like(filt)
+    in_out_filt = tuple(in_out_filt | ((arange > l) & (arange < r)) for l, r in izip(lefts, rigths))[-1]
+
+    out_in_filt = (~ in_out_filt) & filt
+    in_out_filt &= filt
+
+    io_mean = extenstion_lengths[in_out_filt].mean()
+    oi_mean = extenstion_lengths[out_in_filt].mean()
+
+    if io_mean > oi_mean:
+        canditates = in_out_filt
+    else:
+        canditates = out_in_filt
+
+    labeled_canditates, n_candidates = label(canditates)
+
+    """
     def check_peaks(pvals, ppos):
 
         old = 0
@@ -945,17 +970,18 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
         positions, peak_directions)
 
     print("Linearity boundaries {0}".format(positions))
+    """
 
-    arange = np.arange(filt.size)
+    for candidate in range(1, n_candidates + 1):
 
-    for i in range(0, positions.size, 2):
+        # if not filt[positions[candidate]] or not filt[positions[candidate + 1]]:
+        #    print("***Colliding segment {0}: {1}".format(positions[candidate], positions[candidate + 1]))
+        #    # continue
 
-        if not filt[positions[i]] or not filt[positions[i + 1]]:
-            print("***Colliding segment {0}: {1}".format(positions[i], positions[i + 1]))
-            # continue
-
-        cur_filt = filt & (arange >= positions[i]) & (arange <= positions[i + 1])
+        # cur_filt = filt & (arange >= positions[candidate]) & (arange <= positions[candidate + 1])
+        cur_filt = labeled_canditates == candidate
         attempt = 0
+
         # print cur_filt.astype(int)
         # print model.phases.data
 
