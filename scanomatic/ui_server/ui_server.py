@@ -20,6 +20,7 @@ from scanomatic.models.factories.compile_project_factory import CompileProjectFa
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.io.backup import backup_file
+from scanomatic.util import bioscreen
 
 from . import qc_api
 from . import analysis_api
@@ -264,6 +265,47 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 path = os.path.abspath(path.replace('root', Config().paths.projects_root))
                 _logger.info("Attempting to extract features in '{0}'".format(path))
                 model = FeaturesFactory.create(analysis_directory=path)
+
+                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
+                    FeaturesFactory.to_dict(model))
+
+                if success:
+                    return jsonify(success=success)
+                else:
+                    return jsonify(success=success, reason="The follwoing has bad data: {0}".format(", ".join(
+                        FeaturesFactory.get_invalid_names(model))) if not FeaturesFactory.validate(model) else
+                        "Refused by the server, check logs.")
+
+            elif action == 'bioscreen_extract':
+
+                path = request.values.get("bioscreen_file")
+                path = os.path.abspath(path.replace('root', Config().paths.projects_root))
+
+                if os.path.isfile(path):
+
+                    output = os.path.join(path, ".features")
+                    os.makedirs(output, exist_ok=True)
+                else:
+                    return jsonify(success=False, reason="No such file")
+
+
+                preprocess = request.values.get("bioscreen_preprocess", default=None)
+
+                try:
+                    preprocess = bioscreen.Preprocessing(preprocess) if preprocess else bioscreen.Preprocessing.Precog2016_S_cerevisiae
+                except (TypeError, KeyError):
+                    return jsonify(success=False, reason="Unknown preprocessing state")
+
+                time_scale = request.value.get("bioscreen_timescale", default=36000)
+                try:
+                    time_scale = float(time_scale)
+                except (ValueError, TypeError):
+                    return jsonify(success=False, reason="Bad timescale")
+
+                project = bioscreen.load(path, time_scale=time_scale, preprocess=preprocess)
+                project.save_state(output, ask_if_overwrite=False)
+
+                model = FeaturesFactory.create(analysis_directory=output)
 
                 success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
                     FeaturesFactory.to_dict(model))
