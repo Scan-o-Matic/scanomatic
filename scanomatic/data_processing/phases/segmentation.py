@@ -126,7 +126,7 @@ class PhaseEdge(Enum):
 
 
 DEFAULT_THRESHOLDS = {
-    Thresholds.LinearModelExtension: 0.015,
+    Thresholds.LinearModelExtension: 0.0125,
     Thresholds.PhaseMinimumLength: 3,
     Thresholds.NonFlatLinearMinimumLength: 5,
     Thresholds.FlatlineSlopRequirement: 0.02,
@@ -894,22 +894,24 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
     if len(positions) > 1:
 
         lefts = positions[::2]
-        rigths = positions[1::2]
+        rights = positions[1::2]
 
     else:
 
         lefts = [None]
-        rigths = positions
+        rights = positions
 
     arange = np.arange(filt.size)
     in_out_filt = np.zeros_like(filt)
-    in_out_filt = tuple(in_out_filt | ((arange > l) & (arange < r)) for l, r in izip(lefts, rigths))[-1]
+    for l, r in izip(lefts, rights):
+        in_out_filt = in_out_filt | ((arange > l) & (arange < r))
 
     out_in_filt = (~ in_out_filt) & filt
     in_out_filt &= filt
 
     io_mean = extenstion_lengths[in_out_filt].mean()
     oi_mean = extenstion_lengths[out_in_filt].mean()
+    print ("{0} vs {1}".format(io_mean, oi_mean))
 
     if io_mean > oi_mean:
         canditates = in_out_filt
@@ -917,6 +919,7 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
         canditates = out_in_filt
 
     labeled_canditates, n_candidates = label(canditates)
+    print "{0}, {1}: Candidates ({3}) {2}".format(model.plate, model.pos, labeled_canditates, n_candidates)
 
     """
     def check_peaks(pvals, ppos):
