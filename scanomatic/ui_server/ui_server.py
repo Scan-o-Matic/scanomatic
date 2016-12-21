@@ -283,19 +283,25 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
                 if os.path.isfile(path):
 
-                    output = os.path.join(path, ".features")
-                    os.makedirs(output, exist_ok=True)
+                    output = ".".join((path, "features"))
+
+                    try:
+                        os.makedirs(output)
+                    except OSError:
+                        _logger.info("Analysis folder {0} exists, so will overwrite files if needed".format(output))
+                        pass
                 else:
                     return jsonify(success=False, reason="No such file")
 
                 preprocess = request.values.get("bioscreen_preprocess", default=None)
 
                 try:
-                    preprocess = bioscreen.Preprocessing(preprocess) if preprocess else bioscreen.Preprocessing.Precog2016_S_cerevisiae
+                    preprocess = bioscreen.Preprocessing(preprocess) if preprocess else \
+                        bioscreen.Preprocessing.Precog2016_S_cerevisiae
                 except (TypeError, KeyError):
                     return jsonify(success=False, reason="Unknown preprocessing state")
 
-                time_scale = request.value.get("bioscreen_timescale", default=36000)
+                time_scale = request.values.get("bioscreen_timescale", default=36000)
                 try:
                     time_scale = float(time_scale)
                 except (ValueError, TypeError):
