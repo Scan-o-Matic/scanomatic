@@ -329,7 +329,8 @@ def _fill_undefined_gaps(phases):
         elif loc == last_index:
             if phases[loc - 1] != CurvePhases.Undetermined.value:
                 phases[loc] = phases[loc - 1]
-        elif phases[loc - 1] == phases[loc + 1] and phases[loc + 1] != CurvePhases.Undetermined.value:
+        elif phases[loc - 1] == phases[loc + 1] and phases[loc + 1] != CurvePhases.Undetermined.value and \
+                phases[loc + 1] not in (CurvePhases.Impulse.value, CurvePhases.Collapse.value):
             phases[loc] = phases[loc + 1]
 
 
