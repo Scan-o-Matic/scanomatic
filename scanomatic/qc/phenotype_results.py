@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import pandas as pd
 from functools import wraps
 from types import StringTypes
@@ -16,7 +17,8 @@ import scipy.cluster.hierarchy as sch
 
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
 from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS, \
-    get_data_needed_for_segmentation, get_curve_classification_in_steps
+    get_data_needed_for_segmentation, get_curve_classification_in_steps, get_linear_non_flat_extension_per_position, \
+    classifier_flat
 from scanomatic.data_processing.phases.features import get_phase_assignment_frequencies, CurvePhasePhenotypes, \
     get_variance_decomposition_by_phase
 from scanomatic.data_processing.phenotyper import Phenotyper
@@ -556,6 +558,112 @@ def plot_all_curves_and_smoothing(phenotyper_object, id_plate, f=None,
 
 
 @_validate_input
+def plot_phases_all_curves(
+        phenotyper_object, id_plate, f=None, set_title=False, plot_from_pos=None, plot_to_pos=None,
+        plot_derivative=False, hide_all_legends=True):
+
+    if f is None:
+        f = plt.figure("Plate {0} phases".format(id_plate + 1))
+    else:
+        f.clf()
+
+    plate = phenotyper_object.smooth_growth_data[id_plate]
+    if not plot_from_pos:
+        plot_from_pos = (0, 0)
+    if not plot_to_pos:
+        plot_to_pos = plate.shape[:2]
+
+    plate_shape = (plot_to_pos[0] - plot_from_pos[0], plot_to_pos[1] - plot_from_pos[1])
+    times = phenotyper_object.times
+
+    for i, (id1, id2) in enumerate(product(range(plot_from_pos[0], plot_to_pos[0]),
+                                           range(plot_from_pos[1], plot_to_pos[1]))):
+
+        ax = f.add_subplot(plate_shape[0], plate_shape[1], i + 1)
+
+        if set_title:
+            ax.set_title("({0}, {1})".format(id1, id2))
+
+        print("Constructing plot {0}".format((id1, id2)))
+
+        curve = plate[id1, id2]
+        deriv = phenotyper_object.get_derivative(id_plate, (id1, id2)) if plot_derivative else None
+        phases = phenotyper_object.get_curve_phases(id_plate, id1, id2)
+
+        plot_phases_from_data(times, np.log2(curve), phases, ax=ax, f=f, colors=PHASE_PLOTTING_COLORS, deriv=deriv,
+                              plot_legend=False, set_labels=i == 0 and not hide_all_legends, layout=False)
+
+    if set_title:
+        f.tight_layout(w_pad=0.01)
+    else:
+        f.tight_layout(h_pad=0.01, w_pad=0.01)
+
+    return f
+
+
+@_validate_input
+def plot_phases_legend(f=None, colors=None):
+
+    if f is None:
+        f = plt.figure("Phases legend")
+    else:
+        f.clf()
+
+    if colors is None:
+        colors = PHASE_PLOTTING_COLORS
+
+    ax = f.gca()
+
+    legend = []
+    for phase in CurvePhases:
+        if phase is CurvePhases.Multiple:
+            continue
+
+        legend.append(mpatches.Patch(color=colors[phase], label=re.sub(r"([a-z])([A-Z])", r'\1 \2', phase.name)))
+
+    ax.legend(handles=legend, loc='center', fontsize='large', markerscale=0.66, ncol=2,
+              bbox_to_anchor=(0., 0., 1., 1.), borderaxespad=0)
+
+    ax.axis("off")
+
+    return f
+
+
+@_validate_input
+@_setup_figure
+def plot_barad_dur_plot(phenotyper_object, plate, pos, f=None, ax=None):
+
+    model = get_data_needed_for_segmentation(phenotyper_object, plate, pos, DEFAULT_THRESHOLDS)
+    ext_val, _ = get_linear_non_flat_extension_per_position(model, DEFAULT_THRESHOLDS)
+    model.phases[classifier_flat(model)[1]] = CurvePhases.Flat.value
+
+    flat_parts, n_flats = label(model.phases == CurvePhases.Flat.value)
+    non_flat_parts, n_nonflats = label(model.phases != CurvePhases.Flat.value)
+    print n_flats, n_nonflats
+    ax.set_xlabel("Time [h]")
+    ax.set_ylabel("Length of local linearity in number of indices")
+    ax.set_title(u"Barad-dûr plot of plate {0} pos {1}".format(model.plate, model.pos))
+    line_in = None
+    for i in range(1, n_nonflats + 1):
+        line_in = ax.plot(
+            phenotyper_object.times[non_flat_parts == i], ext_val[non_flat_parts == i], '-', color='k',
+            label="Non-flat segment")[0]
+
+    line_out = None
+    for i in range(1, n_flats + 1):
+        line_out = ax.plot(
+            phenotyper_object.times[flat_parts == i], ext_val[flat_parts == i], ':', color='r',
+            label="Flat segment")[0]
+
+    ax.legend([line_in, line_out],
+              [line_in.get_label() if line_in else "Non-flat segment (missing)",
+               line_out.get_label() if line_out else "Flat segment (missing)"],
+              loc='lower right')
+
+    return f
+
+
+@_validate_input
 @_setup_figure
 def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT_THRESHOLDS, show_thresholds=True,
                                ax=None, f=None):
@@ -723,7 +831,7 @@ def plot_phases_from_model(model, ax=None, f=None, colors=None, segment_alpha=1,
 
 @_setup_figure
 def plot_phases_from_data(times, log2_curve, phases, ax=None, f=None, colors=None, segment_alpha=1, loc="lower right",
-                          deriv=None, plot_legend=True, set_labels=True):
+                          deriv=None, plot_legend=True, set_labels=True, layout=True):
 
     if colors is None:
         colors = PHASE_PLOTTING_COLORS
@@ -749,26 +857,40 @@ def plot_phases_from_data(times, log2_curve, phases, ax=None, f=None, colors=Non
 
     ax.plot(times, log2_curve, "-", color=colors["smooth"], lw=2)
     if deriv is not None:
+
+        if times.size > deriv.size:
+            delta = times.size - deriv.size
+            assert delta % 2 == 0, "The derivative to times offset is not multiple of 2"
+            delta /= 2
+            deriv_times = times[delta:-delta]
+        else:
+            deriv_times = times
+
         tax = ax.twinx()
-        tax.plot(times, deriv, "--", color=colors["derivative"], lw=2)
+        tax.plot(deriv_times, deriv, "--", color=colors["derivative"], lw=2)
         if set_labels:
                 tax.set_ylabel("dY/dt used for phases")
         else:
             tax.set_yticks([])
 
     ax.set_xlim(xmin=times[0], xmax=times[-1])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
 
     if set_labels:
         ax.set_xlabel("Time [h]")
         ax.set_ylabel("Pop Size [Cells, log2]")
     else:
-        ax.set_xticks([])
-        ax.set_yticks([])
+        ax.set_xticklabels(["" for _ in ax.get_xticklabels()])
+        ax.set_yticklabels(["" for _ in ax.get_yticklabels()])
 
     if plot_legend and legend:
         ax.legend(loc=loc, handles=list(legend.values()))
 
-    f.subplots_adjust(hspace=0.3, wspace=0.15, top=0.95)
+    if layout:
+        f.subplots_adjust(hspace=0.3, wspace=0.15, top=0.95)
 
     return f
 
@@ -816,4 +938,5 @@ def plot_phase_segmentation_in_steps(phenotyper, plate, position, plot_deriv=Tru
                markerscale=0.66, ncol=2, bbox_to_anchor=(0., 0., 2., 1.), borderaxespad=0)
 
     f.tight_layout(h_pad=0.01, w_pad=0.01)
+
     return f
