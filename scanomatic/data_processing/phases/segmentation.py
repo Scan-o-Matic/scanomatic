@@ -126,7 +126,7 @@ class PhaseEdge(Enum):
 
 
 DEFAULT_THRESHOLDS = {
-    Thresholds.LinearModelExtension: 0.0125,
+    Thresholds.LinearModelExtension: 0.05,
     Thresholds.PhaseMinimumLength: 3,
     Thresholds.NonFlatLinearMinimumLength: 5,
     Thresholds.FlatlineSlopRequirement: 0.02,
@@ -430,7 +430,7 @@ def get_tangent_proximity(model, loc, thresholds):
 
     # Find all candidates
     return (np.abs(model.log2_curve - tangent) <
-            np.abs(thresholds[Thresholds.LinearModelExtension] * loc_value)).filled(False)
+            np.abs(thresholds[Thresholds.LinearModelExtension] * loc_slope)).filled(False)
 
 
 def _validate_linear_non_flat_phase(model, elected, phase, thresholds):
@@ -555,8 +555,8 @@ def classifier_nonflat_linear(model, thresholds, filt):
                     model.phases[elected] = flank
                     return CurvePhases.Undetermined, np.zeros_like(candidates).astype(bool), False
 
-        if model.pos == (8, 3):
-            print("*** Writing loc {0} as {1}".format(loc, CurvePhases.Undetermined))
+        # if model.pos == (8, 3):
+        #    print("*** Writing loc {0} as {1}".format(loc, CurvePhases.Undetermined))
         model.phases[loc] = CurvePhases.Undetermined.value
         return CurvePhases.Undetermined, np.zeros_like(candidates).astype(bool), False
 
@@ -911,7 +911,7 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
 
     io_mean = extenstion_lengths[in_out_filt].mean()
     oi_mean = extenstion_lengths[out_in_filt].mean()
-    print ("{0} vs {1}".format(io_mean, oi_mean))
+    # print ("{0} vs {1}".format(io_mean, oi_mean))
 
     if io_mean > oi_mean:
         canditates = in_out_filt
@@ -919,69 +919,10 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
         canditates = out_in_filt
 
     labeled_canditates, n_candidates = label(canditates)
-    print "{0}, {1}: Candidates ({3}) {2}".format(model.plate, model.pos, labeled_canditates, n_candidates)
-
-    """
-    def check_peaks(pvals, ppos):
-
-        old = 0
-        next_pv = None
-        next_pp = None
-
-        for i, (pv, pp) in enumerate(zip(pvals, ppos)):
-            print ((pv, pp))
-            if pv == 0:
-                continue
-
-            if i == 0 or np.sign(pv) == np.sign(old):
-                next_pp = pp
-                next_pv = pv
-                old = pv
-            else:
-                if next_pv is not None:
-                    yield next_pv, next_pp
-
-                next_pp = pp
-                next_pv = pv
-                old = pv
-
-        if next_pv is not None:
-            yield next_pv, next_pp
-
-    peak_directions, positions = zip(*check_peaks(peak_directions, positions))
-
-    print("Linearity boundaries {0}".format(positions))
-
-    if len(positions) == 1:
-
-        positions = []
-
-    else:
-
-        # Check if segment started with linear phase
-        if peak_directions[0] < 0:
-
-            positions = np.hstack((np.where(lfilt == lfilt[positions[0]])[0][0], positions))
-
-        if peak_directions[-1] > 0:
-
-            positions = np.hstack((positions, np.where(lfilt == lfilt[positions[-1]])[0][-1]))
-
-    positions = np.array(positions)
-
-    assert positions.size % 2 == 0, "Faulty number of segmentation borders {0} directions {1}".format(
-        positions, peak_directions)
-
-    print("Linearity boundaries {0}".format(positions))
-    """
+    # print "{0}, {1}: Candidates ({3}) {2}".format(model.plate, model.pos, labeled_canditates, n_candidates)
 
     for candidate in range(1, n_candidates + 1):
 
-        # if not filt[positions[candidate]] or not filt[positions[candidate + 1]]:
-        #    print("***Colliding segment {0}: {1}".format(positions[candidate], positions[candidate + 1]))
-        #    # continue
-
-        # cur_filt = filt & (arange >= positions[candidate]) & (arange <= positions[candidate + 1])
         cur_filt = labeled_canditates == candidate
         attempt = 0
 
