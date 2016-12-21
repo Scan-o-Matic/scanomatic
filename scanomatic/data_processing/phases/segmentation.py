@@ -942,7 +942,7 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
 
                 model.phases[elected_padding] = CurvePhases.UndeterminedNonLinear.value
 
-                print("***{1} Found segment, phases now {0}".format(model.phases.data, model.pos))
+                # print("***{1} Found segment, phases now {0}".format(model.phases.data, model.pos))
 
                 break
             else:
