@@ -513,6 +513,8 @@ def plot_all_curves_and_smoothing(phenotyper_object, id_plate, f=None,
     if f is None:
         f = plt.figure("Plate {0} curves".format(id_plate + 1))
 
+    f.clf()
+
     plate = phenotyper_object.smooth_growth_data[id_plate]
     if not plot_from_pos:
         plot_from_pos = (0, 0)
@@ -639,7 +641,7 @@ def plot_barad_dur_plot(phenotyper_object, plate, pos, f=None, ax=None):
 
     flat_parts, n_flats = label(model.phases == CurvePhases.Flat.value)
     non_flat_parts, n_nonflats = label(model.phases != CurvePhases.Flat.value)
-    print n_flats, n_nonflats
+
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Length of local linearity in number of indices")
     ax.set_title(u"Barad-dûr plot of plate {0} pos {1}".format(model.plate, model.pos))
