@@ -158,25 +158,6 @@ def is_undetermined(phase_type):
 def segment(segmentation_model, thresholds=None):
     """Iteratively segments a log2_curve into its component CurvePhases
 
-    Proposed future segmentation structure:
-
-        mark everything as flat segments or non-flat
-
-        for each non-flat and not non-linear segment:
-            if contains linear slope:
-                mark slope as impulse or collapse
-                for each flanking:
-                    detetect non-linear type
-                    if nothing detected, mark as linear
-            else
-                mark as non-linear
-
-        for each remaining non-linear segment:
-            if contains detectable non-linear type:
-                mark type
-            else:
-                mark undefined
-
     Args:
         segmentation_model (scanomatic.models.phases_models.SegmentationModel):
             A data model with information
@@ -191,40 +172,6 @@ def segment(segmentation_model, thresholds=None):
     _set_flat_segments(segmentation_model, thresholds)
 
     yield None
-
-    """
-    while (segmentation_model.phases == CurvePhases.UndeterminedNonFlat.value).any():
-
-        # Mark linear slope
-        flanking = _set_nonflat_linear_segment(segmentation_model, thresholds)
-
-        yield None
-
-        if flanking.any():
-
-            first_on_left_flank = flanking.argmin()
-
-            for filt in _get_candidate_segment(flanking):
-
-                direction = PhaseEdge.Right if \
-                    filt.argmin() == first_on_left_flank else \
-                    PhaseEdge.Left
-
-                # Mark flanking non-linear phase
-                phase = _set_nonlinear_phase_type(segmentation_model, thresholds, filt, direction)
-
-                if phase is CurvePhases.Undetermined:
-                    # If no curved segment found, it is not safe to look for more
-                    # non-flat linear phases because could merge two that should
-                    # not be merged.
-                    segmentation_model.phases[filt] = CurvePhases.UndeterminedNonLinear.value
-
-                # Only look for the first non-linear segment rest is up for grabs for
-                # Next iteration of finding impulses or collapses
-                flanking[filt] = False
-
-                yield None
-    """
 
     extensions, _ = get_linear_non_flat_extension_per_position(segmentation_model, thresholds)
 
