@@ -168,12 +168,13 @@ def segment(segmentation_model, thresholds=None):
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
+    # IMPORTANT, should be before having set flat so that there are no edge conditions.
+    extensions, _ = get_linear_non_flat_extension_per_position(segmentation_model, thresholds)
+
     # Mark all flats
     _set_flat_segments(segmentation_model, thresholds)
 
     yield None
-
-    extensions, _ = get_linear_non_flat_extension_per_position(segmentation_model, thresholds)
 
     set_nonflat_linearity_segments(segmentation_model, extensions, thresholds)
 
