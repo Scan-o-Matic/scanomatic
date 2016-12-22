@@ -4,7 +4,7 @@ from itertools import izip
 import numpy as np
 from enum import Enum
 from scipy import signal
-from scipy.ndimage import label, generic_filter
+from scipy.ndimage import label, generic_filter, binary_closing
 from scanomatic.models.phases_models import SegmentationModel
 
 
@@ -587,11 +587,11 @@ def _get_candidate_lengths_and_edges(candidates):
     return rights - lefts, lefts, rights
 
 
-def _bridge_canditates(candidates, window_size=5):
+def _bridge_canditates(candidates, structure=(True, True, True, True, True)):
     # TODO: Verify method, use published, sure this will never expand initial detections?
-    for window in range(3, window_size, 2):
-        candidates = signal.medfilt(candidates, window_size).astype(bool) | candidates
-    return candidates
+    # for window in range(3, window_size, 2):
+    #    candidates = signal.medfilt(candidates, window_size).astype(bool) | candidates
+    return binary_closing(candidates.astype(bool), structure=structure) | candidates.astype(bool)
 
 
 def classifier_nonlinear(model, thresholds, filt, test_edge):
