@@ -105,7 +105,7 @@ class Thresholds(Enum):
     """:type : Thresholds"""
     NonFlatLinearMergeLengthMax = 9
     """:type : Thresholds"""
-    LinearityPeakSigmaCoeff = 10
+    LinearityPeak = 10
     """:type : Thresholds"""
 
 
@@ -135,7 +135,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5,
     Thresholds.NonFlatLinearMinimumYield: 0.1,
     Thresholds.NonFlatLinearMergeLengthMax: 3,
-    Thresholds.LinearityPeakSigmaCoeff: 1.75}
+    Thresholds.LinearityPeak: 3}
 
 
 def is_detected_non_linear(phase_type):
@@ -823,19 +823,18 @@ def get_linear_non_flat_extension_per_position(model, thresholds):
     return extension_lengths, extension_borders
 
 
-def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
+def get_barad_dur_towers(extension_lengths, filt, thresholds):
 
-    filt = model.phases != CurvePhases.Flat.value
-    model.phases[filt] = CurvePhases.UndeterminedNonFlat.value
+    peaks = np.hstack(([0], signal.convolve(extension_lengths, [-1, 2, -1], mode='valid'), [0]))
+    peaks = (peaks > thresholds[Thresholds.LinearityPeak]) & filt
 
-    peaks = np.hstack(([0], signal.convolve(extenstion_lengths, [-1, 2, -1], mode='valid'), [0]))
-    peaks = (peaks > thresholds[Thresholds.LinearityPeakSigmaCoeff] * peaks.std()) & filt
-
-    # slopes = np.hstack(([0], signal.convolve(extenstion_lengths, [1, 0, -1], mode='valid'), [0]))
+    # slopes = np.hstack(([0], signal.convolve(extension_lengths, [1, 0, -1], mode='valid'), [0]))
     # peak_directions = slopes[peaks]
 
     if not peaks.any():
-        return model
+        return None, 0
+
+    # Do once per non flat segment!
 
     positions = np.where(peaks)[0]
 
@@ -852,26 +851,37 @@ def set_nonflat_linearity_segments(model, extenstion_lengths, thresholds):
     arange = np.arange(filt.size)
     in_out_filt = np.zeros_like(filt)
     for l, r in izip(lefts, rights):
-        in_out_filt = in_out_filt | ((arange > l) & (arange < r))
+        in_out_filt = in_out_filt | ((arange >= l) & (arange <= r))
 
     out_in_filt = (~ in_out_filt) & filt
     in_out_filt &= filt
 
-    io_mean = extenstion_lengths[in_out_filt].mean()
-    oi_mean = extenstion_lengths[out_in_filt].mean()
+    io_mean = extension_lengths[in_out_filt].mean()
+    oi_mean = extension_lengths[out_in_filt].mean()
     # print ("{0} vs {1}".format(io_mean, oi_mean))
 
     if io_mean > oi_mean:
-        canditates = in_out_filt
+        candidates = in_out_filt
     else:
-        canditates = out_in_filt
+        candidates = out_in_filt
 
-    labeled_canditates, n_candidates = label(canditates)
-    # print "{0}, {1}: Candidates ({3}) {2}".format(model.plate, model.pos, labeled_canditates, n_candidates)
+    return label(candidates)
+
+
+def set_nonflat_linearity_segments(model, extension_lengths, thresholds):
+
+    filt = model.phases != CurvePhases.Flat.value
+    model.phases[filt] = CurvePhases.UndeterminedNonFlat.value
+
+    # print "{0}, {1}: Candidates ({3}) {2}".format(model.plate, model.pos, labeled_candidates, n_candidates)
+    labeled_candidates, n_candidates = get_barad_dur_towers(extension_lengths, filt, thresholds)
+
+    if n_candidates == 0:
+        return model
 
     for candidate in range(1, n_candidates + 1):
 
-        cur_filt = labeled_canditates == candidate
+        cur_filt = labeled_candidates == candidate
         attempt = 0
 
         # print cur_filt.astype(int)
