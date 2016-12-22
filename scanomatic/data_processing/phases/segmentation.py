@@ -374,6 +374,9 @@ def get_tangent_proximity(model, loc, thresholds):
     loc_value = model.log2_curve[loc]
     loc_time = model.times[loc]
 
+    if np.ma.is_masked(loc_value) or np.ma.is_masked(loc_slope):
+        return np.zeros_like(model.times, dtype=bool)
+
     # Tangent at max
     tangent = (model.times - loc_time) * loc_slope + loc_value
 
