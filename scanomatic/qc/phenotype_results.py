@@ -712,10 +712,17 @@ def plot_barad_dur_plot(phenotyper_object, plate, pos, plot_curve=False, plot_fi
         tax.set_ylabel("Population Size [Cells, log2]")
         legend_handles.append(line_curve)
         legend_labels.append(line_curve.get_label())
+        tax.spines['top'].set_visible(False)
+        tax.spines['left'].set_visible(False)
 
     ax.legend(legend_handles, legend_labels, loc='lower right')
 
     ax.set_xlim((0, model.times.max()))
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
 
     return f
 
