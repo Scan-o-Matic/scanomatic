@@ -387,9 +387,9 @@ def get_tangent_proximity(model, loc, thresholds):
 
 def _validate_linear_non_flat_phase(model, elected, phase, thresholds):
     if phase is CurvePhases.Undetermined or elected.sum() < thresholds[Thresholds.NonFlatLinearMinimumLength]:
-        if model.pos == (8, 3):
-            print("***Failed phase, too short ({3}, {4}) {0} / {1} < {2}".format(
-                phase, elected.sum(), thresholds[Thresholds.NonFlatLinearMinimumLength], model.plate, model.pos))
+        # if model.pos == (8, 3):
+        #     print("***Failed phase, too short ({3}, {4}) {0} / {1} < {2}".format(
+        #         phase, elected.sum(), thresholds[Thresholds.NonFlatLinearMinimumLength], model.plate, model.pos))
         return False
 
     # Get first and last index of elected stretch
@@ -400,16 +400,18 @@ def _validate_linear_non_flat_phase(model, elected, phase, thresholds):
                 model.log2_curve[model.offset: -model.offset][left]) * \
                 (-1 if phase is CurvePhases.Collapse else 1) < \
                 thresholds[Thresholds.NonFlatLinearMinimumYield]:
-            print("***Failed phase ({2}, {3}): {0:.2f}".format(
-                np.abs(model.log2_curve[left] - model.log2_curve[right]), None, model.plate, model.pos))
+
+            # print("***Failed phase ({2}, {3}): {0:.2f}".format(
+            #    np.abs(model.log2_curve[left] - model.log2_curve[right]), None, model.plate, model.pos))
 
             return False
     else:
 
         if (model.log2_curve[right] - model.log2_curve[left]) * (-1 if phase is CurvePhases.Collapse else 1) < \
                 thresholds[Thresholds.NonFlatLinearMinimumYield]:
-            print("***Failed phase ({2}, {3}): {0:.2f}".format(
-                np.abs(model.log2_curve[left] - model.log2_curve[right]), None, model.plate, model.pos))
+
+            # print("***Failed phase ({2}, {3}): {0:.2f}".format(
+            #    np.abs(model.log2_curve[left] - model.log2_curve[right]), None, model.plate, model.pos))
 
             return False
 
@@ -471,7 +473,6 @@ def classifier_nonflat_linear(model, thresholds, filt):
     # if model.pos == (8, 3):
     #    print candidates.sum()
 
-    # TODO: Expands candidates
     candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
 
@@ -611,7 +612,7 @@ def classifier_nonlinear(model, thresholds, filt, test_edge):
 
     """
 
-    # TODO: In particluar d2yd2t_signs may all be zero though there's a
+    # TODO: In particular d2yd2t_signs may all be zero though there's a
     # consensus on sign due to the area around 0 being set to zero.
 
     phase = classify_non_linear_segment_type(model, thresholds, filt, test_edge)
@@ -912,7 +913,7 @@ def set_nonflat_linearity_segments(model, extension_lengths, thresholds):
                 break
             else:
 
-                print("***Invalid segment {1}, filt was {0}".format(cur_filt.astype(int), elected.astype(int)))
+                # print("***Invalid segment {1}, filt was {0}".format(cur_filt.astype(int), elected.astype(int)))
 
                 cur_filt = cur_filt & (model.phases == CurvePhases.UndeterminedNonFlat.value)
 
