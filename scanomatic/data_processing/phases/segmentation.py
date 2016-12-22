@@ -795,7 +795,9 @@ def _custom_filt(v, max_gap=3, min_length=3):
 
 def get_linear_non_flat_extension_per_position(model, thresholds):
 
-    filt = model.phases != CurvePhases.Flat.value
+    filt = (model.phases != CurvePhases.Flat.value)
+    if isinstance(filt, np.ma.masked_array):
+        filt = filt.filled(False)
 
     extension_lengths = np.zeros_like(filt, dtype=np.int)
     extension_borders = {}
@@ -806,6 +808,7 @@ def get_linear_non_flat_extension_per_position(model, thresholds):
             continue
 
         candidates = get_tangent_proximity(model, loc, thresholds)
+
         candidates &= filt
 
         candidates = _bridge_canditates(candidates)
