@@ -18,7 +18,7 @@ import scipy.cluster.hierarchy as sch
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
 from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS, \
     get_data_needed_for_segmentation, get_curve_classification_in_steps, get_linear_non_flat_extension_per_position, \
-    classifier_flat
+    classifier_flat, get_barad_dur_towers
 from scanomatic.data_processing.phases.features import get_phase_assignment_frequencies, CurvePhasePhenotypes, \
     get_variance_decomposition_by_phase
 from scanomatic.data_processing.phenotyper import Phenotyper
@@ -633,23 +633,29 @@ def plot_phases_legend(f=None, colors=None):
 
 @_validate_input
 @_setup_figure
-def plot_barad_dur_plot(phenotyper_object, plate, pos, f=None, ax=None):
+def plot_barad_dur_plot(phenotyper_object, plate, pos, plot_curve=False, plot_final_phases=False, f=None, ax=None):
 
     model = get_data_needed_for_segmentation(phenotyper_object, plate, pos, DEFAULT_THRESHOLDS)
     ext_val, _ = get_linear_non_flat_extension_per_position(model, DEFAULT_THRESHOLDS)
     model.phases[classifier_flat(model)[1]] = CurvePhases.Flat.value
 
-    flat_parts, n_flats = label(model.phases == CurvePhases.Flat.value)
-    non_flat_parts, n_nonflats = label(model.phases != CurvePhases.Flat.value)
+    flat_filt = model.phases == CurvePhases.Flat.value
+    """:type: numpy.ndarray"""
+
+    flat_parts, n_flats = label(flat_filt)
+
+    non_flat_filt = model.phases != CurvePhases.Flat.value
+    """:type: numpy.ndarray"""
+
+    non_flat_parts, n_nonflats = label(non_flat_filt)
+    towers, n_towers = get_barad_dur_towers(ext_val, non_flat_filt, DEFAULT_THRESHOLDS)
 
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Length of local linearity in number of indices")
     ax.set_title(u"Barad-dûr plot of plate {0} pos {1}".format(model.plate, model.pos))
-    line_in = None
-    for i in range(1, n_nonflats + 1):
-        line_in = ax.plot(
-            phenotyper_object.times[non_flat_parts == i], ext_val[non_flat_parts == i], '-', color='k',
-            label="Non-flat segment")[0]
+
+    legend_handles = []
+    legend_labels = []
 
     line_out = None
     for i in range(1, n_flats + 1):
@@ -657,10 +663,59 @@ def plot_barad_dur_plot(phenotyper_object, plate, pos, f=None, ax=None):
             phenotyper_object.times[flat_parts == i], ext_val[flat_parts == i], ':', color='r',
             label="Flat segment")[0]
 
-    ax.legend([line_in, line_out],
-              [line_in.get_label() if line_in else "Non-flat segment (missing)",
-               line_out.get_label() if line_out else "Flat segment (missing)"],
-              loc='lower right')
+    legend_handles.append(line_out)
+    legend_labels.append(line_out.get_label() if line_out else "Flat segment (missing)")
+
+    line_in = None
+    for i in range(1, n_nonflats + 1):
+        line_in = ax.plot(
+            phenotyper_object.times[non_flat_parts == i], ext_val[non_flat_parts == i], '-', color='k',
+            label="Non-flat segment")[0]
+
+    legend_handles.append(line_in)
+    legend_labels.append(line_in.get_label() if line_in else "Non-flat segment (missing)")
+
+    if plot_final_phases:
+
+        non_flat_linear = (phenotyper_object.get_curve_phases(
+            model.plate, model.pos[0], model.pos[1]) == 4).filled(False)
+
+        phases, n_phases = label(non_flat_linear)
+        line_phases = None
+        for i in range(1, n_phases + 1):
+            line_phases = ax.fill_between(
+                model.times[phases == i],
+                ext_val[phases == i],
+                0,
+                color='r', edgecolor='r', alpha=0.9, lw=0,
+                label='Linear Phase(s)')
+
+        legend_handles.append(line_phases)
+        legend_labels.append(line_phases.get_label() if line_phases else "Linear Phase(s) (missing)")
+
+    tower_line = None
+    if n_towers:
+        # ground = ext_val[non_flat_filt].min()
+
+        for i in range(1, n_towers + 1):
+            tower_line = ax.fill_between(phenotyper_object.times[towers == i],
+                                         ext_val[towers == i],
+                                         0, color='k', edgecolor='k', alpha=0.9, lw=0,
+                                         label='Tower(s)')
+
+    legend_handles.append(tower_line)
+    legend_labels.append(tower_line.get_label() if tower_line else "Tower(s) (missing)")
+
+    if plot_curve:
+        tax = ax.twinx()
+        line_curve = tax.plot(model.times, model.log2_curve, 'gray', lw=2, label='Growth curve')[0]
+        tax.set_ylabel("Population Size [Cells, log2]")
+        legend_handles.append(line_curve)
+        legend_labels.append(line_curve.get_label())
+
+    ax.legend(legend_handles, legend_labels, loc='lower right')
+
+    ax.set_xlim((0, model.times.max()))
 
     return f
 
