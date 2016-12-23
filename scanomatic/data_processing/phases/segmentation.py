@@ -589,9 +589,7 @@ def _get_candidate_lengths_and_edges(candidates):
 
 
 def _bridge_canditates(candidates, structure=(True, True, True, True, True)):
-    # TODO: Verify method, use published, sure this will never expand initial detections?
-    # for window in range(3, window_size, 2):
-    #    candidates = signal.medfilt(candidates, window_size).astype(bool) | candidates
+
     return binary_closing(candidates.astype(bool), structure=structure) | candidates.astype(bool)
 
 
