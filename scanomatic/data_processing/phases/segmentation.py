@@ -610,9 +610,6 @@ def classifier_nonlinear(model, thresholds, filt, test_edge):
 
     """
 
-    # TODO: In particular d2yd2t_signs may all be zero though there's a
-    # consensus on sign due to the area around 0 being set to zero.
-
     phase = classify_non_linear_segment_type(model, thresholds, filt, test_edge)
     if phase is CurvePhases.Undetermined:
         return phase, np.zeros_like(filt).astype(bool)
