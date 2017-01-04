@@ -9,7 +9,8 @@ import cPickle as pickle
 import numpy as np
 from enum import Enum
 from scipy.ndimage import median_filter
-from scipy.stats import norm
+from scipy.stats import norm, pearsonr
+from scipy.signal import convolve
 from scanomatic.io.pickler import unpickle, unpickle_with_unpickler
 
 #
@@ -1638,19 +1639,29 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 self.smooth_growth_data[plate][position].reshape(1, 1, self.times.size))[0], self.times_strided)[0]
 
     def get_chapman_richards_data(self, plate, position):
-        """Get the chapman ritchard model information and data for a position if possible.
+        """Get the chapman ritchard model information
 
         Args:
             plate (int): Plate index
             position (tuple int): Position tuple
 
-        Returns (tuple):
-            Log_2 population size model based on chapman richards growth model,
-            The fit of the model (float) or `None` if model is missing,
-            The parameter tuple or `None` if model is missing
+        Returns (tuple): (`y_hat`, `fit`, `dydt_fit`, `params`)
+
+            y_hat (numpy.ndarray):
+                Log_2 population size model based on chapman richards
+                growth model
+            fit (float):
+                The fit of the model (float) or
+                `None` if model is missing,
+            dydt_fit (float):
+                The fit of the model's first derivative to
+                the data's derivative or `None` if model is missing,
+            params (tuple):
+                The parameter tuple for the model
+                or `None` if model is missing
         """
         if self._phenotypes is None or self._phenotypes[plate] is None:
-            return np.array([]), None, None
+            return np.array([]), None, None, None
 
         try:
             p1 = self.get_phenotype(Phenotypes.ChapmanRichardsParam1)[plate][position]
@@ -1660,11 +1671,19 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             d = self.get_phenotype(Phenotypes.ChapmanRichardsParamXtra)[plate][position]
             fit = self.get_phenotype(Phenotypes.ChapmanRichardsFit)[plate][position]
         except TypeError:
-            return np.array([]), None, None
+            return np.array([]), None, None, None
 
-        log2_y_data = get_chapman_richards_4parameter_extended_curve(self.times, p1, p2, p3, p4, d)
+        log2_model_y_data = get_chapman_richards_4parameter_extended_curve(self.times, p1, p2, p3, p4, d)
+        log2_y_data = np.log2(self.smooth_growth_data[plate][position])
 
-        return log2_y_data, fit, (p1, p2, p3, p4, d)
+        dydt = convolve(log2_y_data, [-1, 1], mode='valid')
+        dydt_model = convolve(log2_model_y_data, [-1, 1], mode='valid')
+
+        finites = np.isfinite(dydt)
+        delta = (dydt - dydt_model)[finites]
+        dydt_fit = (1.0 - np.square(delta).sum() / np.square(dydt[finites] - dydt[finites].mean()).sum())
+
+        return log2_model_y_data, fit, dydt_fit, (p1, p2, p3, p4, d)
 
     def get_quality_index(self, plate):
 
