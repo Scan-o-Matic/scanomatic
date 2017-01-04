@@ -24,7 +24,7 @@ import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes, \
-    get_derivative
+    get_derivative, get_chapman_richards_4parameter_extended_curve
 from scanomatic.data_processing.phases.features import extract_phenotypes, \
     CurvePhaseMetaPhenotypes, VectorPhenotypes
 from scanomatic.data_processing.phases.analysis import get_phase_analysis
@@ -1636,6 +1636,35 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         return get_derivative(
             self._get_plate_linear_regression_strided(
                 self.smooth_growth_data[plate][position].reshape(1, 1, self.times.size))[0], self.times_strided)[0]
+
+    def get_chapman_richards_data(self, plate, position):
+        """Get the chapman ritchard model information and data for a position if possible.
+
+        Args:
+            plate (int): Plate index
+            position (tuple int): Position tuple
+
+        Returns (tuple):
+            Log_2 population size model based on chapman richards growth model,
+            The fit of the model (float) or `None` if model is missing,
+            The parameter tuple or `None` if model is missing
+        """
+        if self._phenotypes is None or self._phenotypes[plate] is None:
+            return np.array([]), None, None
+
+        try:
+            p1 = self.get_phenotype(Phenotypes.ChapmanRichardsParam1)[plate][position]
+            p2 = self.get_phenotype(Phenotypes.ChapmanRichardsParam2)[plate][position]
+            p3 = self.get_phenotype(Phenotypes.ChapmanRichardsParam3)[plate][position]
+            p4 = self.get_phenotype(Phenotypes.ChapmanRichardsParam4)[plate][position]
+            d = self.get_phenotype(Phenotypes.ChapmanRichardsParamXtra)[plate][position]
+            fit = self.get_phenotype(Phenotypes.ChapmanRichardsFit)[plate][position]
+        except TypeError:
+            return np.array([]), None, None
+
+        log2_y_data = get_chapman_richards_4parameter_extended_curve(self.times, p1, p2, p3, p4, d)
+
+        return log2_y_data, fit, (p1, p2, p3, p4, d)
 
     def get_quality_index(self, plate):
 
