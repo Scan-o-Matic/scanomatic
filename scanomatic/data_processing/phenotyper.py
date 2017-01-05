@@ -1645,7 +1645,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             plate (int): Plate index
             position (tuple int): Position tuple
 
-        Returns (tuple): (`y_hat`, `fit`, `dydt_fit`, `params`)
+        Returns (tuple):
+            (`y_hat`, (`fit`, `dydt_fit`), (`data_dydt`, `model_dydt`),
+            `params`)
 
             y_hat (numpy.ndarray):
                 Log_2 population size model based on chapman richards
@@ -1656,6 +1658,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             dydt_fit (float):
                 The fit of the model's first derivative to
                 the data's derivative or `None` if model is missing,
+            data_dydt (numpy.ndarray):
+                First derivative of the growth data
+            model_dydt (numpy.ndarray):
+                First derivative of the model data
             params (tuple):
                 The parameter tuple for the model
                 or `None` if model is missing
@@ -1683,7 +1689,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         delta = (dydt - dydt_model)[finites]
         dydt_fit = (1.0 - np.square(delta).sum() / np.square(dydt[finites] - dydt[finites].mean()).sum())
 
-        return log2_model_y_data, fit, dydt_fit, (p1, p2, p3, p4, d)
+        return log2_model_y_data, (fit, dydt_fit), (dydt, dydt_model), (p1, p2, p3, p4, d)
 
     def get_quality_index(self, plate):
 
