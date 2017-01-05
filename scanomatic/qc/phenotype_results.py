@@ -730,7 +730,7 @@ def plot_barad_dur_plot(phenotyper_object, plate, pos, plot_curve=False, plot_fi
 @_validate_input
 @_setup_figure
 def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT_THRESHOLDS, show_thresholds=True,
-                               ax=None, f=None):
+                               ax=None, f=None, **kwargs):
     """Plots a log2_curve and both its derivatives as calculated and
     smoothed by scanomatic during the phase sectioning.
 
@@ -749,18 +749,22 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
 
     model = get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds)
 
-    return plot_curve_and_derivatives_from_model(model, thresholds, show_thresholds, ax=ax)
+    return plot_curve_and_derivatives_from_model(model, thresholds, show_thresholds, ax=ax, **kwargs)
 
 
 @_setup_figure
-def plot_curve_and_derivatives_from_model(model, thresholds=DEFAULT_THRESHOLDS, show_thresholds=False, f=None, ax=None):
+def plot_curve_and_derivatives_from_model(model, thresholds=DEFAULT_THRESHOLDS, show_thresholds=False, f=None, ax=None,
+                                          fill_alpha=0.35):
     thresholds_width = 1.5
 
     times = model.times
+    nan_arr = np.ones_like(model.d2yd2t) * np.nan
+    for val, color in izip((-1, 0, 1), ('r', 'k', 'g')):
+        filt = model.d2yd2t_signs != val
+        ax.plot(times, np.choose(filt, (model.d2yd2t, nan_arr)), lw=2.5, color=color)
 
-    ax.plot(times, model.d2yd2t, color='g')
     ax.set_ylabel("d2y/dt2 ", color='g')
-    ax.fill_between(times, model.d2yd2t, 0, color='g', alpha=0.7)
+    ax.fill_between(times, model.d2yd2t, 0, color='g', alpha=fill_alpha)
 
     if show_thresholds:
 
@@ -769,8 +773,12 @@ def plot_curve_and_derivatives_from_model(model, thresholds=DEFAULT_THRESHOLDS, 
         ax.axhline(t1, linestyle='--', color='g', lw=thresholds_width)
 
     ax2 = ax.twinx()
-    ax2.plot(times, model.dydt, color='r')
-    ax2.fill_between(times, model.dydt, 0, color='r', alpha=0.7)
+    nan_arr = np.ones_like(model.d2yd2t) * np.nan
+    for val, color in izip((-1, 0, 1), ('r', 'k', 'g')):
+        filt = model.dydt_signs != val
+        ax2.plot(times, np.choose(filt, (model.dydt, nan_arr)), lw=2.5, color=color)
+
+    ax2.fill_between(times, model.dydt, 0, color='r', alpha=fill_alpha)
     ax2.set_ylabel("dy/dt", color='r')
 
     if show_thresholds:
@@ -781,7 +789,7 @@ def plot_curve_and_derivatives_from_model(model, thresholds=DEFAULT_THRESHOLDS, 
         ax2.axhline(-t1, linestyle='--', color='r', lw=thresholds_width)
 
     ax3 = ax.twinx()
-    ax3.plot(times, model.curve, color='k', lw=2)
+    ax3.plot(times, model.log2_curve, color='k', lw=2)
     ax3.yaxis.labelpad = -40
     ax3.set_ylabel("Log2 cells")
     ax3.set_yticks(ax3.get_yticks()[1:-1])
@@ -792,6 +800,7 @@ def plot_curve_and_derivatives_from_model(model, thresholds=DEFAULT_THRESHOLDS, 
 
     ax.set_xlabel("Hours")
     ax.set_title("Curve {0} and its derviatives".format((model.plate, model.pos)))
+    """
     legend = ax.legend(
         [ax3.lines[0], ax2.lines[0], ax.lines[0]],
         ['growth', 'dy/dt', 'ddy/dt'],
@@ -799,7 +808,7 @@ def plot_curve_and_derivatives_from_model(model, thresholds=DEFAULT_THRESHOLDS, 
         bbox_to_anchor=(0.9, 0))
 
     legend.get_frame().set_facecolor('white')
-
+    """
     f.tight_layout()
     return f
 
