@@ -134,7 +134,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.UniformityTestMinSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.15,
     Thresholds.NonFlatLinearMinimumYield: 0.1,
-    Thresholds.NonFlatLinearMergeLengthMax: 3,
+    Thresholds.NonFlatLinearMergeLengthMax: 0,
     Thresholds.LinearityPeak: 3}
 
 
