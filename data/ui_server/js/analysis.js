@@ -141,6 +141,7 @@ function set_regridding_source_directory(input) {
         input,
         true,
         "",
+        null,
         function(data, status) {
 
             //TODO: For some reason popup don't appear...
@@ -172,6 +173,7 @@ function set_analysis_directory(input, validate) {
         input,
         true,
         "",
+        null,
         function(data, status) {
             if (validate) {
                 InputEnabled($("#submit-button2"), data.valid_parent && data.exists);
@@ -180,15 +182,16 @@ function set_analysis_directory(input, validate) {
     });
 }
 
-function set_file_path(input, suffix) {
+function set_file_path(input, suffix, suffix_pattern, toggle_regridding_if_not_exists) {
 
     get_path_suggestions(
         input,
         false,
         suffix,
+        suffix_pattern,
         function(data, status) {
 
-            if (suffix == ".project.compilation") {
+            if (toggle_regridding_if_not_exists) {
                 $("#manual-regridding-source-folder").prop("disabled", !data.exists);
             }
 
