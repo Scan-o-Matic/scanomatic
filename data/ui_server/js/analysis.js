@@ -31,7 +31,11 @@ function set_fixture_plate_listing() {
     }
 
     if (localFixture) {
-        $.get("/api/data/fixture/local/" + path.substring(5, path.length), callback).fail(error_callback);
+        if (path.length > 5) {
+            $.get("/api/data/fixture/local/" + path.substring(5, path.length), callback).fail(error_callback);
+        } else {
+            error_callback();
+        }
     } else {
         fixt = $(current_fixture_id).val();
         if (fixt) {
