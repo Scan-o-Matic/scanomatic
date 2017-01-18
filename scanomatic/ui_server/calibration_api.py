@@ -33,7 +33,7 @@ def add_routes(app):
     def get_active_calibrations():
 
         try:
-            identifiers, cccs = zip(calibration.get_active_cccs().iteritems())
+            identifiers, cccs = zip(*calibration.get_active_cccs().iteritems())
             return jsonify(success=True, is_endpoint=True, identifiers=identifiers,
                            species=[ccc[calibration.CellCountCalibration.species] for ccc in cccs],
                            references=[ccc[calibration.CellCountCalibration.reference] for ccc in cccs])
@@ -46,7 +46,7 @@ def add_routes(app):
     def get_under_construction_calibrations():
 
         try:
-            identifiers, cccs = zip(calibration.get_under_construction_cccs().iteritems())
+            identifiers, cccs = zip(*calibration.get_under_construction_cccs().iteritems())
             return jsonify(success=True, is_endpoint=True, identifiers=identifiers,
                            species=[ccc[calibration.CellCountCalibration.species] for ccc in cccs],
                            references=[ccc[calibration.CellCountCalibration.reference] for ccc in cccs])
