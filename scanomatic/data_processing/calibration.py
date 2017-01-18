@@ -409,7 +409,7 @@ def get_image_identifiers_in_ccc(identifier):
 
         ccc = __CCC[identifier]
 
-        return [im_json[CCCImage.identifier] for im_json in ccc]
+        return [im_json[CCCImage.identifier] for im_json in ccc[CellCountCalibration.images]]
 
     return False
 
