@@ -691,6 +691,11 @@ def ipv_residue(scaling_params, ipv, gt):
 
 def get_normalized_data(data, offsets=None):
 
+    if data is None:
+        return None
+    elif np.isfinite(data).sum() < 4:
+        return np.ones_like(data) * np.nan
+
     surface = get_control_position_filtered_arrays(data, offsets=offsets)
     pre_surface = get_downsampled_plates(surface, offsets)
     apply_outlier_filter(pre_surface, measure=None)
