@@ -31,7 +31,11 @@ function set_fixture_plate_listing() {
     }
 
     if (localFixture) {
-        $.get("/api/data/fixture/local/" + path.substring(5, path.length), callback).fail(error_callback);
+        if (path.length > 5) {
+            $.get("/api/data/fixture/local/" + path.substring(5, path.length), callback).fail(error_callback);
+        } else {
+            error_callback();
+        }
     } else {
         fixt = $(current_fixture_id).val();
         if (fixt) {
@@ -141,6 +145,7 @@ function set_regridding_source_directory(input) {
         input,
         true,
         "",
+        null,
         function(data, status) {
 
             //TODO: For some reason popup don't appear...
@@ -172,6 +177,7 @@ function set_analysis_directory(input, validate) {
         input,
         true,
         "",
+        null,
         function(data, status) {
             if (validate) {
                 InputEnabled($("#submit-button2"), data.valid_parent && data.exists);
@@ -180,15 +186,16 @@ function set_analysis_directory(input, validate) {
     });
 }
 
-function set_file_path(input, suffix) {
+function set_file_path(input, suffix, suffix_pattern, toggle_regridding_if_not_exists) {
 
     get_path_suggestions(
         input,
         false,
         suffix,
+        suffix_pattern,
         function(data, status) {
 
-            if (suffix == ".project.compilation") {
+            if (toggle_regridding_if_not_exists) {
                 $("#manual-regridding-source-folder").prop("disabled", !data.exists);
             }
 
@@ -244,6 +251,29 @@ function Extract(button) {
         url: '?action=extract',
         data: {
             analysis_directory: $("#extract").val()
+               },
+        method: 'POST',
+        success: function(data) {
+            if (data.success) {
+                Dialogue("Feature Extraction", "Extraction Enqueued", "", "/status");
+            } else {
+                Dialogue("Feature Extraction", "Extraction refused", data.reason ? data.reason : "Unknown reason", false, button);
+            }
+        },
+        error: function(data) {
+            Dialogue("Feature Extraction", "Error", "An error occurred processing request", false, button);
+        }
+
+    });
+}
+
+function BioscreenExtract(button) {
+    InputEnabled($(button), false)
+
+    $.ajax({
+        url: '?action=bioscreen_extract',
+        data: {
+            bioscreen_file: $("#bioscreen_extract").val()
                },
         method: 'POST',
         success: function(data) {

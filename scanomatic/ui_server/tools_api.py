@@ -233,13 +233,23 @@ def add_routes(app):
                 suggestions = tuple("/".join(chain([command], os.path.relpath(p, root).split(os.sep)))
                                     for p in glob.glob(path + "*" + (suffix if is_directory else ""))
                                     if os.path.isdir(p) and safe_directory_name(os.path.basename(p)))
+
+                suggestion_is_directories = tuple(1 for _ in suggestions)
+
                 if not is_directory:
-                    suggestions = tuple("/".join(chain([command], os.path.relpath(p, root).split(os.sep)))
-                                        for p in glob.glob(os.path.join(os.path.dirname(path), prefix + "*" + suffix))
-                                        if os.path.isfile(p)) + suggestions
+
+                    candidates = glob.glob(os.path.join(os.path.dirname(path), prefix + "*" + suffix))
+
+                    suggestion_files = tuple("/".join(chain([command], os.path.relpath(p, root).split(os.sep)))
+                                        for p in candidates if os.path.isfile(p))
+
+                    suggestions = suggestion_files + suggestions
+
+                    suggestion_is_directories = tuple(0 for _ in suggestion_files) + suggestion_is_directories
 
             else:
                 suggestions = tuple()
+                suggestion_is_directories = tuple()
 
             _logger.info("{0}: {1}".format(path, glob.glob(path + "*")))
 
@@ -249,7 +259,11 @@ def add_routes(app):
                 has_analysis = None
 
             return jsonify(path="/".join(chain([command], sub_path)), valid_parent=valid_parent_directory,
-                           reason=reason, suggestions=suggestions, prefix=prefix, exists=exists,
+                           reason=reason,
+                           suggestions=suggestions,
+                           suggestion_is_directories=suggestion_is_directories,
+                           prefix=prefix,
+                           exists=exists,
                            has_analysis=has_analysis)
 
         return jsonify(path='/', valid_parent=False, reason="Path not allowed")

@@ -310,8 +310,9 @@ def add_routes(app, rpc_client, is_debug_mode):
             return jsonify(fixtures=[], success=False, reason="Scan-o-Matic server offline")
 
     @app.route("/api/data/fixture/local/<path:project>")
+    @app.route("/api/data/fixture/local")
     @decorate_api_access_restriction
-    def _fixture_local_data(project):
+    def _fixture_local_data(project=""):
 
         path = os.path.join(convert_url_to_path(project), Paths().experiment_local_fixturename)
 

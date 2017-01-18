@@ -24,16 +24,16 @@
                 <div class="section">
                     <label for="compilation">Compilation File</label>
                     <input name="compilation" id="compilation" class="long"
-                       onchange="set_file_path(this, '.project.compilation');"
-                       onfocus="set_file_path(this, '.project.compilation');"
-                       onkeyup="set_file_path(this, '.project.compilation');">
-                    <div class="indented"><em>This should point to a file with the ending <code>.project.compilation</code>.</em></div>
+                       onchange="set_file_path(this, '', /\.project\.(compilation(\.original)?|settings)$/, true);"
+                       onfocus="set_file_path(this, '', /\.project\.(compilation(\.original)?|settings)$/, true);"
+                       onkeyup="set_file_path(this, '', /\.project\.(compilation(\.original)?|settings)$/, true);">
+                    <div class="indented"><em>Either the original or a new re-compilation file</em></div>
 
                     <label for="compile-instructions">Compile Instructions File <em>(optional)</em></label>
                     <input name="compile-instructions" id="compile-instructions" class="long"
-                        onchange="set_file_path(this, '.project.compilation.instructions');"
-                       onfocus="set_file_path(this, '.project.compilation.instructions');"
-                       onkeyup="set_file_path(this, '.project.compilation.instructions');">
+                        onchange="set_file_path(this, 'project.compilation.instructions', null, false);"
+                       onfocus="set_file_path(this, 'project.compilation.instructions', null, false);"
+                       onkeyup="set_file_path(this, 'project.compilation.instructions', null, false);">
                     <div class="indented"><em>This is optional, but if included should point to a <code>.project.compilation.instructions</code>,
                         else it is inferred from the compilation file path and name above.</em></div>
                 </div>
@@ -136,6 +136,18 @@
             </form>
         </div>
 
+        <h2>Bioscreen feature extraction</h2>
+        <div class="section-frame">
+            <form>
+
+                <label for="bioscreen_extract">Biocreen file</label>
+                <input name="extract" id="bioscreen_extract" class="long" value="root/">
+
+                <div class="indented"><em>For now you have to know the exact path, and keep
+                    <code>root/</code> or it won't work. A folder will be created in which the output is stored</em></div>
+                <button type="button" id="submit-button3" onclick="BioscreenExtract(this);">Run Feature Extraction</button>
+            </form>
+        </div>
     </div>
     <script>
         get_fixtures();

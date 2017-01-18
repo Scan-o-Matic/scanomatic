@@ -137,6 +137,7 @@ if len(sys.argv) > 1:
 
     _logger.info("Non python dependencies done")
     _logger.info("Preparing setup parameters")
+    from setup_tools import update_init_file
 
     if version_update:
 
@@ -144,7 +145,7 @@ if len(sys.argv) > 1:
         # PRE-INSTALL VERSIONING
         #
 
-        from setup_tools import get_hash_all_files, get_package_hash, get_hash, update_init_file
+        from setup_tools import get_hash_all_files, get_package_hash, get_hash
 
         _logger.info("Checking for local changes")
 
@@ -181,6 +182,7 @@ if len(sys.argv) > 1:
 
             _logger.info("No local changes detected!")
     else:
+        update_init_file(do_branch=True, do_version=False)
         _logger.info("Skipping checking changes to current version")
     #
     # INSTALLING SCAN-O-MATIC

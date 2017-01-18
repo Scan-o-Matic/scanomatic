@@ -41,7 +41,7 @@ def get_preprocessed_data_for_phenotypes(curve, curve_strided, flat_times, times
     return {
         'curve_smooth_growth_data': np.ma.masked_invalid(curve),
         'index48h': index_for_48h,
-        'chapman_richards_fit': CalculateFitRSquare(flat_times, curve_logged),
+        'chapman_richards_fit': get_fit_r_square(flat_times, curve_logged),
         'derivative_values_log2': np.ma.masked_invalid(derivative_values_log2),
         'derivative_errors': np.ma.masked_invalid(derivative_errors),
         'linregress_extent': position_offset,
@@ -125,16 +125,16 @@ def growth_48h(curve_smooth_growth_data, index48h, *args, **kwargs):
     return curve_smooth_growth_data[index48h]
 
 
-def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
-    """Reterns a Chapman-Ritchards 4 parameter log2_curve exteneded with a
-    Y-axis offset D parameter.
+def get_chapman_richards_4parameter_extended_curve(x_data, b0, b1, b2, b3, d):
+    """Returns a Chapman-Richards 4 parameter log2_curve extended with a
+    Y-axis offset d parameter.
 
     ''Note: The parameters b0, b1, b2 and b3 have been transposed so
     that they stay within the allowed bounds of the model
 
     Args:
 
-        X (np.array):   The X-data
+        x_data (np.array):   The X-data
 
         b0 (float): The first parameter. To ensure that it stays within
                     the allowed bounds b0 > 0, the input b0 is
@@ -146,7 +146,7 @@ def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
                         ``np.power(np.e, b1) / (np.power(np.e, b1) + 1) *
                         b3 + (1 - b3)``
 
-                    Where ``b3`` referes to the transformed version.
+                    Where ``b3`` refers to the transformed version.
 
 
         b2 (float): The third parameter, has same bounds and scaling as
@@ -157,7 +157,7 @@ def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
 
                         ``np.power(np.e, b3) / (np.power(np.e, b3) + 1)``
 
-        D (float):  Any real number, used as the offset of the log2_curve,
+        d (float):  Any real number, used as the offset of the log2_curve,
                     no transformation applied.
 
     Returns:
@@ -168,7 +168,7 @@ def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
 
     """
 
-    # Enusuring parameters stay within the allowed bounds
+    # Ensuring parameters stay within the allowed bounds
     b0 = np.power(np.e, b0)
     b2 = np.power(np.e, b2)
     v = np.power(np.e, b3)
@@ -176,33 +176,33 @@ def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
     v = np.power(np.e, b1)
     b1 = v / (v + 1.0) * b3 + (1 - b3)
 
-    return D + b0 * np.power(1.0 - b1 * np.exp(-b2 * X), 1.0 / (1.0 - b3))
+    return d + b0 * np.power(1.0 - b1 * np.exp(-b2 * x_data), 1.0 / (1.0 - b3))
 
 
-def CalculateFitRSquare(X, Y, p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18], dtype=np.float)):
-    """X and Y must be 1D, Y must be log2"""
+def get_fit_r_square(x_data, y_data, p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18], dtype=np.float)):
+    """x_data and y_data must be 1D, y_data must be log2"""
 
-    X = X[np.isfinite(Y)]
-    Y = Y[np.isfinite(Y)]
+    finite_y = np.isfinite(y_data)
+    x_data = x_data[finite_y]
+    y_data = y_data[finite_y]
 
     try:
-        p = leastsq(RCResiduals, p0, args=(X, Y))[0]
+        p = leastsq(get_chapman_richards_residuals, p0, args=(x_data, y_data))[0]
     except TypeError:
         return np.inf, p0
 
-    Yhat = ChapmanRichards4ParameterExtendedCurve(
-        X, *p)
+    y_hat_vector = get_chapman_richards_4parameter_extended_curve(x_data, *p)
 
-    if np.isfinite(Y).any():
-        return (1.0 - np.square(Yhat - Y).sum() /
-            np.square(Yhat - Y[np.isfinite(Y)].mean()).sum()), p
+    if y_data.any():
+        return (1.0 - np.square(y_hat_vector - y_data).sum() /
+                np.square(y_hat_vector - y_data.mean()).sum()), p
     else:
         return np.nan, p
 
 
-def RCResiduals(crParams, X, Y):
+def get_chapman_richards_residuals(cr_params, x_data, y_data):
 
-    return Y - ChapmanRichards4ParameterExtendedCurve(X, *crParams)
+    return y_data - get_chapman_richards_4parameter_extended_curve(x_data, *cr_params)
 
 
 def generation_time(derivative_values_log2, index, **kwargs):

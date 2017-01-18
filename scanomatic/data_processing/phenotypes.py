@@ -66,6 +66,11 @@ class PhenotypeDataType(Enum):
         _trusted = (
             Phenotypes.GenerationTime,
             Phenotypes.ChapmanRichardsFit,
+            Phenotypes.ChapmanRichardsParam1,
+            Phenotypes.ChapmanRichardsParam2,
+            Phenotypes.ChapmanRichardsParam3,
+            Phenotypes.ChapmanRichardsParam4,
+            Phenotypes.ChapmanRichardsParamXtra,
             Phenotypes.ColonySize48h,
             Phenotypes.InitialValue,
             Phenotypes.ExperimentBaseLine,

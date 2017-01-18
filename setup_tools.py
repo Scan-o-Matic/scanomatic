@@ -94,23 +94,27 @@ def get_hash(paths, pattern=None, hasher=None, buffsize=65536):
     return hasher
 
 
-def update_init_file():
-    data = source.get_source_information(True)
-    try:
-        data['version'] = source.next_subversion(str(data['branch']) if data['branch'] else None, get_version())
-    except:
-        _logger.warning("Can reach GitHub to verify version")
-        data['version'] = source.increase_version(source.parse_version(data['version']))
+def update_init_file(do_version=True, do_branch=True):
 
-    if data['branch'] is None:
-        data['branch'] = "++UNKNOWN BRANCH++"
+    data = source.get_source_information(True)
+
+    if do_version:
+        try:
+            data['version'] = source.next_subversion(str(data['branch']) if data['branch'] else None, get_version())
+        except:
+            _logger.warning("Can reach GitHub to verify version")
+            data['version'] = source.increase_version(source.parse_version(data['version']))
+
+    if do_branch:
+        if data['branch'] is None:
+            data['branch'] = "++NONE/Probably a release++"
 
     lines = []
     with open(os.path.join("scanomatic", "__init__.py")) as fh:
         for line in fh:
-            if line.startswith("__version__ = "):
+            if do_version and line.startswith("__version__ = "):
                 lines.append("__version__ = \"v{0}\"\n".format(".".join((str(v) for v in data['version']))))
-            elif line.startswith("__branch = "):
+            elif do_branch and line.startswith("__branch = "):
                 lines.append("__branch = \"{0}\"\n".format(data['branch']))
             else:
                 lines.append(line)

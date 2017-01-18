@@ -169,16 +169,19 @@ class CalibrationValidation(Enum):
 
 def _validate_ccc_edit_request(f):
 
-    def wrapped(identifier, access_token=None, *args, **kwargs):
+    def wrapped(identifier, *args, **kwargs):
 
         if identifier in __CCC:
 
             ccc = __CCC[identifier]
 
-            if ccc[CellCountCalibration.edit_access_token] == access_token and access_token:
+            if "access_token" in kwargs \
+                    and ccc[CellCountCalibration.edit_access_token] == kwargs["access_token"] \
+                    and kwargs["access_token"]:
 
                 if ccc[CellCountCalibration.status] == CalibrationEntryStatus.UnderConstruction:
 
+                    del kwargs["access_token"]
                     return f(identifier, *args, **kwargs)
 
                 else:
@@ -270,7 +273,7 @@ def add_ccc(ccc):
         return False
 
 @_validate_ccc_edit_request
-def activate_ccc(identifier, access_token):
+def activate_ccc(identifier):
 
     ccc = __CCC[identifier]
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
@@ -406,7 +409,7 @@ def get_image_identifiers_in_ccc(identifier):
 
         ccc = __CCC[identifier]
 
-        return [im_json[CCCImage.identifier] for im_json in ccc]
+        return [im_json[CCCImage.identifier] for im_json in ccc[CellCountCalibration.images]]
 
     return False
 

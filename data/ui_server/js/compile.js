@@ -34,6 +34,7 @@ function set_project_directory(input) {
         input,
         true,
         "",
+        null,
         function(data, status) {
             path = $(input).val();
             project_path_valid = data.valid_parent && data.exists;

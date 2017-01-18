@@ -9,7 +9,8 @@ import cPickle as pickle
 import numpy as np
 from enum import Enum
 from scipy.ndimage import median_filter
-from scipy.stats import norm
+from scipy.stats import norm, pearsonr
+from scipy.signal import convolve
 from scanomatic.io.pickler import unpickle, unpickle_with_unpickler
 
 #
@@ -24,7 +25,7 @@ import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes, \
-    get_derivative
+    get_derivative, get_chapman_richards_4parameter_extended_curve
 from scanomatic.data_processing.phases.features import extract_phenotypes, \
     CurvePhaseMetaPhenotypes, VectorPhenotypes
 from scanomatic.data_processing.phases.analysis import get_phase_analysis
@@ -1636,6 +1637,59 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         return get_derivative(
             self._get_plate_linear_regression_strided(
                 self.smooth_growth_data[plate][position].reshape(1, 1, self.times.size))[0], self.times_strided)[0]
+
+    def get_chapman_richards_data(self, plate, position):
+        """Get the chapman ritchard model information
+
+        Args:
+            plate (int): Plate index
+            position (tuple int): Position tuple
+
+        Returns (tuple):
+            (`y_hat`, (`fit`, `dydt_fit`), (`data_dydt`, `model_dydt`),
+            `params`)
+
+            y_hat (numpy.ndarray):
+                Log_2 population size model based on chapman richards
+                growth model
+            fit (float):
+                The fit of the model (float) or
+                `None` if model is missing,
+            dydt_fit (float):
+                The fit of the model's first derivative to
+                the data's derivative or `None` if model is missing,
+            data_dydt (numpy.ndarray):
+                First derivative of the growth data
+            model_dydt (numpy.ndarray):
+                First derivative of the model data
+            params (tuple):
+                The parameter tuple for the model
+                or `None` if model is missing
+        """
+        if self._phenotypes is None or self._phenotypes[plate] is None:
+            return np.array([]), None, None, None
+
+        try:
+            p1 = self.get_phenotype(Phenotypes.ChapmanRichardsParam1)[plate][position]
+            p2 = self.get_phenotype(Phenotypes.ChapmanRichardsParam2)[plate][position]
+            p3 = self.get_phenotype(Phenotypes.ChapmanRichardsParam3)[plate][position]
+            p4 = self.get_phenotype(Phenotypes.ChapmanRichardsParam4)[plate][position]
+            d = self.get_phenotype(Phenotypes.ChapmanRichardsParamXtra)[plate][position]
+            fit = self.get_phenotype(Phenotypes.ChapmanRichardsFit)[plate][position]
+        except TypeError:
+            return np.array([]), None, None, None
+
+        log2_model_y_data = get_chapman_richards_4parameter_extended_curve(self.times, p1, p2, p3, p4, d)
+        log2_y_data = np.log2(self.smooth_growth_data[plate][position])
+
+        dydt = convolve(log2_y_data, [-1, 1], mode='valid')
+        dydt_model = convolve(log2_model_y_data, [-1, 1], mode='valid')
+
+        finites = np.isfinite(dydt)
+        delta = (dydt - dydt_model)[finites]
+        dydt_fit = (1.0 - np.square(delta).sum() / np.square(dydt[finites] - dydt[finites].mean()).sum())
+
+        return log2_model_y_data, (fit, dydt_fit), (dydt, dydt_model), (p1, p2, p3, p4, d)
 
     def get_quality_index(self, plate):
 

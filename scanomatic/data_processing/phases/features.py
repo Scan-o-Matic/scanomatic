@@ -452,7 +452,7 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
 
         lag = (impulse_intercept - np.log2(flat_intercept)) / (flat_slope - impulse_slope)
 
-        lag[(lag < 0) | (impulse_start < low_point_time)] = np.nan
+        lag[(lag < 0) | (impulse_start < low_point_time) | (~np.isfinite(low_point_time))] = np.nan
 
         return lag
 
