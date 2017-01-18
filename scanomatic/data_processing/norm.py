@@ -413,9 +413,9 @@ def get_normalisation_surface(control_positions_filtered_data, control_position_
                 anchor_points = get_stripped_invalid_points(np.isfinite(plate[anchor_points]))
                 anchor_values = plate[anchor_points]
 
-                if anchor_values.size == 0 or np.isfinite(plate).all():
+                if anchor_values.size == 0 or np.isfinite(plate).all() or np.isfinite(anchor_values).sum() < 4:
                     break
-                elif anchor_values.any():
+                else:
 
                     splined_plate = griddata(anchor_points, anchor_values, (grid_x, grid_y), method=method,
                                              fill_value=fill_value)
@@ -693,14 +693,16 @@ def get_normalized_data(data, offsets=None):
 
     if data is None:
         return None
-    elif np.isfinite(data).sum() < 4:
-        return np.ones_like(data) * np.nan
 
     surface = get_control_position_filtered_arrays(data, offsets=offsets)
     pre_surface = get_downsampled_plates(surface, offsets)
     apply_outlier_filter(pre_surface, measure=None)
-    surface = get_normalisation_surface(surface, offsets=offsets)
-
+    try:
+        surface = get_normalisation_surface(surface, offsets=offsets)
+    except ValueError:
+        print offsets
+        print data
+        raise
     return normalisation(data, surface, log=True)
 
 
