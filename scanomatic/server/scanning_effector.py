@@ -265,6 +265,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if step_action is SCAN_STEP.NextMajor:
             self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_major
+            self._logger.info("Entering step {0}".format(self._scanning_effector_data.current_cycle_step))
         elif step_action is SCAN_STEP.NextMinor:
             self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_minor
         elif step_action is SCAN_STEP.TruncateIteration:
@@ -295,6 +296,13 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             return SCAN_STEP.NextMajor
         else:
+            """
+            self._logger.info("Awaiting next scan, {0:.2f}s lapsed compared to {1:.2f}s and fraction {2}".format(
+                self.time_since_last_scan,
+                self._scanning_job.time_between_scans * SECONDS_PER_MINUTE,
+                self.WAIT_FOR_NEXT_SCAN
+            ))
+            """
             return SCAN_STEP.Wait
 
     def _do_wait_for_usb(self):
