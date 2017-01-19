@@ -34,10 +34,8 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
                 {
                 int :  # plate index (get valid from fixture),
                     {
-                    CCCPlate.gs_transformed_image_identifier: string,  # How to find numpy-array of transformed plate
                     CCCPlate.grid_shape: (16, 24),  # Number of rows and columns of colonies on plate
                     CCCPlate.grid_cell_size: (52.5, 53.1),  # Number of pixels for each colony (yes is in decimal)
-                    CCCPlate.grid_data_identifier: string,  # How to find numpy-array of grid positions on plate
                     CCCPlate.compressed_ccc_data:  # Row, column info on CCC analysis of each colony
                         [
                             [
@@ -112,15 +110,11 @@ class CCCImage(Enum):
 
 
 class CCCPlate(Enum):
-    gs_transformed_image_identifier = 0
+    grid_shape = 0
     """:type : CCCPlate"""
-    grid_shape = 1
+    grid_cell_size = 1
     """:type : CCCPlate"""
-    grid_cell_size = 2
-    """:type : CCCPlate"""
-    grid_data_identifier = 3
-    """:type : CCCPlate"""
-    compressed_ccc_data = 4
+    compressed_ccc_data = 2
     """:type : CCCPlate"""
 
 
