@@ -488,7 +488,7 @@ def get_local_fixture_for_image(identifier, image_identifier):
     if im_json is None:
         return None
 
-    fixture_settings = Fixtures()[im_json[CCCImage.Fixture]]
+    fixture_settings = Fixtures()[im_json[CCCImage.fixture]]
     if fixture_settings is None:
         return None
 
