@@ -6,9 +6,10 @@ from io import BytesIO
 import zipfile
 import time
 import os
+from itertools import product
 
-from scanomatic.image_analysis import grid
-from scanomatic.image_analysis.grid_array import GridCellSizes
+from scanomatic.image_analysis.grid_array import GridArray
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.io.paths import Paths
 from scanomatic.data_processing import calibration
 from scanomatic.io.fixtures import Fixtures
@@ -252,10 +253,6 @@ def add_routes(app):
     @decorate_api_access_restriction
     def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
 
-        data_object = request.get_json(silent=True, force=True)
-        if not data_object:
-            data_object = request.values
-
         image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
         if image_data is None:
             return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
@@ -264,41 +261,46 @@ def add_routes(app):
         if im is None:
             return jsonify(success=False, is_endpoint=True, reason="No such image slice exists, has it been sliced?")
 
-        pinning_matrix = data_object.values.get("pinning_format")
-        validate_parameters = False
-        expected_spacings = GridCellSizes.get(pinning_matrix)
-        expected_center = tuple([s / 2.0 for s in im.shape])
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
 
-        draft_grid, _, _, _, grid_cell_size, adjusted_values = grid.get_grid(
-            im,
-            expected_spacing=expected_spacings,
-            expected_center=expected_center,
-            validate_parameters=validate_parameters,
-            grid_shape=pinning_matrix,
-            grid_correction=None)
+        pinning_format = data_object.values.get("pinning_format")
+        correction = request.values.getlist('gridding_correction')
+        if not correction:
+            correction = None
 
-        dx, dy = grid_cell_size
+        analysis_model = AnalysisModelFactory.create()
+        analysis_model.output_directory = ""
+        ga = GridArray((None, None), pinning_format, analysis_model)
 
-        final_grid = grid.get_validated_grid(
-            im, draft_grid, dy, dx, adjusted_values)
+        if not ga.detect_grid(im, grid_correction=correction):
+            return jsonify(
+                success=False,
+                reason="Grid detection failed",
+                is_endpoint=True,
+            )
 
-        grid_cell_corners = np.zeros((2, 2, final_grid.shape[1], final_grid.shape[2]))
+        grid = ga.grid
+        inner = len(grid[0])
+        outer = len(grid)
+        xy1 = [([None] for _ in range(inner)) for _ in range(outer)]
+        xy2 = [([None] for _ in range(inner)) for _ in range(outer)]
 
-        # For all sets lower values boundaries
-        grid_cell_corners[0, 0, :, :] = final_grid[0] - grid_cell_size[0] / 2.0
-        grid_cell_corners[1, 0, :, :] = final_grid[1] - grid_cell_size[1] / 2.0
+        for pos in product(range(outer), range(inner)):
 
-        # For both dimensions sets higher value boundaries
-        grid_cell_corners[0, 1, :, :] = final_grid[0] + grid_cell_size[0] / 2.0
-        grid_cell_corners[1, 1, :, :] = final_grid[1] + grid_cell_size[1] / 2.0
+            o, i = pos
+            gc = ga[pos]
+            xy1[o][i] = gc.xy1
+            xy2[o][i] = gc.xy2
 
         grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
-        np.save(grid_path, final_grid)
+        np.save(grid_path, grid)
 
         success = calibration.set_plate_grid_info(
             ccc_identifier, image_identifier, plate,
-            grid_shape=pinning_matrix,
-            grid_cell_size=grid_cell_size,
+            grid_shape=pinning_format,
+            grid_cell_size=ga.grid_cell_size,
             access_token=data_object.get("access_token"))
 
         if not success:
@@ -306,11 +308,9 @@ def add_routes(app):
                            reason="Probably bad access token, or trying to re-grid image after has been used")
 
         return jsonify(succes=True, is_endpoint=True,
-                       grid=final_grid.tolist(),
-                       dy=dy,
-                       dx=dx,
-                       xy1=grid_cell_corners[:, 0, ...].tolist(),
-                       xy2=grid_cell_corners[:, 1, ...].tolist())
+                       grid=grid.tolist(),
+                       xy1=xy1,
+                       xy2=xy2)
 
     """
     DEPRECATION WARNING BELOW
