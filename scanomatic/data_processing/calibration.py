@@ -418,7 +418,7 @@ def set_image_info(identifier, image_identifier, **kwargs):
 
         try:
 
-            im_json[CCCImage(key)] = kwargs[key]
+            im_json[CCCImage[key]] = kwargs[key]
 
         except (KeyError, TypeError):
 
