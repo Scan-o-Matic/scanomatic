@@ -127,7 +127,7 @@ class Paths(SingeltonOneInit):
         self.ccc_image_plate_transformed_slice_pattern = \
             os.path.join(self.ccc_folder, "{0}.{1}.plate_{2}.transformed.npy")
         self.ccc_image_gs_slice_pattern = os.path.join(self.ccc_folder, "{0}.{1}.gs.npy")
-
+        self.ccc_image_plate_grid_pattern = os.path.join(self.ccc_folder, "{0}.{1}.plate{2}.grid.npy")
         self.analysis_run_log = 'analysis.log'
         self.analysis_model_file = 'analysis.model'
 

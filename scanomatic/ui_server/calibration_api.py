@@ -7,6 +7,8 @@ import zipfile
 import time
 import os
 
+from scanomatic.image_analysis import grid
+from scanomatic.image_analysis.grid_array import GridCellSizes
 from scanomatic.io.paths import Paths
 from scanomatic.data_processing import calibration
 from scanomatic.io.fixtures import Fixtures
@@ -245,6 +247,70 @@ def add_routes(app):
                            reason="Probably bad access token or not having sliced image and analysed grayscale first")
 
         return jsonify(success=True, is_endpoint=True)
+
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<plate>/grid/set", methods=['POST'])
+    @decorate_api_access_restriction
+    def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        if image_data is None:
+            return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
+
+        im = calibration.get_plate_slice(ccc_identifier, image_identifier, plate, gs_transformed=False)
+        if im is None:
+            return jsonify(success=False, is_endpoint=True, reason="No such image slice exists, has it been sliced?")
+
+        pinning_matrix = data_object.values.get("pinning_format")
+        validate_parameters = False
+        expected_spacings = GridCellSizes.get(pinning_matrix)
+        expected_center = tuple([s / 2.0 for s in im.shape])
+
+        draft_grid, _, _, _, grid_cell_size, adjusted_values = grid.get_grid(
+            im,
+            expected_spacing=expected_spacings,
+            expected_center=expected_center,
+            validate_parameters=validate_parameters,
+            grid_shape=pinning_matrix,
+            grid_correction=None)
+
+        dx, dy = grid_cell_size
+
+        final_grid = grid.get_validated_grid(
+            im, draft_grid, dy, dx, adjusted_values)
+
+        grid_cell_corners = np.zeros((2, 2, final_grid.shape[1], final_grid.shape[2]))
+
+        # For all sets lower values boundaries
+        grid_cell_corners[0, 0, :, :] = final_grid[0] - grid_cell_size[0] / 2.0
+        grid_cell_corners[1, 0, :, :] = final_grid[1] - grid_cell_size[1] / 2.0
+
+        # For both dimensions sets higher value boundaries
+        grid_cell_corners[0, 1, :, :] = final_grid[0] + grid_cell_size[0] / 2.0
+        grid_cell_corners[1, 1, :, :] = final_grid[1] + grid_cell_size[1] / 2.0
+
+        grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
+        np.save(grid_path, final_grid)
+
+        success = calibration.set_plate_grid_info(
+            ccc_identifier, image_identifier, plate,
+            grid_shape=pinning_matrix,
+            grid_cell_size=grid_cell_size,
+            access_token=data_object.get("access_token"))
+
+        if not success:
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Probably bad access token, or trying to re-grid image after has been used")
+
+        return jsonify(succes=True, is_endpoint=True,
+                       grid=final_grid.tolist(),
+                       dy=dy,
+                       dx=dx,
+                       xy1=grid_cell_corners[:, 0, ...].tolist(),
+                       xy2=grid_cell_corners[:, 1, ...].tolist())
 
     """
     DEPRECATION WARNING BELOW

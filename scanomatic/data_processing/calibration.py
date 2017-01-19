@@ -429,6 +429,26 @@ def set_image_info(identifier, image_identifier, **kwargs):
     return True
 
 
+@_validate_ccc_edit_request
+def set_plate_grid_info(identifier, image_identifier, plate, grid_shape=None, grid_cell_size=None, **kwargs):
+
+    ccc = __CCC[identifier]
+    im_json = get_image_json_from_ccc(identifier, image_identifier)
+    if plate in im_json[CCCImage.plates]:
+        plate_json = im_json[CCCImage.plates][plate]
+        if plate_json[CCCPlate.compressed_ccc_data]:
+            return False
+    else:
+        plate_json = {CCCPlate.grid_cell_size: None, CCCPlate.grid_shape: None, CCCPlate.compressed_ccc_data: []}
+        im_json[CCCImage.plates][plate] = plate_json
+
+    plate_json[CCCPlate.grid_cell_size] = grid_cell_size
+    plate_json[CCCPlate.grid_shape] = grid_shape
+
+    _save_ccc_to_disk(ccc)
+    return True
+
+
 def get_image_json_from_ccc(identifier, image_identifier):
 
     if identifier in __CCC:
