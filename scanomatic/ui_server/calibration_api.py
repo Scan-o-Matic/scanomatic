@@ -322,6 +322,39 @@ def add_routes(app):
                        xy1=xy1,
                        xy2=xy2)
 
+    @app.route(
+        "/api/data/calibratoin/<ccc_identifier>/image/<image_identifier>/plate/<plate>/detect/colony/<x>/<y>",
+        methods=["POST"])
+    @decorate_api_access_restriction
+    def detect_colony(ccc_identifier, image_identifier, plate, x, y):
+
+        im = calibration.get_plate_slice(ccc_identifier, image_identifier, plate, True)
+
+        if im is None:
+            return jsonify(success=False, is_endpoint=True, reason="Image plate slice hasn't been prepared probably")
+
+        grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
+        try:
+            grid = np.load(grid_path)
+        except IOError:
+            return jsonify(success=False, is_endpoint=True, reason="Gridding is missing")
+
+        image_json = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+
+        if not image_json or plate not in image_json[calibration.CCCImage.plates]:
+
+            return jsonify(success=False, is_endpoint=True, reason="Image id not known or plate not know")
+
+        plate_json = image_json[calibration.CCCImage.plates][plate]
+        h, w = plate_json[calibration.CCCPlate.grid_cell_size]
+
+        px_y, px_x = grid[y, x]
+
+        colony_im = im[
+            int(round(px_y - h/2)): int(round(px_y + h/2) + 1),
+            int(round(px_x - w / 2)): int(round(px_x + w / 2) + 1)]
+
+        return jsonify(image=colony_im.tolist())
     """
     DEPRECATION WARNING BELOW
     """
