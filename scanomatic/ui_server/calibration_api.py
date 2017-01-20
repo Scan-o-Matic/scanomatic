@@ -7,6 +7,7 @@ import zipfile
 import time
 import os
 from itertools import product
+from types import StringTypes
 
 from scanomatic.image_analysis.grid_array import GridArray
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
@@ -147,6 +148,15 @@ def add_routes(app):
                 continue
             val = data_object.get(data_type.name, None)
             if val:
+                if data_type is calibration.CCCImage.marker_x or data_type is calibration.CCCImage.marker_y and \
+                        isinstance(val, StringTypes):
+
+                    try:
+                        val = [float(v) for v in val.split(",")]
+                    except ValueError:
+                        app.logger.warning("The parameter {0} value '{1}' not understood".format(data_type, val))
+                        continue
+
                 data_update[data_type.name] = val
 
                 if data_type is calibration.CCCImage.fixture and \
