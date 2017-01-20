@@ -9,16 +9,18 @@ import os
 from itertools import product
 from types import StringTypes
 
-from scanomatic.image_analysis.grid_array import GridArray
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.io.paths import Paths
-from scanomatic.data_processing import calibration
-from scanomatic.io.fixtures import Fixtures
+from scanomatic.models.analysis_model import COMPARTMENTS, VALUES
+from scanomatic.image_analysis.grid_cell import GridCell
+from scanomatic.image_analysis.grid_array import GridArray
+from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.image_analysis.image_grayscale import get_grayscale_image_analysis
+from scanomatic.io.paths import Paths
+from scanomatic.io.fixtures import Fixtures
+from scanomatic.data_processing import calibration
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
     get_data_file_path
-from scanomatic.image_analysis.grayscale import getGrayscale
 from .general import decorate_api_access_restriction, serve_numpy_as_image, get_grayscale_is_valid
 
 _VALID_CHARACTERS = letters + "-._1234567890"
@@ -354,7 +356,22 @@ def add_routes(app):
             int(round(px_y - h/2)): int(round(px_y + h/2) + 1),
             int(round(px_x - w / 2)): int(round(px_x + w / 2) + 1)]
 
-        return jsonify(image=colony_im.tolist())
+        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+
+        gc = GridCell(identifier, None, save_extra_data=False)
+        gc.source = colony_im.astype(np.float64)
+        gc.attach_analysis(
+            blob=True, background=True, cell=True,
+            run_detect=False)
+
+        gc.detect(remember_filter=False)
+
+        return jsonify(
+            success=True,
+            blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
+            background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist(),
+            image=colony_im.tolist())
+
     """
     DEPRECATION WARNING BELOW
     """
