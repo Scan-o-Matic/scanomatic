@@ -689,21 +689,40 @@ def ipv_residue(scaling_params, ipv, gt):
 #
 
 
-def get_normalized_data(data, offsets=None):
+def norm_by_log2(plate, surface, **kwargs):
+    return np.log2(plate) - np.log2(surface)
+
+
+def norm_by_diff(plate, surface, **kwargs):
+    return plate - surface
+
+
+def norm_by_log2_std_scaled(plate, surface, std, **kwargs):
+    return (np.log2(plate) - np.log2(surface)) / std
+
+
+def get_normalized_data(data, offsets=None, method=norm_by_log2):
 
     if data is None:
         return None
 
     surface = get_control_position_filtered_arrays(data, offsets=offsets)
+
     pre_surface = get_downsampled_plates(surface, offsets)
     apply_outlier_filter(pre_surface, measure=None)
+
+    std = [None] * len(data)
+
+    if method == norm_by_log2_std_scaled:
+        std = [plate[np.isfinite(plate)].std() if plate is not None else None for plate in pre_surface]
+
     try:
         surface = get_normalisation_surface(surface, offsets=offsets)
     except ValueError:
         print offsets
         print data
         raise
-    return normalisation(data, surface, log=True)
+    return normalisation(data, surface, method=method, std=std)
 
 
 def get_reference_positions(data, offsets, outlier_filter=True):
@@ -715,19 +734,18 @@ def get_reference_positions(data, offsets, outlier_filter=True):
     return pre_surface
 
 
-def normalisation(data, norm_surface, log=False):
+def normalisation(data, norm_surface, method=norm_by_log2, std=(None,)):
 
     normed_data = []
     if isinstance(data, Data_Bridge):
         data = data.get_as_array()
 
-    for id_plate, (plate, surf) in enumerate(zip(data, norm_surface)):
+    for id_plate, (plate, surf, plate_std) in enumerate(zip(data, norm_surface, std)):
 
         if plate is None or surf is None:
             normed_data.append(None)
-        elif log:
-            normed_data.append(np.log2(plate) - np.log2(surf))
+
         else:
-            normed_data.append(plate - surf)
+            normed_data.append(method(plate, surf, std=plate_std))
 
     return np.array(normed_data)

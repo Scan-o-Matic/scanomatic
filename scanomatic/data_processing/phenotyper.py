@@ -9,7 +9,7 @@ import cPickle as pickle
 import numpy as np
 from enum import Enum
 from scipy.ndimage import median_filter
-from scipy.stats import norm, pearsonr
+from scipy.stats import norm
 from scipy.signal import convolve
 from scanomatic.io.pickler import unpickle, unpickle_with_unpickler
 
@@ -33,7 +33,8 @@ from scanomatic.data_processing.phenotypes import PhenotypeDataType, infer_pheno
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.data_processing.strain_selector import StrainSelector
-from scanomatic.data_processing.norm import Offsets, get_normalized_data, get_reference_positions
+from scanomatic.data_processing.norm import Offsets, get_normalized_data, get_reference_positions, norm_by_log2, \
+    norm_by_log2_std_scaled
 
 
 def time_based_gaussian_weighted_mean(data, time, sigma=1):
@@ -56,6 +57,24 @@ class EdgeCondition(Enum):
     """:type : EdgeCondition"""
     Valid = 3
     """:type : EdgeCondition"""
+
+
+class NormalizationMethod(Enum):
+    """Methods for calculating normalized values
+
+    The basic feature for all is calculating a normalization surface.
+
+    In `Log2Difference` the norm surface is subtraced from
+    the experimental values.
+
+    In `Log2DiffReferenceStdScaled` the outcome of the first is
+    divided by the observed standard deviation of the controls.
+
+    """
+    Log2Difference = 0
+    """:type: NormalizationMethod"""
+    Log2DiffReferenceStdScaled = 1
+    """:type: NormalizationMethod"""
 
 
 def edge_condition(arr, mode=EdgeCondition.Reflect, kernel_size=3):
@@ -1394,7 +1413,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         except IndexError:
             return 0
 
-    def normalize_phenotypes(self):
+    def normalize_phenotypes(self, method=NormalizationMethod.Log2Difference):
         """Normalize phenotypes.
 
         See Also:
@@ -1406,6 +1425,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         """
         if self._normalized_phenotypes is None:
             self._normalized_phenotypes = np.array([{} for _ in self.enumerate_plates], dtype=np.object)
+
+        norm_method = norm_by_log2
+        if method == NormalizationMethod.Log2DiffReferenceStdScaled:
+            norm_method = norm_by_log2_std_scaled
 
         for phenotype in self._normalizable_phenotypes:
 
@@ -1425,7 +1448,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             data = [None if plate is None else plate.filled() for plate in data]
 
-            for id_plate, plate in enumerate(get_normalized_data(data, self._reference_surface_positions)):
+            for id_plate, plate in enumerate(get_normalized_data(
+                    data, self._reference_surface_positions, method=norm_method)):
+
                 self._normalized_phenotypes[id_plate][phenotype] = plate
 
     @property
