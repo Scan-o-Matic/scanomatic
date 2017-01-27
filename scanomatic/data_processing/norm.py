@@ -7,6 +7,7 @@ import numpy as np
 from types import StringTypes
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_filter, median_filter
+from scipy.stats import pearsonr
 
 #
 #   INTERNAL DEPENDENCIES
@@ -689,7 +690,7 @@ def ipv_residue(scaling_params, ipv, gt):
 #
 
 
-def norm_by_log2(plate, surface, **kwargs):
+def norm_by_log2_diff(plate, surface, **kwargs):
     return np.log2(plate) - np.log2(surface)
 
 
@@ -697,11 +698,18 @@ def norm_by_diff(plate, surface, **kwargs):
     return plate - surface
 
 
-def norm_by_log2_std_scaled(plate, surface, std, **kwargs):
-    return (np.log2(plate) - np.log2(surface)) / std
+def norm_by_signal_to_noise(plate, surface, std, **kwargs):
+    return (plate - surface) / std
 
 
-def get_normalized_data(data, offsets=None, method=norm_by_log2):
+def norm_by_log2_diff_corr_scaled(plate, surface, **kwargs):
+    plate = np.log2(plate)
+    surface = np.log2(surface)
+    filt = np.isfinite(plate) & np.isfinite(surface)
+    return (plate - surface) * (pearsonr(plate[filt], surface[filt])[0] + 1) * 0.5
+
+
+def get_normalized_data(data, offsets=None, method=norm_by_log2_diff):
 
     if data is None:
         return None
@@ -713,7 +721,7 @@ def get_normalized_data(data, offsets=None, method=norm_by_log2):
 
     std = [None] * len(data)
 
-    if method == norm_by_log2_std_scaled:
+    if method == norm_by_signal_to_noise:
         std = [plate[np.isfinite(plate)].std() if plate is not None else None for plate in pre_surface]
 
     try:
@@ -722,6 +730,7 @@ def get_normalized_data(data, offsets=None, method=norm_by_log2):
         print offsets
         print data
         raise
+
     return normalisation(data, surface, method=method, std=std)
 
 
@@ -734,7 +743,7 @@ def get_reference_positions(data, offsets, outlier_filter=True):
     return pre_surface
 
 
-def normalisation(data, norm_surface, method=norm_by_log2, std=(None,)):
+def normalisation(data, norm_surface, method=norm_by_log2_diff, std=(None,)):
 
     normed_data = []
     if isinstance(data, Data_Bridge):

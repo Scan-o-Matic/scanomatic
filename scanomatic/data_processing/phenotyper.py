@@ -33,8 +33,8 @@ from scanomatic.data_processing.phenotypes import PhenotypeDataType, infer_pheno
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.data_processing.strain_selector import StrainSelector
-from scanomatic.data_processing.norm import Offsets, get_normalized_data, get_reference_positions, norm_by_log2, \
-    norm_by_log2_std_scaled
+from scanomatic.data_processing.norm import Offsets, get_normalized_data, get_reference_positions, norm_by_log2_diff, \
+    norm_by_signal_to_noise, norm_by_log2_diff_corr_scaled, norm_by_diff
 
 
 def time_based_gaussian_weighted_mean(data, time, sigma=1):
@@ -64,16 +64,29 @@ class NormalizationMethod(Enum):
 
     The basic feature for all is calculating a normalization surface.
 
-    In `Log2Difference` the norm surface is subtraced from
+    In `Log2Difference` the norm surface is subtracted from
     the experimental values.
 
-    In `Log2DiffReferenceStdScaled` the outcome of the first is
-    divided by the observed standard deviation of the controls.
+    In `SignalToNoise` the outcome of the difference in absolute
+    value between experiment and normalization surface divided by
+    the standard deviation of the reference values.
 
+    In `Log2DifferenceCorrelationScaled`, the value of the log2
+    difference is scaled with the pearson correlation between the
+    observations and the normalization surface in such a way that
+    negative correlations gives least trust, no correlation intermediate
+    and positive most trust.
+
+    In `Difference`, it is just the abolute difference between
+    experiment and normalization surface.
     """
     Log2Difference = 0
     """:type: NormalizationMethod"""
-    Log2DiffReferenceStdScaled = 1
+    SignalToNoise = 1
+    """:type: NormalizationMethod"""
+    Log2DifferenceCorrelationScaled = 2
+    """:type: NormalizationMethod"""
+    Difference = 3
     """:type: NormalizationMethod"""
 
 
@@ -1426,9 +1439,16 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if self._normalized_phenotypes is None:
             self._normalized_phenotypes = np.array([{} for _ in self.enumerate_plates], dtype=np.object)
 
-        norm_method = norm_by_log2
-        if method == NormalizationMethod.Log2DiffReferenceStdScaled:
-            norm_method = norm_by_log2_std_scaled
+        norm_method = norm_by_log2_diff
+        if method == NormalizationMethod.SignalToNoise:
+            norm_method = norm_by_signal_to_noise
+            self._logger.warning("Using {0} to normalize hasn't been fully vetted".format(method))
+        elif method == NormalizationMethod.Log2DifferenceCorrelationScaled:
+            norm_method = norm_by_log2_diff_corr_scaled
+            self._logger.warning("Using {0} to normalize hasn't been fully vetted".format(method))
+        elif method == NormalizationMethod.Difference:
+            norm_method = norm_by_diff
+            self._logger.warning("Using {0} to normalize hasn't been fully vetted".format(method))
 
         for phenotype in self._normalizable_phenotypes:
 
