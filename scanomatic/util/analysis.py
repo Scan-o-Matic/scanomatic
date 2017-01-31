@@ -42,11 +42,11 @@ def produce_grid_images(path=".", image=None, mark_position=None):
                 break
 
     try:
-        image = load_image_to_numpy(image_path)
+        image = load_image_to_numpy(image_path, dtype=np.uint8)
     except IOError:
 
         try:
-            image = load_image_to_numpy(os.path.join(project_path, os.path.basename(image_path)))
+            image = load_image_to_numpy(os.path.join(project_path, os.path.basename(image_path)), dtype=np.uint8)
         except IOError:
             raise ValueError("Image doesn't exist, can't show gridding")
 
