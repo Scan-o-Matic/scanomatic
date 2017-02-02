@@ -11,6 +11,8 @@ from enum import Enum
 from scipy.ndimage import median_filter
 from scipy.stats import norm
 from scipy.signal import convolve
+import zipfile
+from StringIO import StringIO
 from scanomatic.io.pickler import unpickle, unpickle_with_unpickler
 
 #
@@ -2322,6 +2324,120 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                  self._no_growth_pop_doublings_threshold])
 
         self._logger.info("State saved to '{0}'".format(dir_path))
+
+    def save_state_to_zip(self, target=None):
+
+        def zipit(save_functions, data, zip_paths):
+
+            zip_buffer = StringIO()
+            zf = zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False)
+
+            for save_func, d, zpath in zip(save_functions, data, zip_paths):
+                self._logger.info("Zipping {0}".format(zpath))
+
+                file_buffer = StringIO()
+                save_func(file_buffer, d)
+                file_buffer.flush()
+                file_buffer.seek(0)
+
+                zf.writestr(zpath, file_buffer.read())
+
+            for zfile in zf.filelist:
+                zfile.create_system = 0
+
+            zip_buffer.flush()
+            zf.close()
+            zip_buffer.seek(0)
+
+            return zip_buffer
+
+        self._logger.info("Note that this does not change the saved state in the analysis folder")
+
+        try:
+            dir_path = os.sep.join(self._base_name.split(os.sep)[-2:])
+        except (TypeError, ValueError):
+            dir_path = ""
+        if not dir_path or not dir_path.strip() or dir_path == ".":
+            dir_path = "analysis"
+
+        save_functions = []
+        data = []
+        zip_paths = []
+
+        # Phenotypes
+        zip_paths.append(os.path.join(dir_path, self._paths.phenotypes_raw_npy))
+        save_functions.append(np.save)
+        data.append(self._phenotypes)
+
+        # Vector phenotypes
+        zip_paths.append(os.path.join(dir_path, self._paths.vector_phenotypes_raw))
+        save_functions.append(np.save)
+        data.append(self._vector_phenotypes)
+
+        # Meta phenotypes
+        zip_paths.append(os.path.join(dir_path, self._paths.vector_meta_phenotypes_raw))
+        save_functions.append(np.save)
+        data.append(self._vector_meta_phenotypes)
+
+        # Normalized phenotypes
+        zip_paths.append(os.path.join(dir_path, self._paths.normalized_phenotypes))
+        save_functions.append(np.save)
+        data.append(self._normalized_phenotypes)
+
+        # Raw growth data
+        zip_paths.append(os.path.join(dir_path, self._paths.phenotypes_input_data))
+        save_functions.append(np.save)
+        data.append(self._raw_growth_data)
+
+        # Smooth growth data
+        zip_paths.append(os.path.join(dir_path, self._paths.phenotypes_input_smooth))
+        save_functions.append(np.save)
+        data.append(self._smooth_growth_data)
+
+        # Phenotypes filter (qc-markings)
+        zip_paths.append(os.path.join(dir_path, self._paths.phenotypes_filter))
+        save_functions.append(np.save)
+        data.append(self._phenotype_filter)
+
+        # Reference surface positions
+        zip_paths.append(os.path.join(dir_path, self._paths.phenotypes_reference_offsets))
+        save_functions.append(np.save)
+        data.append(self._reference_surface_positions)
+
+        # Undo filter (qc undo)
+        zip_paths.append(os.path.join(dir_path, self._paths.phenotypes_filter_undo))
+        save_functions.append(lambda x, y: pickle.dump(y, x))
+        data.append(self._phenotype_filter_undo)
+
+        # Time stamps
+        zip_paths.append(os.path.join(dir_path, self._paths.phenotype_times))
+        save_functions.append(np.save)
+        data.append(self._times_data)
+
+        # Meta-data (strain info)
+        zip_paths.append(os.path.join(dir_path, self._paths.phenotypes_meta_data))
+        save_functions.append(lambda x, y: pickle.dump(y, x))
+        data.append(self._meta_data)
+
+        # Internal settings
+        zip_paths.append(os.path.join(dir_path, self._paths.phenotypes_extraction_params))
+        save_functions.append(np.save)
+        data.append(
+                [self._median_kernel_size,
+                 self._gaussian_filter_sigma,
+                 self._linear_regression_size,
+                 None if self._phenotypes_inclusion is None else self._phenotypes_inclusion.name,
+                 self._no_growth_monotonicity_threshold,
+                 self._no_growth_pop_doublings_threshold])
+
+        zip_stream = zipit(save_functions, data, zip_paths)
+        if target:
+            with open(target, 'wb') as fh:
+                fh.write(zip_stream.read())
+            zip_stream.close()
+            self._logger.info("Zip file saved to {0}".format(target))
+        else:
+            return zip_stream
 
     def for_each_call(self, extra_keyword_args=tuple(), start_plate=None, start_pos=None, funcs=tuple()):
         """For each log2_curve, the supplied functions are called.
