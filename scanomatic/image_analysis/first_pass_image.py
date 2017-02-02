@@ -139,7 +139,7 @@ class FixtureImage(object):
         elif image_path is not None:
 
             try:
-                self.im = load_image_to_numpy(image_path, dtype=np.uint8)
+                self.im = load_image_to_numpy(image_path)
             except IOError:
                 self.im = None
 
