@@ -232,6 +232,9 @@ def git_version(
 
 def parse_version(version=get_version()):
 
+    if version is None:
+        return 0, 0
+
     return tuple(int("".join(c for c in v if c in "0123456789")) for v in version.split(".")
                  if any((c in "0123456789" and c) for c in v))
 
