@@ -96,7 +96,10 @@ def get_hash(paths, pattern=None, hasher=None, buffsize=65536):
 
 def update_init_file(do_version=True, do_branch=True):
 
-    data = source.get_source_information(True)
+    cur_dir = os.path.dirname(sys.argv[1])
+    if not cur_dir:
+        cur_dir = os.path.curdir
+    data = source.get_source_information(True, force_location=cur_dir)
 
     if do_version:
         try:
@@ -137,9 +140,14 @@ def _clone_all_files_in(path):
 def install_data_files(target_base=None, source_base=None, install_list=None, silent=False):
 
     p = re.compile(r'ver=_-_VERSIONTAG_-_')
+
+    cur_dir = os.path.dirname(sys.argv[1])
+    if not cur_dir:
+        cur_dir = os.path.curdir
+
     buff_size = 65536
     replacement = r'ver={0}'.format(".".join(
-        (str(v) for v in source.parse_version(source.get_source_information(True)['version']))))
+        (str(v) for v in source.parse_version(source.get_source_information(True, force_location=cur_dir)['version']))))
 
     _logger.info("Data gets installed as {0}".format(replacement))
 
