@@ -203,7 +203,7 @@ def add_routes(app):
         success = calibration.save_image_slices(
             ccc_identifier, image_identifier,
             grayscale_slice=data["grayscale"],
-            plates=data['plates'],
+            plate_slices=data['plates'],
             access_token=data_object.get("access_token"))
 
         if not success:
