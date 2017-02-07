@@ -235,15 +235,18 @@ def add_routes(app):
     def get_ccc_image_grayscale_analysis(ccc_identifier, image_identifier):
 
         gs_image = calibration.get_grayscale_slice(ccc_identifier, image_identifier)
-        gs_name = gs_image[calibration.CCCImage.grayscale_name]
+        image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        try:
+            gs_name = image_data[calibration.CCCImage.grayscale_name]
+        except TypeError:
+            return jsonify(success=False, is_endpoint=True, reason='Unknown image or CCC')
 
         _, values = get_grayscale_image_analysis(gs_image, gs_name, debug=False)
         grayscale_object = getGrayscale(gs_name)
         valid = get_grayscale_is_valid(values, grayscale_object)
         if not valid:
-            return jsonify(success=True, is_endpoint=True, reason='Grayscale results are not valid')
+            return jsonify(success=False, is_endpoint=True, reason='Grayscale results are not valid')
 
-        calibration.CCCImage.grayscale_target_values
         calibration.set_image_info(ccc_identifier, image_identifier,
                                    grayscale_source_values=values,
                                    grayscale_target_values=grayscale_object['targets'])
