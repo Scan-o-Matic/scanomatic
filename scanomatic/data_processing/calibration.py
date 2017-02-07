@@ -515,9 +515,9 @@ def save_image_slices(identifier, image_identifier, grayscale_slice=None, plate_
                 _get_im_slice(im, grayscale_slice))
 
     if plate_slices:
-        for id_plate, plate_dict in plate_slices.iteritems():
-            np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, id_plate),
-                    _get_im_slice(im, plate_dict))
+        for plate_model in plate_slices:
+            np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, plate_model.index),
+                    _get_im_slice(im, plate_model))
 
 
 def _get_im_slice(im, model):
