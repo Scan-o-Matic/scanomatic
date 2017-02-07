@@ -46,9 +46,6 @@
 
         $(document)
             .ready(function () {
-                //isDebug = document.location.hostname == "localhost";
-                //isDebug = false;
-
                 var branchSymbol = "¤";
                 var qIndexQueue = [];
                 var qIndexCurrent = 0;
@@ -211,6 +208,10 @@
                     dispatch.setExp("id" + row + "_" + col);
                 }
 
+                function setExperimentByCoord(row, col) {
+                    dispatch.setExp("id" + row + "_" + col);
+                }
+
                 function isQualityControlOn() {
                     var on = $("#divMarkStates").is(':visible');
                     return on;
@@ -279,6 +280,7 @@
                 function projectSlelectionStage(level) {
                     switch (level) {
                         case "project":
+                            $("#displayArea").hide();
                             $("#dialogGrid").hide();
                             $(".loPhenotypeSelection").hide();
                             $(".loPlateSelection").hide();
@@ -291,6 +293,7 @@
                             $(".loPhenotypeSelection").show();
                             break;
                         case "Plates":
+                            $("#displayArea").show();
                             $(".loPlateSelection").show();
                             d3.select("#selPhenotypePlates").remove();
                             break;
@@ -564,9 +567,12 @@
                         $("#divPhenotypePlatesSelecton")
                             .append("<a type='button' class='btn btn-default btn-xs plateSelectionButton' id='btnShowGrid' href='#' role='button'>Show Grid</a>");
                         $("#btnShowGrid").click(showGrid);
-                        //load plate 0 by default
-                        $("#btnPlate0").focus();
-                        document.getElementById("btnPlate0").click();
+                        //check for plate index or load plate 0 by default
+                        var plateIdx = $("#currentSelection").data("plateIdx");
+                        var plateId = "btnPlate0";
+                        if (plateIdx) plateId = "btnPlate" + plateIdx;
+                        $("#"+plateId).focus();
+                        document.getElementById(plateId).click();
                     });
                 };
 
@@ -607,6 +613,10 @@
                         var phenotypeName = data.plate_phenotype;
                         qIndexQueue = data.plate_qIdxSort;
                         var plate = DrawPlate("#plate", plateData, growthMetaData, plateMetaData, phenotypeName, dispatch);
+                        var row = $("#currentSelection").data("row");
+                        var col = $("#currentSelection").data("col");
+                        if (row && col)
+                            setExperimentByCoord(row, col);
                         stopWait();
                         plate.on("SelectedExperiment", function (datah) {
                                 console.log("dispatched:" + datah.coord);
@@ -727,7 +737,7 @@
                 </div>
             </div>
         </div>
-        <div class="section-frame">
+        <div class="section-frame" id="displayArea">
             <div class="row">
                 <div class="col-md-7">
                     <div class="row">
