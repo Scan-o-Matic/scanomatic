@@ -494,8 +494,8 @@ def get_local_fixture_for_image(identifier, image_identifier):
 
     fixture = FixtureImage(fixture_settings)
     current_settings = fixture['current']
-    current_settings.model.orientation_marks_x = im_json[CCCImage.marker_x]
-    current_settings.model.orientation_marks_y = im_json[CCCImage.marker_y]
+    current_settings.model.orientation_marks_x = np.array(im_json[CCCImage.marker_x])
+    current_settings.model.orientation_marks_y = np.array(im_json[CCCImage.marker_y])
     issues = {}
     fixture.set_current_areas(issues)
 
