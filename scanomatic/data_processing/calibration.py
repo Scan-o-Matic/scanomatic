@@ -519,6 +519,8 @@ def save_image_slices(identifier, image_identifier, grayscale_slice=None, plate_
             np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, plate_model.index),
                     _get_im_slice(im, plate_model))
 
+    return True
+
 
 def _get_im_slice(im, model):
 
