@@ -234,6 +234,10 @@ def add_routes(app):
     @decorate_api_access_restriction
     def get_ccc_image_grayscale_analysis(ccc_identifier, image_identifier):
 
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
         gs_image = calibration.get_grayscale_slice(ccc_identifier, image_identifier)
         image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
         try:
@@ -247,11 +251,21 @@ def add_routes(app):
         if not valid:
             return jsonify(success=False, is_endpoint=True, reason='Grayscale results are not valid')
 
-        calibration.set_image_info(ccc_identifier, image_identifier,
-                                   grayscale_source_values=values,
-                                   grayscale_target_values=grayscale_object['targets'])
+        success = calibration.set_image_info(
+            ccc_identifier, image_identifier,
+            grayscale_source_values=values,
+            grayscale_target_values=grayscale_object['targets'],
+            access_token=data_object.get("access_token"))
 
-        return jsonify(success=True, is_endpoint=True, source_values=values, target_values=grayscale_object['targets'])
+        if success:
+
+            return jsonify(success=True, is_endpoint=True, source_values=values,
+                           target_values=grayscale_object['targets'])
+
+        else:
+
+            return jsonify(success=False, is_endpoint=True,
+                           reason='Refused to set image grayscale info, probably bad access token')
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<plate>/transform", methods=['POST'])
     @decorate_api_access_restriction
