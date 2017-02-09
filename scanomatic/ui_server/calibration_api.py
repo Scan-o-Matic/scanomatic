@@ -271,7 +271,12 @@ def add_routes(app):
     @decorate_api_access_restriction
     def get_ccc_image_plate_transform(ccc_identifier, image_identifier, plate):
 
-        success = calibration.transform_plate_slice(ccc_identifier, image_identifier, plate)
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        success = calibration.transform_plate_slice(ccc_identifier, image_identifier, plate,
+                                                    access_token=data_object.get("access_token"))
         if not success:
             return jsonify(success=False, is_endpoint=True,
                            reason="Probably bad access token or not having sliced image and analysed grayscale first")
