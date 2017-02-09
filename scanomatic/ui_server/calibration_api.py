@@ -347,7 +347,7 @@ def add_routes(app):
                        xy2=xy2)
 
     @app.route(
-        "/api/data/calibratoin/<ccc_identifier>/image/<image_identifier>/plate/<plate>/detect/colony/<x>/<y>",
+        "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/plate/<plate>/detect/colony/<x>/<y>",
         methods=["POST"])
     @decorate_api_access_restriction
     def detect_colony(ccc_identifier, image_identifier, plate, x, y):
