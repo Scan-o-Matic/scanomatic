@@ -299,8 +299,8 @@ def add_routes(app):
         if not data_object:
             data_object = request.values
 
-        pinning_format = data_object.values.get("pinning_format")
-        correction = request.values.getlist('gridding_correction')
+        pinning_format = data_object.get("pinning_format")
+        correction = data_object.getlist('gridding_correction')
         if not correction:
             correction = None
 
