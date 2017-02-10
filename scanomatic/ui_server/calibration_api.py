@@ -306,7 +306,7 @@ def add_routes(app):
 
         analysis_model = AnalysisModelFactory.create()
         analysis_model.output_directory = ""
-        ga = GridArray((None, None), pinning_format, analysis_model)
+        ga = GridArray((None, plate - 1), pinning_format, analysis_model)
 
         if not ga.detect_grid(im, grid_correction=correction):
             return jsonify(
