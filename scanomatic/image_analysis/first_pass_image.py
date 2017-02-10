@@ -417,6 +417,12 @@ class FixtureImage(object):
         :type offset: tuple(int)
         """
 
+        if area is None:
+            self._logger.error("Area is None, can't set if area isn't specified")
+
+        if offset is None:
+            self._logger.error("Offset is None, this doesn't make any sense")
+
         if rotation and np.abs(rotation) > 0.01:
             self._logger.warning("Not supporting rotations yet (got {0})".format(rotation))
             # area.x1, area.y1 = _get_rotated_vector(area.x1, area.y1, rotation)
