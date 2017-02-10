@@ -135,6 +135,8 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
 
 def get_grayscale(fixture, grayscale_area_model, debug=False):
     im = fixture.get_grayscale_im_section(grayscale_area_model)
+    if im is None:
+        return None
     return get_grayscale_image_analysis(im, grayscale_area_model.name, debug=debug)
 
 
