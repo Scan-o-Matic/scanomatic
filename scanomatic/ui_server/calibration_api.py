@@ -299,7 +299,14 @@ def add_routes(app):
         if not data_object:
             data_object = request.values
 
-        pinning_format = data_object.get("pinning_format")
+        pinning_format = data_object.getlist("pinning_format")
+        try:
+            pinning_format = tuple(int(v) for v in pinning_format)
+        except (ValueError, TypeError):
+            app.logger.error("Pinning-format not understood ({0}/{1})".format(
+                data_object.getlist("pinning_format"), data_object.get("pinning_format")))
+            return jsonify(success=False, is_endpoint=True, reason="Bad pinning format")
+
         correction = data_object.getlist('gridding_correction')
         if not correction:
             correction = None
