@@ -75,7 +75,7 @@ class FixtureImage(object):
 
         if key in ['current']:
             if self._current_fixture_settings is None:
-                self._current_fixture_settings = FixtureSettings(self.name, overwrite=True)
+                self._current_fixture_settings = FixtureSettings(self.name, overwrite=False)
             return self._current_fixture_settings
 
         elif key in ['fixture', 'reference']:
