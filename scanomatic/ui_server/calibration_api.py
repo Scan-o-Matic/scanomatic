@@ -303,12 +303,17 @@ def add_routes(app):
         try:
             pinning_format = tuple(int(v) for v in pinning_format.split(u","))
         except (ValueError, TypeError):
-            app.logger.error("Pinning-format not understood ({0}/{1})".format(
-                data_object.getlist("pinning_format"), data_object.get("pinning_format")))
+            app.logger.error("Pinning-format not understood ({0})".format(data_object.get("pinning_format")))
             return jsonify(success=False, is_endpoint=True, reason="Bad pinning format")
 
-        correction = data_object.getlist('gridding_correction')
-        if not correction:
+        correction = data_object.get('gridding_correction')
+        if correction:
+            try:
+                correction = tuple(int(v) for v in correction.split(u","))
+            except ValueError:
+                app.logger.error("Correction-format not understood ({0})".format(data_object.get("pinning_format")))
+                return jsonify(success=False, is_endpoint=True, reason="Bad grid correction")
+        else:
             correction = None
 
         analysis_model = AnalysisModelFactory.create()
