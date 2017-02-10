@@ -48,7 +48,7 @@ function set_project_directory(input) {
             }
 
             if (localFixture) {
-                set_fiture_status();
+                set_fixture_status();
             }
             InputEnabled($("#submit-button"), project_path_valid);
     });
@@ -119,7 +119,7 @@ function setOnAllImages(included) {
 
 function toggleLocalFixture(caller) {
     localFixture = $(caller).prop("checked");
-    set_fiture_status();
+    set_fixture_status();
     InputEnabled($(current_fixture_id), !localFixture);
 }
 
