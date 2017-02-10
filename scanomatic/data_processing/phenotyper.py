@@ -1892,7 +1892,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def _init_default_offsets(self):
 
-        if len(self._reference_surface_positions) != len(self._phenotypes):
+        if self._phenotypes is None or len(self._reference_surface_positions) != len(self._phenotypes):
             self.set_control_surface_offsets(Offsets.LowerRight)
 
     def _init_plate_filter(self, plate_index, phenotype, phenotype_data, growth_filter):
