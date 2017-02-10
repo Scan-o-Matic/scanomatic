@@ -1834,7 +1834,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         elif data_type == "phenotype_filter":
 
-            if all(True if plate is None else isinstance(plate, dict) for plate in data):
+            if isinstance(data, np.ndarray) and (data.size == 0 or data.size == 1 and not data.shape):
+                self._phenotype_filter = None
+            elif all(True if plate is None else isinstance(plate, dict) for plate in data):
                 self._phenotype_filter = data
             else:
                 self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
