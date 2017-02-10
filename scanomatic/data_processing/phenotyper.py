@@ -1807,21 +1807,30 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         elif data_type == 'vector_phenotypes':
 
-            self._vector_phenotypes = data
+            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+                self._vector_phenotypes = None
+            else:
+                self._vector_phenotypes = data
 
             self._init_remove_filter_and_undo_actions()
             self._init_default_offsets()
 
         elif data_type == 'vector_meta_phenotypes':
 
-            self._vector_meta_phenotypes = data
+            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+                self._vector_meta_phenotypes = None
+            else:
+                self._vector_meta_phenotypes = data
 
             self._init_remove_filter_and_undo_actions()
             self._init_default_offsets()
 
         elif data_type == 'smooth_growth_data':
 
-            self._smooth_growth_data = data
+            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+                self._smooth_growth_data = None
+            else:
+                self._smooth_growth_data = data
 
         elif data_type == "phenotype_filter_undo":
 

@@ -310,7 +310,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 project = bioscreen.load(path, time_scale=time_scale, preprocess=preprocess)
                 project.save_state(output, ask_if_overwrite=False)
 
-                model = FeaturesFactory.create(analysis_directory=output)
+                model = FeaturesFactory.create(analysis_directory=output, extraction_data="State")
 
                 success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
                     FeaturesFactory.to_dict(model))
