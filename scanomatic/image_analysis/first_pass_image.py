@@ -145,7 +145,7 @@ class FixtureImage(object):
                 self.im = None
 
             if self.im is None:
-                self._logger.error("Could not load image")
+                self._logger.error("Could not load image at '{0}'".format(image_path))
 
             else:
                 self._logger.info("Loaded image {0} with shape {1}".format(image_path, self.im.shape))
