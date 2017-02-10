@@ -2220,35 +2220,38 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             with open(plate_path, 'wb') as fh:
 
-                cw = csv.writer(fh, dialect=dialect)
+                try:
+                    # DATA
+                    plate = data_source[data_source.keys()[0]][plate_index]
+                except IndexError:
+                    self._logger.warning("Output empty file because there were no phenotypes")
+                else:
+                    # HEADER ROW
+                    meta_data_headers = self.meta_data_headers(plate_index)
 
-                # DATA
-                plate = data_source[data_source.keys()[0]][plate_index]
+                    cw = csv.writer(fh, dialect=dialect)
 
-                # HEADER ROW
-                meta_data_headers = self.meta_data_headers(plate_index)
+                    cw.writerow(
+                        tuple(self._make_csv_row(
+                            default_meta_data,
+                            meta_data_headers,
+                            data_source.keys())))
 
-                cw.writerow(
-                    tuple(self._make_csv_row(
-                        default_meta_data,
-                        meta_data_headers,
-                        data_source.keys())))
+                    filt = self._phenotype_filter[plate_index]
 
-                filt = self._phenotype_filter[plate_index]
+                    for idX, X in enumerate(plate):
 
-                for idX, X in enumerate(plate):
+                        for idY, Y in enumerate(X):
 
-                    for idY, Y in enumerate(X):
+                            cw.writerow(
+                                tuple(self._make_csv_row(
+                                    (plate_index, idX, idY),
+                                    no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
+                                    tuple(data_source[p][plate_index][idX, idY] if filt[p][idX, idY] == 0 else
+                                     Filter(filt[p][idX, idY]).name
+                                     for p in data_source))))
 
-                        cw.writerow(
-                            tuple(self._make_csv_row(
-                                (plate_index, idX, idY),
-                                no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
-                                tuple(data_source[p][plate_index][idX, idY] if filt[p][idX, idY] == 0 else
-                                 Filter(filt[p][idX, idY]).name
-                                 for p in data_source))))
-
-                self._logger.info("Saved {0}, plate {1} to {2}".format(save_data, plate_index + 1, plate_path))
+                    self._logger.info("Saved {0}, plate {1} to {2}".format(save_data, plate_index + 1, plate_path))
 
         return True
 
