@@ -267,7 +267,7 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=True,
                            reason='Refused to set image grayscale info, probably bad access token')
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<plate>/transform", methods=['POST'])
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/transform", methods=['POST'])
     @decorate_api_access_restriction
     def get_ccc_image_plate_transform(ccc_identifier, image_identifier, plate):
 
@@ -283,7 +283,7 @@ def add_routes(app):
 
         return jsonify(success=True, is_endpoint=True)
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<plate>/grid/set", methods=['POST'])
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/grid/set", methods=['POST'])
     @decorate_api_access_restriction
     def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
 
@@ -347,7 +347,7 @@ def add_routes(app):
                        xy2=xy2)
 
     @app.route(
-        "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/plate/<plate>/detect/colony/<x>/<y>",
+        "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/detect/colony/<int:x>/<int:y>",
         methods=["POST"])
     @decorate_api_access_restriction
     def detect_colony(ccc_identifier, image_identifier, plate, x, y):
