@@ -309,9 +309,12 @@ def detect_grayscale(im_trimmed, grayscale):
                 if right >= im_trimmed.shape[0]:
                     right = im_trimmed.shape[0] - 1
 
-                gray_scale.append(iqr_mean(
-                    im_trimmed[int(round(left)): int(round(right)),
-                               int(round(top)): int(round(bottom))]))
+                left = int(round(left))
+                right = int(round(right))
+                top = int(round(top))
+                bottom = int(round(bottom))
+
+                gray_scale.append(iqr_mean(im_trimmed[left: right, top: bottom]))
 
                 if DEBUG_DETECTION:
                     np.save(os.path.join(Paths().log, "gs_segment_{0}.npy".format(i)),
