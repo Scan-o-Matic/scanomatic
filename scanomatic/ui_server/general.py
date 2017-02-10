@@ -301,7 +301,7 @@ def get_fixture_image_by_name(name, ext="tiff"):
 
 def get_fixture_image(name, image_path):
 
-    fixture = FixtureImage()
+    fixture = FixtureImage(reference_overwrite_mode=True)
     fixture.name = name
     fixture.set_image(image_path=image_path)
     return fixture
@@ -366,7 +366,7 @@ def get_image_data_as_array(image_data, reshape=None):
 
 def get_fixture_image_from_data(name, image_data):
 
-    fixture = FixtureImage()
+    fixture = FixtureImage(reference_overwrite_mode=True)
     fixture.name = name
     fixture.set_image(image=get_image_data_as_array(image_data))
     return fixture

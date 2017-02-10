@@ -19,7 +19,7 @@ import ConfigParser
 
 class FixtureSettings(object):
 
-    def __init__(self, name, dir_path=None):
+    def __init__(self, name, dir_path=None, overwrite=False):
 
         self._logger = Logger("Fixture {0}".format(name))
 
@@ -31,11 +31,14 @@ class FixtureSettings(object):
         else:
             self._conf_path = Paths().get_fixture_path(name)
 
-        self.model = self._load_model(name)
+        self.model = self._load_model(name, overwrite)
         self.history = grid_history.GriddingHistory(self)
 
-    def _load_model(self, name):
+    def _load_model(self, name, overwrite=False):
         """:rtype : scanomatic.models.fixture_models.FixtureModel"""
+
+        if overwrite:
+            return FixtureFactory.create(path=self._conf_path, name=name)
 
         try:
             val = FixtureFactory.serializer.load_first(self._conf_path)

@@ -48,7 +48,7 @@ class FixtureImage(object):
     EXPECTED_IM_SIZE = (6000, 4800)
     EXPECTED_IM_DPI = 600
 
-    def __init__(self, fixture=None):
+    def __init__(self, fixture=None, reference_overwrite_mode=False):
 
         """
 
@@ -58,6 +58,7 @@ class FixtureImage(object):
 
         self._reference_fixture_settings = fixture
         self._current_fixture_settings = None
+        self._reference_overwrite_mode = reference_overwrite_mode
         """:type : scanomatic.io.fixtures.Fixture_Settings"""
         if fixture:
             self._history = GriddingHistory(fixture)
@@ -74,12 +75,12 @@ class FixtureImage(object):
 
         if key in ['current']:
             if self._current_fixture_settings is None:
-                self._current_fixture_settings = FixtureSettings(self.name)
+                self._current_fixture_settings = FixtureSettings(self.name, overwrite=True)
             return self._current_fixture_settings
 
         elif key in ['fixture', 'reference']:
             if self._reference_fixture_settings is None:
-                self._reference_fixture_settings = FixtureSettings(self.name)
+                self._reference_fixture_settings = FixtureSettings(self.name, overwrite=self._reference_overwrite_mode)
                 self._name = self.name
 
             return self._reference_fixture_settings
