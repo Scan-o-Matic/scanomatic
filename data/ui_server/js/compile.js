@@ -138,11 +138,13 @@ function Compile(button) {
         });
     }
 
-    data = {local: localFixture ? 1 : 0, 'fixture': $(current_fixture_id).val(),
-               path: path,
-               chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
-               images: images
-            };
+    data = {
+        local: localFixture ? 1 : 0,
+        fixture: localFixture ? "" : $(current_fixture_id).val(),
+        path: path,
+        chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
+        images: images
+    };
 
     $.ajax({
         url: "?run=1",
