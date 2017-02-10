@@ -299,9 +299,9 @@ def add_routes(app):
         if not data_object:
             data_object = request.values
 
-        pinning_format = data_object.getlist("pinning_format")
+        pinning_format = data_object.get("pinning_format")
         try:
-            pinning_format = tuple(int(v) for v in pinning_format)
+            pinning_format = tuple(int(v) for v in pinning_format.split(u","))
         except (ValueError, TypeError):
             app.logger.error("Pinning-format not understood ({0}/{1})".format(
                 data_object.getlist("pinning_format"), data_object.get("pinning_format")))
