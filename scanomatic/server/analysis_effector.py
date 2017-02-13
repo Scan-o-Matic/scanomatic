@@ -75,7 +75,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             self._analysis_job = AnalysisModelFactory.create()
             self._logger.warning("No job instructions")
 
-        self._orginal_model = None
+        self._original_model = None
 
         self._job.content_model = self._analysis_job
 
@@ -261,9 +261,11 @@ Scan-o-Matic""", self._analysis_job)
 
             self._logger.surpress_prints = False
 
+        if len(self._first_pass_results.plates) != len(self._analysis_job.pinning_matrices):
+            self._filter_pinning_on_included_plates()
 
         AnalysisModelFactory.serializer.dump(
-            self._orginal_model, os.path.join(self._analysis_job.output_directory, Paths().analysis_model_file))
+            self._original_model, os.path.join(self._analysis_job.output_directory, Paths().analysis_model_file))
 
         self._logger.info("Will remove previous files")
 
@@ -306,6 +308,16 @@ Scan-o-Matic""", self._analysis_job)
 
         return True
 
+    def _filter_pinning_on_included_plates(self):
+
+        included_indices = tuple(p.index for p in self._first_pass_results.plates)
+        self._analysis_job.pinning_matrices = [pm for i, pm in enumerate(self._analysis_job.pinning_matrices)
+                                               if i in included_indices]
+        self._logger.warning("Inconsistency in number of plates reported in analysis instruction and compilation." +
+                             " Asuming pinning to be {0}".format(self._analysis_job.pinning_matrices))
+
+        self._original_model.pinning_matrices = self._analysis_job.pinning_matrices
+
     def _remove_files_from_previous_analysis(self):
 
         for p in image_data.ImageData.iter_image_paths(self._analysis_job.output_directory):
@@ -343,7 +355,7 @@ Scan-o-Matic""", self._analysis_job)
 
         allow_start = AnalysisModelFactory.validate(self._analysis_job)
 
-        self._orginal_model = AnalysisModelFactory.copy(self._analysis_job)
+        self._original_model = AnalysisModelFactory.copy(self._analysis_job)
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
 
         try:
