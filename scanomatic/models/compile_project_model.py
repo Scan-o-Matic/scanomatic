@@ -20,7 +20,7 @@ class CompileInstructionsModel(Model):
 
     def __init__(self, compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis, start_time=0.0, images=tuple(), path="",
                  start_condition="", fixture_type=FIXTURE.Local, fixture_name=None, email="",
-                 overwrite_grid_shapes=None):
+                 overwrite_pinning_matrices=None):
 
         self.compile_action = compile_action
         self.images = images
@@ -30,7 +30,7 @@ class CompileInstructionsModel(Model):
         self.fixture_type = fixture_type
         self.fixture_name = fixture_name
         self.email = email
-        self.overwrite_grid_shapes = overwrite_grid_shapes
+        self.overwrite_pinning_matrices = overwrite_pinning_matrices
 
         super(CompileInstructionsModel, self).__init__()
 
