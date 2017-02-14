@@ -13,6 +13,7 @@ class FeaturesFactory(AbstractModelFactory):
         "analysis_directory": str,
         "email": email_serializer,
         "extraction_data": features_model.FeatureExtractionData,
+        "try_keep_qc": bool
     }
 
     @classmethod
