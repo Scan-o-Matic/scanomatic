@@ -242,13 +242,15 @@ def json_response(exits, data, success=True):
 def get_common_root_and_relative_paths(*file_list):
 
     dir_list = set(tuple(os.path.dirname(f) if os.path.isfile(f) else f for f in file_list))
-    common_test = zip(*(os.path.split(p) for p in dir_list))
+    common_test = zip(*(p.split(os.sep) for p in dir_list))
     root = ""
     for d_list in common_test:
         if all(d == d_list[0] for d in d_list):
             root = os.path.join(root, d_list[0])
         else:
             break
+        if not root:
+            root = os.path.sep
 
     root += os.path.sep
     start_at = len(root)
@@ -281,6 +283,7 @@ def serve_zip_file(zip_name, *file_list):
 
     zf.close()
 
+    data_buffer.flush()
     data_buffer.seek(0)
 
     return send_file(data_buffer,
