@@ -33,6 +33,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         super(PhenotypeExtractionEffector, self).__init__(job, logger_name="Phenotype Extractor '{0}'".format(job.id))
 
         self._feature_job = job.content_model
+        """:type: scanomatic.models.features_model.FeaturesModel"""
         self._job_label = self._feature_job.analysis_directory
         self._progress = 0
         self._times = None
@@ -157,6 +158,6 @@ Scan-o-Matic""", self._feature_job)
                 raw_growth_data=self._data,
                 times_data=self._times)
 
-        self._phenotype_iterator = self._phenotyper.iterate_extraction()
+        self._phenotype_iterator = self._phenotyper.iterate_extraction(self._feature_job.try_keep_qc)
         self._iteration_index = 1
         self._logger.info("Starting phenotype extraction")

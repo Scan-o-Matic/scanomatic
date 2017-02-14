@@ -823,7 +823,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         return StrainSelector(self, tuple((zip(*s) if plates is None or i in plates else tuple())
                                           for i, s in enumerate(selection)))
 
-    def iterate_extraction(self):
+    def iterate_extraction(self, keep_filter=False):
 
         self._logger.info(
             "Iteration started, will extract {0} phenotypes".format(
@@ -835,6 +835,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             yield 0
         else:
             self._logger.info("No smoothing, data already smooth!")
+
+        self.wipe_extracted_phenotypes(keep_filter)
 
         for x in self._calculate_phenotypes():
             self._logger.debug("Phenotype extraction iteration")
