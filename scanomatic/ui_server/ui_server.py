@@ -391,6 +391,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     @decorate_access_restriction
     def _compile():
 
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
         if request.args.get("run"):
 
             if not rpc_client.online:
@@ -398,10 +402,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
             path = request.values.get('path')
             path = os.path.abspath(path.replace('root', Config().paths.projects_root))
-            fixture_is_local = bool(int(request.values.get('local')))
-            fixture = request.values.get("fixture")
-            chain_steps = bool(request.values.get('chain', default=1, type=int))
-            images = request.values.getlist('images[]')
+            fixture_is_local = bool(int(data_object.get('local')))
+            fixture = data_object.get("fixture")
+            chain_steps = bool(data_object.get('chain', default=1, type=int))
+            images = data_object.getlist('images[]')
 
             _logger.info("Attempting to compile on path {0}, as {1} fixture{2} (Chaining: {3}), images {4}".format(
                 path,
@@ -421,6 +425,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                         success=False,
                         reason="The manually set list of images could not be satisfied"
                         "with the images in the specified folder")
+
+            dict_model["overwrite_pinning_matrices"] = get_2d_list(data_object, "pinning_matrices")
 
             job_id = rpc_client.create_compile_project_job(dict_model)
 
