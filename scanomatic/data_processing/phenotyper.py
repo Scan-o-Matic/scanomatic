@@ -1170,9 +1170,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._logger.info("Phenotypes (N={0}), extraction started for {1} curves".format(
             phenotypes_count, int(total_curves)))
 
-        phenotypes_max_value = max(p.value for p in self._phenotypes_inclusion()
-                                   if PhenotypeDataType.Scalar(p) and not PhenotypeDataType.Phases(p)) + 1
-
         curves_in_completed_plates = 0
         phenotypes_inclusion = self._phenotypes_inclusion
 
@@ -1191,7 +1188,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
             phenotypes = {
-                p: np.zeros(plate.shape[:2], dtype=np.object) * np.nan
+                p: np.zeros(plate.shape[:2], dtype=np.float) * np.nan
                 for p in Phenotypes if phenotypes_inclusion(p)}
 
             plate_size = np.prod(plate.shape[:2])
