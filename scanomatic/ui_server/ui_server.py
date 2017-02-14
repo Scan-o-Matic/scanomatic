@@ -248,11 +248,14 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     chain=bool(data_object.get('chain', default=1, type=int)))
 
                 if "pinning_matrices" in data_object:
-                    model.pinning_matrices = get_2d_list(data_object, "pinning_matrices")
+                    model.pinning_matrices = get_2d_list(
+                        data_object, "pinning_matrices", getlist_kwargs={"type": int}, dtype=int)
 
                 regridding_folder = data_object.get("reference_grid_folder", default=None)
                 if regridding_folder:
-                    grid_list = get_2d_list(data_object, "gridding_offsets")
+                    grid_list = get_2d_list(data_object, "gridding_offsets",
+                                            getlist_kwargs={"type": int}, dtype=int)
+
                     grid_list = tuple(tuple(map(int, l)) if l else None for l in grid_list)
 
                     model.grid_model.reference_grid_folder = regridding_folder
@@ -426,7 +429,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                         reason="The manually set list of images could not be satisfied"
                         "with the images in the specified folder")
 
-            dict_model["overwrite_pinning_matrices"] = get_2d_list(data_object, "pinning_matrices")
+            dict_model["overwrite_pinning_matrices"] = get_2d_list(data_object, "pinning_matrices",
+                                                                   getlist_kwargs={"type": int}, dtype=int)
 
             job_id = rpc_client.create_compile_project_job(dict_model)
 

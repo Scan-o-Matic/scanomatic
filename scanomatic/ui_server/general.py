@@ -40,7 +40,7 @@ def image_is_allowed(ext):
     return ext.lower() in _ALLOWED_EXTENSIONS
 
 
-def string_parse_2d_list(data_string):
+def string_parse_2d_list(data_string, dtype=float):
 
     p1 = re.compile(r'\[[^\]\[]+\]')
     p2 = re.compile(r'(\d+\.?\d*|\.\d+)')
@@ -48,12 +48,12 @@ def string_parse_2d_list(data_string):
     parsed = [p2.findall(f) for f in p1.findall(data_string)]
     if all(len(p) == len(parsed[0]) for p in parsed):
         try:
-            return [[float(v) for v in l] for l in parsed]
+            return [[dtype(v) for v in l] for l in parsed]
         except ValueError:
             return []
 
 
-def get_2d_list(data, key, **kwargs):
+def get_2d_list(data, key, getlist_kwargs=None, use_fallback=True, dtype=float):
     """
 
     :param data: Example a request.values
@@ -62,6 +62,9 @@ def get_2d_list(data, key, **kwargs):
     """
 
     key += "[{0}][]"
+
+    if getlist_kwargs is None:
+        getlist_kwargs = {}
 
     def _list_enumerator():
         i = 0
@@ -73,7 +76,12 @@ def get_2d_list(data, key, **kwargs):
             else:
                 break
 
-    return tuple(data.getlist(k, **kwargs) for k in _list_enumerator())
+    value = tuple(data.getlist(k, **getlist_kwargs) for k in _list_enumerator())
+
+    if not value and use_fallback:
+        value = string_parse_2d_list(data.get(key, dtype=dtype))
+
+    return value
 
 
 def get_area_too_large_for_grayscale(grayscale_area_model):
