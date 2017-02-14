@@ -252,6 +252,15 @@
                     return $("#spLock").data("lock_key");
                 }
 
+                function isPlateAllNull(plateData) {
+                    for (var i = 0, len = plateData.length; i < len; i += 1)
+                        for (var j = 0, lenj = plateData[1].length; j < lenj; j += 1)
+                            if (plateData[i][j] !== null)
+                                return false;
+
+                    return true;
+                }
+                
                 function createMarkButton(buttonId, type) {
                     var btn = d3.select(buttonId)
                         .append("svg")
@@ -603,7 +612,8 @@
                     var lockKey = getLock_key();
                     GetPlateData(path, isNormalized, metaDataPath, "###", lockKey, function (data) {
                         $("#plate").empty();
-                        if (!data) {
+                        var allNull = isPlateAllNull(data.plate_data);
+                        if (!data || allNull) {
                             stopWait();
                             return;
                         }
@@ -795,11 +805,5 @@
     </div>
 
 </body>
-
-
-
-
-
-
 
 </html>
