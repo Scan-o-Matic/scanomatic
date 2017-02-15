@@ -119,6 +119,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._project_directory,
             paths_object.scan_project_file_pattern.format(self._scanning_job.project_name))
 
+        self._scanning_job.scanning_program = sane.SaneBase.get_scan_program()
+        self._scanning_job.scanning_program_version = sane.SaneBase.get_program_version()
+
+        # NOTE: In actual scanning the scanner USB setting is prepended to the settings
+        self._scanning_job.scanning_program_params = self._scanner.get_scan_instructions_as_tuple()
+
         if ScanningModelFactory.serializer.dump(self._scanning_job, scan_project_file_path):
 
             self._logger.info("Saved project settings to '{0}'".format(scan_project_file_path))
