@@ -84,7 +84,10 @@ class ScanningModel(model.Model):
                  fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU", computer="",
                  auxillary_info=ScanningAuxInfoModel(),
                  plate_descriptions=tuple(),
-                 version=scanomatic.__version__):
+                 version=scanomatic.__version__,
+                 scanning_program="",
+                 scanning_program_version="",
+                 scanning_program_params=tuple()):
 
         self.number_of_scans = number_of_scans
         self.time_between_scans = time_between_scans
@@ -101,6 +104,9 @@ class ScanningModel(model.Model):
         self.fixture = fixture
         self.scanner = scanner
         self.scanner_hardware = scanner_hardware
+        self.scanning_program = scanning_program
+        self.scanning_program_version = scanning_program_version
+        self.scanning_program_params = scanning_program_params
         self.mode = mode
         self.computer = computer
         self.start_time = start_time
