@@ -282,10 +282,12 @@ Scan-o-Matic""", self._analysis_job)
 
             raise StopIteration
 
-        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results.compile_instructions)
+        self._image = analysis_image.ProjectImage(self._analysis_job)
 
         self._xmlWriter.write_header(self._scanning_instructions, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()
+
+        # TODO: Need rework to handle gridding of diff times for diff plates
 
         index_for_gridding = self._get_index_for_gridding()
 

@@ -47,7 +47,7 @@ def _get_init_features(grid_arrays):
 
 class ProjectImage(object):
 
-    def __init__(self, analysis_model, scanning_meta_data):
+    def __init__(self, analysis_model):
         """
 
         :param analysis_model: The model
@@ -57,7 +57,6 @@ class ProjectImage(object):
         :return:
         """
         self._analysis_model = analysis_model
-        self._scanning_meta_data = scanning_meta_data
         self._logger = Logger("Analysis Image")
 
         self._im_loaded = False
