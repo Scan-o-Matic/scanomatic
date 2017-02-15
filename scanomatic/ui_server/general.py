@@ -42,6 +42,9 @@ def image_is_allowed(ext):
 
 def string_parse_2d_list(data_string, dtype=float):
 
+    if not isinstance(data_string, StringTypes):
+        return None
+
     p1 = re.compile(r'\[[^\]\[]+\]')
     p2 = re.compile(r'(\d+\.?\d*|\.\d+)')
 
@@ -79,7 +82,7 @@ def get_2d_list(data, key, getlist_kwargs=None, use_fallback=True, dtype=float):
     value = tuple(data.getlist(k, **getlist_kwargs) for k in _list_enumerator())
 
     if not value and use_fallback:
-        value = string_parse_2d_list(data.get(key, dtype=dtype))
+        value = string_parse_2d_list(data.get(key, type=dtype))
 
     return value
 
