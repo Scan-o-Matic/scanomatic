@@ -269,6 +269,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
                     if isinstance(plate_image_inclusion, StringTypes):
                         plate_image_inclusion = tuple(val.strip() for val in plate_image_inclusion.split(";"))
+                        plate_image_inclusion = [val if val else None for val in plate_image_inclusion]
 
                     model.plate_image_inclusion = plate_image_inclusion
 
