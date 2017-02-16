@@ -34,10 +34,8 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
                 {
                 int :  # plate index (get valid from fixture),
                     {
-                    CCCPlate.gs_transformed_image_identifier: string,  # How to find numpy-array of transformed plate
                     CCCPlate.grid_shape: (16, 24),  # Number of rows and columns of colonies on plate
                     CCCPlate.grid_cell_size: (52.5, 53.1),  # Number of pixels for each colony (yes is in decimal)
-                    CCCPlate.grid_data_identifier: string,  # How to find numpy-array of grid positions on plate
                     CCCPlate.compressed_ccc_data:  # Row, column info on CCC analysis of each colony
                         [
                             [
@@ -112,15 +110,11 @@ class CCCImage(Enum):
 
 
 class CCCPlate(Enum):
-    gs_transformed_image_identifier = 0
+    grid_shape = 0
     """:type : CCCPlate"""
-    grid_shape = 1
+    grid_cell_size = 1
     """:type : CCCPlate"""
-    grid_cell_size = 2
-    """:type : CCCPlate"""
-    grid_data_identifier = 3
-    """:type : CCCPlate"""
-    compressed_ccc_data = 4
+    compressed_ccc_data = 2
     """:type : CCCPlate"""
 
 
@@ -424,12 +418,32 @@ def set_image_info(identifier, image_identifier, **kwargs):
 
         try:
 
-            im_json[CCCImage(key)] = kwargs[key]
+            im_json[CCCImage[key]] = kwargs[key]
 
         except (KeyError, TypeError):
 
             _logger.error("{0} is not a known property of images".format(key))
             return False
+
+    _save_ccc_to_disk(ccc)
+    return True
+
+
+@_validate_ccc_edit_request
+def set_plate_grid_info(identifier, image_identifier, plate, grid_shape=None, grid_cell_size=None, **kwargs):
+
+    ccc = __CCC[identifier]
+    im_json = get_image_json_from_ccc(identifier, image_identifier)
+    if plate in im_json[CCCImage.plates]:
+        plate_json = im_json[CCCImage.plates][plate]
+        if plate_json[CCCPlate.compressed_ccc_data]:
+            return False
+    else:
+        plate_json = {CCCPlate.grid_cell_size: None, CCCPlate.grid_shape: None, CCCPlate.compressed_ccc_data: []}
+        im_json[CCCImage.plates][plate] = plate_json
+
+    plate_json[CCCPlate.grid_cell_size] = grid_cell_size
+    plate_json[CCCPlate.grid_shape] = grid_shape
 
     _save_ccc_to_disk(ccc)
     return True
@@ -474,14 +488,14 @@ def get_local_fixture_for_image(identifier, image_identifier):
     if im_json is None:
         return None
 
-    fixture_settings = Fixtures()[im_json[CCCImage.Fixture]]
+    fixture_settings = Fixtures()[im_json[CCCImage.fixture]]
     if fixture_settings is None:
         return None
 
     fixture = FixtureImage(fixture_settings)
     current_settings = fixture['current']
-    current_settings.model.orientation_marks_x = im_json[CCCImage.marker_x]
-    current_settings.model.orientation_marks_y = im_json[CCCImage.marker_y]
+    current_settings.model.orientation_marks_x = np.array(im_json[CCCImage.marker_x])
+    current_settings.model.orientation_marks_y = np.array(im_json[CCCImage.marker_y])
     issues = {}
     fixture.set_current_areas(issues)
 
@@ -501,9 +515,11 @@ def save_image_slices(identifier, image_identifier, grayscale_slice=None, plate_
                 _get_im_slice(im, grayscale_slice))
 
     if plate_slices:
-        for id_plate, plate_dict in plate_slices.iteritems():
-            np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, id_plate),
-                    _get_im_slice(im, plate_dict))
+        for plate_model in plate_slices:
+            np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, plate_model.index),
+                    _get_im_slice(im, plate_model))
+
+    return True
 
 
 def _get_im_slice(im, model):

@@ -6,15 +6,21 @@ from io import BytesIO
 import zipfile
 import time
 import os
+from itertools import product
+from types import StringTypes
 
-from scanomatic.io.paths import Paths
-from scanomatic.data_processing import calibration
-from scanomatic.io.fixtures import Fixtures
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.analysis_model import COMPARTMENTS, VALUES
+from scanomatic.image_analysis.grid_cell import GridCell
+from scanomatic.image_analysis.grid_array import GridArray
+from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.image_analysis.image_grayscale import get_grayscale_image_analysis
+from scanomatic.io.paths import Paths
+from scanomatic.io.fixtures import Fixtures
+from scanomatic.data_processing import calibration
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
     get_data_file_path
-from scanomatic.image_analysis.grayscale import getGrayscale
 from .general import decorate_api_access_restriction, serve_numpy_as_image, get_grayscale_is_valid
 
 _VALID_CHARACTERS = letters + "-._1234567890"
@@ -144,6 +150,15 @@ def add_routes(app):
                 continue
             val = data_object.get(data_type.name, None)
             if val:
+                if data_type is calibration.CCCImage.marker_x or data_type is calibration.CCCImage.marker_y and \
+                        isinstance(val, StringTypes):
+
+                    try:
+                        val = [float(v) for v in val.split(",")]
+                    except ValueError:
+                        app.logger.warning("The parameter {0} value '{1}' not understood".format(data_type, val))
+                        continue
+
                 data_update[data_type.name] = val
 
                 if data_type is calibration.CCCImage.fixture and \
@@ -188,7 +203,7 @@ def add_routes(app):
         success = calibration.save_image_slices(
             ccc_identifier, image_identifier,
             grayscale_slice=data["grayscale"],
-            plates=data['plates'],
+            plate_slices=data['plates'],
             access_token=data_object.get("access_token"))
 
         if not success:
@@ -219,32 +234,177 @@ def add_routes(app):
     @decorate_api_access_restriction
     def get_ccc_image_grayscale_analysis(ccc_identifier, image_identifier):
 
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
         gs_image = calibration.get_grayscale_slice(ccc_identifier, image_identifier)
-        gs_name = gs_image[calibration.CCCImage.grayscale_name]
+        image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        try:
+            gs_name = image_data[calibration.CCCImage.grayscale_name]
+        except TypeError:
+            return jsonify(success=False, is_endpoint=True, reason='Unknown image or CCC')
 
         _, values = get_grayscale_image_analysis(gs_image, gs_name, debug=False)
         grayscale_object = getGrayscale(gs_name)
         valid = get_grayscale_is_valid(values, grayscale_object)
         if not valid:
-            return jsonify(success=True, is_endpoint=True, reason='Grayscale results are not valid')
+            return jsonify(success=False, is_endpoint=True, reason='Grayscale results are not valid')
 
-        calibration.CCCImage.grayscale_target_values
-        calibration.set_image_info(ccc_identifier, image_identifier,
-                                   grayscale_source_values=values,
-                                   grayscale_target_values=grayscale_object['targets'])
+        success = calibration.set_image_info(
+            ccc_identifier, image_identifier,
+            grayscale_source_values=values,
+            grayscale_target_values=grayscale_object['targets'],
+            access_token=data_object.get("access_token"))
 
-        return jsonify(success=True, is_endpoint=True, source_values=values, target_values=grayscale_object['targets'])
+        if success:
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<plate>/transform", methods=['POST'])
+            return jsonify(success=True, is_endpoint=True, source_values=values,
+                           target_values=grayscale_object['targets'])
+
+        else:
+
+            return jsonify(success=False, is_endpoint=True,
+                           reason='Refused to set image grayscale info, probably bad access token')
+
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/transform", methods=['POST'])
     @decorate_api_access_restriction
     def get_ccc_image_plate_transform(ccc_identifier, image_identifier, plate):
 
-        success = calibration.transform_plate_slice(ccc_identifier, image_identifier, plate)
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        success = calibration.transform_plate_slice(ccc_identifier, image_identifier, plate,
+                                                    access_token=data_object.get("access_token"))
         if not success:
             return jsonify(success=False, is_endpoint=True,
                            reason="Probably bad access token or not having sliced image and analysed grayscale first")
 
         return jsonify(success=True, is_endpoint=True)
+
+    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/grid/set", methods=['POST'])
+    @decorate_api_access_restriction
+    def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
+
+        image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        if image_data is None:
+            return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
+
+        im = calibration.get_plate_slice(ccc_identifier, image_identifier, plate, gs_transformed=False)
+        if im is None:
+            return jsonify(success=False, is_endpoint=True, reason="No such image slice exists, has it been sliced?")
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        pinning_format = data_object.get("pinning_format")
+        try:
+            pinning_format = tuple(int(v) for v in pinning_format.split(u","))
+        except (ValueError, TypeError):
+            app.logger.error("Pinning-format not understood ({0})".format(data_object.get("pinning_format")))
+            return jsonify(success=False, is_endpoint=True, reason="Bad pinning format")
+
+        correction = data_object.get('gridding_correction')
+        if correction:
+            try:
+                correction = tuple(int(v) for v in correction.split(u","))
+            except ValueError:
+                app.logger.error("Correction-format not understood ({0})".format(data_object.get("pinning_format")))
+                return jsonify(success=False, is_endpoint=True, reason="Bad grid correction")
+        else:
+            correction = None
+
+        analysis_model = AnalysisModelFactory.create()
+        analysis_model.output_directory = ""
+        ga = GridArray((None, plate - 1), pinning_format, analysis_model)
+
+        if not ga.detect_grid(im, grid_correction=correction):
+            return jsonify(
+                success=False,
+                reason="Grid detection failed",
+                is_endpoint=True,
+            )
+
+        grid = ga.grid
+        inner = len(grid[0])
+        outer = len(grid)
+        xy1 = [([None] for _ in range(inner)) for _ in range(outer)]
+        xy2 = [([None] for _ in range(inner)) for _ in range(outer)]
+
+        for pos in product(range(outer), range(inner)):
+
+            o, i = pos
+            gc = ga[pos]
+            xy1[o][i] = gc.xy1
+            xy2[o][i] = gc.xy2
+
+        grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
+        np.save(grid_path, grid)
+
+        success = calibration.set_plate_grid_info(
+            ccc_identifier, image_identifier, plate,
+            grid_shape=pinning_format,
+            grid_cell_size=ga.grid_cell_size,
+            access_token=data_object.get("access_token"))
+
+        if not success:
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Probably bad access token, or trying to re-grid image after has been used")
+
+        return jsonify(succes=True, is_endpoint=True,
+                       grid=grid.tolist(),
+                       xy1=xy1,
+                       xy2=xy2)
+
+    @app.route(
+        "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/detect/colony/<int:x>/<int:y>",
+        methods=["POST"])
+    @decorate_api_access_restriction
+    def detect_colony(ccc_identifier, image_identifier, plate, x, y):
+
+        im = calibration.get_plate_slice(ccc_identifier, image_identifier, plate, True)
+
+        if im is None:
+            return jsonify(success=False, is_endpoint=True, reason="Image plate slice hasn't been prepared probably")
+
+        grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
+        try:
+            grid = np.load(grid_path)
+        except IOError:
+            return jsonify(success=False, is_endpoint=True, reason="Gridding is missing")
+
+        image_json = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+
+        if not image_json or plate not in image_json[calibration.CCCImage.plates]:
+
+            return jsonify(success=False, is_endpoint=True, reason="Image id not known or plate not know")
+
+        plate_json = image_json[calibration.CCCImage.plates][plate]
+        h, w = plate_json[calibration.CCCPlate.grid_cell_size]
+
+        px_y, px_x = grid[y, x]
+
+        colony_im = im[
+            int(round(px_y - h/2)): int(round(px_y + h/2) + 1),
+            int(round(px_x - w / 2)): int(round(px_x + w / 2) + 1)]
+
+        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+
+        gc = GridCell(identifier, None, save_extra_data=False)
+        gc.source = colony_im.astype(np.float64)
+        gc.attach_analysis(
+            blob=True, background=True, cell=True,
+            run_detect=False)
+
+        gc.detect(remember_filter=False)
+
+        return jsonify(
+            success=True,
+            blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
+            background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist(),
+            image=colony_im.tolist())
 
     """
     DEPRECATION WARNING BELOW

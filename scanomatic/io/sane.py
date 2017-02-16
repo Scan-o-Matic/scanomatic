@@ -57,6 +57,7 @@ class SCAN_FLAGS(Enum):
     Device = "-d"
     Help = '--help'
     ListScanners = '-L'
+    ProgramVersion = '-V'
 
 
 class SaneBase(object):
@@ -99,13 +100,22 @@ class SaneBase(object):
     _SOURCE_SEPARATOR = "|"
     _SOURCE_PATTERN = re.compile(r'--source ([^\n[]+)')
 
+    @staticmethod
+    def get_scan_program():
+        return SaneBase._PROGRAM
+
+    @staticmethod
+    def get_program_version():
+
+        p = Popen(['scanimage', SCAN_FLAGS.ProgramVersion], shell=False, stdout=PIPE, stderr=PIPE)
+        stdout, _ = p.communicate()
+        return stdout.strip()
+
     def __init__(self, model, scan_mode):
 
         self._logger = Logger("SANE")
 
         self.next_file_name = None
-
-        self._scan_settings = None
 
         self._model = SaneBase._get_model(model, self._logger)
         self._scan_mode = SaneBase._get_mode(scan_mode, self._model, self._logger)
@@ -226,7 +236,7 @@ class SaneBase(object):
             self._logger.critical("Without know settings, no scanning possible")
             return None
 
-    def _get_scan_instructions(self, prepend=None):
+    def get_scan_instructions_as_tuple(self, prepend=None):
 
         def _dict_to_tuple(d, key_order=None):
 
@@ -238,14 +248,18 @@ class SaneBase(object):
 
             return tuple(chain(*((key.value, d[key]) for key in key_order)))
 
-        program = (SaneBase._PROGRAM,)
         if prepend:
             prepend_settings = _dict_to_tuple(prepend)
         else:
             prepend_settings = tuple()
 
         settings = _dict_to_tuple(self._scan_settings, key_order=SaneBase._SETTINGS_ORDER)
-        return program + prepend_settings + settings
+
+        return prepend_settings + settings
+
+    def get_complete_scan_instructions_as_tuple(self, prepend=None):
+
+        return (SaneBase._PROGRAM,) + self.get_scan_instructions_as_tuple(prepend=prepend)
 
     def OpenScanner(self, mainWindow=None, ProductName=None, UseCallback=False):
         pass
@@ -307,7 +321,7 @@ class SaneBase(object):
                         else:
                             preprend_settings = None
 
-                        scan_query = self._get_scan_instructions(prepend=preprend_settings)
+                        scan_query = self.get_complete_scan_instructions_as_tuple(prepend=preprend_settings)
                         self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
 
                         if SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.WaitBeforeScan]:

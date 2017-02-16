@@ -13,10 +13,16 @@ from types import GeneratorType
 from collections import defaultdict
 
 
-def float_list_serializer(enforce=None,serialize=None):
+class UnserializationError(ValueError): pass
+
+
+def float_list_serializer(enforce=None, serialize=None):
     if enforce is not None:
         if isinstance(enforce, types.StringTypes):
-            return [float(m.strip()) for m in enforce.split(",")]
+            try:
+                return [float(m.strip()) for m in enforce.split(",")]
+            except ValueError:
+                raise UnserializationError("Could not parse '{0}' as float list".format(enforce))
         elif isinstance(enforce, list):
             return [float(e) for i, e in enumerate(enforce) if e or i < len(enforce) - 1]
         else:
@@ -892,8 +898,17 @@ class Serializer(object):
 
     def _unserialize(self, conf):
 
-        return (self.unserialize_section(conf, section) for section in conf.sections()
-                if self._factory.all_keys_valid(conf.options(section)))
+        for section in conf.sections():
+
+            try:
+
+                if self._factory.all_keys_valid(conf.options(section)):
+                    yield self.unserialize_section(conf, section)
+
+            except UnserializationError:
+
+                self._logger.error("Parsing section '{0}': {1}".format(section, conf.options(section)))
+                raise
 
     def unserialize_section(self, conf, section):
 

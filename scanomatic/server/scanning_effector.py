@@ -119,6 +119,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._project_directory,
             paths_object.scan_project_file_pattern.format(self._scanning_job.project_name))
 
+        self._scanning_job.scanning_program = sane.SaneBase.get_scan_program()
+        self._scanning_job.scanning_program_version = sane.SaneBase.get_program_version()
+
+        # NOTE: In actual scanning the scanner USB setting is prepended to the settings
+        self._scanning_job.scanning_program_params = self._scanner.get_scan_instructions_as_tuple()
+
         if ScanningModelFactory.serializer.dump(self._scanning_job, scan_project_file_path):
 
             self._logger.info("Saved project settings to '{0}'".format(scan_project_file_path))
@@ -264,16 +270,26 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def _update_scan_cycle_step(self, step_action):
 
         if step_action is SCAN_STEP.NextMajor:
+
             self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_major
+            self._logger.info("Entering step {0}".format(self._scanning_effector_data.current_cycle_step))
+
         elif step_action is SCAN_STEP.NextMinor:
+
             self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_minor
+
         elif step_action is SCAN_STEP.TruncateIteration:
+
+            self._logger.warning("Entering wait mode due to scan cycle truncation. This is a bad sign")
             self._scanning_effector_data.current_cycle_step = SCAN_CYCLE.Wait
 
         if step_action is None:
+
             self._logger.error("Scan step {0} failed to return a valid step action".format((
                 self._scanning_effector_data.current_cycle_step)))
+
         elif step_action is not SCAN_STEP.Wait:
+
             self._scanning_effector_data.current_step_start_time = time.time()
 
     def _do_wait(self):
@@ -295,6 +311,13 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             return SCAN_STEP.NextMajor
         else:
+            """
+            self._logger.info("Awaiting next scan, {0:.2f}s lapsed compared to {1:.2f}s and fraction {2}".format(
+                self.time_since_last_scan,
+                self._scanning_job.time_between_scans * SECONDS_PER_MINUTE,
+                self.WAIT_FOR_NEXT_SCAN
+            ))
+            """
             return SCAN_STEP.Wait
 
     def _do_wait_for_usb(self):

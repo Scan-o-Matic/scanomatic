@@ -48,7 +48,7 @@ function set_project_directory(input) {
             }
 
             if (localFixture) {
-                set_fiture_status();
+                set_fixture_status();
             }
             InputEnabled($("#submit-button"), project_path_valid);
     });
@@ -119,7 +119,7 @@ function setOnAllImages(included) {
 
 function toggleLocalFixture(caller) {
     localFixture = $(caller).prop("checked");
-    set_fiture_status();
+    set_fixture_status();
     InputEnabled($(current_fixture_id), !localFixture);
 }
 
@@ -138,11 +138,13 @@ function Compile(button) {
         });
     }
 
-    data = {local: localFixture ? 1 : 0, 'fixture': $(current_fixture_id).val(),
-               path: path,
-               chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
-               images: images
-            };
+    data = {
+        local: localFixture ? 1 : 0,
+        fixture: localFixture ? "" : $(current_fixture_id).val(),
+        path: path,
+        chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
+        images: images
+    };
 
     $.ajax({
         url: "?run=1",

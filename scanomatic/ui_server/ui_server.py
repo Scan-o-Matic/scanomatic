@@ -220,13 +220,17 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         action = request.args.get("action")
 
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
         if action:
             if action == 'analysis':
 
-                path_compilation = request.values.get("compilation")
+                path_compilation = data_object.get("compilation")
                 path_compilation = os.path.abspath(path_compilation.replace('root', Config().paths.projects_root))
 
-                path_compile_instructions = request.values.get("compile_instructions")
+                path_compile_instructions = data_object.get("compile_instructions")
                 if path_compile_instructions == "root" or path_compile_instructions == "root/":
                     path_compile_instructions = None
                 elif path_compile_instructions:
@@ -239,13 +243,19 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 model = AnalysisModelFactory.create(
                     compilation=path_compilation,
                     compile_instructions=path_compile_instructions,
-                    output_directory=request.values.get("output_directory"),
-                    one_time_positioning=bool(request.values.get('one_time_positioning', default=1, type=int)),
-                    chain=bool(request.values.get('chain', default=1, type=int)))
+                    output_directory=data_object.get("output_directory"),
+                    one_time_positioning=bool(data_object.get('one_time_positioning', default=1, type=int)),
+                    chain=bool(data_object.get('chain', default=1, type=int)))
 
-                regridding_folder = request.values.get("reference_grid_folder", default=None)
+                if "pinning_matrices" in data_object:
+                    model.pinning_matrices = get_2d_list(
+                        data_object, "pinning_matrices", getlist_kwargs={"type": int}, dtype=int)
+
+                regridding_folder = data_object.get("reference_grid_folder", default=None)
                 if regridding_folder:
-                    grid_list = get_2d_list(request.values, "gridding_offsets")
+                    grid_list = get_2d_list(data_object, "gridding_offsets",
+                                            getlist_kwargs={"type": int}, dtype=int)
+
                     grid_list = tuple(tuple(map(int, l)) if l else None for l in grid_list)
 
                     model.grid_model.reference_grid_folder = regridding_folder
@@ -261,7 +271,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                         ", ".join(AnalysisModelFactory.get_invalid_names(model))))
 
             elif action == 'extract':
-                path = request.values.get("analysis_directory")
+
+                path = data_object.get("analysis_directory")
                 path = os.path.abspath(path.replace('root', Config().paths.projects_root))
                 _logger.info("Attempting to extract features in '{0}'".format(path))
                 model = FeaturesFactory.create(analysis_directory=path)
@@ -278,7 +289,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
             elif action == 'bioscreen_extract':
 
-                path = request.values.get("bioscreen_file")
+                path = data_object.get("bioscreen_file")
                 path = os.path.abspath(path.replace('root', Config().paths.projects_root))
 
                 if os.path.isfile(path):
@@ -293,15 +304,15 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 else:
                     return jsonify(success=False, reason="No such file")
 
-                preprocess = request.values.get("bioscreen_preprocess", default=None)
+                preprocess = data_object.get("bioscreen_preprocess", default=None)
 
                 try:
                     preprocess = bioscreen.Preprocessing(preprocess) if preprocess else \
                         bioscreen.Preprocessing.Precog2016_S_cerevisiae
                 except (TypeError, KeyError):
-                    return jsonify(success=False, reason="Unknown preprocessing state")
+                    return jsonify(success=False, reason="Unknown pre-processing state")
 
-                time_scale = request.values.get("bioscreen_timescale", default=36000)
+                time_scale = data_object.get("bioscreen_timescale", default=36000)
                 try:
                     time_scale = float(time_scale)
                 except (ValueError, TypeError):
@@ -310,7 +321,13 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 project = bioscreen.load(path, time_scale=time_scale, preprocess=preprocess)
                 project.save_state(output, ask_if_overwrite=False)
 
-                model = FeaturesFactory.create(analysis_directory=output)
+                try_keep_qc = bool(data_object.get("try_keep_qc", default=False))
+
+                model = FeaturesFactory.create(
+                    analysis_directory=output,
+                    extraction_data="State",
+                    try_keep_qc=try_keep_qc,
+                    )
 
                 success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
                     FeaturesFactory.to_dict(model))
@@ -323,7 +340,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                         "Refused by the server, check logs.")
 
             else:
-                return jsonify(success=False, reason='Action "{0}" not reconginzed'.format(action))
+                return jsonify(success=False, reason='Action "{0}" not recognized'.format(action))
+
         return send_from_directory(Paths().ui_root, Paths().ui_analysis_file)
 
     @app.route("/experiment", methods=['get', 'post'])
@@ -382,6 +400,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     @decorate_access_restriction
     def _compile():
 
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
         if request.args.get("run"):
 
             if not rpc_client.online:
@@ -389,10 +411,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
             path = request.values.get('path')
             path = os.path.abspath(path.replace('root', Config().paths.projects_root))
-            fixture_is_local = bool(int(request.values.get('local')))
-            fixture = request.values.get("fixture")
-            chain_steps = bool(request.values.get('chain', default=1, type=int))
-            images = request.values.getlist('images[]')
+            fixture_is_local = bool(int(data_object.get('local')))
+            fixture = data_object.get("fixture")
+            chain_steps = bool(data_object.get('chain', default=1, type=int))
+            images = data_object.getlist('images[]')
 
             _logger.info("Attempting to compile on path {0}, as {1} fixture{2} (Chaining: {3}), images {4}".format(
                 path,
@@ -412,6 +434,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                         success=False,
                         reason="The manually set list of images could not be satisfied"
                         "with the images in the specified folder")
+
+            dict_model["overwrite_pinning_matrices"] = get_2d_list(data_object, "pinning_matrices",
+                                                                   getlist_kwargs={"type": int}, dtype=int)
 
             job_id = rpc_client.create_compile_project_job(dict_model)
 

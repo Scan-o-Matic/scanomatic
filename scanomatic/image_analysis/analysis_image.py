@@ -47,7 +47,7 @@ def _get_init_features(grid_arrays):
 
 class ProjectImage(object):
 
-    def __init__(self, analysis_model, scanning_meta_data):
+    def __init__(self, analysis_model):
         """
 
         :param analysis_model: The model
@@ -57,7 +57,6 @@ class ProjectImage(object):
         :return:
         """
         self._analysis_model = analysis_model
-        self._scanning_meta_data = scanning_meta_data
         self._logger = Logger("Analysis Image")
 
         self._im_loaded = False
@@ -178,7 +177,7 @@ class ProjectImage(object):
 
         try:
 
-            self.im = load_image_to_numpy(path, IMAGE_ROTATIONS.Portrait)
+            self.im = load_image_to_numpy(path, IMAGE_ROTATIONS.Portrait, dtype=np.uint8)
             self._im_loaded = True
 
         except (TypeError, IOError):
@@ -189,7 +188,7 @@ class ProjectImage(object):
             self._logger.warning("Failed to load image at '{0}', trying '{1}'.".format(path, alt_path))
             try:
 
-                self.im = load_image_to_numpy(alt_path, IMAGE_ROTATIONS.Portrait)
+                self.im = load_image_to_numpy(alt_path, IMAGE_ROTATIONS.Portrait, dtype=np.uint8)
                 self._im_loaded = True
 
             except (TypeError, IOError):

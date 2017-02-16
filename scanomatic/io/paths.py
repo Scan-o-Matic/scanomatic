@@ -110,8 +110,6 @@ class Paths(SingeltonOneInit):
 
         self.experiment_scan_image_pattern = "{0}_{1}_{2:.4f}.tiff"
         self.experiment_analysis_relative_path = "analysis"
-        # self.experiment_analysis_file_name = "analysis.log"
-        # self.experiment_rebuild_instructions = "rebuild.instructions"
 
         self.analysis_polynomial = os.path.join(
             self.config, "calibration.polynomials")
@@ -127,12 +125,10 @@ class Paths(SingeltonOneInit):
         self.ccc_image_plate_transformed_slice_pattern = \
             os.path.join(self.ccc_folder, "{0}.{1}.plate_{2}.transformed.npy")
         self.ccc_image_gs_slice_pattern = os.path.join(self.ccc_folder, "{0}.{1}.gs.npy")
-
+        self.ccc_image_plate_grid_pattern = os.path.join(self.ccc_folder, "{0}.{1}.plate{2}.grid.npy")
         self.analysis_run_log = 'analysis.log'
         self.analysis_model_file = 'analysis.model'
 
-        # self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
-        # self.experiment_first_pass_log_relative = ".1_pass.log"
         self.experiment_local_fixturename = \
             self.fixture_conf_file_rel_pattern.format("fixture")
         self.experiment_grid_image_pattern = "grid___origin_plate_{0}.svg"
@@ -157,6 +153,7 @@ class Paths(SingeltonOneInit):
         self.phenotype_times = "phenotype_times.npy"
 
         self.phenotypes_extraction_log = "phenotypes.extraction.log"
+        self.phenotypes_extraction_instructions = "phenotypes.extraction.instructions"
 
         self.image_analysis_img_data = "image_{0}_data.npy"
         self.image_analysis_time_series = "time_data.npy"

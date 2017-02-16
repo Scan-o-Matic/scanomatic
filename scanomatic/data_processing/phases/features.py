@@ -447,8 +447,8 @@ def extract_phenotypes(plate, meta_phenotype, phenotypes):
                 phase[CurvePhasePhenotypes.PopulationDoublings] else -np.inf for phase in phases))[-1]])
 
         flat_slope = 0
-        flat_intercept = phenotypes[..., growth_phenotypes.Phenotypes.ExperimentLowPoint.value]
-        low_point_time = phenotypes[..., growth_phenotypes.Phenotypes.ExperimentLowPointWhen.value]
+        flat_intercept = phenotypes[growth_phenotypes.Phenotypes.ExperimentLowPoint]
+        low_point_time = phenotypes[growth_phenotypes.Phenotypes.ExperimentLowPointWhen]
 
         lag = (impulse_intercept - np.log2(flat_intercept)) / (flat_slope - impulse_slope)
 
