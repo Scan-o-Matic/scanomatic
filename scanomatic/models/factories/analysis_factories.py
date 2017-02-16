@@ -151,7 +151,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         'image_data_output_measure': analysis_model.MEASURES,
         'image_data_output_item': analysis_model.COMPARTMENTS,
         'chain': bool,
-        'plate_image_inclusion': tuple(tuple, str),
+        'plate_image_inclusion': (tuple, str),
     }
 
     @classmethod
