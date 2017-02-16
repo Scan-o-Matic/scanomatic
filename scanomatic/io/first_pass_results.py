@@ -117,6 +117,12 @@ class CompilationResults(object):
         except (ValueError, IndexError):
             return None
 
+    def keys(self):
+
+        if self._image_models is None:
+            return []
+        return range(len(self._image_models))
+
     def __add__(self, other):
 
         """

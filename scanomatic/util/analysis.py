@@ -11,7 +11,7 @@ from scanomatic.generics.purge_importing import ExpiringModule
 _logger = Logger("Analysis Utils")
 
 
-def produce_grid_images(path=".", image=None, mark_position=None):
+def produce_grid_images(path=".", plates=None, image=None, mark_position=None):
 
     project_path = os.path.join(os.path.dirname(os.path.abspath(path)))
 
@@ -33,12 +33,12 @@ def produce_grid_images(path=".", image=None, mark_position=None):
     compilation = CompileImageAnalysisFactory.serializer.load(compilation)
 
     image_path = compilation[-1].image.path
-    plates = compilation[-1].fixture.plates
+    all_plates = compilation[-1].fixture.plates
     if image is not None:
         for c in compilation:
             if os.path.basename(c.image.path) == os.path.basename(image):
                 image_path = c.image.path
-                plates = c.fixture.plates
+                all_plates = c.fixture.plates
                 break
 
     try:
@@ -50,7 +50,10 @@ def produce_grid_images(path=".", image=None, mark_position=None):
         except IOError:
             raise ValueError("Image doesn't exist, can't show gridding")
 
-    for plate in plates:
+    for plate in all_plates:
+
+        if plate is not None and plate not in plates:
+            continue
 
         plate_image = image[plate.y1: plate.y2, plate.x1: plate.x2]
         grid = unpickle_with_unpickler(np.load, os.path.join(path, Paths().grid_pattern.format(plate.index)))

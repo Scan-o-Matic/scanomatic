@@ -226,6 +226,11 @@ class GridArray(object):
     def image_index(self, value):
         self._identifier[0] = value
 
+    @property
+    def has_grid(self):
+
+        return self._grid is not None
+
     def set_grid(self, im, analysis_directory=None, offset=None, grid=None):
 
         self._LOGGER.info("Setting manual re-gridding for plate {0} using offset {1} on reference grid {2}".format(
