@@ -1861,7 +1861,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             if plate is None:
                 store.append(None)
 
-            if plate.dtype != dict:
+            if not isinstance(plate, dict):
 
                 new_plate = {}
                 store.append(new_plate)
