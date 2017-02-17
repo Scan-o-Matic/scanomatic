@@ -261,7 +261,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     model.grid_model.reference_grid_folder = regridding_folder
                     model.grid_model.gridding_offsets = grid_list
 
-                plate_image_inclusion = data_object.getlist('plate_image_inclusion[]', default=None)
+                plate_image_inclusion = data_object.getlist('plate_image_inclusion[]')
                 if not plate_image_inclusion:
                     data_object.get('plate_image_inclusion', default=None)
 
