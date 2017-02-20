@@ -1734,27 +1734,27 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         try:
             gt = self.get_phenotype(Phenotypes.GenerationTime)[plate].data
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             gt = np.ones(shape)
 
         try:
             gt_err = self.get_phenotype(Phenotypes.GenerationTimeStErrOfEstimate)[plate].data
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             gt_err = np.ones(shape)
 
         try:
             cr_fit = self.get_phenotype(Phenotypes.ChapmanRichardsFit)[plate].data
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             cr_fit = np.ones(shape)
 
         try:
             lag = self.get_phenotype(Phenotypes.GrowthLag)[plate].data
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             lag = np.ones(shape)
 
         try:
             growth = self.get_phenotype(Phenotypes.ExperimentGrowthYield)[plate].data
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             growth = np.ones(shape)
 
         gt_mean = gt[np.isfinite(gt)].mean()
@@ -1767,7 +1767,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                    np.abs(lag - lag_mean) / lag_mean +
                    np.abs(growth - growth_mean) / growth)
 
-        return np.unravel_index(badness.ravel().argsort(), badness.shape)
+        return np.unravel_index(badness.ravel().argsort()[::-1], badness.shape)
 
     def set(self, data_type, data):
 
