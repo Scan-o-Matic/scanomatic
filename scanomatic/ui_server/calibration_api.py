@@ -311,7 +311,7 @@ def add_routes(app):
             try:
                 correction = tuple(int(v) for v in correction.split(u","))
             except ValueError:
-                app.logger.warning("Correction-format not understood ({0})".format(data_object.get("pinning_format")))
+                app.logger.warning("Correction-format not understood ({0})".format(correction))
                 # return jsonify(success=False, is_endpoint=True, reason="Bad grid correction {0}".format(correction))
                 correction = None
         else:
