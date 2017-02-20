@@ -311,9 +311,8 @@ def add_routes(app):
             try:
                 correction = tuple(int(v) for v in correction.split(u","))
             except ValueError:
-                app.logger.warning("Correction-format not understood ({0})".format(correction))
-                # return jsonify(success=False, is_endpoint=True, reason="Bad grid correction {0}".format(correction))
-                correction = None
+                app.logger.error("Correction-format not understood ({0})".format(correction))
+                return jsonify(success=False, is_endpoint=True, reason="Bad grid correction {0}".format(correction))
         else:
             correction = None
 
@@ -331,15 +330,19 @@ def add_routes(app):
         grid = ga.grid
         inner = len(grid[0])
         outer = len(grid)
-        xy1 = [[[None] for _ in range(inner)] for _ in range(outer)]
-        xy2 = [[[None] for _ in range(inner)] for _ in range(outer)]
+        xy1 = [[[None] for c in range(inner)] for r in range(outer)]
+        xy2 = [[[None] for c in range(inner)] for r in range(outer)]
 
         for pos in product(range(outer), range(inner)):
 
             o, i = pos
             gc = ga[pos]
-            xy1[o][i] = gc.xy1
-            xy2[o][i] = gc.xy2
+            try:
+                xy1[o][i] = gc.xy1
+                xy2[o][i] = gc.xy2
+            except:
+                app.logger.error("Pos {0} ({1} {2}) the len obj {3} inner {4}".format(pos, o, i, len(xy1), len(xy1[0])))
+                return jsonify(success=False)
 
         grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
         np.save(grid_path, grid)
