@@ -405,7 +405,9 @@ def add_routes(app):
             success=True,
             blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
             background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist(),
-            image=colony_im.tolist())
+            image=colony_im.tolist(),
+            grid_position=(px_y, px_x),
+        )
 
     """
     DEPRECATION WARNING BELOW
