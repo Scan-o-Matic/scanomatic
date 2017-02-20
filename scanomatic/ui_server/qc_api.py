@@ -742,7 +742,7 @@ def add_routes(app):
             return jsonify(json_response(["urls"], dict(urls=urls, **response)))
 
         rows, cols = state.get_quality_index(plate)
-        return jsonify(dim1_rows=rows.tolist()[::-1], dim2_cols=cols.tolist()[::-1], **response)
+        return jsonify(dim1_rows=rows.tolist(), dim2_cols=cols.tolist(), **response)
 
     @app.route("/api/results/normalized_phenotype")
     @app.route("/api/results/normalized_phenotype/<phenotype>/<int:plate>/<path:project>")

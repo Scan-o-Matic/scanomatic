@@ -261,6 +261,18 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     model.grid_model.reference_grid_folder = regridding_folder
                     model.grid_model.gridding_offsets = grid_list
 
+                plate_image_inclusion = data_object.getlist('plate_image_inclusion[]')
+                if not plate_image_inclusion:
+                    data_object.get('plate_image_inclusion', default=None)
+
+                if plate_image_inclusion:
+
+                    if isinstance(plate_image_inclusion, StringTypes):
+                        plate_image_inclusion = tuple(val.strip() for val in plate_image_inclusion.split(";"))
+                        plate_image_inclusion = [val if val else None for val in plate_image_inclusion]
+
+                    model.plate_image_inclusion = plate_image_inclusion
+
                 success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(
                     AnalysisModelFactory.to_dict(model))
 

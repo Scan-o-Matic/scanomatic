@@ -282,16 +282,14 @@ Scan-o-Matic""", self._analysis_job)
 
             raise StopIteration
 
-        self._image = analysis_image.ProjectImage(self._analysis_job)
+        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results)
 
         self._xmlWriter.write_header(self._scanning_instructions, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()
 
         # TODO: Need rework to handle gridding of diff times for diff plates
 
-        index_for_gridding = self._get_index_for_gridding()
-
-        if not self._image.set_grid(self._first_pass_results[index_for_gridding]):
+        if not self._image.set_grid():
             self._stopping = True
 
         self._analysis_needs_init = False
@@ -325,18 +323,6 @@ Scan-o-Matic""", self._analysis_job)
         for p in image_data.ImageData.iter_image_paths(self._analysis_job.output_directory):
             os.remove(p)
             self._logger.info("Removed pre-existing file '{0}'".format(p))
-
-    def _get_index_for_gridding(self):
-
-        if self._analysis_job.grid_images:
-            pos = max(self._analysis_job.grid_images)
-            if pos >= len(self._first_pass_results):
-                pos = self._first_pass_results.last_index
-        else:
-
-            pos = self._first_pass_results.last_index
-
-        return pos
 
     def setup(self, job, redirect_logging=True):
 

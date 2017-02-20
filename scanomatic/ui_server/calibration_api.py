@@ -311,8 +311,8 @@ def add_routes(app):
             try:
                 correction = tuple(int(v) for v in correction.split(u","))
             except ValueError:
-                app.logger.error("Correction-format not understood ({0})".format(data_object.get("pinning_format")))
-                return jsonify(success=False, is_endpoint=True, reason="Bad grid correction")
+                app.logger.error("Correction-format not understood ({0})".format(correction))
+                return jsonify(success=False, is_endpoint=True, reason="Bad grid correction {0}".format(correction))
         else:
             correction = None
 
@@ -330,15 +330,16 @@ def add_routes(app):
         grid = ga.grid
         inner = len(grid[0])
         outer = len(grid)
-        xy1 = [([None] for _ in range(inner)) for _ in range(outer)]
-        xy2 = [([None] for _ in range(inner)) for _ in range(outer)]
+        xy1 = [[[None] for c in range(inner)] for r in range(outer)]
+        xy2 = [[[None] for c in range(inner)] for r in range(outer)]
 
         for pos in product(range(outer), range(inner)):
 
             o, i = pos
-            gc = ga[pos]
-            xy1[o][i] = gc.xy1
-            xy2[o][i] = gc.xy2
+            gc = ga[(i, o)]
+
+            xy1[o][i] = gc.xy1.tolist()
+            xy2[o][i] = gc.xy2.tolist()
 
         grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
         np.save(grid_path, grid)
@@ -353,8 +354,8 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=True,
                            reason="Probably bad access token, or trying to re-grid image after has been used")
 
-        return jsonify(succes=True, is_endpoint=True,
-                       grid=grid.tolist(),
+        return jsonify(success=True, is_endpoint=True,
+                       grid=grid,
                        xy1=xy1,
                        xy2=xy2)
 
@@ -404,7 +405,9 @@ def add_routes(app):
             success=True,
             blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
             background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist(),
-            image=colony_im.tolist())
+            image=colony_im.tolist(),
+            grid_position=(px_y, px_x),
+        )
 
     """
     DEPRECATION WARNING BELOW
