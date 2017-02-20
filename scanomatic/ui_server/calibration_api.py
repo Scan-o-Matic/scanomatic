@@ -354,7 +354,7 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=True,
                            reason="Probably bad access token, or trying to re-grid image after has been used")
 
-        return jsonify(succes=True, is_endpoint=True,
+        return jsonify(success=True, is_endpoint=True,
                        grid=grid,
                        xy1=xy1,
                        xy2=xy2)
