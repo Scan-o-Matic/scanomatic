@@ -337,12 +337,9 @@ def add_routes(app):
 
             o, i = pos
             gc = ga[(i, o)]
-            try:
-                xy1[o][i] = gc.xy1
-                xy2[o][i] = gc.xy2
-            except:
-                app.logger.error("Pos {0} ({1} {2}) the len obj {3} inner {4}".format(pos, o, i, len(xy1), len(xy1[0])))
-                return jsonify(success=False)
+
+            xy1[o][i] = gc.xy1
+            xy2[o][i] = gc.xy2
 
         grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
         np.save(grid_path, grid)
@@ -358,7 +355,7 @@ def add_routes(app):
                            reason="Probably bad access token, or trying to re-grid image after has been used")
 
         return jsonify(succes=True, is_endpoint=True,
-                       grid=grid.tolist(),
+                       grid=grid,
                        xy1=xy1,
                        xy2=xy2)
 
