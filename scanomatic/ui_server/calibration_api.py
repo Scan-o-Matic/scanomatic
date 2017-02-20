@@ -338,8 +338,8 @@ def add_routes(app):
             o, i = pos
             gc = ga[(i, o)]
 
-            xy1[o][i] = gc.xy1
-            xy2[o][i] = gc.xy2
+            xy1[o][i] = gc.xy1.tolist()
+            xy2[o][i] = gc.xy2.tolist()
 
         grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
         np.save(grid_path, grid)
