@@ -336,7 +336,7 @@ def add_routes(app):
         for pos in product(range(outer), range(inner)):
 
             o, i = pos
-            gc = ga[pos]
+            gc = ga[(o, i)]
             try:
                 xy1[o][i] = gc.xy1
                 xy2[o][i] = gc.xy2
