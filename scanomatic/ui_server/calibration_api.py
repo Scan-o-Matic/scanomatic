@@ -331,8 +331,8 @@ def add_routes(app):
         grid = ga.grid
         inner = len(grid[0])
         outer = len(grid)
-        xy1 = [([None] for _ in range(inner)) for _ in range(outer)]
-        xy2 = [([None] for _ in range(inner)) for _ in range(outer)]
+        xy1 = [[[None] for _ in range(inner)] for _ in range(outer)]
+        xy2 = [[[None] for _ in range(inner)] for _ in range(outer)]
 
         for pos in product(range(outer), range(inner)):
 
