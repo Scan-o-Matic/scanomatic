@@ -385,7 +385,7 @@ def add_routes(app):
         plate_json = image_json[calibration.CCCImage.plates][plate]
         h, w = plate_json[calibration.CCCPlate.grid_cell_size]
 
-        px_y, px_x = grid[y, x]
+        px_y, px_x = grid[:, y, x]
 
         colony_im = im[
             int(round(px_y - h/2)): int(round(px_y + h/2) + 1),
