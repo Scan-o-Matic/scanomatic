@@ -87,6 +87,19 @@ def get_2d_list(data, key, getlist_kwargs=None, use_fallback=True, dtype=float):
     return value
 
 
+def valid_array_dimensions(dims, *arrs):
+
+    for arr in arrs:
+
+        try:
+            if arr.ndim != dims:
+                return False
+        except (AttributeError, TypeError):
+            return False
+
+    return True
+
+
 def get_area_too_large_for_grayscale(grayscale_area_model):
     global _TOO_LARGE_GRAYSCALE_AREA
     area_size = (grayscale_area_model.x2 - grayscale_area_model.x1) * \

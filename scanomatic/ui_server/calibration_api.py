@@ -18,10 +18,11 @@ from scanomatic.image_analysis.image_grayscale import get_grayscale_image_analys
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
 from scanomatic.data_processing import calibration
-from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
+from scanomatic.data_processing.calibration import add_calibration, calculate_polynomial, \
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
     get_data_file_path
-from .general import decorate_api_access_restriction, serve_numpy_as_image, get_grayscale_is_valid
+from .general import decorate_api_access_restriction, serve_numpy_as_image, get_grayscale_is_valid, \
+    valid_array_dimensions
 
 _VALID_CHARACTERS = letters + "-._1234567890"
 
@@ -409,14 +410,12 @@ def add_routes(app):
             grid_position=(px_y, px_x),
         )
 
-    """
-    DEPRECATION WARNING BELOW
-    """
-
-    @app.route("/api/calibration/compress")
+    @app.route(
+        "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/compress/colony/<int:x>/<int:y>",
+        methods=["POST"])
     @decorate_api_access_restriction
-    def calibration_compress():
-        """Get compressed calibration entry
+    def calibration_compress(ccc_identifier, image_identifier, plate, x, y):
+        """Set compressed calibration entry
 
         Request Keys:
             "image": The grayscale calibrated image
@@ -428,18 +427,58 @@ def add_routes(app):
         if not data_object:
             data_object = request.values
 
-        image = np.array(data_object.get("image", [[]]))
-        image_filter = np.array(data_object.get("filter", [[]]))
-        image_name = data_object.get("image_name", "")
-        colony_name = data_object.get("colony_name", "")
-        target_value = float(data_object.get("target_value", 0))
-        colony = image[image_filter].ravel()
-        keys, counts = zip(*{k: (colony == k).sum() for k in np.unique(colony).tolist()}.iteritems())
-        return jsonify(success=True, entry={CalibrationEntry.target_value.name: target_value,
-                                            CalibrationEntry.source_value_counts.name: counts,
-                                            CalibrationEntry.source_values.name: keys,
-                                            CalibrationEntry.image.name: image_name,
-                                            CalibrationEntry.colony_name.name: colony_name})
+        image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        if image_data is None:
+            return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
+
+        try:
+            image = np.array(data_object.get("image", [[]]), dtype=np.float64)
+        except TypeError:
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Image data is not understandable as a float array")
+
+        try:
+            blob_filter = np.array(data_object.get("blob", [[]]), dtype=bool)
+        except TypeError:
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Blob filter data is not understandable as a boolean array")
+
+        try:
+            background_filter = np.array(data_object.get("background", [[]]))
+        except TypeError:
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Background filter data is not understandable as a boolean array")
+
+        if valid_array_dimensions(2, image, blob_filter, background_filter):
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Supplied data does not have the correct dimensions")
+
+        if (blob_filter & background_filter).any():
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Blob and background filter may not overlap")
+
+        if not blob_filter.any():
+            return jsonify(success=False, is_endpoint=False,
+                           reason="Blob is empty/there's no colony detected")
+
+        if not background_filter.any():
+            return jsonify(success=False, is_endpoint=False,
+                           reason="Background is empty/there's no background detected")
+
+        if calibration.set_colony_compressed_data(
+                ccc_identifier, image_identifier, plate, x, y,
+                included=True,
+                image=image, blob_filter=blob_filter, background_filter=background_filter):
+
+            return jsonify(sucecss=True, is_endpoint=True)
+
+        else:
+
+            return jsonify(success=False, is_endpoint=False, reason="Probably invalid access token")
+
+    """
+    DEPRECATION WARNING BELOW
+    """
 
     @app.route("/api/calibration/add/<name>")
     @app.route("/api/calibration/add/<name>/<int:degree>")
