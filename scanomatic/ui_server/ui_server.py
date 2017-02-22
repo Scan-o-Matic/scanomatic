@@ -201,7 +201,13 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         elif 'scanner' in status_type:
             return jsonify(success=True, data=rpc_client.get_scanner_status())
         elif 'job' in status_type:
-            return jsonify(success=True, data=rpc_client.get_job_status())
+            data = rpc_client.get_job_status()
+            for item in data:
+                if item['type'] == "Feature Extraction Job":
+                    item['label'] = convert_path_to_url("", item['label'])
+                if 'log_file' in item and item['log_file']:
+                    item['log_file'] = convert_path_to_url("/logs/project", item['log_file'])
+            return jsonify(success=True, data=data)
         elif status_type == 'server':
             return jsonify(success=True, data=rpc_client.get_status())
         elif status_type == "":

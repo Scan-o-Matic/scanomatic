@@ -54,6 +54,8 @@ class ProcessEffector(object):
         self._stopping = False
         self._paused = False
 
+        self._log_file_path = None
+
         self._messages = []
 
         self._iteration_index = None
@@ -157,6 +159,7 @@ class ProcessEffector(object):
 
         return dict([('id', self._job.id),
                      ('label', self.label),
+                     ('log_file', self._log_file_path),
                      ('pid', self._pid),
                      ('type', self.TYPE.text),
                      ('running', self._running),
