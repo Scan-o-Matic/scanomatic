@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="20.675915mm"
+   height="17.80262mm"
+   viewBox="0 0 73.261115 63.080149"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="icons.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.979899"
+     inkscape:cx="133.364"
+     inkscape:cy="-77.454784"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     fit-margin-left="2"
+     fit-margin-right="2"
+     fit-margin-top="2"
+     fit-margin-bottom="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1016"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-109.84112,-211.14386)">
+    <g
+       id="g4152">
+      <path
+         id="path4138"
+         d="m 164.9082,218.48047 a 10.859139,11.111678 0 0 0 -9.6914,6.125 27.526657,20.708128 0 0 0 -10.51172,-1.57813 27.526657,20.708128 0 0 0 -27.52735,20.70704 27.526657,20.708128 0 0 0 27.52735,20.70898 27.526657,20.708128 0 0 0 27.52539,-20.70898 27.526657,20.708128 0 0 0 -0.90039,-5.19727 10.859139,11.111678 0 0 0 4.43554,-8.94336 10.859139,11.111678 0 0 0 -10.85742,-11.11328 z"
+         style="opacity:1;fill:#d5f6ff;fill-opacity:1;stroke:#006680;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0"
+         inkscape:connector-curvature="0" />
+      <g
+         transform="translate(21.253814,9.0101525)"
+         id="g4147">
+        <rect
+           style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0"
+           id="rect4141"
+           width="44.95179"
+           height="19.697975"
+           x="109.09647"
+           y="238.17926" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           x="113.20079"
+           y="254.39848"
+           id="text4143"
+           sodipodi:linespacing="125%"><tspan
+             sodipodi:role="line"
+             id="tspan4145"
+             x="113.20079"
+             y="254.39848"
+             style="font-size:17.5px">LOG</tspan></text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 import os
 import requests
-
+import glob
 import time
 import webbrowser
 from flask import Flask, request, send_from_directory, redirect, jsonify, render_template
@@ -10,7 +10,7 @@ from threading import Thread, Timer
 from types import StringTypes
 
 from scanomatic.io.app_config import Config
-from scanomatic.io.logger import Logger, LOG_RECYCLE_TIME, parse_log_file
+from scanomatic.io.logger import Logger, LOG_RECYCLE_TIME
 from scanomatic.io.paths import Paths
 from scanomatic.io.power_manager import POWER_MANAGER_TYPE
 from scanomatic.io.rpc_client import get_client
@@ -21,6 +21,8 @@ from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.io.backup import backup_file
 from scanomatic.util import bioscreen
+from scanomatic.data_processing import phenotyper
+
 
 from . import qc_api
 from . import analysis_api
@@ -30,7 +32,8 @@ from . import scan_api
 from . import management_api
 from . import tools_api
 from . import data_api
-from .general import get_2d_list, decorate_access_restriction, set_local_app, is_local_ip, get_app_is_local
+from .general import get_2d_list, decorate_access_restriction, set_local_app, is_local_ip, get_app_is_local, \
+    serve_log_as_html, convert_url_to_path, get_search_results, convert_path_to_url
 
 _url = None
 _logger = Logger("UI-server")
@@ -80,7 +83,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/")
     def _root():
-        return send_from_directory(Paths().ui_root, Paths().ui_root_file)
+        return render_template(Paths().ui_root_file, debug=app.debug)
 
     @app.route("/ccc")
     def _ccc():
@@ -135,28 +138,55 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     def _logs(log):
         """
         Args:
-            log:
+            log: The log-type to be returned {'server' or 'ui_server'}.
 
-        Returns:
+        Returns: html-document (or json on invalid log-parameter).
 
         """
         if log == 'server':
-            what = Paths().log_server
+            log_path = Paths().log_server
         elif log == "ui_server":
-            what = Paths().log_ui_server
-
-        data = parse_log_file(what)
-        data['garbage'] = [l.replace("\n", "<br>") for l in data['garbage']]
-        for e in data['records']:
-            e['message'] = e['message'].split("\n")
-
-        if data:
-            return render_template(
-                Paths().ui_log_template,
-                title=log.replace("_", " ").capitalize(),
-                **data)
+            log_path = Paths().log_ui_server
         else:
-            return ""
+            return jsonify(success=False, is_endpoint=True, reason="No system log of that type")
+
+        return serve_log_as_html(log_path, log.replace("_", " ").capitalize())
+
+    @app.route("/logs/project/<path:project>")
+    def _project_logs(project):
+
+        path = convert_url_to_path(project)
+
+        if not os.path.exists(path):
+
+            return jsonify(success=True,
+                           is_project=False,
+                           is_endpoint=False,
+                           exits=['urls'],
+                           **get_search_results(path, "/logs/project"))
+
+        is_project_analysis = phenotyper.path_has_saved_project_state(path)
+
+        if not os.path.isfile(path) or not path.endswith(".log"):
+
+            if is_project_analysis:
+                logs = glob.glob(os.path.join(path, Paths().analysis_run_log))
+                logs += glob.glob(os.path.join(path, Paths().phenotypes_extraction_log))
+            else:
+                logs = glob.glob(os.path.join(path, Paths().scan_log_file_pattern.format("*")))
+                logs += glob.glob(os.path.join(path, Paths().project_compilation_log_pattern.format("*")))
+
+            return jsonify(success=True,
+                           is_project=False,
+                           is_endpoint=False,
+                           is_project_analysis=is_project_analysis,
+                           exits=['urls', 'logs'],
+                           logs=[convert_path_to_url("/logs/project", log_path) for log_path in logs],
+                           **get_search_results(path, "/logs/project"))
+
+        include_levels = 3 if is_project_analysis else 2
+
+        return serve_log_as_html(path, os.sep.join(path.split(os.path.sep)[-include_levels:]))
 
     @app.route("/status")
     @app.route("/status/<status_type>")
@@ -171,7 +201,13 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         elif 'scanner' in status_type:
             return jsonify(success=True, data=rpc_client.get_scanner_status())
         elif 'job' in status_type:
-            return jsonify(success=True, data=rpc_client.get_job_status())
+            data = rpc_client.get_job_status()
+            for item in data:
+                if item['type'] == "Feature Extraction Job":
+                    item['label'] = convert_path_to_url("", item['label'])
+                if 'log_file' in item and item['log_file']:
+                    item['log_file'] = convert_path_to_url("/logs/project", item['log_file'])
+            return jsonify(success=True, data=data)
         elif status_type == 'server':
             return jsonify(success=True, data=rpc_client.get_status())
         elif status_type == "":
@@ -213,6 +249,91 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return jsonify(success=False, reason="Not implemented")
 
         return render_template(Paths().ui_settings_template, **app_conf.model_copy())
+
+    @app.route("/feature_extract", methods=['get', 'post'])
+    @decorate_access_restriction
+    def _feature_extract():
+
+        action = request.args.get("action")
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        if action:
+
+            if action == 'extract':
+
+                path = data_object.get("analysis_directory")
+                path = os.path.abspath(path.replace('root', Config().paths.projects_root))
+                _logger.info("Attempting to extract features in '{0}'".format(path))
+                model = FeaturesFactory.create(analysis_directory=path)
+
+                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
+                    FeaturesFactory.to_dict(model))
+
+                if success:
+                    return jsonify(success=success)
+                else:
+                    return jsonify(success=success, reason="The following has bad data: {0}".format(", ".join(
+                        FeaturesFactory.get_invalid_names(model))) if not FeaturesFactory.validate(model) else
+                        "Refused by the server, check logs.")
+
+            elif action == 'bioscreen_extract':
+
+                path = data_object.get("bioscreen_file")
+                path = os.path.abspath(path.replace('root', Config().paths.projects_root))
+
+                if os.path.isfile(path):
+
+                    output = ".".join((path, "features"))
+
+                    try:
+                        os.makedirs(output)
+                    except OSError:
+                        _logger.info("Analysis folder {0} exists, so will overwrite files if needed".format(output))
+                        pass
+                else:
+                    return jsonify(success=False, reason="No such file")
+
+                preprocess = data_object.get("bioscreen_preprocess", default=None)
+
+                try:
+                    preprocess = bioscreen.Preprocessing(preprocess) if preprocess else \
+                        bioscreen.Preprocessing.Precog2016_S_cerevisiae
+                except (TypeError, KeyError):
+                    return jsonify(success=False, reason="Unknown pre-processing state")
+
+                time_scale = data_object.get("bioscreen_timescale", default=36000)
+                try:
+                    time_scale = float(time_scale)
+                except (ValueError, TypeError):
+                    return jsonify(success=False, reason="Bad timescale")
+
+                project = bioscreen.load(path, time_scale=time_scale, preprocess=preprocess)
+                project.save_state(output, ask_if_overwrite=False)
+
+                try_keep_qc = bool(data_object.get("try_keep_qc", default=False))
+
+                model = FeaturesFactory.create(
+                    analysis_directory=output,
+                    extraction_data="State",
+                    try_keep_qc=try_keep_qc,
+                    )
+
+                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
+                    FeaturesFactory.to_dict(model))
+
+                if success:
+                    return jsonify(success=success)
+                else:
+                    return jsonify(success=success, reason="The following has bad data: {0}".format(", ".join(
+                        FeaturesFactory.get_invalid_names(model))) if not FeaturesFactory.validate(model) else
+                        "Refused by the server, check logs.")
+            else:
+                return jsonify(success=False, reason='Action "{0}" not recognized'.format(action))
+
+        return send_from_directory(Paths().ui_root, Paths().ui_feature_extract_file)
 
     @app.route("/analysis", methods=['get', 'post'])
     @decorate_access_restriction
@@ -281,75 +402,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 else:
                     return jsonify(success=False, reason="The following has bad data: {0}".format(
                         ", ".join(AnalysisModelFactory.get_invalid_names(model))))
-
-            elif action == 'extract':
-
-                path = data_object.get("analysis_directory")
-                path = os.path.abspath(path.replace('root', Config().paths.projects_root))
-                _logger.info("Attempting to extract features in '{0}'".format(path))
-                model = FeaturesFactory.create(analysis_directory=path)
-
-                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
-                    FeaturesFactory.to_dict(model))
-
-                if success:
-                    return jsonify(success=success)
-                else:
-                    return jsonify(success=success, reason="The following has bad data: {0}".format(", ".join(
-                        FeaturesFactory.get_invalid_names(model))) if not FeaturesFactory.validate(model) else
-                        "Refused by the server, check logs.")
-
-            elif action == 'bioscreen_extract':
-
-                path = data_object.get("bioscreen_file")
-                path = os.path.abspath(path.replace('root', Config().paths.projects_root))
-
-                if os.path.isfile(path):
-
-                    output = ".".join((path, "features"))
-
-                    try:
-                        os.makedirs(output)
-                    except OSError:
-                        _logger.info("Analysis folder {0} exists, so will overwrite files if needed".format(output))
-                        pass
-                else:
-                    return jsonify(success=False, reason="No such file")
-
-                preprocess = data_object.get("bioscreen_preprocess", default=None)
-
-                try:
-                    preprocess = bioscreen.Preprocessing(preprocess) if preprocess else \
-                        bioscreen.Preprocessing.Precog2016_S_cerevisiae
-                except (TypeError, KeyError):
-                    return jsonify(success=False, reason="Unknown pre-processing state")
-
-                time_scale = data_object.get("bioscreen_timescale", default=36000)
-                try:
-                    time_scale = float(time_scale)
-                except (ValueError, TypeError):
-                    return jsonify(success=False, reason="Bad timescale")
-
-                project = bioscreen.load(path, time_scale=time_scale, preprocess=preprocess)
-                project.save_state(output, ask_if_overwrite=False)
-
-                try_keep_qc = bool(data_object.get("try_keep_qc", default=False))
-
-                model = FeaturesFactory.create(
-                    analysis_directory=output,
-                    extraction_data="State",
-                    try_keep_qc=try_keep_qc,
-                    )
-
-                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
-                    FeaturesFactory.to_dict(model))
-
-                if success:
-                    return jsonify(success=success)
-                else:
-                    return jsonify(success=success, reason="The following has bad data: {0}".format(", ".join(
-                        FeaturesFactory.get_invalid_names(model))) if not FeaturesFactory.validate(model) else
-                        "Refused by the server, check logs.")
 
             else:
                 return jsonify(success=False, reason='Action "{0}" not recognized'.format(action))

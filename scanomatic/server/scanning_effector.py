@@ -95,7 +95,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._project_directory, paths_object.scan_log_file_pattern.format(self._scanning_job.project_name))
             self._logger.info("{0} is setting up; logging will be directed to file {1}".format(job, file_path))
             self._logger.set_output_target(file_path, catch_stdout=True, catch_stderr=True)
-
+            self._log_file_path = file_path
             self._logger.surpress_prints = False
 
         self._logger.info("Doing setup")

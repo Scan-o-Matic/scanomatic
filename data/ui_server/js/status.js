@@ -98,6 +98,11 @@ function jobStatusAsHTML(job) {
 
     ret += job.label;
 
+    if (job.log_file) {
+
+        ret += "<span class='log-link'><a href='" + job.log_file  + "'><img src='/images/log_icon.png' height=24px></a></span>"
+    }
+
     ret += "<button type='button' class='stop-button' onclick='stopDialogue(this);'></button>";
     return ret + "</div>";
 }

@@ -51,9 +51,10 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         if self._compile_job.images is None:
             self._compile_job.images = tuple()
 
-        self._logger.set_output_target(Paths().get_project_compile_log_path_from_compile_model(self._compile_job),
-                                       catch_stdout=True, catch_stderr=True)
+        log_path = Paths().get_project_compile_log_path_from_compile_model(self._compile_job)
+        self._logger.set_output_target(log_path, catch_stdout=True, catch_stderr=True)
         self._logger.surpress_prints = True
+        self._log_file_path = log_path
 
         self._logger.info("Doing setup")
         self._logger.info("Action {0}".format(self._compile_job.compile_action))
