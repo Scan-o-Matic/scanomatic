@@ -121,6 +121,32 @@ nav span {
 
 }
 
+.nav-dropdown {
+    display: inline-block;
+}
+
+.nav-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #e7d2b7;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    padding: 12px 16px;
+    z-index: 1;
+}
+
+.nav-dropdown:hover .nav-dropdown-content {
+    display: block;
+}
+
+.nav-dropdown-item {
+    display: block;
+    background-color: #cd8b34;
+    padding: 3px 12px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+
 ul {
 	padding:12px;
 	background: #e7d2b7;

@@ -18,16 +18,32 @@
                     option in deployment.</div>
                 {% endif %}
                 <nav>
-                    <a href="/experiment?ver=_-_VERSIONTAG_-_" target="page">Experiment</a>
-                    <a href="/compile?ver=_-_VERSIONTAG_-_" target="page">Compile</a>
-                    <a href="/analysis?ver=_-_VERSIONTAG_-_" target="page">Analysis</a>
+                    <div class="nav-dropdown">
+                        <span>Experiment</span>
+                        <div class="nav-dropdown-content">
+                            <div class="nav-dropdown-item"><a href="/experiment?ver=_-_VERSIONTAG_-_" target="page">Experiment</a></div>
+                            <div class="nav-dropdown-item"><a href="/compile?ver=_-_VERSIONTAG_-_" target="page">Compile</a></div>
+                            <div class="nav-dropdown-item"><a href="/analysis?ver=_-_VERSIONTAG_-_" target="page">Analysis</a></div>
+                        </div>
+                    </div>
+                    |
                     <a href="/qc_norm?ver=_-_VERSIONTAG_-_" target="page">QC & Norm</a>
                     |
                     <a href="/status?ver=_-_VERSIONTAG_-_" target="page">Status</a>
                     |
-                    <a href="/fixtures?ver=_-_VERSIONTAG_-_" target="page">Fixtures</a>
+                    <div class="nav-dropdown">
+                        <span>Settings</span>
+                        <div class="nav-dropdown-content">
+                            <div class="nav-dropdown-item"><a href="/fixtures?ver=_-_VERSIONTAG_-_" target="page">Fixtures</a></div>
+                            {% if debug %}
+                            <div class="nav-dropdown-item"><a href="/ccc?ver=_-_VERSIONTAG_-_" target="page" title="Cell Count Calibration">CCC</a></div>
+                            {% endif %}
+                            <hr>
+                            <div class="nav-dropdown-item"><a href="/settings?ver=_-_VERSIONTAG_-_" target="page">Settings</a></div>
+                            <div class="nav-dropdown-item"><a href="/maintain?ver=_-_VERSIONTAG_-_" target="page">Maintenance</a></div>
+                        </div>
+                    </div>
                     |
-                    <a href="/settings?ver=_-_VERSIONTAG_-_" target="page">Settings</a>
                     <a href="/wiki" target="_blank">Wiki</a>
 
                     <span>ver=_-_VERSIONTAG_-_</span>
