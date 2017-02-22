@@ -1,6 +1,6 @@
 import os
 import requests
-
+import glob
 import time
 import webbrowser
 from flask import Flask, request, send_from_directory, redirect, jsonify, render_template
@@ -10,7 +10,7 @@ from threading import Thread, Timer
 from types import StringTypes
 
 from scanomatic.io.app_config import Config
-from scanomatic.io.logger import Logger, LOG_RECYCLE_TIME, parse_log_file
+from scanomatic.io.logger import Logger, LOG_RECYCLE_TIME
 from scanomatic.io.paths import Paths
 from scanomatic.io.power_manager import POWER_MANAGER_TYPE
 from scanomatic.io.rpc_client import get_client
@@ -21,6 +21,8 @@ from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.io.backup import backup_file
 from scanomatic.util import bioscreen
+from scanomatic.data_processing import phenotyper
+
 
 from . import qc_api
 from . import analysis_api
@@ -30,7 +32,8 @@ from . import scan_api
 from . import management_api
 from . import tools_api
 from . import data_api
-from .general import get_2d_list, decorate_access_restriction, set_local_app, is_local_ip, get_app_is_local
+from .general import get_2d_list, decorate_access_restriction, set_local_app, is_local_ip, get_app_is_local, \
+    serve_log_as_html, convert_url_to_path, get_search_results, convert_path_to_url
 
 _url = None
 _logger = Logger("UI-server")
@@ -135,28 +138,55 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     def _logs(log):
         """
         Args:
-            log:
+            log: The log-type to be returned {'server' or 'ui_server'}.
 
-        Returns:
+        Returns: html-document (or json on invalid log-parameter).
 
         """
         if log == 'server':
-            what = Paths().log_server
+            log_path = Paths().log_server
         elif log == "ui_server":
-            what = Paths().log_ui_server
-
-        data = parse_log_file(what)
-        data['garbage'] = [l.replace("\n", "<br>") for l in data['garbage']]
-        for e in data['records']:
-            e['message'] = e['message'].split("\n")
-
-        if data:
-            return render_template(
-                Paths().ui_log_template,
-                title=log.replace("_", " ").capitalize(),
-                **data)
+            log_path = Paths().log_ui_server
         else:
-            return ""
+            return jsonify(success=False, is_endpoint=True, reason="No system log of that type")
+
+        return serve_log_as_html(log_path, log.replace("_", " ").capitalize())
+
+    @app.route("/logs/project/<path:project>")
+    def _project_logs(project):
+
+        path = convert_url_to_path(project)
+
+        if not os.path.exists(path):
+
+            return jsonify(success=True,
+                           is_project=False,
+                           is_endpoint=False,
+                           exits=['urls'],
+                           **get_search_results(path, "/logs/project"))
+
+        is_project_analysis = phenotyper.path_has_saved_project_state(path)
+
+        if not os.path.isfile(path) or not path.endswith(".log"):
+
+            if is_project_analysis:
+                logs = glob.glob(os.path.join(path, Paths().analysis_run_log))
+                logs += glob.glob(os.path.join(path, Paths().phenotypes_extraction_log))
+            else:
+                logs = glob.glob(os.path.join(path, Paths().scan_log_file_pattern.format("*")))
+                logs += glob.glob(os.path.join(path, Paths().project_compilation_log_pattern.format("*")))
+
+            return jsonify(success=True,
+                           is_project=False,
+                           is_endpoint=False,
+                           is_project_analysis=is_project_analysis,
+                           exits=['urls', 'logs'],
+                           logs=[convert_path_to_url("/logs/project", log_path) for log_path in logs],
+                           **get_search_results(path, "/logs/project"))
+
+        include_levels = 3 if is_project_analysis else 2
+
+        return serve_log_as_html(path, os.sep.join(path.split(os.path.sep)[-include_levels:]))
 
     @app.route("/status")
     @app.route("/status/<status_type>")

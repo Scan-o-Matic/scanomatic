@@ -81,6 +81,7 @@ class Paths(SingeltonOneInit):
         self.ui_analysis_file = 'analysis.html'
         self.ui_settings_template = 'settings.html'
         self.ui_log_template = 'log.html'
+        self.ui_log_not_found_template = 'log_not_found.html'
         self.ui_ccc_file = 'CCC.html'
 
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")

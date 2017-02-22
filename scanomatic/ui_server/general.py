@@ -5,7 +5,7 @@ from StringIO import StringIO
 import io
 from scipy.misc import imread
 from itertools import chain
-from flask import send_file, request, send_from_directory, jsonify
+from flask import send_file, request, send_from_directory, jsonify, render_template
 from werkzeug.datastructures import FileStorage
 import numpy as np
 import zipfile
@@ -15,7 +15,7 @@ import base64
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
-from scanomatic.io.logger import Logger
+from scanomatic.io.logger import Logger, parse_log_file
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scipy.misc import toimage
 from scanomatic.image_analysis.first_pass_image import FixtureImage
@@ -548,3 +548,20 @@ def decorate_api_access_restriction(restricted_route):
             return ret
 
     return getattr(Restrictor(), restricted_route.__name__)
+
+
+def serve_log_as_html(log_path, title):
+
+    data = parse_log_file(log_path)
+    data['garbage'] = [l.replace("\n", "<br>") for l in data['garbage']]
+    for e in data['records']:
+        e['message'] = e['message'].split("\n")
+
+    if data:
+        return render_template(
+            Paths().ui_log_template,
+            title=title,
+            **data)
+    else:
+        return render_template(Paths().ui_log_not_found_template,
+                               title=title)
