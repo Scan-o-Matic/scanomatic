@@ -79,6 +79,7 @@ class Paths(SingeltonOneInit):
         self.ui_experiment_file = 'experiment.html'
         self.ui_status_file = 'status.html'
         self.ui_analysis_file = 'analysis.html'
+        self.ui_feature_extract_file = 'feature_extract.html'
         self.ui_settings_template = 'settings.html'
         self.ui_log_template = 'log.html'
         self.ui_log_not_found_template = 'log_not_found.html'

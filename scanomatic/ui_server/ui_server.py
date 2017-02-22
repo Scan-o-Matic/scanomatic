@@ -244,9 +244,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         return render_template(Paths().ui_settings_template, **app_conf.model_copy())
 
-    @app.route("/analysis", methods=['get', 'post'])
+    @app.route("/feature_extract", methods=['get', 'post'])
     @decorate_access_restriction
-    def _analysis():
+    def _feature_extract():
 
         action = request.args.get("action")
 
@@ -255,64 +255,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             data_object = request.values
 
         if action:
-            if action == 'analysis':
 
-                path_compilation = data_object.get("compilation")
-                path_compilation = os.path.abspath(path_compilation.replace('root', Config().paths.projects_root))
-
-                path_compile_instructions = data_object.get("compile_instructions")
-                if path_compile_instructions == "root" or path_compile_instructions == "root/":
-                    path_compile_instructions = None
-                elif path_compile_instructions:
-                    path_compile_instructions = os.path.abspath(path_compile_instructions.replace(
-                        'root', Config().paths.projects_root))
-
-                _logger.info("Attempting to analyse '{0}' (instructions {1})".format(
-                    path_compilation, path_compile_instructions))
-
-                model = AnalysisModelFactory.create(
-                    compilation=path_compilation,
-                    compile_instructions=path_compile_instructions,
-                    output_directory=data_object.get("output_directory"),
-                    one_time_positioning=bool(data_object.get('one_time_positioning', default=1, type=int)),
-                    chain=bool(data_object.get('chain', default=1, type=int)))
-
-                if "pinning_matrices" in data_object:
-                    model.pinning_matrices = get_2d_list(
-                        data_object, "pinning_matrices", getlist_kwargs={"type": int}, dtype=int)
-
-                regridding_folder = data_object.get("reference_grid_folder", default=None)
-                if regridding_folder:
-                    grid_list = get_2d_list(data_object, "gridding_offsets",
-                                            getlist_kwargs={"type": int}, dtype=int)
-
-                    grid_list = tuple(tuple(map(int, l)) if l else None for l in grid_list)
-
-                    model.grid_model.reference_grid_folder = regridding_folder
-                    model.grid_model.gridding_offsets = grid_list
-
-                plate_image_inclusion = data_object.getlist('plate_image_inclusion[]')
-                if not plate_image_inclusion:
-                    data_object.get('plate_image_inclusion', default=None)
-
-                if plate_image_inclusion:
-
-                    if isinstance(plate_image_inclusion, StringTypes):
-                        plate_image_inclusion = tuple(val.strip() for val in plate_image_inclusion.split(";"))
-                        plate_image_inclusion = [val if val else None for val in plate_image_inclusion]
-
-                    model.plate_image_inclusion = plate_image_inclusion
-
-                success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(
-                    AnalysisModelFactory.to_dict(model))
-
-                if success:
-                    return jsonify(success=True)
-                else:
-                    return jsonify(success=False, reason="The following has bad data: {0}".format(
-                        ", ".join(AnalysisModelFactory.get_invalid_names(model))))
-
-            elif action == 'extract':
+            if action == 'extract':
 
                 path = data_object.get("analysis_directory")
                 path = os.path.abspath(path.replace('root', Config().paths.projects_root))
@@ -380,6 +324,78 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     return jsonify(success=success, reason="The following has bad data: {0}".format(", ".join(
                         FeaturesFactory.get_invalid_names(model))) if not FeaturesFactory.validate(model) else
                         "Refused by the server, check logs.")
+            else:
+                return jsonify(success=False, reason='Action "{0}" not recognized'.format(action))
+
+        return send_from_directory(Paths().ui_root, Paths().ui_feature_extract_file)
+
+    @app.route("/analysis", methods=['get', 'post'])
+    @decorate_access_restriction
+    def _analysis():
+
+        action = request.args.get("action")
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        if action:
+            if action == 'analysis':
+
+                path_compilation = data_object.get("compilation")
+                path_compilation = os.path.abspath(path_compilation.replace('root', Config().paths.projects_root))
+
+                path_compile_instructions = data_object.get("compile_instructions")
+                if path_compile_instructions == "root" or path_compile_instructions == "root/":
+                    path_compile_instructions = None
+                elif path_compile_instructions:
+                    path_compile_instructions = os.path.abspath(path_compile_instructions.replace(
+                        'root', Config().paths.projects_root))
+
+                _logger.info("Attempting to analyse '{0}' (instructions {1})".format(
+                    path_compilation, path_compile_instructions))
+
+                model = AnalysisModelFactory.create(
+                    compilation=path_compilation,
+                    compile_instructions=path_compile_instructions,
+                    output_directory=data_object.get("output_directory"),
+                    one_time_positioning=bool(data_object.get('one_time_positioning', default=1, type=int)),
+                    chain=bool(data_object.get('chain', default=1, type=int)))
+
+                if "pinning_matrices" in data_object:
+                    model.pinning_matrices = get_2d_list(
+                        data_object, "pinning_matrices", getlist_kwargs={"type": int}, dtype=int)
+
+                regridding_folder = data_object.get("reference_grid_folder", default=None)
+                if regridding_folder:
+                    grid_list = get_2d_list(data_object, "gridding_offsets",
+                                            getlist_kwargs={"type": int}, dtype=int)
+
+                    grid_list = tuple(tuple(map(int, l)) if l else None for l in grid_list)
+
+                    model.grid_model.reference_grid_folder = regridding_folder
+                    model.grid_model.gridding_offsets = grid_list
+
+                plate_image_inclusion = data_object.getlist('plate_image_inclusion[]')
+                if not plate_image_inclusion:
+                    data_object.get('plate_image_inclusion', default=None)
+
+                if plate_image_inclusion:
+
+                    if isinstance(plate_image_inclusion, StringTypes):
+                        plate_image_inclusion = tuple(val.strip() for val in plate_image_inclusion.split(";"))
+                        plate_image_inclusion = [val if val else None for val in plate_image_inclusion]
+
+                    model.plate_image_inclusion = plate_image_inclusion
+
+                success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(
+                    AnalysisModelFactory.to_dict(model))
+
+                if success:
+                    return jsonify(success=True)
+                else:
+                    return jsonify(success=False, reason="The following has bad data: {0}".format(
+                        ", ".join(AnalysisModelFactory.get_invalid_names(model))))
 
             else:
                 return jsonify(success=False, reason='Action "{0}" not recognized'.format(action))
