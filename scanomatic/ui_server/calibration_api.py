@@ -419,7 +419,8 @@ def add_routes(app):
 
         Request Keys:
             "image": The grayscale calibrated image
-            "image_filter": The filter indicating what is the colony
+            "blob": The filter indicating what is the colony
+            "background": The filter indicating what is the background
         Returns:
 
         """
@@ -550,6 +551,7 @@ def add_routes(app):
             data.compress_type = zipfile.ZIP_DEFLATED
             zf.writestr(data, open(data_path, 'r').read())
 
+        memory_file.flush()
         memory_file.seek(0)
         if not name:
             name = 'default'

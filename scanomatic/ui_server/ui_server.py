@@ -80,7 +80,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/")
     def _root():
-        return send_from_directory(Paths().ui_root, Paths().ui_root_file)
+        return render_template(Paths().ui_root_file, debug=app.debug)
 
     @app.route("/ccc")
     def _ccc():

@@ -49,8 +49,16 @@ img.icon-large {
     height: 100%;
 }
 
+#header {
+    position: absolute;
+    width: 100%;
+    top: 0px;
+    height: 190px;
+
+}
+
 #page {
-    position: fixed;
+    position: absolute;
     width: 100%;
     bottom: 0px;
     height: calc(100% - 190px);
@@ -95,6 +103,9 @@ li {
 }
 
 nav {
+    display: block;
+    position: absolute;
+    bottom: 0px;
     padding: 12px;
 	background: #e7d2b7;
 	color: #cd8b34;
@@ -155,6 +166,26 @@ label {
 #cont h3 {
     font-family: sans;
     margin-top: 10px;
+}
+
+.urgent {
+    max-width: 900px;
+    font-size: 130%;
+    font-weight: bold;
+    background-color: #b01010;
+    color: #101010;
+    margin-left: 30px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    z-index: 999;
+    opacity: 0.9;
+    padding: 6px;
+}
+
+#logo {
+    position: fixed;
+    top: 0;
+    z-index: -1;
 }
 
 .section {

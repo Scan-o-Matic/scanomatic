@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="style/main.css?ver=_-_VERSIONTAG_-_">
+    <script src="/js/jquery-2.1.4.min.js"></script>
+
+	<title>Scan-o-Matic</title>
+</head>
+<body>
+        <div id="holder">
+            <div id="header">
+                <img id='logo' src='images/help_logo.png'>
+                {% if debug %}
+                <div class="urgent">You are running in debug mode,
+                    this exposes you to execution of arbitrary remote code.
+                    Make absolutely sure you are behind a firewall and never use this
+                    option in deployment.</div>
+                {% endif %}
+                <nav>
+                    <a href="/experiment?ver=_-_VERSIONTAG_-_" target="page">Experiment</a>
+                    <a href="/compile?ver=_-_VERSIONTAG_-_" target="page">Compile</a>
+                    <a href="/analysis?ver=_-_VERSIONTAG_-_" target="page">Analysis</a>
+                    <a href="/qc_norm?ver=_-_VERSIONTAG_-_" target="page">QC & Norm</a>
+                    |
+                    <a href="/status?ver=_-_VERSIONTAG_-_" target="page">Status</a>
+                    |
+                    <a href="/fixtures?ver=_-_VERSIONTAG_-_" target="page">Fixtures</a>
+                    |
+                    <a href="/settings?ver=_-_VERSIONTAG_-_" target="page">Settings</a>
+                    <a href="/wiki" target="_blank">Wiki</a>
+
+                    <span>ver=_-_VERSIONTAG_-_</span>
+                </nav>
+            </div>
+            <iframe id="page" name="page" src="/home"></iframe>
+        </div>
+        <script>
+            $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
+        </script>
+</body>
+</html>
