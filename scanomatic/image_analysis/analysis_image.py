@@ -253,8 +253,8 @@ class ProjectImage(object):
             call(["python",
                   "-c",
                   "from scanomatic.util.analysis import produce_grid_images;"
-                  " produce_grid_images('{0}', plates={1})".format(
-                      self._analysis_model.output_directory, plate_indices)])
+                  " produce_grid_images('{0}', plates={1}, compilation='{2}')".format(
+                      self._analysis_model.output_directory, plate_indices, self._analysis_model.compilation)])
 
         return True
 

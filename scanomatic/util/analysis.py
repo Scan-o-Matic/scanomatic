@@ -11,22 +11,26 @@ from scanomatic.generics.purge_importing import ExpiringModule
 _logger = Logger("Analysis Utils")
 
 
-def produce_grid_images(path=".", plates=None, image=None, mark_position=None):
+def produce_grid_images(path=".", plates=None, image=None, mark_position=None, compilation=None):
 
     project_path = os.path.join(os.path.dirname(os.path.abspath(path)))
 
-    for compilation_pattern in (Paths().project_compilation_pattern,
-                                Paths().project_compilation_from_scanning_pattern,
-                                Paths().project_compilation_from_scanning_pattern_old):
+    if compilation:
+        if not os.path.isfile(compilation):
+            raise ValueError("There's no compilation at {0}".format(compilation))
+    else:
+        for compilation_pattern in (Paths().project_compilation_pattern,
+                                    Paths().project_compilation_from_scanning_pattern,
+                                    Paths().project_compilation_from_scanning_pattern_old):
 
-        compilations = glob.glob(
-            os.path.join(os.path.dirname(os.path.abspath(path)), compilation_pattern.format("*")))
+            compilations = glob.glob(
+                os.path.join(os.path.dirname(os.path.abspath(path)), compilation_pattern.format("*")))
 
-        if compilations:
-            break
+            if compilations:
+                break
 
-    if not compilations:
-        raise ValueError("There are no compilations in the parent directory")
+        if not compilations:
+            raise ValueError("There are no compilations in the parent directory")
 
     compilation = compilations[0]
     _logger.info("Using {0}".format(os.path.basename(compilation)))
