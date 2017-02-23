@@ -224,6 +224,27 @@ if len(sys.argv) > 1:
         requires=package_dependencies
     )
 
+    if set(v.lower() for v in sys.argv).intersection(('--help', '--help-commands')):
+
+        print """
+        SCAN-O-MATIC Specific Setup
+        ---------------------------
+
+        setup.py install [options]
+
+        --version   Checks for changes in the code and upgrades version
+                    if detected.
+
+        --default   Will select default option to setup questions.
+
+
+        setup.py uninstall
+
+            Uninstalls Scan-o-Matic
+
+        """
+        sys.exit()
+
     if os.name == "nt":
 
         _logger.info(
