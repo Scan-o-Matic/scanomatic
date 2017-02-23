@@ -450,7 +450,7 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=True,
                            reason="Background filter data is not understandable as a boolean array")
 
-        if valid_array_dimensions(2, image, blob_filter, background_filter):
+        if not valid_array_dimensions(2, image, blob_filter, background_filter):
             return jsonify(success=False, is_endpoint=True,
                            reason="Supplied data does not have the correct dimensions." +
                            " Image-shape is {0}, blob-shape {1}, and background-shape {2}.".format(
