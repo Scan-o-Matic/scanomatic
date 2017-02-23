@@ -452,7 +452,11 @@ def add_routes(app):
 
         if valid_array_dimensions(2, image, blob_filter, background_filter):
             return jsonify(success=False, is_endpoint=True,
-                           reason="Supplied data does not have the correct dimensions")
+                           reason="Supplied data does not have the correct dimensions." +
+                           " Image-shape is {0}, blob-shape {1}, and background-shape {2}.".format(
+                               image.shape, blob_filter.shape, background_filter.shape) +
+                           " All need to be identical shape and 2D."
+                           )
 
         if (blob_filter & background_filter).any():
             return jsonify(success=False, is_endpoint=True,
