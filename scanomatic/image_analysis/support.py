@@ -29,7 +29,18 @@ _logger = logger.Logger("Resource Analysis Support")
 def save_image_as_png(from_path, **kwargs):
 
     file, ext = os.path.splitext(from_path)
-    Image.open(from_path).save(os.path.extsep.join((file, "png")), **kwargs)
+    im = Image.open(from_path)
+    try:
+        im.save(os.path.extsep.join((file, "png")), **kwargs)
+    except (IOError):
+
+        if im.mode == 'I;16':
+            im2 = im.point(lambda i: i * (1. / 256))
+            im2.mode = 'I;8'
+            im2.save(os.path.extsep.join((file, "png")), **kwargs)
+        else:
+            raise TypeError("Don't know how to process images of type {0}".format(im.mode))
+
 
 def get_first_rotated(A, B):
     """Evaluates if both have the same orientation (lanscape or standing)
