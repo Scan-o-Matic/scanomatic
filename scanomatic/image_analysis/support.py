@@ -6,6 +6,7 @@ try:
 except ImportError:
     from PIL import Image
 import numpy as np
+from scipy.misc import toimage
 
 
 #
@@ -36,8 +37,10 @@ def save_image_as_png(from_path, **kwargs):
 
         if im.mode == 'I;16':
             im2 = im.point(lambda i: i * (1. / 256))
-            im2.mode = 'I;8'
-            im2.save(os.path.extsep.join((file, "png")), **kwargs)
+            im2.mode = 'L'
+            data = np.array(im2.getdata(), dtype=np.uint8).reshape(im2.shape[::-1])
+            toimage(data).save(os.path.extsep.join((file, "png")), **kwargs)
+            _logger.info("Attempted conversion to 8bit PNG format")
         else:
             raise TypeError("Don't know how to process images of type {0}".format(im.mode))
 
