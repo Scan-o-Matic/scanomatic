@@ -33,7 +33,8 @@ def save_image_as_png(from_path, **kwargs):
     im = Image.open(from_path)
     try:
         im.save(os.path.extsep.join((file, "png")), **kwargs)
-    except (IOError):
+
+    except IOError:
 
         if im.mode == 'I;16':
             im2 = im.point(lambda i: i * (1. / 256))
