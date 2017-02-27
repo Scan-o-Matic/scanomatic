@@ -48,7 +48,7 @@ class FixtureImage(object):
     EXPECTED_IM_SIZE = (6000, 4800)
     EXPECTED_IM_DPI = 600
 
-    def __init__(self, fixture=None):
+    def __init__(self, fixture=None, reference_overwrite_mode=False):
 
         """
 
@@ -58,6 +58,7 @@ class FixtureImage(object):
 
         self._reference_fixture_settings = fixture
         self._current_fixture_settings = None
+        self._reference_overwrite_mode = reference_overwrite_mode
         """:type : scanomatic.io.fixtures.Fixture_Settings"""
         if fixture:
             self._history = GriddingHistory(fixture)
@@ -74,12 +75,12 @@ class FixtureImage(object):
 
         if key in ['current']:
             if self._current_fixture_settings is None:
-                self._current_fixture_settings = FixtureSettings(self.name)
+                self._current_fixture_settings = FixtureSettings(self.name, overwrite=False)
             return self._current_fixture_settings
 
         elif key in ['fixture', 'reference']:
             if self._reference_fixture_settings is None:
-                self._reference_fixture_settings = FixtureSettings(self.name)
+                self._reference_fixture_settings = FixtureSettings(self.name, overwrite=self._reference_overwrite_mode)
                 self._name = self.name
 
             return self._reference_fixture_settings
@@ -144,7 +145,7 @@ class FixtureImage(object):
                 self.im = None
 
             if self.im is None:
-                self._logger.error("Could not load image")
+                self._logger.error("Could not load image at '{0}'".format(image_path))
 
             else:
                 self._logger.info("Loaded image {0} with shape {1}".format(image_path, self.im.shape))
@@ -397,7 +398,11 @@ class FixtureImage(object):
 
             return False
 
-        current_model.grayscale.values = image_grayscale.get_grayscale(self, current_model.grayscale)[1]
+        try:
+            current_model.grayscale.values = image_grayscale.get_grayscale(self, current_model.grayscale)[1]
+        except TypeError:
+            current_model.grayscale.values = None
+
         if current_model.grayscale.values is None:
             self._logger.error("Grayscale detection failed")
             return False
@@ -411,6 +416,12 @@ class FixtureImage(object):
         :type issues: dict
         :type offset: tuple(int)
         """
+
+        if area is None:
+            self._logger.error("Area is None, can't set if area isn't specified")
+
+        if offset is None:
+            self._logger.error("Offset is None, this doesn't make any sense")
 
         if rotation and np.abs(rotation) > 0.01:
             self._logger.warning("Not supporting rotations yet (got {0})".format(rotation))

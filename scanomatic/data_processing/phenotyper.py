@@ -455,7 +455,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 return False
 
         if isinstance(phenotype, Phenotypes) and self._phenotypes is not None:
-            return self._phenotypes is not None and phenotype.value < self._phenotypes.shape[-1]
+            return any(phenotype in plate for plate in self._phenotypes if plate is not None)
         elif isinstance(phenotype, CurvePhaseMetaPhenotypes) and self._vector_meta_phenotypes is not None:
             return any(phenotype in plate for plate in self._vector_meta_phenotypes if plate is not None)
         return False
@@ -823,7 +823,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         return StrainSelector(self, tuple((zip(*s) if plates is None or i in plates else tuple())
                                           for i, s in enumerate(selection)))
 
-    def iterate_extraction(self):
+    def iterate_extraction(self, keep_filter=False):
 
         self._logger.info(
             "Iteration started, will extract {0} phenotypes".format(
@@ -835,6 +835,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             yield 0
         else:
             self._logger.info("No smoothing, data already smooth!")
+
+        self.wipe_extracted_phenotypes(keep_filter)
 
         for x in self._calculate_phenotypes():
             self._logger.debug("Phenotype extraction iteration")
@@ -1168,9 +1170,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._logger.info("Phenotypes (N={0}), extraction started for {1} curves".format(
             phenotypes_count, int(total_curves)))
 
-        phenotypes_max_value = max(p.value for p in self._phenotypes_inclusion()
-                                   if PhenotypeDataType.Scalar(p) and not PhenotypeDataType.Phases(p)) + 1
-
         curves_in_completed_plates = 0
         phenotypes_inclusion = self._phenotypes_inclusion
 
@@ -1188,7 +1187,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
-            phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_max_value,), dtype=np.float)
+            phenotypes = {
+                p: np.zeros(plate.shape[:2], dtype=np.float) * np.nan
+                for p in Phenotypes if phenotypes_inclusion(p)}
+
             plate_size = np.prod(plate.shape[:2])
             self._logger.info("Plate {0} has {1} curves".format(id_plate + 1, plate_size))
 
@@ -1203,8 +1205,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             all_vector_meta_phenotypes.append(vector_meta_phenotypes)
 
             for pos_index, pos_data in enumerate(plate_flat_regression_strided):
-
-                position_phenotypes = [None] * phenotypes_max_value
 
                 id1 = pos_index % plate.shape[1]
                 id0 = pos_index / plate.shape[1]
@@ -1234,16 +1234,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                             continue
 
                         if PhenotypeDataType.Scalar(phenotype):
-
-                            try:
-                                position_phenotypes[phenotype.value] = phenotype(**curve_data)
-                            except IndexError:
-                                self._logger.critical(
-                                    "Could not store {0} (index {1}) expected max {2}.".format(
-                                        phenotype, phenotype.value, phenotypes_max_value))
-                                return
-
-                phenotypes[id0, id1, ...] = position_phenotypes
+                            phenotypes[phenotype][id0, id1] = phenotype(**curve_data)
 
                 if curve_has_data and (
                             phenotypes_inclusion(VectorPhenotypes.PhasesClassifications) or
@@ -1251,7 +1242,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                     phases, phases_phenotypes = get_phase_analysis(
                         self, id_plate, (id0, id1),
-                        experiment_doublings=position_phenotypes[Phenotypes.ExperimentPopulationDoublings.value])
+                        experiment_doublings=phenotypes[Phenotypes.ExperimentPopulationDoublings][id0, id1])
 
                     if phenotypes_inclusion(VectorPhenotypes.PhasesClassifications):
                         vector_phenotypes[VectorPhenotypes.PhasesClassifications][id0, id1] = phases
@@ -1260,8 +1251,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 if id1 == 0:
 
-                    self._logger.debug("Done plate {0} pos {1} {2} {3}".format(
-                        id_plate, id0, id1, list(position_phenotypes)))
+                    self._logger.debug("Done plate {0} pos {1} {2}".format(id_plate, id0, id1))
 
                     self._logger.info("Plate {1} growth phenotypes {0:.1f}% done".format(
                         100.0 * (pos_index + 1.0) / plate_size,
@@ -1282,8 +1272,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                         phenotype, VectorPhenotypes.PhasesPhenotypes))
                     continue
 
-                phenotype_data = extract_phenotypes(vector_phenotypes[VectorPhenotypes.PhasesPhenotypes],
-                                                    phenotype, phenotypes)
+                phenotype_data = extract_phenotypes(
+                    vector_phenotypes[VectorPhenotypes.PhasesPhenotypes], phenotype, phenotypes)
 
                 vector_meta_phenotypes[phenotype] = phenotype_data.astype(np.float)
 
@@ -1633,7 +1623,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             else:
                 return _plate_type_converter_scalar(plate)
 
-        return [None if (p is None or phenotype not in self) else _plate_type_converter(p[..., phenotype.value])
+        return [None if (p is None or phenotype not in self) else _plate_type_converter(p[phenotype])
                 for p in self._phenotypes]
 
     @property
@@ -1642,7 +1632,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         for p in Phenotypes:
 
             if self._phenotypes_inclusion(p) and self._phenotypes is not None\
-                    and self._phenotypes[0].shape[-1] > p.value:
+                    and any(p in plate for plate in self._phenotypes if plate is not None):
                 yield p
 
     @property
@@ -1744,27 +1734,27 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         try:
             gt = self.get_phenotype(Phenotypes.GenerationTime)[plate].data
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             gt = np.ones(shape)
 
         try:
             gt_err = self.get_phenotype(Phenotypes.GenerationTimeStErrOfEstimate)[plate].data
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             gt_err = np.ones(shape)
 
         try:
             cr_fit = self.get_phenotype(Phenotypes.ChapmanRichardsFit)[plate].data
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             cr_fit = np.ones(shape)
 
         try:
             lag = self.get_phenotype(Phenotypes.GrowthLag)[plate].data
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             lag = np.ones(shape)
 
         try:
             growth = self.get_phenotype(Phenotypes.ExperimentGrowthYield)[plate].data
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError, ValueError):
             growth = np.ones(shape)
 
         gt_mean = gt[np.isfinite(gt)].mean()
@@ -1777,7 +1767,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                    np.abs(lag - lag_mean) / lag_mean +
                    np.abs(growth - growth_mean) / growth)
 
-        return np.unravel_index(badness.ravel().argsort(), badness.shape)
+        return np.unravel_index(badness.ravel().argsort()[::-1], badness.shape)
 
     def set(self, data_type, data):
 
@@ -1787,7 +1777,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 self._phenotypes = None
 
             else:
-                self._phenotypes = data
+                self._phenotypes = self._convert_phenotype_to_current(data)
 
             self._init_remove_filter_and_undo_actions()
             self._init_default_offsets()
@@ -1807,21 +1797,30 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         elif data_type == 'vector_phenotypes':
 
-            self._vector_phenotypes = data
+            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+                self._vector_phenotypes = None
+            else:
+                self._vector_phenotypes = data
 
             self._init_remove_filter_and_undo_actions()
             self._init_default_offsets()
 
         elif data_type == 'vector_meta_phenotypes':
 
-            self._vector_meta_phenotypes = data
+            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+                self._vector_meta_phenotypes = None
+            else:
+                self._vector_meta_phenotypes = data
 
             self._init_remove_filter_and_undo_actions()
             self._init_default_offsets()
 
         elif data_type == 'smooth_growth_data':
 
-            self._smooth_growth_data = data
+            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+                self._smooth_growth_data = None
+            else:
+                self._smooth_growth_data = data
 
         elif data_type == "phenotype_filter_undo":
 
@@ -1834,7 +1833,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         elif data_type == "phenotype_filter":
 
-            if all(True if plate is None else isinstance(plate, dict) for plate in data):
+            if isinstance(data, np.ndarray) and (data.size == 0 or data.size == 1 and not data.shape):
+                self._phenotype_filter = None
+            elif all(True if plate is None else isinstance(plate, dict) for plate in data):
                 self._phenotype_filter = data
             else:
                 self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
@@ -1850,6 +1851,56 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         else:
 
             self._logger.warning('Unknown type of data {0}'.format(data_type))
+
+    def _convert_phenotype_to_current(self, data):
+
+        has_warned = False
+        store = []
+        for plate in data:
+
+            if plate is None:
+                store.append(None)
+
+            if not isinstance(plate, dict):
+
+                new_plate = {}
+                store.append(new_plate)
+
+                if not has_warned:
+                    has_warned = True
+                    self._logger.warning(
+                        "Outdated phenotypes format, guessing which were extracted and converting to current format."
+                        "To faster load in the future and get rid of this message, save current state.")
+
+                try:
+                    n_phenotypes = plate.shape[2]
+                except IndexError:
+                    self._logger.error("Plate format not understood, old phenotype extraction not accepted")
+                    return None
+
+                for id_phenotype in range(n_phenotypes):
+
+                    if plate[..., id_phenotype].any():
+
+                        try:
+                            phenotype = Phenotypes(id_phenotype)
+                        except ValueError:
+                            self._logger.error(
+                                "There were phenotypes for index {0} but no known phenotype with that index.".format(
+                                    id_phenotype) + " Data omitted.")
+                            continue
+
+                        new_plate[phenotype] = plate[..., id_phenotype]
+
+        if has_warned is False:
+            return data
+
+        if np.unique(tuple(hash(tuple(p.keys())) for p in store if p is not None)) != 1:
+            self._logger.warning(
+                "The plates don't agree on what phenotypes were extracted, you should tread carefully or better yet:" +
+                " rerun feature extraction.")
+
+        return np.array(store)
 
     def _convert_to_current_phenotype_filter(self, data):
 
@@ -1892,7 +1943,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def _init_default_offsets(self):
 
-        if len(self._reference_surface_positions) != len(self._phenotypes):
+        if self._phenotypes is None or len(self._reference_surface_positions) != len(self._phenotypes):
             self.set_control_surface_offsets(Offsets.LowerRight)
 
     def _init_plate_filter(self, plate_index, phenotype, phenotype_data, growth_filter):
@@ -1922,7 +1973,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if self._phenotype_filter is None or len(self._phenotypes) != len(self._phenotype_filter):
 
             self._logger.warning("Filter doesn't match number of plates. Rewriting...")
-            self._phenotype_filter = np.array([{} for _ in range(self._phenotypes.shape[0])], dtype=np.object)
+            self._phenotype_filter = np.array([{} for _ in self._phenotypes], dtype=np.object)
             self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
         elif self._phenotype_filter_undo is None or len(self._phenotypes) != len(self._phenotype_filter_undo):
@@ -1932,25 +1983,25 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         if Phenotypes.Monotonicity in self and Phenotypes.ExperimentPopulationDoublings in self:
             growth_filter = [
-                ((plate[..., Phenotypes.Monotonicity.value] < self._no_growth_monotonicity_threshold) |
-                 (np.isfinite(plate[..., Phenotypes.Monotonicity.value]) == np.False_)) &
-                ((plate[..., Phenotypes.ExperimentPopulationDoublings.value] <
+                ((plate[Phenotypes.Monotonicity] < self._no_growth_monotonicity_threshold) |
+                 (np.isfinite(plate[Phenotypes.Monotonicity]) == np.False_)) &
+                ((plate[Phenotypes.ExperimentPopulationDoublings] <
                   self._no_growth_pop_doublings_threshold) |
-                 (np.isfinite(plate[..., Phenotypes.ExperimentPopulationDoublings.value]) == np.False_))
+                 (np.isfinite(plate[Phenotypes.ExperimentPopulationDoublings]) == np.False_))
                 for plate in self._phenotypes]
         elif Phenotypes.Monotonicity in self:
             growth_filter = [
-                ((plate[..., Phenotypes.Monotonicity.value] < self._no_growth_monotonicity_threshold) |
-                 (np.isfinite(plate[..., Phenotypes.Monotonicity.value]) == np.False_))
+                ((plate[Phenotypes.Monotonicity] < self._no_growth_monotonicity_threshold) |
+                 (np.isfinite(plate[Phenotypes.Monotonicity]) == np.False_))
                 for plate in self._phenotypes]
         elif Phenotypes.ExperimentPopulationDoublings in self:
             growth_filter = [
-                ((plate[..., Phenotypes.ExperimentPopulationDoublings.value] <
+                ((plate[Phenotypes.ExperimentPopulationDoublings] <
                   self._no_growth_pop_doublings_threshold) |
-                 (np.isfinite(plate[..., Phenotypes.ExperimentPopulationDoublings.value]) == np.False_))
+                 (np.isfinite(plate[Phenotypes.ExperimentPopulationDoublings]) == np.False_))
                 for plate in self._phenotypes]
         else:
-            growth_filter = [[] for _ in range(self._phenotypes.shape[0])]
+            growth_filter = [[] for _ in self._phenotypes]
 
         for phenotype in self.phenotypes:
 
@@ -2218,35 +2269,38 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             with open(plate_path, 'wb') as fh:
 
-                cw = csv.writer(fh, dialect=dialect)
+                try:
+                    # DATA
+                    plate = data_source[data_source.keys()[0]][plate_index]
+                except IndexError:
+                    self._logger.warning("Output empty file because there were no phenotypes")
+                else:
+                    # HEADER ROW
+                    meta_data_headers = self.meta_data_headers(plate_index)
 
-                # DATA
-                plate = data_source[data_source.keys()[0]][plate_index]
+                    cw = csv.writer(fh, dialect=dialect)
 
-                # HEADER ROW
-                meta_data_headers = self.meta_data_headers(plate_index)
+                    cw.writerow(
+                        tuple(self._make_csv_row(
+                            default_meta_data,
+                            meta_data_headers,
+                            data_source.keys())))
 
-                cw.writerow(
-                    tuple(self._make_csv_row(
-                        default_meta_data,
-                        meta_data_headers,
-                        data_source.keys())))
+                    filt = self._phenotype_filter[plate_index]
 
-                filt = self._phenotype_filter[plate_index]
+                    for idX, X in enumerate(plate):
 
-                for idX, X in enumerate(plate):
+                        for idY, Y in enumerate(X):
 
-                    for idY, Y in enumerate(X):
+                            cw.writerow(
+                                tuple(self._make_csv_row(
+                                    (plate_index, idX, idY),
+                                    no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
+                                    tuple(data_source[p][plate_index][idX, idY] if filt[p][idX, idY] == 0 else
+                                     Filter(filt[p][idX, idY]).name
+                                     for p in data_source))))
 
-                        cw.writerow(
-                            tuple(self._make_csv_row(
-                                (plate_index, idX, idY),
-                                no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
-                                tuple(data_source[p][plate_index][idX, idY] if filt[p][idX, idY] == 0 else
-                                 Filter(filt[p][idX, idY]).name
-                                 for p in data_source))))
-
-                self._logger.info("Saved {0}, plate {1} to {2}".format(save_data, plate_index + 1, plate_path))
+                    self._logger.info("Saved {0}, plate {1} to {2}".format(save_data, plate_index + 1, plate_path))
 
         return True
 

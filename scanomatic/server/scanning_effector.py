@@ -95,7 +95,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._project_directory, paths_object.scan_log_file_pattern.format(self._scanning_job.project_name))
             self._logger.info("{0} is setting up; logging will be directed to file {1}".format(job, file_path))
             self._logger.set_output_target(file_path, catch_stdout=True, catch_stderr=True)
-
+            self._log_file_path = file_path
             self._logger.surpress_prints = False
 
         self._logger.info("Doing setup")
@@ -118,6 +118,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
         scan_project_file_path = os.path.join(
             self._project_directory,
             paths_object.scan_project_file_pattern.format(self._scanning_job.project_name))
+
+        self._scanning_job.scanning_program = sane.SaneBase.get_scan_program()
+        self._scanning_job.scanning_program_version = sane.SaneBase.get_program_version()
+
+        # NOTE: In actual scanning the scanner USB setting is prepended to the settings
+        self._scanning_job.scanning_program_params = self._scanner.get_scan_instructions_as_tuple()
 
         if ScanningModelFactory.serializer.dump(self._scanning_job, scan_project_file_path):
 
@@ -264,17 +270,26 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def _update_scan_cycle_step(self, step_action):
 
         if step_action is SCAN_STEP.NextMajor:
+
             self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_major
             self._logger.info("Entering step {0}".format(self._scanning_effector_data.current_cycle_step))
+
         elif step_action is SCAN_STEP.NextMinor:
+
             self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_minor
+
         elif step_action is SCAN_STEP.TruncateIteration:
+
+            self._logger.warning("Entering wait mode due to scan cycle truncation. This is a bad sign")
             self._scanning_effector_data.current_cycle_step = SCAN_CYCLE.Wait
 
         if step_action is None:
+
             self._logger.error("Scan step {0} failed to return a valid step action".format((
                 self._scanning_effector_data.current_cycle_step)))
+
         elif step_action is not SCAN_STEP.Wait:
+
             self._scanning_effector_data.current_step_start_time = time.time()
 
     def _do_wait(self):

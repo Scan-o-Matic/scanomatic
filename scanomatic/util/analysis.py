@@ -11,34 +11,38 @@ from scanomatic.generics.purge_importing import ExpiringModule
 _logger = Logger("Analysis Utils")
 
 
-def produce_grid_images(path=".", image=None, mark_position=None):
+def produce_grid_images(path=".", plates=None, image=None, mark_position=None, compilation=None):
 
     project_path = os.path.join(os.path.dirname(os.path.abspath(path)))
 
-    for compilation_pattern in (Paths().project_compilation_pattern,
-                                Paths().project_compilation_from_scanning_pattern,
-                                Paths().project_compilation_from_scanning_pattern_old):
+    if compilation:
+        if not os.path.isfile(compilation):
+            raise ValueError("There's no compilation at {0}".format(compilation))
+    else:
+        for compilation_pattern in (Paths().project_compilation_pattern,
+                                    Paths().project_compilation_from_scanning_pattern,
+                                    Paths().project_compilation_from_scanning_pattern_old):
 
-        compilations = glob.glob(
-            os.path.join(os.path.dirname(os.path.abspath(path)), compilation_pattern.format("*")))
+            compilations = glob.glob(
+                os.path.join(os.path.dirname(os.path.abspath(path)), compilation_pattern.format("*")))
 
-        if compilations:
-            break
+            if compilations:
+                break
 
-    if not compilations:
-        raise ValueError("There are no compilations in the parent directory")
+        if not compilations:
+            raise ValueError("There are no compilations in the parent directory")
 
     compilation = compilations[0]
     _logger.info("Using {0}".format(os.path.basename(compilation)))
     compilation = CompileImageAnalysisFactory.serializer.load(compilation)
 
     image_path = compilation[-1].image.path
-    plates = compilation[-1].fixture.plates
+    all_plates = compilation[-1].fixture.plates
     if image is not None:
         for c in compilation:
             if os.path.basename(c.image.path) == os.path.basename(image):
                 image_path = c.image.path
-                plates = c.fixture.plates
+                all_plates = c.fixture.plates
                 break
 
     try:
@@ -50,7 +54,10 @@ def produce_grid_images(path=".", image=None, mark_position=None):
         except IOError:
             raise ValueError("Image doesn't exist, can't show gridding")
 
-    for plate in plates:
+    for plate in all_plates:
+
+        if plate is not None and plate not in plates:
+            continue
 
         plate_image = image[plate.y1: plate.y2, plate.x1: plate.x2]
         grid = unpickle_with_unpickler(np.load, os.path.join(path, Paths().grid_pattern.format(plate.index)))

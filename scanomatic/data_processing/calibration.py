@@ -13,10 +13,13 @@ import re
 from uuid import uuid1
 from glob import iglob
 from types import StringTypes
+
+
+from scanomatic.generics.maths import mid50_mean
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
-from scanomatic.image_analysis.image_basics import load_image_to_numpy, Image_Transpose
 from scanomatic.io.fixtures import Fixtures
+from scanomatic.image_analysis.image_basics import load_image_to_numpy, Image_Transpose
 from scanomatic.image_analysis.first_pass_image import FixtureImage
 
 """ Data structure for CCC-jsons
@@ -494,8 +497,8 @@ def get_local_fixture_for_image(identifier, image_identifier):
 
     fixture = FixtureImage(fixture_settings)
     current_settings = fixture['current']
-    current_settings.model.orientation_marks_x = im_json[CCCImage.marker_x]
-    current_settings.model.orientation_marks_y = im_json[CCCImage.marker_y]
+    current_settings.model.orientation_marks_x = np.array(im_json[CCCImage.marker_x])
+    current_settings.model.orientation_marks_y = np.array(im_json[CCCImage.marker_y])
     issues = {}
     fixture.set_current_areas(issues)
 
@@ -515,9 +518,11 @@ def save_image_slices(identifier, image_identifier, grayscale_slice=None, plate_
                 _get_im_slice(im, grayscale_slice))
 
     if plate_slices:
-        for id_plate, plate_dict in plate_slices.iteritems():
-            np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, id_plate),
-                    _get_im_slice(im, plate_dict))
+        for plate_model in plate_slices:
+            np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, plate_model.index),
+                    _get_im_slice(im, plate_model))
+
+    return True
 
 
 def _get_im_slice(im, model):
@@ -585,6 +590,58 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
             identifier, image_identifier, plate_id)))
         return False
 
+
+@_validate_ccc_edit_request
+def set_colony_compressed_data(identifier, image_identifier, plate_id, x, y, included=True,
+                               image=None, blob_filter=None, background_filter=None):
+
+    ccc = __CCC[identifier]
+    only_update_included = True
+    if image is not None:
+        only_update_included = False
+        background = mid50_mean(image[background_filter].ravel())
+        colony = image[blob_filter].ravel() - background
+
+        values, counts = zip(*{k: (colony == k).sum() for k in np.unique(colony).tolist()}.iteritems())
+
+        if np.sum(counts) != blob_filter.sum():
+            _logger.error("Counting mismatch between compressed format and blob filter")
+            return False
+
+        image_data = get_image_json_from_ccc(identifier, image_identifier)
+        plate = image_data[CCCImage.plates][plate_id]
+
+    while len(plate[CCCPlate.compressed_ccc_data]) <= x:
+
+        plate[CCCPlate.compressed_ccc_data].append([])
+
+    while len(plate[CCCPlate.compressed_ccc_data][x]) <= y:
+
+        plate[CCCPlate.compressed_ccc_data][x].append(
+            {CCCMeasurement.included: False,
+             CCCMeasurement.source_value_counts: [],
+             CCCMeasurement.source_values: []})
+
+    if only_update_included:
+
+        if included and not (plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_values] or
+                             plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_value_counts]):
+
+            _logger.warning(
+                "Attempting to include CCC Measurement for position {0}, {1} while it has no data".format(x, y))
+
+            return False
+
+        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.included] = included
+
+    else:
+        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.included] = included
+        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_value_counts] = counts
+        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_values] = values
+
+    _save_ccc_to_disk(ccc)
+
+    return True
 
 if not __CCC:
     __load_cccs()

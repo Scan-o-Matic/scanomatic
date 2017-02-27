@@ -58,7 +58,8 @@ class AnalysisModel(model.Model):
                  focus_position=None, suppress_non_focal=False, animate_focal=False,
                  one_time_positioning=True, one_time_grayscale=False,
                  grid_images=None, grid_model=None, xml_model=None,
-                 image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum, chain=True):
+                 image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum, chain=True,
+                 plate_image_inclusion=None):
 
         if grid_model is None:
             grid_model = GridModel()
@@ -84,7 +85,7 @@ class AnalysisModel(model.Model):
         self.image_data_output_item = image_data_output_item
         self.image_data_output_measure = image_data_output_measure
         self.chain = chain
-
+        self.plate_image_inclusion = plate_image_inclusion
         super(AnalysisModel, self).__init__()
 
 

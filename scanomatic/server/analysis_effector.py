@@ -75,7 +75,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             self._analysis_job = AnalysisModelFactory.create()
             self._logger.warning("No job instructions")
 
-        self._orginal_model = None
+        self._original_model = None
 
         self._job.content_model = self._analysis_job
 
@@ -253,17 +253,19 @@ Scan-o-Matic""", self._analysis_job)
                 raise StopIteration
 
         if self._redirect_logging:
-            self._logger.info("{0} is setting up, output will be directed to {1}".format(self._analysis_job,
-                                                                                         Paths().analysis_run_log))
-            self._logger.set_output_target(
-                os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
-                catch_stdout=True, catch_stderr=True, buffering=0)
+            self._logger.info("{0} is setting up, output will be directed to {1}".format(
+                self._analysis_job, Paths().analysis_run_log))
 
+            log_path = os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log)
+            self._logger.set_output_target(log_path, catch_stdout=True, catch_stderr=True, buffering=0)
             self._logger.surpress_prints = False
+            self._log_file_path = log_path
 
+        if len(self._first_pass_results.plates) != len(self._analysis_job.pinning_matrices):
+            self._filter_pinning_on_included_plates()
 
         AnalysisModelFactory.serializer.dump(
-            self._orginal_model, os.path.join(self._analysis_job.output_directory, Paths().analysis_model_file))
+            self._original_model, os.path.join(self._analysis_job.output_directory, Paths().analysis_model_file))
 
         self._logger.info("Will remove previous files")
 
@@ -280,14 +282,14 @@ Scan-o-Matic""", self._analysis_job)
 
             raise StopIteration
 
-        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results.compile_instructions)
+        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results)
 
         self._xmlWriter.write_header(self._scanning_instructions, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()
 
-        index_for_gridding = self._get_index_for_gridding()
+        # TODO: Need rework to handle gridding of diff times for diff plates
 
-        if not self._image.set_grid(self._first_pass_results[index_for_gridding]):
+        if not self._image.set_grid():
             self._stopping = True
 
         self._analysis_needs_init = False
@@ -306,23 +308,21 @@ Scan-o-Matic""", self._analysis_job)
 
         return True
 
+    def _filter_pinning_on_included_plates(self):
+
+        included_indices = tuple(p.index for p in self._first_pass_results.plates)
+        self._analysis_job.pinning_matrices = [pm for i, pm in enumerate(self._analysis_job.pinning_matrices)
+                                               if i in included_indices]
+        self._logger.warning("Inconsistency in number of plates reported in analysis instruction and compilation." +
+                             " Asuming pinning to be {0}".format(self._analysis_job.pinning_matrices))
+
+        self._original_model.pinning_matrices = self._analysis_job.pinning_matrices
+
     def _remove_files_from_previous_analysis(self):
 
         for p in image_data.ImageData.iter_image_paths(self._analysis_job.output_directory):
             os.remove(p)
             self._logger.info("Removed pre-existing file '{0}'".format(p))
-
-    def _get_index_for_gridding(self):
-
-        if self._analysis_job.grid_images:
-            pos = max(self._analysis_job.grid_images)
-            if pos >= len(self._first_pass_results):
-                pos = self._first_pass_results.last_index
-        else:
-
-            pos = self._first_pass_results.last_index
-
-        return pos
 
     def setup(self, job, redirect_logging=True):
 
@@ -343,7 +343,7 @@ Scan-o-Matic""", self._analysis_job)
 
         allow_start = AnalysisModelFactory.validate(self._analysis_job)
 
-        self._orginal_model = AnalysisModelFactory.copy(self._analysis_job)
+        self._original_model = AnalysisModelFactory.copy(self._analysis_job)
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
 
         try:

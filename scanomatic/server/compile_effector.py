@@ -51,9 +51,10 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         if self._compile_job.images is None:
             self._compile_job.images = tuple()
 
-        self._logger.set_output_target(Paths().get_project_compile_log_path_from_compile_model(self._compile_job),
-                                       catch_stdout=True, catch_stderr=True)
+        log_path = Paths().get_project_compile_log_path_from_compile_model(self._compile_job)
+        self._logger.set_output_target(log_path, catch_stdout=True, catch_stderr=True)
         self._logger.surpress_prints = True
+        self._log_file_path = log_path
 
         self._logger.info("Doing setup")
         self._logger.info("Action {0}".format(self._compile_job.compile_action))
@@ -214,12 +215,25 @@ Scan-o-Matic""", self._compile_job)
 
     def _spawn_analysis(self):
 
-        if rpc_client.get_client(admin=True).create_analysis_job(AnalysisModelFactory.to_dict(
-                AnalysisModelFactory.create(
+        analysis_model = AnalysisModelFactory.create(
                     chain=True,
                     compile_instructions=self._compile_instructions_path,
                     compilation=self._compile_job.path,
-                    email=self._compile_job.email))):
+                    email=self._compile_job.email)
+
+        if self._compile_job.overwrite_pinning_matrices:
+            analysis_model.pinning_matrices = self._compile_job.overwrite_pinning_matrices
+
+        if len(analysis_model.pinning_matrices) != len(self._fixture_settings.model.plates):
+
+            accepted_indices = tuple(p.index for p in self._fixture_settings.model.plates)
+            analysis_model.pinning_matrices = [pm for i, pm in analysis_model.pinning_matrices
+                                               if i in accepted_indices]
+            self._logger.warning(
+                "Reduced pinning matrices instructions to {0} because lacking plates in fixture".format(
+                    analysis_model.pinning_matrices))
+
+        if rpc_client.get_client(admin=True).create_analysis_job(AnalysisModelFactory.to_dict(analysis_model)):
             self._logger.info("Enqueued analysis")
 
             return True

@@ -88,7 +88,7 @@ def add_routes(app):
 
         analysis_file = os.path.join(path, Paths().analysis_model_file)
         model = AnalysisModelFactory.serializer.load_first(analysis_file)
-        """:type model: AnalysisModel"""
+        """:type model: scanomatic.models.analysis_model.AnalysisModel"""
 
         analysis_logs = tuple(chain(((
             convert_path_to_url("/api/tools/logs/0/0", c),
@@ -112,6 +112,7 @@ def add_routes(app):
                     'compilation': model.compilation,
                     'compile_instructions': model.compile_instructions,
                     'email': model.email,
+                    'pinning_matrices': model.pinning_matrices,
                     'grid_model': {'gridding_offsets': model.grid_model.gridding_offsets,
                                    'reference_grid_folder': model.grid_model.reference_grid_folder},
                 },
