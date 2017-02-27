@@ -126,3 +126,21 @@ function Map(arr, lambda_func) {
     }
     return new_arr;
 }
+
+function setVersionInformation(target, preface) {
+    $.ajax({
+    url: "/api/app/version",
+    method: 'GET',
+    success: function(data) {
+
+        if (data["source_information"] && data["source_information"]["branch"])
+            branch = ", " + data["source_information"]["branch"];
+        else
+            branch = "";
+        $(target).html(preface + data["version"] + branch);
+    },
+    error: function(data) {
+        $(target).html("Error checking version");
+    }
+    });
+}
