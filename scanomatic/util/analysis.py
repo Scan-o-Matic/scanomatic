@@ -32,7 +32,8 @@ def produce_grid_images(path=".", plates=None, image=None, mark_position=None, c
         if not compilations:
             raise ValueError("There are no compilations in the parent directory")
 
-    compilation = compilations[0]
+        compilation = compilations[0]
+
     _logger.info("Using {0}".format(os.path.basename(compilation)))
     compilation = CompileImageAnalysisFactory.serializer.load(compilation)
 
