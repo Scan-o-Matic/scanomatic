@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="style/main.css?ver=_-_VERSIONTAG_-_">
     <script src="/js/jquery-2.1.4.min.js"></script>
-
+    <script src="/js/helpers.js?ver=_-_VERSIONTAG_-_"></script>
 	<title>Scan-o-Matic</title>
 </head>
 <body>
@@ -19,10 +19,10 @@
                 {% endif %}
                 <nav>
                     <div class="nav-dropdown">
-                        <span>Experiment</span>
+                        <span class="linky"><img src="/images/menu.png" class="nav-icon">Experiment</span>
                         <div class="nav-dropdown-content">
-                            <div class="nav-dropdown-item"><a href="/experiment?ver=_-_VERSIONTAG_-_" target="page">Experiment</a></div>
-                            <div class="nav-dropdown-item"><a href="/compile?ver=_-_VERSIONTAG_-_" target="page">Compile</a></div>
+                            <div class="nav-dropdown-item"><a href="/experiment?ver=_-_VERSIONTAG_-_" target="page">Experiment / Scan</a></div>
+                            <div class="nav-dropdown-item"><a href="/compile?ver=_-_VERSIONTAG_-_" target="page">Compile Project</a></div>
                             <div class="nav-dropdown-item"><a href="/analysis?ver=_-_VERSIONTAG_-_" target="page">Analysis</a></div>
                             <div class="nav-dropdown-item"><a href="/feature_extract?ver=_-_VERSIONTAG_-_" target="page">Feature Extraction</a></div>
                         </div>
@@ -33,7 +33,7 @@
                     <a href="/status?ver=_-_VERSIONTAG_-_" target="page">Status</a>
                     |
                     <div class="nav-dropdown">
-                        <span>Settings</span>
+                        <span class="linky"><img src="/images/menu.png" class="nav-icon">Settings</span>
                         <div class="nav-dropdown-content">
                             <div class="nav-dropdown-item"><a href="/fixtures?ver=_-_VERSIONTAG_-_" target="page">Fixtures</a></div>
                             {% if debug %}
@@ -47,13 +47,14 @@
                     |
                     <a href="/wiki" target="_blank">Wiki</a>
 
-                    <span>ver=_-_VERSIONTAG_-_</span>
+                    <span id="version-info">ver=_-_VERSIONTAG_-_</span>
                 </nav>
             </div>
             <iframe id="page" name="page" src="/home"></iframe>
         </div>
         <script>
             $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
+            setVersionInformation("#version-info", "");
         </script>
-</body>
+    </body>
 </html>

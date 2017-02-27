@@ -71,7 +71,7 @@ p {
 	line-height: 150%;
 }
 
-a {
+a, .linky {
 	background: #f8e03e;
 	color: #541f0f;
     padding-left: 6px;
@@ -107,8 +107,13 @@ nav {
     position: absolute;
     bottom: 0px;
     padding: 12px;
-	background: #e7d2b7;
+	background: #cd8b34;
 	color: #cd8b34;
+	min-width: 960px;
+}
+
+nav a, nav .linky {
+    padding: 3px 12px;
 }
 
 nav span {
@@ -128,10 +133,9 @@ nav span {
 .nav-dropdown-content {
     display: none;
     position: absolute;
-    background-color: #e7d2b7;
+    background-color: #cd8b34;
     min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    padding: 12px 16px;
+    padding: 12px 6px;
     z-index: 1;
 }
 
@@ -142,9 +146,20 @@ nav span {
 .nav-dropdown-item {
     display: block;
     background-color: #cd8b34;
-    padding: 3px 12px;
+    padding: 3px 6px;
     margin-top: 3px;
     margin-bottom: 3px;
+}
+
+.nav-icon {
+    margin-right: 3px;
+    vertical-align: midle;
+    margin-bottom: 2px;
+}
+
+nav #version-info {
+    right: 12px;
+    position: absolute;
 }
 
 ul {
