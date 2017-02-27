@@ -112,6 +112,10 @@ nav {
 	min-width: 960px;
 }
 
+nav a, nav .linky {
+    padding: 3px 12px;
+}
+
 nav span {
 	background: #cd8b34;
 	color: #541f0f;
