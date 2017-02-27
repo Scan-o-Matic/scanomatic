@@ -109,6 +109,7 @@ nav {
     padding: 12px;
 	background: #cd8b34;
 	color: #cd8b34;
+	min-width: 960px;
 }
 
 nav span {
@@ -150,6 +151,11 @@ nav span {
     margin-right: 3px;
     vertical-align: midle;
     margin-bottom: 2px;
+}
+
+nav #version-info {
+    right: 12px;
+    position: absolute;
 }
 
 ul {
