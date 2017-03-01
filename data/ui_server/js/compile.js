@@ -123,10 +123,7 @@ function toggleLocalFixture(caller) {
     InputEnabled($(current_fixture_id), !localFixture);
 }
 
-function Compile(button) {
-
-    InputEnabled($(button), false);
-
+function GetIncludedImageList() {
     images = null;
     if (image_list_div.find("#manual-selection").prop("checked")) {
         images = [];
@@ -137,13 +134,19 @@ function Compile(button) {
             }
         });
     }
+    return images;
+}
+
+function Compile(button) {
+
+    InputEnabled($(button), false);
 
     data = {
         local: localFixture ? 1 : 0,
         fixture: localFixture ? "" : $(current_fixture_id).val(),
         path: path,
         chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
-        images: images
+        images: GetIncludedImageList()
     };
 
     $.ajax({
