@@ -232,8 +232,8 @@ Scan-o-Matic""", self._compile_job)
             ))
 
             accepted_indices = tuple(p.index for p in self._fixture_settings.model.plates)
-            analysis_model.pinning_matrices = [pm for i, pm in analysis_model.pinning_matrices
-                                               if i in accepted_indices]
+            analysis_model.pinning_matrices = [pm for i, pm in enumerate(analysis_model.pinning_matrices)
+                                               if i + 1 in accepted_indices]
             self._logger.warning(
                 "Reduced pinning matrices instructions to {0} because lacking plates in fixture".format(
                     analysis_model.pinning_matrices))
