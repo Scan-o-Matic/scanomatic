@@ -123,7 +123,7 @@ function toggleLocalFixture(caller) {
     InputEnabled($(current_fixture_id), !localFixture);
 }
 
-function GetImageInclusionList() {
+function GetIncludedImageList() {
     images = null;
     if (image_list_div.find("#manual-selection").prop("checked")) {
         images = [];
@@ -146,7 +146,7 @@ function Compile(button) {
         fixture: localFixture ? "" : $(current_fixture_id).val(),
         path: path,
         chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
-        images: GetImageInclusionList()
+        images: GetIncludedImageList()
     };
 
     $.ajax({

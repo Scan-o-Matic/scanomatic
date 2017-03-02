@@ -27,7 +27,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         super(CompileProjectEffector, self).__init__(job, logger_name="Compile Effector")
         self._compile_job = job.content_model
         """:type : scanomatic.models.compile_project_model.CompileInstructionsModel"""
-        self._job_label = self._compile_job.path
+        self._job_label = os.path.basename(self._compile_job.path)
         self._image_to_analyse = 0
         self._fixture_settings = None
         self._compile_instructions_path = None
@@ -224,7 +224,12 @@ Scan-o-Matic""", self._compile_job)
         if self._compile_job.overwrite_pinning_matrices:
             analysis_model.pinning_matrices = self._compile_job.overwrite_pinning_matrices
 
-        if len(analysis_model.pinning_matrices) != len(self._fixture_settings.model.plates):
+        if analysis_model.pinning_matrices and \
+                len(analysis_model.pinning_matrices) != len(self._fixture_settings.model.plates):
+
+            self._logger.warning("Suggested pinnings are {0} but known plates are {1}".format(
+                analysis_model.pinning_matrices, [p.index for p in self._fixture_settings.model.plates]
+            ))
 
             accepted_indices = tuple(p.index for p in self._fixture_settings.model.plates)
             analysis_model.pinning_matrices = [pm for i, pm in analysis_model.pinning_matrices
