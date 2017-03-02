@@ -40,10 +40,13 @@ function set_project_directory(input) {
             project_path_valid = data.valid_parent && data.exists;
 
             if (project_path_valid) {
+
                 setImageSuggestions(path);
+                $("#project-directory-info").html("Scan images in folder: " + GetIncludedImageList(true).length);
                 InputEnabled(image_list_div.find("#manual-selection"), true);
             } else {
                 toggleManualSelection(false);
+                $("#project-directory-info").html("<em>The project directory is the directory that contains the images that were scanned.</em>");
                 InputEnabled(image_list_div.find("#manual-selection"), false);
             }
 
@@ -123,9 +126,9 @@ function toggleLocalFixture(caller) {
     InputEnabled($(current_fixture_id), !localFixture);
 }
 
-function GetIncludedImageList() {
+function GetIncludedImageList(force_list) {
     images = null;
-    if (image_list_div.find("#manual-selection").prop("checked")) {
+    if (force_list || image_list_div.find("#manual-selection").prop("checked")) {
         images = [];
         image_list_div.find("#options").children().each(function() {
             imp = $(this).find(":input");
