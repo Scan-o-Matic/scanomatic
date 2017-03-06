@@ -492,13 +492,23 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if chain_steps else
                 COMPILE_ACTION.Initiate)
 
+            n_images_in_folder = len(dict_model['images'])
+
             if images:
+
                 dict_model['images'] = [p for p in dict_model['images'] if os.path.basename(p['path']) in images]
+                app.logger.info(
+                    "Manual selection of images, {0} included of {1} requested compared to {2} in folder.".format(
+                        len(dict_model['images']), len(images), n_images_in_folder))
+
                 if len(dict_model['images']) != len(images):
                     return jsonify(
                         success=False,
                         reason="The manually set list of images could not be satisfied"
                         "with the images in the specified folder")
+            else:
+
+                app.logger.info("Using all {0} images in folder for compilation".format(n_images_in_folder))
 
             dict_model["overwrite_pinning_matrices"] = get_2d_list(data_object, "pinning_matrices",
                                                                    getlist_kwargs={"type": int}, dtype=int)

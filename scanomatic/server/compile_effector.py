@@ -71,6 +71,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
             CompileProjectFactory.serializer.dump(self._compile_job, self._compile_instructions_path)
 
+        self._logger.info("{0} Images included in compilations".format(len(self._compile_job.images)))
         self._tweak_path()
         self._load_fixture()
         self._allow_start = True
