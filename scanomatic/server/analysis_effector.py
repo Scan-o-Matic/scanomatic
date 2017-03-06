@@ -22,7 +22,7 @@ from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
 import scanomatic.io.rpc_client as rpc_client
-
+from scanomatic.data_processing.phenotyper import remove_state_from_path
 
 def get_label_from_analysis_model(analysis_model, id_hash):
     """Make a suitable label to show in status view
@@ -331,7 +331,7 @@ Scan-o-Matic""", self._analysis_job)
         times_path = os.path.join(self._analysis_job.output_directory, Paths().image_analysis_time_series)
         try:
             os.remove(times_path)
-        except IOError:
+        except (IOError, OSError):
             pass
         else:
             self._logger.info("Removed pre-existing time data file")
@@ -345,10 +345,12 @@ Scan-o-Matic""", self._analysis_job)
                 grid_path = os.path.join(self._analysis_job.output_directory, filename_pattern).format(i + 1)
                 try:
                     os.remove(grid_path)
-                except IOError:
+                except (IOError, OSError):
                     pass
                 else:
                     self._logger.info("Removed pre-existing grid file '{0}'".format(grid_path))
+
+        remove_state_from_path(self._analysis_job.output_directory)
 
     def setup(self, job, redirect_logging=True):
 

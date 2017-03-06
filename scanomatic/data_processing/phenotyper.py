@@ -39,6 +39,8 @@ from scanomatic.data_processing.norm import Offsets, get_normalized_data, get_re
     norm_by_signal_to_noise, norm_by_log2_diff_corr_scaled, norm_by_diff
 
 
+_logger = logger.Logger("Phenotyper")
+
 def time_based_gaussian_weighted_mean(data, time, sigma=1):
     center = (time.size - time.size % 2) / 2
     delta_time = np.abs(time - time[center])
@@ -258,6 +260,28 @@ def get_project_dates(directory_path):
             pass
 
     return analysis_date, phenotype_date, state_date
+
+
+def remove_state_from_path(directory_path):
+
+    _p = paths.Paths()
+    n = 0
+
+    for path in (_p.phenotypes_input_data, _p.phenotype_times, _p.phenotypes_input_smooth,
+                 _p.phenotypes_extraction_params, _p.phenotypes_filter, _p.phenotypes_filter_undo,
+                 _p.phenotypes_meta_data, _p.normalized_phenotypes, _p.vector_phenotypes_raw,
+                 _p.vector_meta_phenotypes_raw, _p.phenotypes_reference_offsets):
+
+        file_path = os.path.join(directory_path, path)
+        try:
+            os.remove(file_path)
+        except (IOError, OSError):
+            pass
+        else:
+            n += 1
+
+    if n:
+        _logger.info("Removed {0} pre-existing phenotype state files".format(n))
 
 
 class Smoothing(Enum):
