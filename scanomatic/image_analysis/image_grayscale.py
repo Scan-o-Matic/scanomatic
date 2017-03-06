@@ -127,8 +127,9 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
         # Correct offset in the permissible signal to the image
         acceptable_placement += kernel_size[0] / 2
 
-        return im_ortho_trimmed[max(0, acceptable_placement - buffered_half_length):
-                                min(im_ortho_trimmed.shape[0], acceptable_placement + buffered_half_length)]
+        return im_ortho_trimmed[int(round(max(0, acceptable_placement - buffered_half_length))):
+                                int(round(min(im_ortho_trimmed.shape[0],
+                                              acceptable_placement + buffered_half_length)))]
 
     return im_ortho_trimmed
 

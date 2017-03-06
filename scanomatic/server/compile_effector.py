@@ -224,11 +224,16 @@ Scan-o-Matic""", self._compile_job)
         if self._compile_job.overwrite_pinning_matrices:
             analysis_model.pinning_matrices = self._compile_job.overwrite_pinning_matrices
 
-        if len(analysis_model.pinning_matrices) != len(self._fixture_settings.model.plates):
+        if analysis_model.pinning_matrices and \
+                len(analysis_model.pinning_matrices) != len(self._fixture_settings.model.plates):
+
+            self._logger.warning("Suggested pinnings are {0} but known plates are {1}".format(
+                analysis_model.pinning_matrices, [p.index for p in self._fixture_settings.model.plates]
+            ))
 
             accepted_indices = tuple(p.index for p in self._fixture_settings.model.plates)
-            analysis_model.pinning_matrices = [pm for i, pm in analysis_model.pinning_matrices
-                                               if i in accepted_indices]
+            analysis_model.pinning_matrices = [pm for i, pm in enumerate(analysis_model.pinning_matrices)
+                                               if i + 1 in accepted_indices]
             self._logger.warning(
                 "Reduced pinning matrices instructions to {0} because lacking plates in fixture".format(
                     analysis_model.pinning_matrices))
