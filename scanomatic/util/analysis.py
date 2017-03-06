@@ -56,7 +56,7 @@ def produce_grid_images(path=".", plates=None, image=None, mark_position=None, c
         except IOError:
             raise ValueError("Image doesn't exist, can't show gridding")
 
-    _logger.info("Producing grid images for {0}".format([p.index for p in plates]))
+    _logger.info("Producing grid images for {0}".format(plates))
 
     for plate in all_plates:
 
