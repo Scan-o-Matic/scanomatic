@@ -320,9 +320,35 @@ Scan-o-Matic""", self._analysis_job)
 
     def _remove_files_from_previous_analysis(self):
 
+        n = 0
         for p in image_data.ImageData.iter_image_paths(self._analysis_job.output_directory):
             os.remove(p)
-            self._logger.info("Removed pre-existing file '{0}'".format(p))
+            n += 1
+
+        if n:
+            self._logger.info("Removed {0} pre-existing image data files".format(n))
+
+        times_path = os.path.join(self._analysis_job.output_directory, Paths().image_analysis_time_series)
+        try:
+            os.remove(times_path)
+        except IOError:
+            pass
+        else:
+            self._logger.info("Removed pre-existing time data file")
+
+        for i, _ in enumerate(self._analysis_job.pinning_matrices):
+
+            for filename_pattern in (Paths().grid_pattern, Paths().grid_size_pattern,
+                                     Paths().experiment_grid_error_image,
+                                     Paths().experiment_grid_image_pattern):
+
+                grid_path = os.path.join(self._analysis_job.output_directory, filename_pattern).format(i + 1)
+                try:
+                    os.remove(grid_path)
+                except IOError:
+                    pass
+                else:
+                    self._logger.info("Removed pre-existing grid file '{0}'".format(grid_path))
 
     def setup(self, job, redirect_logging=True):
 
