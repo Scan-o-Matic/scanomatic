@@ -296,6 +296,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 else:
                     return jsonify(success=False, reason="No such file")
 
+                phenotyper.remove_state_from_path(output)
                 preprocess = data_object.get("bioscreen_preprocess", default=None)
 
                 try:
