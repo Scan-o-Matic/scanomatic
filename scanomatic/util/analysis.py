@@ -34,6 +34,8 @@ def produce_grid_images(path=".", plates=None, image=None, mark_position=None, c
 
         compilation = compilations[0]
 
+    _logger.info("Using '{0}' to produce grid images".format(os.path.basename(compilation)))
+
     compilation = CompileImageAnalysisFactory.serializer.load(compilation)
 
     image_path = compilation[-1].image.path
@@ -54,8 +56,7 @@ def produce_grid_images(path=".", plates=None, image=None, mark_position=None, c
         except IOError:
             raise ValueError("Image doesn't exist, can't show gridding")
 
-    _logger.info("Using {0} to produce grid images for {1}".format(
-        os.path.basename(compilation)), [p.index for p in plates])
+    _logger.info("Producing grid images for {0}".format([p.index for p in plates]))
 
     for plate in all_plates:
 
