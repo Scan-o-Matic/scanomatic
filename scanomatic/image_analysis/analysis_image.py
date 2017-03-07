@@ -250,6 +250,9 @@ class ProjectImage(object):
                 threads = set(t for t in threads if t.is_alive())
                 sleep(0.01)
 
+            self._logger.info("Producing grid images for plates {0} based on image {1}".format(
+                plate_indices, image_model.image.path))
+
             call(["python",
                   "-c",
                   "from scanomatic.util.analysis import produce_grid_images;"
