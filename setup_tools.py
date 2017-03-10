@@ -41,6 +41,7 @@ data_files = [
                 'calibration.data': False,
                 'grayscales.cfg': False,
                 'rpc.config': False,
+                'scanners.sane.json': False,
                 'scan-o-matic.desktop': True}),
     (os.path.join('config', 'fixtures'), {}),
     ('logs', {}),

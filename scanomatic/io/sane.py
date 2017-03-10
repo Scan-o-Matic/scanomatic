@@ -3,16 +3,15 @@ import re
 import os
 import copy
 import time
+import json
 from itertools import chain
 from enum import Enum
 from types import StringTypes
 
-#
-# INTERNAL DEPENDENCIES
-#
+from scanomatic.io.paths import Paths
+from scanomatic.io.logger import Logger
 
-from logger import Logger
-
+_logger = Logger("SANE module")
 #
 # Functions
 #
@@ -32,32 +31,161 @@ def get_alive_scanners():
 class SCAN_MODES(Enum):
 
     TPU = 0
+    """:type: SCAN_MODES"""
     COLOR = 1
+    """:type: SCAN_MODES"""
+    TPU16 = 2
+    """:type: SCAN_MODES"""
+
+    def is_tpu(self):
+        return self.value == 0 or self.value == 2
 
 
 class SCANNER_DATA(Enum):
 
     SANEBackend = 0
+    """:type: SCANNER_DATA"""
     Aliases = 1
+    """:type: SCANNER_DATA"""
     DefaultTransparencyWord = 2
+    """:type: SCANNER_DATA"""
     WaitBeforeScan = 3
+    """:type: SCANNER_DATA"""
 
 
 class SCAN_FLAGS(Enum):
 
     Source = "--source"
+    """:type: SCAN_FLAGS"""
     Format = "--format"
+    """:type: SCAN_FLAGS"""
     Resolution = "--resolution"
+    """:type: SCAN_FLAGS"""
     Mode = "--mode"
+    """:type: SCAN_FLAGS"""
     Left = "-l"
+    """:type: SCAN_FLAGS"""
     Top = "-t"
+    """:type: SCAN_FLAGS"""
     Width = "-x"
+    """:type: SCAN_FLAGS"""
     Height = "-y"
+    """:type: SCAN_FLAGS"""
     Depth = "--depth"
+    """:type: SCAN_FLAGS"""
     Device = "-d"
+    """:type: SCAN_FLAGS"""
     Help = '--help'
+    """:type: SCAN_FLAGS"""
     ListScanners = '-L'
+    """:type: SCAN_FLAGS"""
     ProgramVersion = '-V'
+    """:type: SCAN_FLAGS"""
+
+
+SETTINGS_REPOSITORY = {
+    "EPSON V700": {
+        SCANNER_DATA.WaitBeforeScan: 0,
+        SCANNER_DATA.SANEBackend: 'epson2',
+        SCANNER_DATA.Aliases: ('GT-X900', 'V700'),
+        SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
+        SCAN_MODES.TPU: {
+            SCAN_FLAGS.Source: "Transparency", SCAN_FLAGS.Format: "tiff",
+            SCAN_FLAGS.Resolution: "600", SCAN_FLAGS.Mode: "Gray", SCAN_FLAGS.Left: "0",
+            SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "203.2", SCAN_FLAGS.Height: "254", SCAN_FLAGS.Depth: "8"},
+        SCAN_MODES.COLOR: {
+            SCAN_FLAGS.Source: "Flatbed", SCAN_FLAGS.Format: "tiff",
+            SCAN_FLAGS.Resolution: "300", SCAN_FLAGS.Mode: "Color", SCAN_FLAGS.Left: "0",
+            SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "215.9", SCAN_FLAGS.Height: "297.18",
+            SCAN_FLAGS.Depth: "8"}},
+    "EPSON V800": {
+        SCANNER_DATA.WaitBeforeScan: 5,
+        SCANNER_DATA.SANEBackend: 'epson2',
+        SCANNER_DATA.Aliases: ('GT-X980', 'V800'),
+        SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
+        SCAN_MODES.TPU: {
+            SCAN_FLAGS.Source: "Transparency", SCAN_FLAGS.Format: "tiff",
+            SCAN_FLAGS.Resolution: "600", SCAN_FLAGS.Mode: "Gray", SCAN_FLAGS.Left: "0",
+            SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "203.2", SCAN_FLAGS.Height: "254", SCAN_FLAGS.Depth: "8"},
+        SCAN_MODES.COLOR: {
+            SCAN_FLAGS.Source: "Flatbed", SCAN_FLAGS.Format: "tiff",
+            SCAN_FLAGS.Resolution: "300", SCAN_FLAGS.Mode: "Color", SCAN_FLAGS.Left: "0",
+            SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "215.9", SCAN_FLAGS.Height: "297.18",
+            SCAN_FLAGS.Depth: "8"}}}
+
+
+def jsonify_settings(settings=None, base=True):
+    if settings is None:
+        settings = SETTINGS_REPOSITORY
+
+    if isinstance(settings, dict):
+        ret = {}
+        for k, v in settings.items():
+            if isinstance(k, SCANNER_DATA):
+                k = "SCANNER_DATA." + k.name
+            elif isinstance(k, SCAN_MODES):
+                k = "SCAN_MODES." + k.name
+            elif isinstance(k, SCAN_FLAGS):
+                k = "SCAN_FLAGS." + k.name
+
+            if isinstance(v, dict):
+                v = jsonify_settings(v, False)
+
+            ret[k] = v
+    else:
+        ret = settings
+
+    if base:
+        return json.dumps(ret, sort_keys=True, indent=4, separators=(',', ': '))
+    else:
+        return ret
+
+
+def load_json_settings_repo(text):
+    data = json.loads(text)
+
+    def parse_data(d):
+
+        if isinstance(d, dict):
+            ret = {}
+
+            for k, v in d.items():
+                try:
+                    k_type, k_value = k.split(".", 1)
+                except ValueError:
+                    pass
+                else:
+                    if k_type == 'SCANNER_DATA':
+                        k_type = SCANNER_DATA
+                    elif k_type == 'SCAN_MODES':
+                        k_type = SCAN_MODES
+                    elif k_type == 'SCAN_FLAGS':
+                        k_type = SCAN_FLAGS
+
+                    try:
+                        k = k_type[k_value]
+                    except KeyError:
+                        pass
+
+                if isinstance(v, dict):
+                    v = parse_data(v)
+
+                ret[k] = v
+
+            return ret
+
+        return d
+
+    return parse_data(data)
+
+
+try:
+    with open(Paths().config_sane, 'r') as fp:
+        SETTINGS_REPOSITORY = load_json_settings_repo(fp.read())
+except IOError:
+    _logger.warning("Deprecation warning, no local sane settings present at {0}. Should have been installed!".format(
+        Paths().config_sane
+    ))
 
 
 class SaneBase(object):
@@ -66,36 +194,7 @@ class SaneBase(object):
     _SETTINGS_ORDER = (SCAN_FLAGS.Source, SCAN_FLAGS.Format, SCAN_FLAGS.Resolution, SCAN_FLAGS.Mode, SCAN_FLAGS.Left,
                        SCAN_FLAGS.Top, SCAN_FLAGS.Width, SCAN_FLAGS.Height, SCAN_FLAGS.Depth)
 
-    _SETTINGS_REPOSITORY = {
-        "EPSON V700": {
-            SCANNER_DATA.WaitBeforeScan: 0,
-            SCANNER_DATA.SANEBackend: 'epson2',
-            SCANNER_DATA.Aliases: ('GT-X900', 'V700'),
-            SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
-            SCAN_MODES.TPU: {
-                SCAN_FLAGS.Source: "Transparency", SCAN_FLAGS.Format: "tiff",
-                SCAN_FLAGS.Resolution: "600", SCAN_FLAGS.Mode: "Gray", SCAN_FLAGS.Left: "0",
-                SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "203.2", SCAN_FLAGS.Height: "254", SCAN_FLAGS.Depth: "8"},
-            SCAN_MODES.COLOR: {
-                SCAN_FLAGS.Source: "Flatbed", SCAN_FLAGS.Format: "tiff",
-                SCAN_FLAGS.Resolution: "300", SCAN_FLAGS.Mode: "Color", SCAN_FLAGS.Left: "0",
-                SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "215.9", SCAN_FLAGS.Height: "297.18",
-                SCAN_FLAGS.Depth: "8"}},
-        "EPSON V800": {
-            SCANNER_DATA.WaitBeforeScan: 5,
-            SCANNER_DATA.SANEBackend: 'epson2',
-            SCANNER_DATA.Aliases: ('GT-X980', 'V800'),
-            SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
-            SCAN_MODES.TPU: {
-                SCAN_FLAGS.Source: "Transparency", SCAN_FLAGS.Format: "tiff",
-                SCAN_FLAGS.Resolution: "600", SCAN_FLAGS.Mode: "Gray", SCAN_FLAGS.Left: "0",
-                SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "203.2", SCAN_FLAGS.Height: "254", SCAN_FLAGS.Depth: "8"},
-            SCAN_MODES.COLOR: {
-                SCAN_FLAGS.Source: "Flatbed", SCAN_FLAGS.Format: "tiff",
-                SCAN_FLAGS.Resolution: "300", SCAN_FLAGS.Mode: "Color", SCAN_FLAGS.Left: "0",
-                SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "215.9", SCAN_FLAGS.Height: "297.18",
-                SCAN_FLAGS.Depth: "8"}}}
-
+    _SETTINGS_REPOSITORY = SETTINGS_REPOSITORY
     _PROGRAM = "scanimage"
     _SOURCE_SEPARATOR = "|"
     _SOURCE_PATTERN = re.compile(r'--source ([^\n[]+)')
@@ -164,7 +263,13 @@ class SaneBase(object):
 
     @classmethod
     def _get_mode(cls, scan_mode, model, logger):
+        """
 
+        :param scan_mode:
+        :param model:
+        :param logger:
+        :return: SCAN_MODES
+        """
         if not model:
             return None
 
@@ -221,7 +326,7 @@ class SaneBase(object):
     def _update_mode_source(self):
 
         default_word = SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.DefaultTransparencyWord]
-        if self._scan_mode is SCAN_MODES.TPU and not self._verified_settings:
+        if self._scan_mode.is_tpu() and not self._verified_settings:
             self._scan_settings[SCAN_FLAGS.Source] = self._name_for_transparency_mode if \
                 self._name_for_transparency_mode else default_word
 
@@ -280,7 +385,7 @@ class SaneBase(object):
                 self._update_mode_source()
                 self._verified_settings = True
                 return True
-            elif self._scan_mode is SCAN_MODES.TPU:
+            elif self._scan_mode.is_tpu():
                 time.sleep(0.5)
             else:
                 self._verified_settings = True
