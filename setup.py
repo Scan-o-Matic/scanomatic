@@ -84,7 +84,10 @@ version_update = {i: v for i, v in enumerate(sys.argv) if v.lower().startswith("
 if version_update:
     id_argument = version_update.keys()[0]
     sys.argv = sys.argv[:id_argument] + sys.argv[id_argument + 1:]
-    version_update = version_update[id_argument]
+    version_update = version_update[id_argument].lower().split("-")[-2:]
+    version_update[0] = True
+    version_update[1] = version_update[1] if version_update[1] in ('minor', 'major') else False
+
 
 #
 # Python-setup
@@ -161,11 +164,11 @@ if len(sys.argv) > 1:
         except IOError:
             prev_hash = None
 
-        if prev_hash != cur_hash:
+        if prev_hash != cur_hash or version_update[1]:
 
             _logger.info("Local changes detected")
 
-            update_init_file()
+            update_init_file(release=version_update[1])
 
             _logger.info("Updated version")
 

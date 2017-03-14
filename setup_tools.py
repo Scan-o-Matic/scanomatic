@@ -95,7 +95,7 @@ def get_hash(paths, pattern=None, hasher=None, buffsize=65536):
     return hasher
 
 
-def update_init_file(do_version=True, do_branch=True):
+def update_init_file(do_version=True, do_branch=True, release=False):
 
     cur_dir = os.path.dirname(sys.argv[1])
     if not cur_dir:
@@ -103,11 +103,20 @@ def update_init_file(do_version=True, do_branch=True):
     data = source.get_source_information(True, force_location=cur_dir)
 
     if do_version:
+
         try:
             data['version'] = source.next_subversion(str(data['branch']) if data['branch'] else None, get_version())
         except:
             _logger.warning("Can reach GitHub to verify version")
             data['version'] = source.increase_version(source.parse_version(data['version']))
+
+        if release == "minor":
+
+            data['version'] = source.get_minor_release_version(data['version'])
+
+        elif release == "major":
+
+            data['version'] = source.get_major_release_version(data['version'])
 
     if do_branch:
         if data['branch'] is None:
