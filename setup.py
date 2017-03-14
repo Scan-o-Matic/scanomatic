@@ -315,3 +315,10 @@ if len(sys.argv) > 1:
     # postSetup.CheckDependencies(package_dependencies)
 
     _logger.info("Install Complete")
+
+    from subprocess import call
+
+    call(["python",
+          '-c',
+          "import scanomatic;print 'Scan-o-Matic {0}, {1}'.format(scanomatic.get_version(), scanomatic.get_branch())"])
+
