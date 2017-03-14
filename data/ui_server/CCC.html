@@ -1,90 +1,27 @@
 ﻿<!DOCTYPE html>
 <html>
-    <head>
-        <title>Cell Count Calibration</title>
-	    <meta charset="utf-8" />
-        <script src="js/jquery-2.2.3.js"></script>
-        <script src="js/bootstrap.js"></script>
-        <script src="js/d3.js"></script>
-        <script src="js/bootstrap-toggle.min.js"></script>
-        <script src="js/spin.js"></script>
-        <script src="js/jquery.modal.js"></script>
-        <script src="js/cccAPIHelper.js"></script>
-        <script src="js/CCCHelper.js"></script>
+<head>
+    <title>Cell Count Calibration</title>
+    <meta charset="utf-8" />
+    <script src="js/jquery-2.2.3.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    <script src="js/d3.js"></script>
+    <script src="js/cccAPIHelper.js"></script>
+    <script src="js/CCCHelper.js"></script>
 
-        <link href="style/ccc.css" rel="stylesheet"/>
-        <link href="style/bootstrap.css" rel="stylesheet"/>
-        <link href="style/main.css" rel="stylesheet"/>
-        <link href="style/bootstrap-toggle.min.css" rel="stylesheet" />
-        <link href="style/jquery.modal.css" rel="stylesheet" />
-
-    </head>
+    <link href="style/ccc.css" rel="stylesheet" />
+    <link href="style/bootstrap.css" rel="stylesheet" />
+    <link href="style/main.css" rel="stylesheet" />
+    <link href="style/jquery-ui.css" rel="stylesheet" />
+</head>
 <body>
     <script>
-        $(window)
-            .unload(function () {
-                var lock_key = $("#spLock").data("lock_key");
-                var unlockPath = $("#spLock").data("unLock_path");
-                if (unlockPath) {
-                    $("#divLockRemoving").show();
-                    RemoveLock(unlockPath,
-                        lock_key,
-                        function (success) {
-                            $("#spLock").text("Read/Write");
-                            $("#divLockRemoving").hide();
-                        });
-                };
-            });
-
         $(document)
             .ready(function () {
                 var selFixtureName = "selFixtures";
                 var selPinFormatsName = "selPinFormats";
-                var opts = {
-                    lines: 9, // The number of lines to draw
-                    length: 9, // The length of each line
-                    width: 5, // The line thickness
-                    radius: 20, // The radius of the inner circle
-                    color: '#000000', // #rgb or #rrggbb or array of colors
-                    speed: 1.9, // Rounds per second
-                    trail: 40, // Afterglow percentage
-                    className: 'spinner' // The CSS class to assign to the spinner
-                };
-                var Uploads = [];
-                var target = document.getElementById("divLoading");
-                var spinner = new Spinner(opts).spin(target);
-                var dispatch = d3.dispatch("setExp", "reDrawExp");
-                spinner.stop();
-
-                function wait() {
-                    $("#divLoading").modal({ escapeClose: false, clickClose: false, showClose: false });
-                    spinner.spin(target);
-                }
-
-                function stopWait() {
-                    spinner.stop();
-                    $.modal.close();
-                }
-
-                function getLock_key() {
-                    return $("#spLock").data("lock_key");
-                }
-
-                function getLock(callback) {
-                    var lockPath = $("#spLock").data("lock_path");
-                    wait();
-                    GetAPILock(lockPath,
-                        function (lockData) {
-                            if (lockData != null) {
-                                var lock = lockData.lock_key;
-                                var permisssionText = lockData.lock_state;
-                                $("#spLock").text(permisssionText);
-                                $("#spLock").data("lock_key", lock);
-                                callback();
-                                stopWait();
-                            }
-                        });
-                }
+                var uploads = [];
 
                 function processMarkers(markers) {
                     var markerXcoords = [];
@@ -98,58 +35,17 @@
                     postMarkers.push(markerYcoords);
                     return JSON.stringify(postMarkers);
                 }
-                
-                function renderDataUriToCanvas(dataUri, canvasId) {
-                    var img = new Image();
-                    img.src = dataUri;
-                    img.onload = function () {
-                        var canvas = $("#" + canvasId);
-                        var ctx = canvas.getContext("2d");
-                        ctx.drawImage(img, 0, 0);
-                    };
+
+                function getImageIdSuccess(data)
+                {
+                    if (data.success)
+                        alert("success uploading!");
                 }
-
-                function renderFileBlobToImage(imageId, file) {
-                    var fr = new FileReader();
-                    fr.onload = function () {
-                        $("#" + imageId).src = fr.result;
-                    }
-                    fr.readAsDataURL(file);
-                };
-
-                function getGrayScaleAnalysisSuccess(data){
-                    alert("Sucess: GrayScaleAnalysis)");
-                };
-
-                function getGrayScaleAnalysisError(data){
-                    alert("error: " + data.responseText);
-                };
-
-                function getTransposedMarkersSucess(data) {
-                    if (data.success == true) {
-                        var grayScale = { area: data.grayscale_area, name: data.grayscale_name };
-                        var plates = data.plates;
-
-                        var uploadedFile = Uploads[0];
-                        uploadedFile.plates = plates;
-                        uploadedFile.grayScale = grayScale;
-
-                        var img = new Image;
-                        img.src = URL.createObjectURL(uploadedFile.file);
-                        img.onload = function () {
-                            var dataUri = sliceImageUp(grayScale.area.x1, grayScale.area.y1, grayScale.area.x2, grayScale.area.y2, img);
-                            //var dataUri = sliceImageUp(plates[0].x1, plates[0].y1, plates[0].x2, plates[0].y2, img);
-                            var blob = dataURItoBlob(dataUri);
-                            GetGrayScaleAnalysis(grayScale.name, dataUri, getGrayScaleAnalysisSuccess, getGrayScaleAnalysisError);
-                            $("#imgSlice").attr("src", dataUri);
-                        };
-                    } else
-                        alert("There was a problem with the tranposing: " + data.reason);
+                function getImageIdError(data)
+                {
+                    if (!data.success)
+                        alert("error uploading!");
                 }
-
-                function getTransposedMarkersError(data){
-                    alert("error:" + data.responseText);
-                };
 
                 $("#btnUploadImage").click(function () {
                     var fixtureName = $("#" + selFixtureName + " option:selected").text();
@@ -159,14 +55,15 @@
                         return;
                     }
                     var uploadedFile = { file: file, markers: {}, plates: {}, grayScale: {} };
-                    Uploads.push(uploadedFile);
+                    uploads.push(uploadedFile);
                     GetMarkers(fixtureName, file, function (data) {
                         if (data.success == true) {
                             alert("The marker data was uploaded successfully:");
-                            var uploadedFile = Uploads[0];
+                            var uploadedFile = uploads[0];
                             uploadedFile.markers = data.markers;
                             var postMarkers = processMarkers(data.markers);
-                            GetTransposedMarkers(fixtureName, postMarkers, file, getTransposedMarkersSucess, getTransposedMarkersError);
+                            //here is the problem
+                            GetImageId("YESTIS", file, "2347cf00d8af11e6b545e069955c1a98", getImageIdSuccess, getImageIdError);
                         } else
                             alert("There was a problem with the upload: " + data.reason);
                     },
@@ -175,9 +72,7 @@
                     });
                 });
 
-                //draw Project selection
-                function ini()
-                {
+                function ini() {
                     GetFixtures(function (fixtures) {
                         if (fixtures == null) {
                             alert("ERROR: There was a problem with the API while fecthing fixtures!");
@@ -218,18 +113,153 @@
                 };
 
                 ini();
-                
+
+                var dialog;
+                var form;
+                var species = $("#inSpecies");
+                var reference = $("#inReference");
+                var allFields = $([]).add(species).add(reference);
+                var tips = $(".validateTips");
+
+                function updateTips(t) {
+                    tips.text(t).addClass("ui-state-highlight");
+                    setTimeout(function () {
+                        tips.removeClass("ui-state-highlight", 1500);
+                    }, 500);
+                }
+
+                function checkLength(o, n, min, max) {
+                    if (o.val().length > max || o.val().length < min) {
+                        o.addClass("ui-state-error");
+                        updateTips("Length of " + n + " must be between " +
+                            min + " and " + max + ".");
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }
+
+                function checkRegexp(o, regexp, n) {
+                    if (!(regexp.test(o.val()))) {
+                        o.addClass("ui-state-error");
+                        updateTips(n);
+                        return false;
+                    } else {
+                        return true;
+                    }
+                };
+
+                function initiateNewCCC() {
+                    var valid = true;
+                    allFields.removeClass("ui-state-error");
+
+                    valid = valid && checkLength(species, "species", 3, 20);
+                    valid = valid && checkLength(reference, "reference", 3, 20);
+
+                    valid = valid && checkRegexp(species, /^[a-z]([0-9a-z_\s])+$/i, "This field may consist of a-z, 0-9, underscores, spaces and must begin with a letter.");
+                    valid = valid && checkRegexp(reference, /^[a-z]([0-9a-z_\s])+$/i, "This field may consist of a-z, 0-9, underscores, spaces and must begin with a letter.");
+
+                    if (valid) {
+                        InitiateCCC(species.val(), reference.val(),
+                            function(data) {
+                                if (data.success) {
+                                    var id = data.identifier;
+                                    var token = data.access_token;
+                                    $("#inititated-cccs tbody").append("<tr>" +
+                                        "<td>" + id + " " + token + "</td>" +
+                                        "<td>" + species.val() + "</td>" +
+                                        "<td>" + reference.val() + "</td>" +
+                                    "</tr>");
+                                } else {
+                                    alert("Problem initializing");
+                                }
+                            },
+                            function(data) {
+                                alert("ini failure!");
+                            });
+
+                        $("#inititated-cccs tbody").append("<tr>" +
+                            "<td>" + "-" + "</td>" +
+                            "<td>" + species.val() + "</td>" +
+                            "<td>" + reference.val() + "</td>" +
+                        "</tr>");
+                        dialog.dialog("close");
+                    }
+                    return valid;
+                }
+
+                dialog = $("#dialog-form").dialog({
+                    autoOpen: false,
+                    height: 400,
+                    width: 350,
+                    modal: true,
+                    buttons: {
+                        "Initiate new CCC": initiateNewCCC,
+                        Cancel: function () { dialog.dialog("close"); }
+                    },
+                    close: function () {
+                        form[0].reset();
+                        allFields.removeClass("ui-state-error");
+                    }
+                });
+
+                form = dialog.find("form").on("submit", function (event) {
+                    event.preventDefault();
+                    initiateNewCCC();
+                });
+
+                $("#initiate-ccc").button().on("click", function () {
+                    dialog.dialog("open");
+                });
+
+
             });
     </script>
-
-    <div id="divLoading" class="modal">
-        <p>Talking to server ... </p>
-    </div>
     <div id="cont" class="container QCCont">
         <h1>Cell Count Calibration</h1>
         <h2>Selection</h2>
         <div class="section-frame">
-            <div class="row">
+            <div class="row" style="visibility:collapse">
+                <div class="col-md-12 " style="height: 100%; width: 100%">
+                    <div class="floating-box" style="width: 20%; horiz-align: center">
+                        <div id="dialog-form" title="Initiate new CCC">
+                            <p class="validateTips">All form fields are required.</p>
+                            <form>
+                                <fieldset>
+                                    <label for="inSpecies">Species</label>
+                                    <input type="text" name="inSpecies" id="inSpecies" value="Name of you species" class="text ui-widget-content ui-corner-all">
+                                    <label for="inReference">Reference/Contact</label>
+                                    <input type="text" name="inReference" id="inReference" value="reference or contact" class="text ui-widget-content ui-corner-all">
+                                    <!-- Allow form submission with keyboard without duplicating the dialog button -->
+                                    <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+                                </fieldset>
+                            </form>
+                        </div>
+                        <div id="ccc-contain" class="ui-widget">
+                            <h1>Initiated CCCs:</h1>
+                            <table id="inititated-cccs" class="ui-widget ui-widget-content">
+                                <thead>
+                                    <tr class="ui-widget-header ">
+                                        <th>Identifiers</th>
+                                        <th>Specie</th>
+                                        <th>Reference</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button id="initiate-ccc">Initiate new CCC</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" >
                 <div class="col-md-12 " style="height: 100%; width: 100%">
                     <div class="floating-box" style="width: 20%; horiz-align: center">
                         <div style="margin-left: 10px; float: left" id="divFixtureSelector"></div>
@@ -237,7 +267,7 @@
                     </div>
                 </div>
             </div>
-            <div class="section-frame">
+            <div class="section-frame" >
                 <div class="row">
                     <div class="col-md-12">
                         <input type="file" name="imageUpload" id="imageUpload" accept="image/*" />
@@ -245,16 +275,18 @@
                     </div>
                 </div>
             </div>
-            <table>
+            <table style="visibility:collapse">
                 <tr>
                     <td>Image Slice</td>
                     <td><img id="imgSlice" /></td>
                 </tr>
             </table>
-            
-            
+
+
         </div>
     </div>
 </body>
+
+
 
 </html>

@@ -22,7 +22,7 @@ from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
 import scanomatic.io.rpc_client as rpc_client
-
+from scanomatic.data_processing.phenotyper import remove_state_from_path
 
 def get_label_from_analysis_model(analysis_model, id_hash):
     """Make a suitable label to show in status view
@@ -75,7 +75,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             self._analysis_job = AnalysisModelFactory.create()
             self._logger.warning("No job instructions")
 
-        self._orginal_model = None
+        self._original_model = None
 
         self._job.content_model = self._analysis_job
 
@@ -253,17 +253,19 @@ Scan-o-Matic""", self._analysis_job)
                 raise StopIteration
 
         if self._redirect_logging:
-            self._logger.info("{0} is setting up, output will be directed to {1}".format(self._analysis_job,
-                                                                                         Paths().analysis_run_log))
-            self._logger.set_output_target(
-                os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
-                catch_stdout=True, catch_stderr=True, buffering=0)
+            self._logger.info("{0} is setting up, output will be directed to {1}".format(
+                self._analysis_job, Paths().analysis_run_log))
 
+            log_path = os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log)
+            self._logger.set_output_target(log_path, catch_stdout=True, catch_stderr=True, buffering=0)
             self._logger.surpress_prints = False
+            self._log_file_path = log_path
 
+        if len(self._first_pass_results.plates) != len(self._analysis_job.pinning_matrices):
+            self._filter_pinning_on_included_plates()
 
         AnalysisModelFactory.serializer.dump(
-            self._orginal_model, os.path.join(self._analysis_job.output_directory, Paths().analysis_model_file))
+            self._original_model, os.path.join(self._analysis_job.output_directory, Paths().analysis_model_file))
 
         self._logger.info("Will remove previous files")
 
@@ -280,14 +282,14 @@ Scan-o-Matic""", self._analysis_job)
 
             raise StopIteration
 
-        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results.compile_instructions)
+        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results)
 
         self._xmlWriter.write_header(self._scanning_instructions, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()
 
-        index_for_gridding = self._get_index_for_gridding()
+        # TODO: Need rework to handle gridding of diff times for diff plates
 
-        if not self._image.set_grid(self._first_pass_results[index_for_gridding]):
+        if not self._image.set_grid():
             self._stopping = True
 
         self._analysis_needs_init = False
@@ -306,23 +308,49 @@ Scan-o-Matic""", self._analysis_job)
 
         return True
 
+    def _filter_pinning_on_included_plates(self):
+
+        included_indices = tuple(p.index for p in self._first_pass_results.plates)
+        self._analysis_job.pinning_matrices = [pm for i, pm in enumerate(self._analysis_job.pinning_matrices)
+                                               if i in included_indices]
+        self._logger.warning("Inconsistency in number of plates reported in analysis instruction and compilation." +
+                             " Asuming pinning to be {0}".format(self._analysis_job.pinning_matrices))
+
+        self._original_model.pinning_matrices = self._analysis_job.pinning_matrices
+
     def _remove_files_from_previous_analysis(self):
 
+        n = 0
         for p in image_data.ImageData.iter_image_paths(self._analysis_job.output_directory):
             os.remove(p)
-            self._logger.info("Removed pre-existing file '{0}'".format(p))
+            n += 1
 
-    def _get_index_for_gridding(self):
+        if n:
+            self._logger.info("Removed {0} pre-existing image data files".format(n))
 
-        if self._analysis_job.grid_images:
-            pos = max(self._analysis_job.grid_images)
-            if pos >= len(self._first_pass_results):
-                pos = self._first_pass_results.last_index
+        times_path = os.path.join(self._analysis_job.output_directory, Paths().image_analysis_time_series)
+        try:
+            os.remove(times_path)
+        except (IOError, OSError):
+            pass
         else:
+            self._logger.info("Removed pre-existing time data file")
 
-            pos = self._first_pass_results.last_index
+        for i, _ in enumerate(self._analysis_job.pinning_matrices):
 
-        return pos
+            for filename_pattern in (Paths().grid_pattern, Paths().grid_size_pattern,
+                                     Paths().experiment_grid_error_image,
+                                     Paths().experiment_grid_image_pattern):
+
+                grid_path = os.path.join(self._analysis_job.output_directory, filename_pattern).format(i + 1)
+                try:
+                    os.remove(grid_path)
+                except (IOError, OSError):
+                    pass
+                else:
+                    self._logger.info("Removed pre-existing grid file '{0}'".format(grid_path))
+
+        remove_state_from_path(self._analysis_job.output_directory)
 
     def setup(self, job, redirect_logging=True):
 
@@ -343,7 +371,7 @@ Scan-o-Matic""", self._analysis_job)
 
         allow_start = AnalysisModelFactory.validate(self._analysis_job)
 
-        self._orginal_model = AnalysisModelFactory.copy(self._analysis_job)
+        self._original_model = AnalysisModelFactory.copy(self._analysis_job)
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
 
         try:

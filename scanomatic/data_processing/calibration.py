@@ -13,10 +13,13 @@ import re
 from uuid import uuid1
 from glob import iglob
 from types import StringTypes
+
+
+from scanomatic.generics.maths import mid50_mean
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
-from scanomatic.image_analysis.image_basics import load_image_to_numpy, Image_Transpose
 from scanomatic.io.fixtures import Fixtures
+from scanomatic.image_analysis.image_basics import load_image_to_numpy, Image_Transpose
 from scanomatic.image_analysis.first_pass_image import FixtureImage
 
 """ Data structure for CCC-jsons
@@ -34,10 +37,8 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
                 {
                 int :  # plate index (get valid from fixture),
                     {
-                    CCCPlate.gs_transformed_image_identifier: string,  # How to find numpy-array of transformed plate
                     CCCPlate.grid_shape: (16, 24),  # Number of rows and columns of colonies on plate
                     CCCPlate.grid_cell_size: (52.5, 53.1),  # Number of pixels for each colony (yes is in decimal)
-                    CCCPlate.grid_data_identifier: string,  # How to find numpy-array of grid positions on plate
                     CCCPlate.compressed_ccc_data:  # Row, column info on CCC analysis of each colony
                         [
                             [
@@ -68,7 +69,6 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
 """
 
 __CCC = {}
-
 _logger = Logger("Cell Count Calibration")
 
 
@@ -113,15 +113,11 @@ class CCCImage(Enum):
 
 
 class CCCPlate(Enum):
-    gs_transformed_image_identifier = 0
+    grid_shape = 0
     """:type : CCCPlate"""
-    grid_shape = 1
+    grid_cell_size = 1
     """:type : CCCPlate"""
-    grid_cell_size = 2
-    """:type : CCCPlate"""
-    grid_data_identifier = 3
-    """:type : CCCPlate"""
-    compressed_ccc_data = 4
+    compressed_ccc_data = 2
     """:type : CCCPlate"""
 
 
@@ -170,16 +166,19 @@ class CalibrationValidation(Enum):
 
 def _validate_ccc_edit_request(f):
 
-    def wrapped(identifier, access_token=None, *args, **kwargs):
+    def wrapped(identifier, *args, **kwargs):
 
         if identifier in __CCC:
 
             ccc = __CCC[identifier]
 
-            if ccc[CellCountCalibration.edit_access_token] == access_token and access_token:
+            if "access_token" in kwargs \
+                    and ccc[CellCountCalibration.edit_access_token] == kwargs["access_token"] \
+                    and kwargs["access_token"]:
 
                 if ccc[CellCountCalibration.status] == CalibrationEntryStatus.UnderConstruction:
 
+                    del kwargs["access_token"]
                     return f(identifier, *args, **kwargs)
 
                 else:
@@ -231,7 +230,7 @@ def _get_ccc_identifier(species, reference):
     return candidate
 
 
-def load_cccs():
+def __load_cccs():
 
     for ccc_path in iglob(Paths().ccc_file_pattern.format("*")):
 
@@ -254,6 +253,12 @@ def get_active_cccs():
             if ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active}
 
 
+def get_under_construction_cccs():
+
+    return {identifier: ccc for identifier, ccc in __CCC.iteritems()
+            if ccc[CellCountCalibration.status] == CalibrationEntryStatus.UnderConstruction}
+
+
 def add_ccc(ccc):
 
     if ccc[CellCountCalibration.identifier] and ccc[CellCountCalibration.identifier] not in __CCC:
@@ -265,7 +270,7 @@ def add_ccc(ccc):
         return False
 
 @_validate_ccc_edit_request
-def activate_ccc(identifier, access_token):
+def activate_ccc(identifier):
 
     ccc = __CCC[identifier]
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
@@ -306,21 +311,28 @@ def save_ccc_to_disk(identifier):
         _logger.error("Can only save changes to CCC:s that are under construction")
 
 
+def _encode_val(v):
+    if isinstance(v, dict):
+        return _encode_dict(v)
+    if isinstance(v, list) or isinstance(v, tuple):
+        return type(v)(_encode_val(e) for e in v)
+    else:
+        return _encode_ccc_enum(v)
+
+
+def _encode_dict(d):
+    return {_encode_ccc_enum(k): _encode_val(v) for k, v in d.iteritems()}
+
+
 def _save_ccc_to_disk(data):
 
-    def _encode_val(v):
-        if isinstance(v, dict):
-            return _encode_dict(v)
-        if isinstance(v, list) or isinstance(v, tuple):
-            return type(v)(_encode_val(e) for e in v)
-        else:
-            return _encode_ccc_enum(v)
-
-    def _encode_dict(d):
-        return {_encode_ccc_enum(k): _encode_val(v) for k, v in d.iteritems()}
-
     identifier = data[CellCountCalibration.identifier]
-    os.makedirs(os.path.dirname(Paths().ccc_file_pattern.format(identifier)))
+
+    try:
+        os.makedirs(os.path.dirname(Paths().ccc_file_pattern.format(identifier)))
+    except os.error:
+        pass
+
     with open(Paths().ccc_file_pattern.format(identifier), 'wb') as fh:
         json.dump(_encode_dict(data), fh)
 
@@ -342,8 +354,9 @@ def _parse_ccc(data):
 
     for ccc_data_type in CellCountCalibration:
         if ccc_data_type not in data:
-            _logger.error("Corrupt CCC-data, missing {0}".format(ccc_data_type))
+            _logger.error("Corrupt CCC-data, missing {0} in {1}".format(ccc_data_type, data))
             return None
+
     return data
 
 __DECODABLE_ENUMS = {
@@ -393,7 +406,7 @@ def get_image_identifiers_in_ccc(identifier):
 
         ccc = __CCC[identifier]
 
-        return [im_json[CCCImage.identifier] for im_json in ccc]
+        return [im_json[CCCImage.identifier] for im_json in ccc[CellCountCalibration.images]]
 
     return False
 
@@ -408,12 +421,32 @@ def set_image_info(identifier, image_identifier, **kwargs):
 
         try:
 
-            im_json[CCCImage(key)] = kwargs[key]
+            im_json[CCCImage[key]] = kwargs[key]
 
         except (KeyError, TypeError):
 
             _logger.error("{0} is not a known property of images".format(key))
             return False
+
+    _save_ccc_to_disk(ccc)
+    return True
+
+
+@_validate_ccc_edit_request
+def set_plate_grid_info(identifier, image_identifier, plate, grid_shape=None, grid_cell_size=None, **kwargs):
+
+    ccc = __CCC[identifier]
+    im_json = get_image_json_from_ccc(identifier, image_identifier)
+    if plate in im_json[CCCImage.plates]:
+        plate_json = im_json[CCCImage.plates][plate]
+        if plate_json[CCCPlate.compressed_ccc_data]:
+            return False
+    else:
+        plate_json = {CCCPlate.grid_cell_size: None, CCCPlate.grid_shape: None, CCCPlate.compressed_ccc_data: []}
+        im_json[CCCImage.plates][plate] = plate_json
+
+    plate_json[CCCPlate.grid_cell_size] = grid_cell_size
+    plate_json[CCCPlate.grid_shape] = grid_shape
 
     _save_ccc_to_disk(ccc)
     return True
@@ -458,14 +491,14 @@ def get_local_fixture_for_image(identifier, image_identifier):
     if im_json is None:
         return None
 
-    fixture_settings = Fixtures()[im_json[CCCImage.Fixture]]
+    fixture_settings = Fixtures()[im_json[CCCImage.fixture]]
     if fixture_settings is None:
         return None
 
     fixture = FixtureImage(fixture_settings)
     current_settings = fixture['current']
-    current_settings.model.orientation_marks_x = im_json[CCCImage.marker_x]
-    current_settings.model.orientation_marks_y = im_json[CCCImage.marker_y]
+    current_settings.model.orientation_marks_x = np.array(im_json[CCCImage.marker_x])
+    current_settings.model.orientation_marks_y = np.array(im_json[CCCImage.marker_y])
     issues = {}
     fixture.set_current_areas(issues)
 
@@ -485,9 +518,11 @@ def save_image_slices(identifier, image_identifier, grayscale_slice=None, plate_
                 _get_im_slice(im, grayscale_slice))
 
     if plate_slices:
-        for id_plate, plate_dict in plate_slices.iteritems():
-            np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, id_plate),
-                    _get_im_slice(im, plate_dict))
+        for plate_model in plate_slices:
+            np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, plate_model.index),
+                    _get_im_slice(im, plate_model))
+
+    return True
 
 
 def _get_im_slice(im, model):
@@ -555,6 +590,61 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
             identifier, image_identifier, plate_id)))
         return False
 
+
+@_validate_ccc_edit_request
+def set_colony_compressed_data(identifier, image_identifier, plate_id, x, y, included=True,
+                               image=None, blob_filter=None, background_filter=None):
+
+    ccc = __CCC[identifier]
+    only_update_included = True
+    if image is not None:
+        only_update_included = False
+        background = mid50_mean(image[background_filter].ravel())
+        colony = image[blob_filter].ravel() - background
+
+        values, counts = zip(*{k: (colony == k).sum() for k in np.unique(colony).tolist()}.iteritems())
+
+        if np.sum(counts) != blob_filter.sum():
+            _logger.error("Counting mismatch between compressed format and blob filter")
+            return False
+
+        image_data = get_image_json_from_ccc(identifier, image_identifier)
+        plate = image_data[CCCImage.plates][plate_id]
+
+    while len(plate[CCCPlate.compressed_ccc_data]) <= x:
+
+        plate[CCCPlate.compressed_ccc_data].append([])
+
+    while len(plate[CCCPlate.compressed_ccc_data][x]) <= y:
+
+        plate[CCCPlate.compressed_ccc_data][x].append(
+            {CCCMeasurement.included: False,
+             CCCMeasurement.source_value_counts: [],
+             CCCMeasurement.source_values: []})
+
+    if only_update_included:
+
+        if included and not (plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_values] or
+                             plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_value_counts]):
+
+            _logger.warning(
+                "Attempting to include CCC Measurement for position {0}, {1} while it has no data".format(x, y))
+
+            return False
+
+        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.included] = included
+
+    else:
+        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.included] = included
+        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_value_counts] = counts
+        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_values] = values
+
+    _save_ccc_to_disk(ccc)
+
+    return True
+
+if not __CCC:
+    __load_cccs()
 
 ########################################
 ########################################

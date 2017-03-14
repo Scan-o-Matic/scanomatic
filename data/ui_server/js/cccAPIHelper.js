@@ -1,10 +1,13 @@
-﻿//var baseUrl = "http://localhost:5000";
-var baseUrl = "";
+﻿var baseUrl = "http://localhost:5000";
+//var baseUrl = "";
+var InitiateCCCPath = baseUrl + "/api/calibration/initiate_new";
 var GetFixtruesPath = baseUrl + "/api/data/fixture/names";
 var GetPinningFormatsPath = baseUrl + "/api/analysis/pinning/formats";
 var GetMarkersPath = baseUrl + "/api/data/markers/detect/";
 var GetTranposedMarkerPath = baseUrl + "/api/data/fixture/calculate/";
 var GetGrayScaleAnalysisPath = baseUrl + "/api/data/grayscale/image/";
+var GetImageId_prePath = baseUrl + "/api/calibration/";
+var GetImageId_postPath = "/add_image";
 
 var lock;
 
@@ -32,10 +35,44 @@ function GetPinningFormats(callback) {
     });
 };
 
+function InitiateCCC(species, reference, successCallback, errorCallback) {
+    var path = InitiateCCCPath;
+    var formData = new FormData();
+    formData.append("species", species);
+    formData.append("reference", reference);
+    $.ajax({
+        url: path,
+        type: "POST",
+        contentType: false,
+        enctype: 'multipart/form-data',
+        data: formData,
+        processData: false,
+        success: successCallback,
+        error: errorCallback
+    });
+}
+
 function GetGrayScaleAnalysis(grayScaleName, imageData, successCallback, errorCallback) {
     var path = GetGrayScaleAnalysisPath + grayScaleName;
     var formData = new FormData();
     formData.append("image", imageData);
+    $.ajax({
+        url: path,
+        type: "POST",
+        contentType: false,
+        enctype: 'multipart/form-data',
+        data: formData,
+        processData: false,
+        success: successCallback,
+        error: errorCallback
+    });
+}
+
+function GetImageId(cccId, file, accessToken, successCallback, errorCallback) {
+    var path = GetImageId_prePath + cccId + GetImageId_postPath;
+    var formData = new FormData();
+    formData.append("image_data", file);
+    formData.append("access_token", accessToken);
     $.ajax({
         url: path,
         type: "POST",
@@ -65,10 +102,26 @@ function GetMarkers(fixtureName, file, successCallback, errorCallback) {
     });
 }
 
-function GetTransposedMarkers(fixtureName, markers, file, successCallback, errorCallback) {
+function GetTransposedMarkersV2(fixtureName, markers, file, successCallback, errorCallback) {
     var path = GetTranposedMarkerPath + fixtureName;
     var formData = new FormData();
     formData.append("image", file);
+    formData.append("markers", markers);
+    $.ajax({
+        url: path,
+        type: "POST",
+        contentType: false,
+        enctype: 'multipart/form-data',
+        data: formData,
+        processData: false,
+        success: successCallback,
+        error: errorCallback
+    });
+}
+
+function GetTransposedMarkers(fixtureName, markers, successCallback, errorCallback) {
+    var path = GetTranposedMarkerPath + fixtureName;
+    var formData = new FormData();
     formData.append("markers", markers);
     $.ajax({
         url: path,

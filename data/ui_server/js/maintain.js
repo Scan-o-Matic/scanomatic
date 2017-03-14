@@ -396,24 +396,6 @@ function app_server_shutdown(button) {
 
 }
 
-function setVersionInformation() {
-    $.ajax({
-    url: "/api/app/version",
-    method: 'GET',
-    success: function(data) {
-
-        if (data["source_information"] && data["source_information"]["branch"])
-            branch = ", " + data["source_information"]["branch"];
-        else
-            branch = "";
-        $("#version-info").html("Scan-o-Matic " + data["version"] + branch);
-    },
-    error: function(data) {
-        $("#version-info").html("Error requesting version of Scan-o-Matic, this should not happen... reboot?");
-    }
-    });
-}
-
 function setUpgradeCheck() {
 
    $("#upgrade").html(

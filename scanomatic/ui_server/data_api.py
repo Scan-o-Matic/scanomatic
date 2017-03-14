@@ -244,7 +244,11 @@ def add_routes(app, rpc_client, is_debug_mode):
             return jsonify(success=False, source_values=None, target_values=None, grayscale=None,
                            reason="Area too large")
 
-        _, values = get_grayscale(image, grayscale_area_model, debug=is_debug_mode)
+        try:
+            _, values = get_grayscale(fixture, grayscale_area_model, debug=is_debug_mode)
+        except TypeError:
+            return jsonify(success=False, is_endpoint=True, reason="Grayscale detection failed")
+
         grayscale_object = getGrayscale(grayscale_area_model.name)
         valid = get_grayscale_is_valid(values, grayscale_object)
 
@@ -286,7 +290,12 @@ def add_routes(app, rpc_client, is_debug_mode):
         _logger.info("Grayscale area to be tested {0}".format(dict(**grayscale_area_model)))
 
         fixture = get_fixture_image_by_name(fixture_name)
-        _, values = get_grayscale(fixture, grayscale_area_model, debug=is_debug_mode)
+
+        try:
+            _, values = get_grayscale(fixture, grayscale_area_model, debug=is_debug_mode)
+        except TypeError:
+            return jsonify(success=False, is_endpoint=True, reason="Grayscale detection failed")
+
         grayscale_object = getGrayscale(grayscale_area_model.name)
         valid = get_grayscale_is_valid(values, grayscale_object)
 
@@ -310,8 +319,9 @@ def add_routes(app, rpc_client, is_debug_mode):
             return jsonify(fixtures=[], success=False, reason="Scan-o-Matic server offline")
 
     @app.route("/api/data/fixture/local/<path:project>")
+    @app.route("/api/data/fixture/local")
     @decorate_api_access_restriction
-    def _fixture_local_data(project):
+    def _fixture_local_data(project=""):
 
         path = os.path.join(convert_url_to_path(project), Paths().experiment_local_fixturename)
 
@@ -457,12 +467,18 @@ def add_routes(app, rpc_client, is_debug_mode):
                 return jsonify(success=False, reason="Area too large for grayscale")
 
             grayscale_area_model.name = grayscale_name
-            _, values = get_grayscale(fixture, grayscale_area_model)
+
+            try:
+                _, values = get_grayscale(fixture, grayscale_area_model)
+            except TypeError:
+
+                return jsonify(success=False, reason="Could not detect grayscale")
+
             grayscale_object = getGrayscale(grayscale_area_model.name)
             valid = get_grayscale_is_valid(values, grayscale_object)
 
             if not valid:
-                return jsonify(success=False, reason="Could not detect grayscale")
+                return jsonify(success=False, reason="Could not detect valid grayscale")
 
             grayscale_area_model.values = values
 

@@ -7,6 +7,7 @@ import numpy as np
 from types import StringTypes
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_filter, median_filter
+from scipy.stats import pearsonr
 
 #
 #   INTERNAL DEPENDENCIES
@@ -413,9 +414,9 @@ def get_normalisation_surface(control_positions_filtered_data, control_position_
                 anchor_points = get_stripped_invalid_points(np.isfinite(plate[anchor_points]))
                 anchor_values = plate[anchor_points]
 
-                if anchor_values.size == 0 or np.isfinite(plate).all():
+                if anchor_values.size == 0 or np.isfinite(plate).all() or np.isfinite(anchor_values).sum() < 4:
                     break
-                elif anchor_values.any():
+                else:
 
                     splined_plate = griddata(anchor_points, anchor_values, (grid_x, grid_y), method=method,
                                              fill_value=fill_value)
@@ -689,14 +690,48 @@ def ipv_residue(scaling_params, ipv, gt):
 #
 
 
-def get_normalized_data(data, offsets=None):
+def norm_by_log2_diff(plate, surface, **kwargs):
+    return np.log2(plate) - np.log2(surface)
+
+
+def norm_by_diff(plate, surface, **kwargs):
+    return plate - surface
+
+
+def norm_by_signal_to_noise(plate, surface, std, **kwargs):
+    return (plate - surface) / std
+
+
+def norm_by_log2_diff_corr_scaled(plate, surface, **kwargs):
+    plate = np.log2(plate)
+    surface = np.log2(surface)
+    filt = np.isfinite(plate) & np.isfinite(surface)
+    return (plate - surface) * (pearsonr(plate[filt], surface[filt])[0] + 1) * 0.5
+
+
+def get_normalized_data(data, offsets=None, method=norm_by_log2_diff):
+
+    if data is None:
+        return None
 
     surface = get_control_position_filtered_arrays(data, offsets=offsets)
+
     pre_surface = get_downsampled_plates(surface, offsets)
     apply_outlier_filter(pre_surface, measure=None)
-    surface = get_normalisation_surface(surface, offsets=offsets)
 
-    return normalisation(data, surface, log=True)
+    std = [None] * len(data)
+
+    if method == norm_by_signal_to_noise:
+        std = [plate[np.isfinite(plate)].std() if plate is not None else None for plate in pre_surface]
+
+    try:
+        surface = get_normalisation_surface(surface, offsets=offsets)
+    except ValueError:
+        print offsets
+        print data
+        raise
+
+    return normalisation(data, surface, method=method, std=std)
 
 
 def get_reference_positions(data, offsets, outlier_filter=True):
@@ -708,19 +743,18 @@ def get_reference_positions(data, offsets, outlier_filter=True):
     return pre_surface
 
 
-def normalisation(data, norm_surface, log=False):
+def normalisation(data, norm_surface, method=norm_by_log2_diff, std=(None,)):
 
     normed_data = []
     if isinstance(data, Data_Bridge):
         data = data.get_as_array()
 
-    for id_plate, (plate, surf) in enumerate(zip(data, norm_surface)):
+    for id_plate, (plate, surf, plate_std) in enumerate(zip(data, norm_surface, std)):
 
         if plate is None or surf is None:
             normed_data.append(None)
-        elif log:
-            normed_data.append(np.log2(plate) - np.log2(surf))
+
         else:
-            normed_data.append(plate - surf)
+            normed_data.append(method(plate, surf, std=plate_std))
 
     return np.array(normed_data)

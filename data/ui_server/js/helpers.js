@@ -1,4 +1,4 @@
-function get_path_suggestions(input, isDirectory, suffix, callback, prefix, checkHasAnalysis) {
+function get_path_suggestions(input, isDirectory, suffix, suffix_pattern, callback, prefix, checkHasAnalysis) {
 
     if (suffix == undefined)
         suffix = "";
@@ -26,6 +26,21 @@ function get_path_suggestions(input, isDirectory, suffix, callback, prefix, chec
                     data.suggestions[i] = data.suggestions[i].substring(start_index, data.suggestions[i].length);
                 }
             }
+
+            if (suffix_pattern != null) {
+                filtered = [];
+                filtered_is_directories = [];
+                i = data.suggestions.length;
+                while (i--) {
+                    if (data.suggestion_is_directories[i] || suffix_pattern.test(data.suggestions[i])) {
+                        filtered.push(data.suggestions[i]);
+                        filtered_is_directories.push(data.suggestion_is_directories[i]);
+                    }
+                }
+                data.suggestions = filtered;
+                data.suggestion_is_directories = filtered_is_directories;
+            }
+
             $(input).autocomplete({source: data.suggestions});
             if (prefix == undefined && (val == "" || (data.path == "root/" && val.length < data.path.length))) {
                 $(input).val(data.path);
@@ -110,4 +125,22 @@ function Map(arr, lambda_func) {
         new_arr[i] = lambda_func(arr[i]);
     }
     return new_arr;
+}
+
+function setVersionInformation(target, preface) {
+    $.ajax({
+    url: "/api/app/version",
+    method: 'GET',
+    success: function(data) {
+
+        if (data["source_information"] && data["source_information"]["branch"])
+            branch = ", " + data["source_information"]["branch"];
+        else
+            branch = "";
+        $(target).html(preface + data["version"] + branch);
+    },
+    error: function(data) {
+        $(target).html("Error checking version");
+    }
+    });
 }

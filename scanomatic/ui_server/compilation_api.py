@@ -52,12 +52,11 @@ def add_routes(app):
         path = convert_url_to_path(project)
 
         model = CompileProjectFactory.serializer.load_first(path)
-        """:type model: CompileInstructionsModel"""
+        """:type model: scanomatic.models.compile_project_model.CompileInstructionsModel"""
 
         if model is None:
             scan_instructions = [convert_path_to_url("/api/scan/instructions", p) for p in
                                  glob(os.path.join(path, Paths().scan_project_file_pattern.format("*")))]
-
         else:
             scan_instructions = [convert_path_to_url("/api/scan/instructions", p) for p in
                                  glob(os.path.join(os.path.dirname(path),
@@ -81,6 +80,8 @@ def add_routes(app):
                         'fixture_type': model.fixture_type.name,
                         'compilation': [dict(**i) for i in model.images],
                         'email': model.email,
+                        'pinning_matrices': model.overwrite_pinning_matrices,
+                        'start_time': model.start_time,
                     },
                     compile_instructions=compile_instructions,
                     scan_instructions=scan_instructions,

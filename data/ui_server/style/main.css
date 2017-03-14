@@ -49,8 +49,16 @@ img.icon-large {
     height: 100%;
 }
 
+#header {
+    position: absolute;
+    width: 100%;
+    top: 0px;
+    height: 190px;
+
+}
+
 #page {
-    position: fixed;
+    position: absolute;
     width: 100%;
     bottom: 0px;
     height: calc(100% - 190px);
@@ -63,7 +71,7 @@ p {
 	line-height: 150%;
 }
 
-a {
+a, .linky {
 	background: #f8e03e;
 	color: #541f0f;
     padding-left: 6px;
@@ -95,9 +103,17 @@ li {
 }
 
 nav {
+    display: block;
+    position: absolute;
+    bottom: 0px;
     padding: 12px;
-	background: #e7d2b7;
+	background: #cd8b34;
 	color: #cd8b34;
+	min-width: 960px;
+}
+
+nav a, nav .linky {
+    padding: 3px 12px;
 }
 
 nav span {
@@ -108,6 +124,42 @@ nav span {
     margin-left: 6px;
     margin-right: 6px;
 
+}
+
+.nav-dropdown {
+    display: inline-block;
+}
+
+.nav-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #cd8b34;
+    min-width: 160px;
+    padding: 12px 6px;
+    z-index: 1;
+}
+
+.nav-dropdown:hover .nav-dropdown-content {
+    display: block;
+}
+
+.nav-dropdown-item {
+    display: block;
+    background-color: #cd8b34;
+    padding: 3px 6px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+
+.nav-icon {
+    margin-right: 3px;
+    vertical-align: midle;
+    margin-bottom: 2px;
+}
+
+nav #version-info {
+    right: 12px;
+    position: absolute;
 }
 
 ul {
@@ -155,6 +207,26 @@ label {
 #cont h3 {
     font-family: sans;
     margin-top: 10px;
+}
+
+.urgent {
+    max-width: 900px;
+    font-size: 130%;
+    font-weight: bold;
+    background-color: #b01010;
+    color: #101010;
+    margin-left: 30px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    z-index: 999;
+    opacity: 0.9;
+    padding: 6px;
+}
+
+#logo {
+    position: fixed;
+    top: 0;
+    z-index: -1;
 }
 
 .section {

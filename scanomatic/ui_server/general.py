@@ -5,7 +5,7 @@ from StringIO import StringIO
 import io
 from scipy.misc import imread
 from itertools import chain
-from flask import send_file, request, send_from_directory, jsonify
+from flask import send_file, request, send_from_directory, jsonify, render_template
 from werkzeug.datastructures import FileStorage
 import numpy as np
 import zipfile
@@ -15,7 +15,7 @@ import base64
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
-from scanomatic.io.logger import Logger
+from scanomatic.io.logger import Logger, parse_log_file
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scipy.misc import toimage
 from scanomatic.image_analysis.first_pass_image import FixtureImage
@@ -40,7 +40,10 @@ def image_is_allowed(ext):
     return ext.lower() in _ALLOWED_EXTENSIONS
 
 
-def string_parse_2d_list(data_string):
+def string_parse_2d_list(data_string, dtype=float):
+
+    if not isinstance(data_string, StringTypes):
+        return None
 
     p1 = re.compile(r'\[[^\]\[]+\]')
     p2 = re.compile(r'(\d+\.?\d*|\.\d+)')
@@ -48,12 +51,12 @@ def string_parse_2d_list(data_string):
     parsed = [p2.findall(f) for f in p1.findall(data_string)]
     if all(len(p) == len(parsed[0]) for p in parsed):
         try:
-            return [[float(v) for v in l] for l in parsed]
+            return [[dtype(v) for v in l] for l in parsed]
         except ValueError:
             return []
 
 
-def get_2d_list(data, key, **kwargs):
+def get_2d_list(data, key, getlist_kwargs=None, use_fallback=True, dtype=float):
     """
 
     :param data: Example a request.values
@@ -62,6 +65,9 @@ def get_2d_list(data, key, **kwargs):
     """
 
     key += "[{0}][]"
+
+    if getlist_kwargs is None:
+        getlist_kwargs = {}
 
     def _list_enumerator():
         i = 0
@@ -73,7 +79,25 @@ def get_2d_list(data, key, **kwargs):
             else:
                 break
 
-    return tuple(data.getlist(k, **kwargs) for k in _list_enumerator())
+    value = tuple(data.getlist(k, **getlist_kwargs) for k in _list_enumerator())
+
+    if not value and use_fallback:
+        value = string_parse_2d_list(data.get(key, type=dtype))
+
+    return value
+
+
+def valid_array_dimensions(dims, *arrs):
+
+    for arr in arrs:
+
+        try:
+            if arr.ndim != dims:
+                return False
+        except (AttributeError, TypeError):
+            return False
+
+    return True
 
 
 def get_area_too_large_for_grayscale(grayscale_area_model):
@@ -234,13 +258,15 @@ def json_response(exits, data, success=True):
 def get_common_root_and_relative_paths(*file_list):
 
     dir_list = set(tuple(os.path.dirname(f) if os.path.isfile(f) else f for f in file_list))
-    common_test = zip(*(os.path.split(p) for p in dir_list))
+    common_test = zip(*(p.split(os.sep) for p in dir_list))
     root = ""
     for d_list in common_test:
         if all(d == d_list[0] for d in d_list):
             root = os.path.join(root, d_list[0])
         else:
             break
+        if not root:
+            root = os.path.sep
 
     root += os.path.sep
     start_at = len(root)
@@ -273,6 +299,7 @@ def serve_zip_file(zip_name, *file_list):
 
     zf.close()
 
+    data_buffer.flush()
     data_buffer.seek(0)
 
     return send_file(data_buffer,
@@ -301,7 +328,7 @@ def get_fixture_image_by_name(name, ext="tiff"):
 
 def get_fixture_image(name, image_path):
 
-    fixture = FixtureImage()
+    fixture = FixtureImage(reference_overwrite_mode=True)
     fixture.name = name
     fixture.set_image(image_path=image_path)
     return fixture
@@ -366,7 +393,7 @@ def get_image_data_as_array(image_data, reshape=None):
 
 def get_fixture_image_from_data(name, image_data):
 
-    fixture = FixtureImage()
+    fixture = FixtureImage(reference_overwrite_mode=True)
     fixture.name = name
     fixture.set_image(image=get_image_data_as_array(image_data))
     return fixture
@@ -521,3 +548,20 @@ def decorate_api_access_restriction(restricted_route):
             return ret
 
     return getattr(Restrictor(), restricted_route.__name__)
+
+
+def serve_log_as_html(log_path, title):
+
+    data = parse_log_file(log_path)
+    data['garbage'] = [l.replace("\n", "<br>") for l in data['garbage']]
+    for e in data['records']:
+        e['message'] = e['message'].split("\n")
+
+    if data:
+        return render_template(
+            Paths().ui_log_template,
+            title=title,
+            **data)
+    else:
+        return render_template(Paths().ui_log_not_found_template,
+                               title=title)

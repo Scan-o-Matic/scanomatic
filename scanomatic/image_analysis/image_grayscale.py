@@ -127,14 +127,17 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
         # Correct offset in the permissible signal to the image
         acceptable_placement += kernel_size[0] / 2
 
-        return im_ortho_trimmed[max(0, acceptable_placement - buffered_half_length):
-                                min(im_ortho_trimmed.shape[0], acceptable_placement + buffered_half_length)]
+        return im_ortho_trimmed[int(round(max(0, acceptable_placement - buffered_half_length))):
+                                int(round(min(im_ortho_trimmed.shape[0],
+                                              acceptable_placement + buffered_half_length)))]
 
     return im_ortho_trimmed
 
 
 def get_grayscale(fixture, grayscale_area_model, debug=False):
     im = fixture.get_grayscale_im_section(grayscale_area_model)
+    if im is None:
+        return None
     return get_grayscale_image_analysis(im, grayscale_area_model.name, debug=debug)
 
 
@@ -309,9 +312,12 @@ def detect_grayscale(im_trimmed, grayscale):
                 if right >= im_trimmed.shape[0]:
                     right = im_trimmed.shape[0] - 1
 
-                gray_scale.append(iqr_mean(
-                    im_trimmed[int(round(left)): int(round(right)),
-                               int(round(top)): int(round(bottom))]))
+                left = int(round(left))
+                right = int(round(right))
+                top = int(round(top))
+                bottom = int(round(bottom))
+
+                gray_scale.append(iqr_mean(im_trimmed[left: right, top: bottom]))
 
                 if DEBUG_DETECTION:
                     np.save(os.path.join(Paths().log, "gs_segment_{0}.npy".format(i)),

@@ -33,6 +33,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         super(PhenotypeExtractionEffector, self).__init__(job, logger_name="Phenotype Extractor '{0}'".format(job.id))
 
         self._feature_job = job.content_model
+        """:type: scanomatic.models.features_model.FeaturesModel"""
         self._job_label = self._feature_job.analysis_directory
         self._progress = 0
         self._times = None
@@ -55,37 +56,49 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         self._feature_job = job.content_model
         self._job.content_model = self._feature_job
 
-        if feature_factory.FeaturesFactory.validate(self._feature_job) is not True:
+        if feature_factory.FeaturesFactory.validate(self._feature_job) is True:
+            feature_factory.FeaturesFactory.serializer.dump(
+                self._feature_job,
+                os.path.join(
+                    self._feature_job.analysis_directory,
+                    paths.Paths().phenotypes_extraction_instructions),
+                overwrite=True
+            )
+        else:
             self._logger.warning("Can't setup, instructions don't validate")
             return False
 
-        self._logger.set_output_target(
-            os.path.join(self._feature_job.analysis_directory, paths.Paths().phenotypes_extraction_log),
-            catch_stdout=True, catch_stderr=True)
+        log_path = os.path.join(self._feature_job.analysis_directory, paths.Paths().phenotypes_extraction_log)
+        self._logger.set_output_target(log_path, catch_stdout=True, catch_stderr=True)
+        self._log_file_path = log_path
 
         self._logger.surpress_prints = False
 
         self._logger.info("Loading files image data from '{0}'".format(
             self._feature_job.analysis_directory))
 
-        times, data = image_data.ImageData.read_image_data_and_time(self._feature_job.analysis_directory)
+        if self._feature_job.extraction_data is feature_factory.features_model.FeatureExtractionData.State:
+            self._times = None
+            self._data = None
+        else:
+            times, data = image_data.ImageData.read_image_data_and_time(self._feature_job.analysis_directory)
 
-        if times is None or data is None or 0 in map(len, (times, data)):
-            self._logger.error(
-                "Could not filter image times to match data or no data. " +
-                "Do you have the right directory, it should be an analysis directory?")
+            if times is None or data is None or 0 in map(len, (times, data)):
+                self._logger.error(
+                    "Could not filter image times to match data or no data. " +
+                    "Do you have the right directory, it should be an analysis directory?")
 
-            self.add_message("There is no image data in given directory or " +
-                             "the image data is corrupt")
+                self.add_message("There is no image data in given directory or " +
+                                 "the image data is corrupt")
 
-            self._running = False
-            self._stopping = True
-            return False
+                self._running = False
+                self._stopping = True
+                return False
 
-        self._times = times
-        self._data = data
-        self._analysis_base_path = image_data.ImageData.directory_path_to_data_path_tuple(
-            self._feature_job.analysis_directory)[0]
+            self._times = times
+            self._data = data
+
+        self._analysis_base_path = self._feature_job.analysis_directory
 
         self._allow_start = True
 
@@ -138,10 +151,13 @@ Scan-o-Matic""", self._feature_job)
 
         self._start_time = time.time()
 
-        self._phenotyper = phenotyper.Phenotyper(
-            raw_growth_data=self._data,
-            times_data=self._times)
+        if self._feature_job.extraction_data is feature_factory.features_model.FeatureExtractionData.State:
+            self._phenotyper = phenotyper.Phenotyper.LoadFromState(self._feature_job.analysis_directory)
+        else:
+            self._phenotyper = phenotyper.Phenotyper(
+                raw_growth_data=self._data,
+                times_data=self._times)
 
-        self._phenotype_iterator = self._phenotyper.iterate_extraction()
+        self._phenotype_iterator = self._phenotyper.iterate_extraction(self._feature_job.try_keep_qc)
         self._iteration_index = 1
         self._logger.info("Starting phenotype extraction")

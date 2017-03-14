@@ -9,7 +9,7 @@ from scanomatic.io.app_config import Config
 from scanomatic.io.logger import Logger, parse_log_file
 from scanomatic.io.paths import Paths
 from scanomatic.data_processing.phenotyper import path_has_saved_project_state
-from .general import convert_url_to_path, json_response, decorate_api_access_restriction
+from .general import convert_url_to_path, json_response, decorate_api_access_restriction, serve_zip_file
 
 _logger = Logger("Tools API")
 
@@ -174,6 +174,86 @@ def add_routes(app):
             else:
                 return jsonify(success=False, reason="No coordinates in {0}".format(data_object))
 
+    @app.route("/api/tools/debug/data/<path:project>")
+    @decorate_api_access_restriction
+    def _debug_data(project=""):
+        """Creates zip of relevant files for a project.
+
+        Args:
+            project: Path to the project
+
+        Optional Json/POST/GET data:
+
+            include_global_logs:
+
+                0 = No
+                1 = Include active server & ui_server logs
+                Note that this will cause zip to be informative of
+                general directory structure.
+
+            include_state:
+                0 = No
+                1 = Include files from feature extraction
+                Only valid if pointing at analysis folder
+
+        Returns: Zip-file or json on fail
+        """
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        path = convert_url_to_path(project)
+        files = []
+
+        if path_has_saved_project_state(path):
+
+            include_state = bool(data_object.get("include_state", default=False))
+            proj_path = os.path.abspath(os.path.join(path, os.path.pardir))
+
+            files += glob.glob(os.path.join(path, Paths().analysis_run_log))
+            files += glob.glob(os.path.join(path, Paths().analysis_model_file))
+            files += glob.glob(os.path.join(path, Paths().phenotypes_extraction_instructions))
+            files += glob.glob(os.path.join(path, Paths().phenotypes_extraction_log))
+
+            if include_state:
+
+                files += glob.glob(os.path.join(path, Paths().phenotype_times))
+                files += glob.glob(os.path.join(path, Paths().phenotypes_extraction_params))
+                files += glob.glob(os.path.join(path, Paths().phenotypes_filter))
+                files += glob.glob(os.path.join(path, Paths().phenotypes_filter_undo))
+                files += glob.glob(os.path.join(path, Paths().phenotypes_input_data))
+                files += glob.glob(os.path.join(path, Paths().phenotypes_input_smooth))
+                files += glob.glob(os.path.join(path, Paths().phenotypes_meta_data))
+                files += glob.glob(os.path.join(path, Paths().phenotypes_meta_data_original_file_patern))
+                files += glob.glob(os.path.join(path, Paths().vector_meta_phenotypes_raw))
+                files += glob.glob(os.path.join(path, Paths().vector_phenotypes_raw))
+                files += glob.glob(os.path.join(path, Paths().phenotypes_reference_offsets))
+                files += glob.glob(os.path.join(path, Paths().experiment_grid_image_pattern.format("*")))
+
+        elif glob.glob(os.path.join(path,
+                                    Paths().experiment_scan_image_pattern.format("*", "*", 0).replace("0", "*"))):
+
+            proj_path = path
+
+        else:
+
+            return jsonify(success=False, is_endpoint=True, reason="Not a project")
+
+        files += glob.glob(os.path.join(proj_path, Paths().experiment_local_fixturename))
+        files += glob.glob(os.path.join(proj_path, Paths().scan_log_file_pattern.format("*")))
+        files += glob.glob(os.path.join(proj_path, Paths().project_compilation_log_pattern.format("*")))
+        files += glob.glob(os.path.join(proj_path, Paths().project_compilation_pattern.format("*")))
+        files += glob.glob(os.path.join(proj_path, Paths().project_compilation_from_scanning_pattern.format("*")))
+        files += glob.glob(os.path.join(proj_path, Paths().project_compilation_from_scanning_pattern_old.format("*")))
+        files += glob.glob(os.path.join(proj_path, Paths().project_compilation_instructions_pattern.format("*")))
+
+        if bool(data_object.get("include_global_logs", default=False)):
+
+            files += glob.glob(Paths().log_server)
+            files += glob.glob(Paths().log_ui_server)
+
+        return serve_zip_file("DebugFiles_{0}.zip".format(os.path.basename(proj_path)), *files)
+
     @app.route("/api/tools/path")
     @app.route("/api/tools/path/<command>", methods=['get', 'post'])
     @app.route("/api/tools/path/<command>/", methods=['get', 'post'])
@@ -233,13 +313,23 @@ def add_routes(app):
                 suggestions = tuple("/".join(chain([command], os.path.relpath(p, root).split(os.sep)))
                                     for p in glob.glob(path + "*" + (suffix if is_directory else ""))
                                     if os.path.isdir(p) and safe_directory_name(os.path.basename(p)))
+
+                suggestion_is_directories = tuple(1 for _ in suggestions)
+
                 if not is_directory:
-                    suggestions = tuple("/".join(chain([command], os.path.relpath(p, root).split(os.sep)))
-                                        for p in glob.glob(os.path.join(os.path.dirname(path), prefix + "*" + suffix))
-                                        if os.path.isfile(p)) + suggestions
+
+                    candidates = glob.glob(os.path.join(os.path.dirname(path), prefix + "*" + suffix))
+
+                    suggestion_files = tuple("/".join(chain([command], os.path.relpath(p, root).split(os.sep)))
+                                        for p in candidates if os.path.isfile(p))
+
+                    suggestions = suggestion_files + suggestions
+
+                    suggestion_is_directories = tuple(0 for _ in suggestion_files) + suggestion_is_directories
 
             else:
                 suggestions = tuple()
+                suggestion_is_directories = tuple()
 
             _logger.info("{0}: {1}".format(path, glob.glob(path + "*")))
 
@@ -249,7 +339,11 @@ def add_routes(app):
                 has_analysis = None
 
             return jsonify(path="/".join(chain([command], sub_path)), valid_parent=valid_parent_directory,
-                           reason=reason, suggestions=suggestions, prefix=prefix, exists=exists,
+                           reason=reason,
+                           suggestions=suggestions,
+                           suggestion_is_directories=suggestion_is_directories,
+                           prefix=prefix,
+                           exists=exists,
                            has_analysis=has_analysis)
 
         return jsonify(path='/', valid_parent=False, reason="Path not allowed")

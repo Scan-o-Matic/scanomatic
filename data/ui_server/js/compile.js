@@ -34,20 +34,24 @@ function set_project_directory(input) {
         input,
         true,
         "",
+        null,
         function(data, status) {
             path = $(input).val();
             project_path_valid = data.valid_parent && data.exists;
 
             if (project_path_valid) {
+
                 setImageSuggestions(path);
+                $("#project-directory-info").html("Scan images in folder: " + GetIncludedImageList(true).length);
                 InputEnabled(image_list_div.find("#manual-selection"), true);
             } else {
                 toggleManualSelection(false);
+                $("#project-directory-info").html("<em>The project directory is the directory that contains the images that were scanned.</em>");
                 InputEnabled(image_list_div.find("#manual-selection"), false);
             }
 
             if (localFixture) {
-                set_fiture_status();
+                set_fixture_status();
             }
             InputEnabled($("#submit-button"), project_path_valid);
     });
@@ -118,16 +122,13 @@ function setOnAllImages(included) {
 
 function toggleLocalFixture(caller) {
     localFixture = $(caller).prop("checked");
-    set_fiture_status();
+    set_fixture_status();
     InputEnabled($(current_fixture_id), !localFixture);
 }
 
-function Compile(button) {
-
-    InputEnabled($(button), false);
-
+function GetIncludedImageList(force_list) {
     images = null;
-    if (image_list_div.find("#manual-selection").prop("checked")) {
+    if (force_list || image_list_div.find("#manual-selection").prop("checked")) {
         images = [];
         image_list_div.find("#options").children().each(function() {
             imp = $(this).find(":input");
@@ -136,12 +137,20 @@ function Compile(button) {
             }
         });
     }
+    return images;
+}
 
-    data = {local: localFixture ? 1 : 0, 'fixture': $(current_fixture_id).val(),
-               path: path,
-               chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
-               images: images
-            };
+function Compile(button) {
+
+    InputEnabled($(button), false);
+
+    data = {
+        local: localFixture ? 1 : 0,
+        fixture: localFixture ? "" : $(current_fixture_id).val(),
+        path: path,
+        chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
+        images: GetIncludedImageList()
+    };
 
     $.ajax({
         url: "?run=1",

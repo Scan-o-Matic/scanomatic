@@ -6,6 +6,7 @@ import signal
 from subprocess import Popen, PIPE
 from threading import Thread
 from scanomatic import get_version
+from scanomatic.io.mail import can_get_server_with_current_settings
 from scanomatic.io.source import parse_version, upgrade, git_version, highest_version, get_source_information
 from .general import decorate_api_access_restriction
 _GIT_INFO = None
@@ -167,6 +168,12 @@ def add_routes(app, rpc_client):
             val = rpc_client.communicate(job_id, job_command)
             return jsonify(success=val, reason=None if val else "Refused by server")
 
-        return jsonify(success=False, reason="Server offline")
+        return jsonify(success=False, is_endpoint=True, reason="Server offline")
+
+    @app.route("/api/settings/mail/possible")
+    @decorate_api_access_restriction
+    def can_possibly_mail():
+
+        return jsonify(success=True, is_endpoint=True, can_possibly_mail=can_get_server_with_current_settings())
 
     # END OF ADDING ROUTES

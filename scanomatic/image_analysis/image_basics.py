@@ -3,6 +3,7 @@
 import numpy as np
 import scanomatic.io.logger as logger
 from scipy.ndimage import zoom
+
 try:
     import Image
 except ImportError:
@@ -21,21 +22,38 @@ _logger = logger.Logger("Basic Image Utils")
 #
 
 
+def scale_16bit_to_8bit_range(data):
+
+    return data / (2 ** 16 - 1.) * 255
+
+
+def round_to_8bit(data):
+
+    return np.round(data).astype(np.uint8)
+
+
 def load_image_to_numpy(path, orientation=IMAGE_ROTATIONS.Portrait, dtype=np.float64):
 
     im = Image.open(path)
-    data = np.asarray(im, dtype=np.uint8)
+    data = np.array(im)
+
+    if data.dtype == np.uint16:
+        data = scale_16bit_to_8bit_range(data)
 
     data_orientation = IMAGE_ROTATIONS.Portrait if max(data.shape) == data.shape[0] else IMAGE_ROTATIONS.Landscape
 
     if data_orientation == orientation:
-        if dtype is None:
+        if dtype is None or data.dtype == dtype:
             return data
+        elif dtype == np.uint8:
+            return np.round(data).astype(dtype)
         else:
             return data.astype(dtype)
     else:
-        if dtype is None:
+        if dtype is None or data.dtype == dtype:
             return data.T
+        elif dtype == np.uint8:
+            return np.round(data).T.astype(dtype)
         else:
             return data.T.astype(dtype)
 
@@ -63,7 +81,7 @@ def Quick_Scale_To_im(path=None, im=None, source_dpi=600, target_dpi=150,
 
         try:
 
-            im = load_image_to_numpy(path)
+            im = load_image_to_numpy(path, dtype=np.uint8)
 
         except:
 

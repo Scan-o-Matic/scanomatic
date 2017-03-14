@@ -62,6 +62,7 @@ function set_experiment_root(input) {
         input,
         true,
         "",
+        null,
         function(data, status) {
             project_path = $(input).val();
             project_path_valid = data.valid_parent && !data.exists;

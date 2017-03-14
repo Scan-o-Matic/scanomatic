@@ -34,3 +34,17 @@
     right: -39px;
     cursor: pointer;
 }
+
+.log-link {
+    float: right
+}
+
+.log-link a {
+    padding-bottom: 2px;
+    padding-top: 1px;
+}
+
+img {
+    vertical-align: middle;
+    float: none;
+}

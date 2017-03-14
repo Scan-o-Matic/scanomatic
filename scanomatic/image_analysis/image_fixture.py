@@ -40,7 +40,7 @@ class FixtureImage(object):
 
             try:
 
-                pattern_img = load_image_to_numpy(pattern_image_path)
+                pattern_img = load_image_to_numpy(pattern_image_path, dtype=np.uint8)
 
             except IOError:
 
@@ -73,7 +73,7 @@ class FixtureImage(object):
 
                 try:
 
-                    self._img = load_image_to_numpy(path)
+                    self._img = load_image_to_numpy(path, np.uint8)
 
                 except IOError:
 
@@ -98,7 +98,7 @@ class FixtureImage(object):
 
         try:
 
-            self._img = load_image_to_numpy(path)
+            self._img = load_image_to_numpy(path, dtype=np.uint8)
 
         except IOError:
 

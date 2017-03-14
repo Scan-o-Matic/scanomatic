@@ -11,7 +11,9 @@ class FeaturesFactory(AbstractModelFactory):
     STORE_SECTION_HEAD = ("analysis_directory", )
     STORE_SECTION_SERIALIZERS = {
         "analysis_directory": str,
-        "email": email_serializer
+        "email": email_serializer,
+        "extraction_data": features_model.FeatureExtractionData,
+        "try_keep_qc": bool
     }
 
     @classmethod

@@ -186,6 +186,7 @@ class ScanningModelFactory(AbstractModelFactory):
         ScanningAuxInfoModel: ScanningAuxInfoFactory,
         PlateDescription: PlateDescriptionFactory
     }
+
     STORE_SECTION_SERIALIZERS = {
         'start_time': float,
         'number_of_scans': int,
@@ -206,6 +207,9 @@ class ScanningModelFactory(AbstractModelFactory):
         'version': str,
         'id': str,
         'auxillary_info': ScanningAuxInfoModel,
+        'scanning_program': str,
+        'scanning_program_version': str,
+        'scanning_program_params': (tuple, str)
     }
 
     @classmethod

@@ -24,16 +24,16 @@
                 <div class="section">
                     <label for="compilation">Compilation File</label>
                     <input name="compilation" id="compilation" class="long"
-                       onchange="set_file_path(this, '.project.compilation');"
-                       onfocus="set_file_path(this, '.project.compilation');"
-                       onkeyup="set_file_path(this, '.project.compilation');">
-                    <div class="indented"><em>This should point to a file with the ending <code>.project.compilation</code>.</em></div>
+                       onchange="set_file_path(this, '', /\.project\.(compilation(\.original)?|settings)$/, true);"
+                       onfocus="set_file_path(this, '', /\.project\.(compilation(\.original)?|settings)$/, true);"
+                       onkeyup="set_file_path(this, '', /\.project\.(compilation(\.original)?|settings)$/, true);">
+                    <div class="indented"><em>Either the original or a new re-compilation file</em></div>
 
                     <label for="compile-instructions">Compile Instructions File <em>(optional)</em></label>
                     <input name="compile-instructions" id="compile-instructions" class="long"
-                        onchange="set_file_path(this, '.project.compilation.instructions');"
-                       onfocus="set_file_path(this, '.project.compilation.instructions');"
-                       onkeyup="set_file_path(this, '.project.compilation.instructions');">
+                        onchange="set_file_path(this, 'project.compilation.instructions', null, false);"
+                       onfocus="set_file_path(this, 'project.compilation.instructions', null, false);"
+                       onkeyup="set_file_path(this, 'project.compilation.instructions', null, false);">
                     <div class="indented"><em>This is optional, but if included should point to a <code>.project.compilation.instructions</code>,
                         else it is inferred from the compilation file path and name above.</em></div>
                 </div>
@@ -117,29 +117,9 @@
 
             </form>
         </div>
-
-
-        <h2>Feature extraction</h2>
-        <div class="section-frame">
-            <form>
-
-                <label for="extract">Analysis folder</label>
-                <input name="extract" id="extract" class="long"
-                       onchange="set_analysis_directory(this, true);"
-                       onfocus="set_analysis_directory(this, true);"
-                       onkeyup="set_analysis_directory(this, true);">
-
-                <div class="indented"><em>The analysis folder is the folder produced by the above step, it
-                contains, among other things, various files named <code>image_X_data.npy</code> and a file <code>time_data.npy</code>.</em></div>
-
-                <button type="button" id="submit-button2" onclick="Extract(this);">Run Feature Extraction</button>
-            </form>
-        </div>
-
     </div>
     <script>
         get_fixtures();
-        InputEnabled($("#submit-button2"), false);
         toggleManualRegridding($("#manual-regridding"));
     </script>
 </body>

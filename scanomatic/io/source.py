@@ -44,10 +44,14 @@ def _load_source_information():
     return {'location': None, 'branch': None}
 
 
-def get_source_information(test_info=False):
+def get_source_information(test_info=False, force_location=None):
 
     data = _load_source_information()
-    data['version'] = _read_source_version(data['location'])
+
+    if force_location:
+        data['location'] = force_location
+
+    data['version'] = _read_source_version(data['location'] if force_location is None else force_location)
 
     if test_info:
         if not has_source(data['location']):
@@ -199,12 +203,12 @@ def upgrade(branch=None):
         if branch is None:
             branch = get_active_branch(path)
 
-        if is_newest_version(branch=branch):
+        if installed_is_newest_version(branch=branch):
 
             if git_pull():
                 return install(path, branch)
 
-    if not is_newest_version():
+    if not installed_is_newest_version():
 
         _logger.info("Downloading fresh into temp")
         path = download(branch=branch)
@@ -232,6 +236,9 @@ def git_version(
 
 def parse_version(version=get_version()):
 
+    if version is None:
+        return 0, 0
+
     return tuple(int("".join(c for c in v if c in "0123456789")) for v in version.split(".")
                  if any((c in "0123456789" and c) for c in v))
 
@@ -256,7 +263,7 @@ def highest_version(v1, v2):
     return None
 
 
-def is_newest_version(branch=None):
+def installed_is_newest_version(branch=None):
     global _logger
     if branch is None:
         branch = get_source_information(True)['branch']
@@ -277,11 +284,17 @@ def is_newest_version(branch=None):
 def next_subversion(branch, current=None):
 
     online_version = git_version(branch=branch)
-    version = list(parse_version(highest_version(online_version, current if current is not None else get_version())))
+    version = parse_version(highest_version(online_version, current if current is not None else get_version()))
 
+    return increase_version(version)
+
+
+def increase_version(version):
+
+    version = list(version)
     if len(version) == 2:
         version += [1]
     else:
         version[-1] += 1
 
-    return version
+        return tuple(version)
