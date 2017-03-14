@@ -23,6 +23,19 @@ def get_alive_scanners():
     stdout, _ = p.communicate()
     return re.findall(r'device[^\`]*.(.*libusb[^\`\']*)\' is a (.*) scanner', stdout)
 
+
+def get_scanner_models():
+
+    return [k for k in SETTINGS_REPOSITORY]
+
+
+def get_scanning_modes(scanner_model):
+
+    if scanner_model in SETTINGS_REPOSITORY:
+        return [mode for mode in SCAN_MODES if SCAN_MODES in SETTINGS_REPOSITORY[scanner_model]]
+    else:
+        return []
+
 #
 # CLASSES
 #
@@ -82,7 +95,9 @@ class SCAN_FLAGS(Enum):
     ProgramVersion = '-V'
     """:type: SCAN_FLAGS"""
 
-
+"""These are default settings that will be overwritten from file.
+They will be deprecated in a futre version.
+"""
 SETTINGS_REPOSITORY = {
     "EPSON V700": {
         SCANNER_DATA.WaitBeforeScan: 0,
