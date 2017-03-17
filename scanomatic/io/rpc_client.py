@@ -3,7 +3,7 @@ import enum
 from subprocess import Popen
 import socket
 from types import StringTypes
-from types import GeneratorType
+from types import GeneratorType, TypeType
 
 #
 # INTERNAL DEPENDENCIES
@@ -29,6 +29,8 @@ def sanitize_communication(obj):
         return tuple(False if v is None else sanitize_communication(v) for v in obj)
     elif obj is None:
         return False
+    elif isinstance(obj, TypeType):
+        return str(obj)
     else:
         return obj
 
