@@ -211,15 +211,17 @@ class InterfaceBuilder(SingeltonOneInit):
         except (TypeError, AttributeError):
             pass
 
-        return sanitize_communication(
-            {
+        data = {
                 'pm': type(pm),
                 'host': host,
                 'unasigned_usbs': _SOM_SERVER.scanner_manager.non_reported_usbs,
                 'power_status': _SOM_SERVER.scanner_manager.power_statuses,
                 'modes': _SOM_SERVER.scanner_manager.pm_types,
+             }
 
-             })
+        _SOM_SERVER.logger.info("PM Status is {0}".format(data))
+
+        return sanitize_communication(data)
 
     def _server_get_queue_status(self, user_id=None):
 
