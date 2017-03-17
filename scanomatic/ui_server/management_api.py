@@ -193,7 +193,7 @@ def add_routes(app, rpc_client):
 
         if rpc_client.online:
             val = rpc_client.get_power_manager_info()
-            if val['host']:
+            if 'host' in val and val['host']:
                 uri = val['host']
                 if not uri.startswith("http"):
                     uri = "http://" + uri

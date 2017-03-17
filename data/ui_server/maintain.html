@@ -42,6 +42,15 @@
             <button type="button" name="Joint" value="Shutdown" onclick="javascript:app_server_shutdown(this);">Shutdown</button>
         </div>
 
+        <h2>Power Manager</h2>
+        <div class="section-frame" id="power-manager">
+            <p>You can test if the running scan-o-matic server knows the power-manager and if it is reachable.</p>
+            <p>Clicking <a href="/api/power_manager/test">here</a> should redirect you to the login page of the power manager.
+            If you get an unformatted page with some data, there should be a reason for the fail in it.
+                If you seem to be redirected to a page that won't load you may need rebooting the router and/or power manager.</p>
+            <p>You can also request unformatted info on the current status for the power manager by clicking <a href="/api/power_manager/status">here</a>.</p>
+        </div>
+
         <h2>Upgrade</h2>
         <div class="section-frame" id="upgrade"></div>
 
