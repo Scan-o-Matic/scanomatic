@@ -160,6 +160,14 @@ class ScannerPowerManager(SingeltonOneInit):
         return True
 
     @property
+    def power_manager(self):
+        """
+
+        :return: scanomatic.io.power_manager.PowerManagerNull
+        """
+        return self._pm
+
+    @property
     def _claimer(self):
         """
 
