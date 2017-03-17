@@ -106,7 +106,7 @@ def add_routes(app):
 
     @app.route("/api/scan/sane/modes/<model>")
     @decorate_api_access_restriction
-    def get_scanner_types(model):
+    def get_scanner_modes(model):
         modes = sane.get_scanning_modes(model)
         if not modes:
             jsonify(success=False, is_endpoint=True, reason="Scanner model '{0}' unknown".format(model))
