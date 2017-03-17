@@ -26,7 +26,7 @@ def sanitize_communication(obj):
     elif isinstance(obj, enum.Enum):
         return obj.name
     elif isinstance(obj, GeneratorType):
-        return tuple(False if v is None else sanitize_communication(v) for v in obs)
+        return tuple(False if v is None else sanitize_communication(v) for v in obj)
     elif obj is None:
         return False
     else:
