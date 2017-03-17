@@ -238,6 +238,12 @@ if len(sys.argv) > 1:
         --version   Checks for changes in the code and upgrades version
                     if detected.
 
+        --version-minor
+                    Increment version to next minor (e.g. 1.4.43 -> 1.5)
+
+        --version-major
+                    Increment verion to next major (e.g. 1.4.43 -> 2.0)
+
         --default   Will select default option to setup questions.
 
 
