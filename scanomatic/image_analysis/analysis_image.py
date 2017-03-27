@@ -250,8 +250,8 @@ class ProjectImage(object):
                 threads = set(t for t in threads if t.is_alive())
                 sleep(0.01)
 
-            self._logger.info("Producing grid images for plates {0} based on image {1}".format(
-                plate_indices, image_model.image.path))
+            self._logger.info("Producing grid images for plates {0} based on image {1} and compilation '{2}'".format(
+                plate_indices, image_model.image.path, self._analysis_model.compilation))
 
             call(["python",
                   "-c",
