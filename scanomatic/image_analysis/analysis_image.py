@@ -258,6 +258,9 @@ class ProjectImage(object):
                   "from scanomatic.util.analysis import produce_grid_images;"
                   " produce_grid_images('{0}', plates={1}, compilation='{2}')".format(
                       self._analysis_model.output_directory, plate_indices, self._analysis_model.compilation)])
+        else :
+
+            self._logger.warning("No gridding done for plates {0} because image not loaded.".format(plate_indices))
 
         return True
 
