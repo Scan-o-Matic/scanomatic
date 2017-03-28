@@ -250,14 +250,17 @@ class ProjectImage(object):
                 threads = set(t for t in threads if t.is_alive())
                 sleep(0.01)
 
-            self._logger.info("Producing grid images for plates {0} based on image {1}".format(
-                plate_indices, image_model.image.path))
+            self._logger.info("Producing grid images for plates {0} based on image {1} and compilation '{2}'".format(
+                plate_indices, image_model.image.path, self._analysis_model.compilation))
 
             call(["python",
                   "-c",
                   "from scanomatic.util.analysis import produce_grid_images;"
                   " produce_grid_images('{0}', plates={1}, compilation='{2}')".format(
                       self._analysis_model.output_directory, plate_indices, self._analysis_model.compilation)])
+        else :
+
+            self._logger.warning("No gridding done for plates {0} because image not loaded.".format(plate_indices))
 
         return True
 

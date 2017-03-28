@@ -215,6 +215,11 @@ class GridArray(object):
         return self._grid.tolist()
 
     @property
+    def grid_shape(self):
+
+        return self._grid.shape[1:]
+    
+    @property
     def index(self):
         return self._identifier[-1]
 

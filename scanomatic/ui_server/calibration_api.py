@@ -329,21 +329,22 @@ def add_routes(app):
             )
 
         grid = ga.grid
-        inner = len(grid[0])
-        outer = len(grid)
+        outer, inner = ga.grid_shape
+
         xy1 = [[[None] for c in range(inner)] for r in range(outer)]
         xy2 = [[[None] for c in range(inner)] for r in range(outer)]
 
-        for pos in product(range(outer), range(inner)):
+        for o, i in product(range(outer), range(inner)):
 
-            o, i = pos
-            gc = ga[(i, o)]
+            gc = ga[(o, i)]
 
             xy1[o][i] = gc.xy1.tolist()
             xy2[o][i] = gc.xy2.tolist()
 
         grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
         np.save(grid_path, grid)
+
+        app.logger.info("xy1 shape {0}, xy2 shape {1}".format(np.asarray(xy1).shape, np.asarray(xy2).shape))
 
         success = calibration.set_plate_grid_info(
             ccc_identifier, image_identifier, plate,
