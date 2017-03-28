@@ -345,6 +345,8 @@ def add_routes(app):
         grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
         np.save(grid_path, grid)
 
+        app._logger.info("xy1 shape {0}, xy2 shape {1}".format(np.asarray(xy1).shape, np.asarray(xy2).shape))
+
         success = calibration.set_plate_grid_info(
             ccc_identifier, image_identifier, plate,
             grid_shape=pinning_format,
