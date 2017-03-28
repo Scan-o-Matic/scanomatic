@@ -329,14 +329,13 @@ def add_routes(app):
             )
 
         grid = ga.grid
-        inner = len(grid[0])
-        outer = len(grid)
+        inner = len(grid[1])
+        outer = len(grid[2])
         xy1 = [[[None] for c in range(inner)] for r in range(outer)]
         xy2 = [[[None] for c in range(inner)] for r in range(outer)]
 
-        for pos in product(range(outer), range(inner)):
+        for o, i in product(range(outer), range(inner)):
 
-            o, i = pos
             gc = ga[(i, o)]
 
             xy1[o][i] = gc.xy1.tolist()
