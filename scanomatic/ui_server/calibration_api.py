@@ -472,7 +472,7 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=False,
                            reason="Background must be consisting of at least 3 pixels")
 
-        if background_filter.sum() < 20 and not data_object.get("override_small_background", default=False):
+        if background_filter.sum() < 20 and not data_object.get("override_small_background", False):
 
             return jsonify(success=False, is_endpoint=True,
                            reason="Background must be at least 20 pixels. Currently only {0}.".format(
