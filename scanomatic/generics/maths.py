@@ -20,9 +20,7 @@ def mid50_mean(data):
     data = data.data[data.mask == False]
     threshold = int(np.floor(data.size * 0.25))
     data.sort()
-    data = data[threshold:-threshold]
-
-    return data.mean()
+    return data[threshold:-threshold].mean()
 
 
 def quantiles_stable(data):
