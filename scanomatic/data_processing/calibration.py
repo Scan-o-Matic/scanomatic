@@ -600,14 +600,11 @@ def set_colony_compressed_data(identifier, image_identifier, plate_id, x, y, inc
     if image is not None:
         only_update_included = False
         background = mid50_mean(image[background_filter].ravel())
-        _logger.info("Types: image={0}, blob_filter={1}, background={2}".format(
-            type(image), type(blob_filter), type(background)))
-        _logger.info("Data content:\nimage:\n{0}\nblob_filter:\n{1}\nbackground:\n{2}".format(
-            image, blob_filter, background
-        ))
-        colony = image[blob_filter].ravel() - background
+        if np.isnan(background):
+            _logger.error("The background had too little information to make mid50 mean")
+            return False
 
-        _logger.info("Colony is of type {0} and has data:\n{1}".format(type(colony), colony))
+        colony = image[blob_filter].ravel() - background
 
         values, counts = zip(*{k: (colony == k).sum() for k in np.unique(colony).tolist()}.iteritems())
 
