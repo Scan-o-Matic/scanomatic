@@ -789,8 +789,10 @@ d3.scanomatic.plateHeatmap = function () {
 
         var gLegendaxis = container.append("g").classed("HeatMapLegendAxis", true);
 
+        var dom = [phenotypeMax, phenotypeMin];
+        //d3.extent(data[0]).reverse()
         var legendScale = d3.scale.linear()
-        .domain( d3.extent(data[0]).reverse())
+        .domain(dom)
         .rangeRound([startY, heatMaphight])
         .nice();
 
@@ -814,9 +816,9 @@ d3.scanomatic.plateHeatmap = function () {
         data = value;
         cols = data[0].length;
         rows = data.length;
-        phenotypeMin = d3.min(data[0]);
-        phenotypeMax = d3.max(data[0]);
-        phenotypeMean = d3.mean(data[0]);
+        phenotypeMin = d3.min(data, function (array) { return d3.min(array) });
+        phenotypeMax = d3.max(data, function(array) { return d3.max(array) });
+        phenotypeMean = d3.mean(data, function(array) { return d3.mean(array) });
         return heatmap;
     }
 
