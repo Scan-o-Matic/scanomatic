@@ -474,7 +474,8 @@ def add_routes(app):
         if calibration.set_colony_compressed_data(
                 ccc_identifier, image_identifier, plate, x, y,
                 included=True,
-                image=image, blob_filter=blob_filter, background_filter=background_filter):
+                image=image, blob_filter=blob_filter, background_filter=background_filter,
+                access_token=data_object.get("access_token")):
 
             return jsonify(sucecss=True, is_endpoint=True)
 
