@@ -18,8 +18,10 @@ def mid50_mean(data):
         data = np.ma.masked_invalid(data)
 
     data = data[data.mask == False]
-    threshold = np.floor(data.size * 0.25)
+    threshold = int(np.floor(data.size * 0.25))
     data.sort()
+    if data.size == 0:
+        raise ValueError("Zero sized array for ")
     return data[threshold:-threshold].mean()
 
 
