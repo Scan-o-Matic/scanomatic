@@ -422,6 +422,7 @@ def add_routes(app):
             "image": The grayscale calibrated image
             "blob": The filter indicating what is the colony
             "background": The filter indicating what is the background
+            "override_small_background": boolean for allowing less than 20 pixel backgrounds
         Returns:
 
         """
@@ -446,7 +447,7 @@ def add_routes(app):
                            reason="Blob filter data is not understandable as a boolean array")
 
         try:
-            background_filter = np.array(data_object.get("background", [[]]))
+            background_filter = np.array(data_object.get("background", [[]]), dtype=bool)
         except TypeError:
             return jsonify(success=False, is_endpoint=True,
                            reason="Background filter data is not understandable as a boolean array")
@@ -467,9 +468,15 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=False,
                            reason="Blob is empty/there's no colony detected")
 
-        if not background_filter.any():
+        if background_filter.sum() < 3:
             return jsonify(success=False, is_endpoint=False,
-                           reason="Background is empty/there's no background detected")
+                           reason="Background must be consisting of at least 3 pixels")
+
+        if background_filter.sum() < 20 and not data_object.get("override_small_background", default=False):
+
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Background must be at least 20 pixels. Currently only {0}.".format(
+                               background_filter.sum()) + " This check can be over-ridden.")
 
         if calibration.set_colony_compressed_data(
                 ccc_identifier, image_identifier, plate, x, y,
