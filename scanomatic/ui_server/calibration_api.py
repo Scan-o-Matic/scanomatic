@@ -15,6 +15,7 @@ from scanomatic.image_analysis.grid_cell import GridCell
 from scanomatic.image_analysis.grid_array import GridArray
 from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.image_analysis.image_grayscale import get_grayscale_image_analysis
+from scanomatic.image_analysis import image_basics
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
 from scanomatic.data_processing import calibration
@@ -397,9 +398,17 @@ def add_routes(app):
 
         gc = GridCell(identifier, None, save_extra_data=False)
         gc.source = colony_im.astype(np.float64)
+
+        transpose_polynomial = image_basics.Image_Transpose(
+            sourceValues=image_json[calibration.CCCImage.grayscale_source_values],
+            targetValues=image_json[calibration.CCCImage.grayscale_target_values])
+
+        gc.source[...] = transpose_polynomial(gc.source)
+
         gc.attach_analysis(
             blob=True, background=True, cell=True,
             run_detect=False)
+
 
         gc.detect(remember_filter=False)
         blob = gc.get_item(COMPARTMENTS.Blob).filter_array
