@@ -600,6 +600,10 @@ def set_colony_compressed_data(identifier, image_identifier, plate_id, x, y, inc
     if image is not None:
         only_update_included = False
         background = mid50_mean(image[background_filter].ravel())
+        if np.isnan(background):
+            _logger.error("The background had too little information to make mid50 mean")
+            return False
+
         colony = image[blob_filter].ravel() - background
 
         values, counts = zip(*{k: (colony == k).sum() for k in np.unique(colony).tolist()}.iteritems())

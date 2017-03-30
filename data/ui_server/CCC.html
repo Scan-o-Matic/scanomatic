@@ -22,55 +22,43 @@
                 var selFixtureName = "selFixtures";
                 var selPinFormatsName = "selPinFormats";
                 var uploads = [];
+                var dialog;
+                var form;
+                var superScope;
+                var species = $("#inSpecies");
+                var reference = $("#inReference");
+                var allFields = $([]).add(species).add(reference);
+                var tips = $(".validateTips");
 
-                function processMarkers(markers) {
-                    var markerXcoords = [];
-                    var markerYcoords = [];
-                    for (var i = 0; i < markers.length; i++) {
-                        markerXcoords.push(markers[i][0]);
-                        markerYcoords.push(markers[i][1]);
-                    }
-                    var postMarkers = [];
-                    postMarkers.push(markerXcoords);
-                    postMarkers.push(markerYcoords);
-                    return JSON.stringify(postMarkers);
-                }
-
-                function getImageIdSuccess(data)
-                {
-                    if (data.success)
-                        alert("success uploading!");
-                }
-                function getImageIdError(data)
-                {
-                    if (!data.success)
-                        alert("error uploading!");
-                }
-
-                $("#btnUploadImage").click(function () {
-                    var fixtureName = $("#" + selFixtureName + " option:selected").text();
-                    var file = $("#imageUpload")[0].files[0];
-                    if (!file) {
-                        alert("You need to select a valid file!");
-                        return;
-                    }
-                    var uploadedFile = { file: file, markers: {}, plates: {}, grayScale: {} };
-                    uploads.push(uploadedFile);
-                    GetMarkers(fixtureName, file, function (data) {
-                        if (data.success == true) {
-                            alert("The marker data was uploaded successfully:");
-                            var uploadedFile = uploads[0];
-                            uploadedFile.markers = data.markers;
-                            var postMarkers = processMarkers(data.markers);
-                            //here is the problem
-                            GetImageId("YESTIS", file, "2347cf00d8af11e6b545e069955c1a98", getImageIdSuccess, getImageIdError);
-                        } else
-                            alert("There was a problem with the upload: " + data.reason);
+                dialog = $("#dialog-form").dialog({
+                    autoOpen: false,
+                    height: 400,
+                    width: 350,
+                    modal: true,
+                    buttons: {
+                        "Initiate new CCC": initiateNewCcc,
+                        Cancel: function () { dialog.dialog("close"); }
                     },
-                    function (data) {
-                        alert("error:" + data.responseText);
-                    });
+                    close: function () {
+                        form[0].reset();
+                        allFields.removeClass("ui-state-error");
+                    }
                 });
+
+                form = dialog.find("form").on("submit", function (event) {
+                    event.preventDefault();
+                    initiateNewCcc();
+                });
+
+                $("#initiate-ccc").button().on("click", function () {
+                    dialog.dialog("open");
+                });
+
+                $("#btnUploadImage").click(uploadImage);
+
+                $("#btnUploadGridding").click(startGridding);
+
+                ini();
 
                 function ini() {
                     GetFixtures(function (fixtures) {
@@ -110,16 +98,16 @@
                         options.text(function (d) { return d.name; });
                         $("#" + elementName).selectedIndex = 0;
                     });
+
+                    $("#divIniCCC").hide();
+                    $("#imProgress0").toggle();
+                    $("#imProgress1").toggle();
+                    $("#imProgress2").toggle();
+                    $("#imProgress3").toggle();
+                    $("#imProgress4").toggle();
+                    $("#imProgress5").toggle();
+                    $("#imProgress6").toggle();
                 };
-
-                ini();
-
-                var dialog;
-                var form;
-                var species = $("#inSpecies");
-                var reference = $("#inReference");
-                var allFields = $([]).add(species).add(reference);
-                var tips = $(".validateTips");
 
                 function updateTips(t) {
                     tips.text(t).addClass("ui-state-highlight");
@@ -149,7 +137,94 @@
                     }
                 };
 
-                function initiateNewCCC() {
+                function getSelectedFixtureName() {
+                    var fixture = $("#" + selFixtureName + " option:selected").text();
+                    return fixture;
+                }
+
+                function getSelectedPinningFormat() {
+                    var format = $("#" + selPinFormatsName + " option:selected").val();
+                    return format;
+                }
+
+                function getCccId() {
+                    return $("#inData").data("idCCC");
+                }
+
+                function setCccId(id) {
+                    $("#inData").data("idCCC", id);
+                }
+
+                function getAccessToken()
+                {
+                    return $("#inData").data("accessToken");
+                };
+
+                function settAccessToken(token)
+                {
+                    $("#inData").data("accessToken", token);
+                };
+
+                function getCccFixture() {
+                    return $("#inData").data("idCCCFixture");
+                }
+
+                function setCccFixture(name) {
+                    $("#inData").data("idCCCFixture", name);
+                }
+
+                function getCccCurrentImageId() {
+                    return $("#inData").data("idCurrentImageId");
+                }
+
+                function setCccCurrentImageId(id) {
+                    $("#inData").data("idCurrentImageId", id);
+                }
+
+                function getCccCurrentImageMarkers() {
+                    return JSON.parse($("#inData").data("idCurrentImageMarkers"));
+                }
+
+                function setCccCurrentImageMarkers(id) {
+                    $("#inData").data("idCurrentImageMarkers", id);
+                }
+
+                //private functions
+                function processMarkers(markers) {
+                    var markerXcoords = [];
+                    var markerYcoords = [];
+                    for (var i = 0; i < markers.length; i++) {
+                        markerXcoords.push(markers[i][0]);
+                        markerYcoords.push(markers[i][1]);
+                    }
+                    var postMarkers = [];
+                    postMarkers.push(markerXcoords);
+                    postMarkers.push(markerYcoords);
+                    return JSON.stringify(postMarkers);
+                }
+
+                function createFixturePlateSelection(plates) {
+                    d3.selectAll(".frmPlateSeclectionInput").remove();
+                    var selPlates = d3.select("#frmPlateSeclection");
+                    var items = selPlates.selectAll("inputPlaceholders")
+                        .data(plates)
+                        .enter().append("div");
+                    items.append("input")
+                         .attr({
+                             "type": "checkbox",
+                             "class": "frmPlateSeclectionInput oneLine rightPadding",
+                             "id": function (d) { return "inImagePlate" + d.index },
+                             "name": "ImagePlates",
+                             "value": function (d) { return d.index }
+                         });
+                    items.append("label")
+                       .text(function (d) { return "Plate " + d.index })
+                       .classed("oneLine", true);
+                }
+
+                //main functions
+
+                function initiateNewCcc() {
                     var valid = true;
                     allFields.removeClass("ui-state-error");
 
@@ -160,57 +235,350 @@
                     valid = valid && checkRegexp(reference, /^[a-z]([0-9a-z_\s])+$/i, "This field may consist of a-z, 0-9, underscores, spaces and must begin with a letter.");
 
                     if (valid) {
-                        InitiateCCC(species.val(), reference.val(),
-                            function(data) {
-                                if (data.success) {
-                                    var id = data.identifier;
-                                    var token = data.access_token;
-                                    $("#inititated-cccs tbody").append("<tr>" +
-                                        "<td>" + id + " " + token + "</td>" +
-                                        "<td>" + species.val() + "</td>" +
-                                        "<td>" + reference.val() + "</td>" +
-                                    "</tr>");
-                                } else {
-                                    alert("Problem initializing");
-                                }
-                            },
-                            function(data) {
-                                alert("ini failure!");
-                            });
-
-                        $("#inititated-cccs tbody").append("<tr>" +
-                            "<td>" + "-" + "</td>" +
-                            "<td>" + species.val() + "</td>" +
-                            "<td>" + reference.val() + "</td>" +
-                        "</tr>");
-                        dialog.dialog("close");
+                        var sp = species.val();
+                        var ref = reference.val();
+                        InitiateCCC(sp, ref, initiateCccSuccess, initiateCccError);
                     }
                     return valid;
                 }
 
-                dialog = $("#dialog-form").dialog({
-                    autoOpen: false,
-                    height: 400,
-                    width: 350,
-                    modal: true,
-                    buttons: {
-                        "Initiate new CCC": initiateNewCCC,
-                        Cancel: function () { dialog.dialog("close"); }
-                    },
-                    close: function () {
-                        form[0].reset();
-                        allFields.removeClass("ui-state-error");
+                function initiateCccError(data) {
+                    alert("ini failure!");
+                }
+
+                function initiateCccSuccess(data) {
+                    if (data.success) {
+                        $("#initiate-ccc").prop('disabled', true);;
+                        $("#divIniCCC").show();
+                        var id = data.identifier;
+                        var token = data.access_token;
+                        var sp = species.val();
+                        var ref = reference.val();
+                        $("#inititated-cccs tbody").append("<tr>" +
+                            "<td>" + id + "</td>" +
+                            "<td>" + token + "</td>" +
+                            "<td>" + sp + "</td>" +
+                            "<td>" + ref + "</td>" +
+                        "</tr>");
+                        setCccId(id);
+                        settAccessToken(token);
+                        dialog.dialog("close");
+                    } else {
+                        alert("Problem initializing:" + data.reason);
                     }
-                });
+                }
 
-                form = dialog.find("form").on("submit", function (event) {
-                    event.preventDefault();
-                    initiateNewCCC();
-                });
+                function uploadImage() {
+                    var file = $("#imageUpload")[0].files[0];
+                    if (!file) {
+                        alert("You need to select a valid file!");
+                        return;
+                    }
+                    $("#imProgress0").toggle();
+                    $("#imProgress1").toggle();
+                    var uploadedFile = { file: file, markers: {}, plates: {}, grayScale: {} };
+                    uploads.push(uploadedFile);
+                    var fixtureName = getSelectedFixtureName();
+                    setCccFixture(fixtureName);
+                    GetMarkers(fixtureName, file, getMarkersSuccess,getMarkersError);
+                }
 
-                $("#initiate-ccc").button().on("click", function () {
-                    dialog.dialog("open");
-                });
+                function getMarkersError(data) {
+                    alert("Markers error:" + data.responseText);
+                }
+
+                function getMarkersSuccess(data) {
+                    if (data.success == true) {
+                        $("#imProgress2").toggle();
+                        var uploadedFile = uploads[0];
+                        uploadedFile.markers = data.markers;
+                        var postMarkers = processMarkers(data.markers);
+                        setCccCurrentImageMarkers(postMarkers);
+                        var cccId = getCccId();
+                        var accessToken = getAccessToken();
+                        GetImageId(cccId, uploadedFile.file, accessToken, getImageIdSuccess, getImageIdError);
+                    } else
+                        alert("There was a problem with the upload: " + data.reason);
+                }
+
+                function getImageIdError(data) {
+                    alert("Fatal error uploading the image: \n " + data.responseText);
+                }
+
+                function getImageIdSuccess(data) {
+                    if (data.success) {
+                        $("#imProgress3").toggle();
+                        var imageId = data.image_identifier;
+                        var cccId = getCccId();
+                        var accessToken = getAccessToken();
+                        setCccCurrentImageId(imageId);
+                        var markers = getCccCurrentImageMarkers();
+                        var toSetData = [];
+                        toSetData.push({ key: "marker_x", value: markers[0] });
+                        toSetData.push({ key: "marker_y", value: markers[1] });
+                        var fixture = getCccFixture();
+                        SetCccImageData(cccId, imageId, accessToken, toSetData, fixture, setCccImageDataSuccess, setCccImageDataError);
+                    }
+                    else
+                        alert("there was a problem uploading the image:" + data.reason);
+                }
+
+                function setCccImageDataError(data) {
+                    alert("Error while setting up the images! " + data.responseText);
+                }
+                
+                function setCccImageDataSuccess(data) {
+                    if (data.success) {
+                        $("#imProgress4").toggle();
+                        var cccId = getCccId();
+                        var cccImageId = getCccCurrentImageId();
+                        var accessToken = getAccessToken();
+                        SetCccImageSlice(cccId, cccImageId, accessToken, setCccImageSliceSuccess, setCccImageSliceError);
+                    } else
+                        alert("set image error!");
+                }
+
+                function setCccImageSliceError(data) {
+                    alert("Error while setting up the images slice!" + data.responseText);
+                }
+
+                function setCccImageSliceSuccess(data) {
+                    if (data.success) {
+                        $("#imProgress5").toggle();
+                        var cccId = getCccId();
+                        var cccImageId = getCccCurrentImageId();
+                        var accessToken = getAccessToken();
+                        SetGrayScaleImageAnalysis(cccId, cccImageId, accessToken, setGrayScaleImageAnalysisSuccess, setGrayScaleImageAnalysisError);
+                    } else
+                        alert("Error while setting up the images slice!:" + data.reason);
+                }
+
+                function setGrayScaleImageAnalysisError(data) {
+                    alert("Error while starting grayscale analysis! " + data.responseText);
+                }
+
+                function setGrayScaleImageAnalysisSuccess(data) {
+                    if (data.success) {
+                        $("#imProgress6").toggle();
+                        //store target_values and source_values to QC graph ???
+                       
+                        var fixtureName = getSelectedFixtureName();
+                        GetFixturePlates(fixtureName, function(data) {
+                            createFixturePlateSelection(data);
+                        });
+
+                    } else
+                        alert("Error while starting grayscale analysis:" + data.reason);
+                }
+
+                
+                function startGridding() {
+                    var values = [];
+                    var cbs = document.forms["frmPlateSeclection"].elements["ImagePlates"];
+                    for (var i = 0, cbLen = cbs.length; i < cbLen; i++) {
+                        if (cbs[i].checked) {
+                            var plateId = cbs[i].value;
+                            var task = createSetGrayScaleTransformTask(plateId);
+                            $(document).queue("plateProcess", task);
+                        }
+                    }
+                    $(document).dequeue("plateProcess");
+                };
+
+                function createSetGrayScaleTransformTask(plateId) {
+                    return function(next) {
+                        doSetGrayScaleTransformTask(plateId, next);
+                    }
+                }
+
+                function doSetGrayScaleTransformTask(plateId, next) {
+                    setGrayScaleTransform(plateId, next);
+                    //test(plateId, next);
+                }
+
+                function test(plateId, next) {
+                    alert("plate: " + plateId);
+                    next();
+                }
+
+                function setGrayScaleTransform(plate, next) {
+                    var cccId = getCccId();
+                    var cccImageId = getCccCurrentImageId();
+                    var accessToken = getAccessToken();
+                    var scope = {
+                        cccId: cccId,
+                        cccImageId: cccImageId,
+                        accessToken: accessToken,
+                        plate: plate,
+                        NextPlateTaskInQueue: next
+                    }
+                    SetGrayScaleTransform(scope, cccId, cccImageId, plate, accessToken, setGrayScaleTransformSuccess, setGrayScaleTransformError);
+                }
+
+                function setGrayScaleTransformError(data) {
+                    alert("set grayscale transform error:" + data.reason);
+                }
+
+                function setGrayScaleTransformSuccess(data, scope) {
+                    if (data.success) {
+                        var pinFormat = getSelectedPinningFormat();
+                        scope.pinFormat = pinFormat.split(",");
+                        SetGridding(scope, scope.cccId, scope.cccImageId, scope.plate, scope.pinFormat, scope.accessToken, setGriddingSuccess, setGriddingError);
+                    } else
+                        alert("set grayscale transform error:" + data.reason);
+                }
+
+                function setGriddingError(data) {
+                    alert("set Griderror:" + data.reason);
+                }
+
+                function drawCanvasGridCenters(totalRows,totalCols, scope, ctx) {
+                    var first = true;
+                    for (var row = 0; row < totalRows; row++) {
+                        for (var col = 0; col < totalCols; col++) {
+                            var x = scope.gridding.grid[1][row][col];
+                            var y = scope.gridding.grid[0][row][col];
+                            if (first) {
+                                ctx.fillStyle = "#c82124";
+                            }
+                            ctx.beginPath();
+                            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+                            if (first) {
+                                ctx.closePath();
+                                ctx.fill();
+                                first = false;
+                            }
+                            else
+                                ctx.stroke();
+                        }
+                    }
+                }
+
+                function drawCanvasGrid(totalRows, totalCols, scope, ctx) {
+                    for (var row = 0; row < totalRows; row++) {
+                        for (var col = 0; col < totalCols; col++) {
+                            var p1 = scope.gridding.xy1[row][col];
+                            var p2 = scope.gridding.xy2[row][col];
+                            var x1 = p1[1];
+                            var y1 = p1[0];
+                            var x2 = p2[1];
+                            var y2 = p2[0];
+                            var w = x2 - x1;
+                            var h = y2 - y1;
+                            ctx.rect(x1, y1, w, h);
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                function setGriddingSuccess(data, scope) {
+                    if (data.success) {
+                        var gridding = {
+                            grid: data.grid,
+                            xy1: data.xy1,
+                            xy2:data.xy2
+                        }
+                        scope.gridding = gridding;
+                        var pinFormat = scope.pinFormat;
+                        scope.colonies = [];
+
+
+                        var img = new Image;
+                        img.src = GetSliceImageURL(scope.cccId, scope.cccImageId, 1);
+                        img.custScope = scope;
+                        
+                        img.onload = function () {
+                            var scope = img.custScope;
+                            var canvas = document.getElementById('cvsPlateGrid');
+                            canvas.width = img.naturalWidth;
+                            canvas.height = img.naturalHeight;
+                            var ctx = canvas.getContext('2d');
+                            ctx.scale(0.2, 0.2);
+                            ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight);
+                            var totalRows = scope.gridding.grid[0].length;
+                            var totalCols = scope.gridding.grid[0][0].length;
+                            drawCanvasGridCenters(totalRows, totalCols, scope, ctx);
+
+                            totalRows = scope.gridding.xy1.length;
+                            totalCols = scope.gridding.xy1[0].length;
+                            //drawCanvasGrid(totalRows, totalCols, scope, ctx);
+
+                            //todo: here we continie
+                            //scope.ColonyCompression = [];
+                            //scope.ColonyCompressed = 0;
+                            //scope.ColonyNotCompressed = 0;
+                            for (var row = 0; row < pinFormat[0]; row++) {
+                                for (var col = 0; col < pinFormat[1]; col++) {
+                                    var task = createDetectColonyTask(scope, row, col);
+                                    $(document).queue("colonyDetect", task);
+                                }
+                            }
+                            $(document).dequeue("colonyDetect");
+                        }
+                    } else
+                        alert("set grid error:" + data.reason);
+                }
+
+                function doDetectColonyTask(scope, row, col, next) {
+                    scope.PlateColonyNextTaskInQueue = next;
+                    SetColonyDetection(scope, scope.cccId, scope.cccImageId, scope.plate, scope.accessToken, row, col, setColonyDetectionSuccess, SetColonyDetectionError);
+                }
+
+                function createDetectColonyTask(scope, row, col) {
+                    return function (next) {
+                        doDetectColonyTask(scope, row, col, next);
+                    }
+                }
+
+                function setColonyDetectionSuccess(data, scope, row, col) {
+                    if (data.success) {
+                        var colony = {
+                            x: row,
+                            y: col,
+                            blob: data.blob,
+                            background: data.background,
+                            image: data.image,
+                            gridPosition: data.grid_position
+                        };
+                        scope.colonies.push(colony);
+                        //superScope = scope;
+
+                        var next = scope.PlateColonyNextTaskInQueue;
+                        $("#divColony").text("Colony: "+row + "," +col);
+
+                        if (next == null) {
+                            alert("the end");
+                        }
+                        //next();
+                        setTimeout(function () {
+                            next();
+                        }, 500);
+
+                        //SetColonyCompressionV2(scope, scope.cccId, scope.cccImageId, scope.plate, scope.accessToken, colony, row, col, setColonyCompressionSuccess, setColonyCompressionError);
+                    }
+                }
+
+                function SetColonyDetectionError(data) {
+                    alert("set Colony Detection Error:" + data.reason);
+                }
+
+
+
+                function setColonyCompressionSuccess(data, scope) {
+                    var item = data.success + "- " + data.reason;
+                    scope.ColonyCompression.push(item);
+                    if (data.success)
+                        scope.ColonyCompressed = scope.ColonyCompressed + 1;
+                    else
+                        scope.ColonyNotCompressed = scope.ColonyNotCompressed + 1;
+
+                    
+                }
+
+                function setColonyCompressionError(data) {
+                    alert("set Colony compression Error:" + data.reason);
+                }
+
 
 
             });
@@ -219,7 +587,12 @@
         <h1>Cell Count Calibration</h1>
         <h2>Selection</h2>
         <div class="section-frame">
-            <div class="row" style="visibility:collapse">
+            <div class="row">
+                <div class="col-md-12">
+                    <button id="initiate-ccc">Initiate new CCC</button>
+                </div>
+            </div>
+            <div class="row">
                 <div class="col-md-12 " style="height: 100%; width: 100%">
                     <div class="floating-box" style="width: 20%; horiz-align: center">
                         <div id="dialog-form" title="Initiate new CCC">
@@ -227,65 +600,102 @@
                             <form>
                                 <fieldset>
                                     <label for="inSpecies">Species</label>
-                                    <input type="text" name="inSpecies" id="inSpecies" value="Name of you species" class="text ui-widget-content ui-corner-all">
+                                    <input type="text" name="inSpecies" id="inSpecies" value="" class="text ui-widget-content ui-corner-all">
                                     <label for="inReference">Reference/Contact</label>
-                                    <input type="text" name="inReference" id="inReference" value="reference or contact" class="text ui-widget-content ui-corner-all">
+                                    <input type="text" name="inReference" id="inReference" value="" class="text ui-widget-content ui-corner-all">
                                     <!-- Allow form submission with keyboard without duplicating the dialog button -->
-                                    <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+                                    <input type="submit" tabindex="-1" style="position: absolute; top: -1000px">
                                 </fieldset>
                             </form>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div id="divIniCCC">
+                <div class="row">
+                    <div class="col-md-12" >
                         <div id="ccc-contain" class="ui-widget">
                             <h1>Initiated CCCs:</h1>
+                            <input type="hidden" id="inData" />
                             <table id="inititated-cccs" class="ui-widget ui-widget-content">
                                 <thead>
                                     <tr class="ui-widget-header ">
-                                        <th>Identifiers</th>
+                                        <th>Identifier</th>
+                                        <th>Access Token</th>
                                         <th>Specie</th>
                                         <th>Reference</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>-</td>
-                                        <td>-</td>
-                                        <td>-</td>
-                                    </tr>
-                                </tbody>
+                                <tbody></tbody>
                             </table>
                         </div>
-                        <button id="initiate-ccc">Initiate new CCC</button>
                     </div>
                 </div>
-            </div>
-
-            <div class="row" >
-                <div class="col-md-12 " style="height: 100%; width: 100%">
-                    <div class="floating-box" style="width: 20%; horiz-align: center">
-                        <div style="margin-left: 10px; float: left" id="divFixtureSelector"></div>
-                        <div style="margin-left: 10px; float: left" id="divPinningFormatsSelector"></div>
+                <div class="row">
+                    <div class="col-md-12 " >
+                        <div class="floating-box" style="width: 100%; horiz-align: center">
+                            <div style="margin-left: 10px; float: left" id="divFixtureSelector">Fixture:</div>
+                            <div style="margin-left: 10px; float: left" id="divPinningFormatsSelector">Format:</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="section-frame" >
+                <div class="row">
+                    <div class="col-md-12 floating-box" style="width: 100%;">
+                        <div style="margin-left: 10px; float: left">
+                            <input type="file" name="imageUpload" id="imageUpload" accept="image/tiff" />
+                        </div>
+                        <div style="margin-left: 10px; float: left">
+                            <button id="btnUploadImage" class="btn btn-default btn-xs">Upload</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-12">
-                        <input type="file" name="imageUpload" id="imageUpload" accept="image/*" />
-                        <button id="btnUploadImage" class="btn btn-default btn-xs">Upload</button>
+                        <ul id="listProgress_Stage1"style="width:40%">
+                            <li id="imProgress0" class="list-group-item"><span class="glyphicon glyphicon-refresh spinning rightPadding" aria-hidden="true"></span>Processing Image ...</li>
+                            <li id="imProgress1" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Upload to client</li>
+                            <li id="imProgress2" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Process markers</li>
+                            <li id="imProgress3" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Upload to server</li>
+                            <li id="imProgress4" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Set paramaters</li>
+                            <li id="imProgress5" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Slice image</li>
+                            <li id="imProgress6" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Analyze grayscale</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="divImagePlatesSelection">
+                            <form id="frmPlateSeclection">
+                                
+                            </form>
+                            <button id="btnUploadGridding" class="btn btn-default btn-xs">Start</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="divColony">
+                            
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="plate Grid">
+                            <canvas id="cvsPlateGrid"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
-            <table style="visibility:collapse">
-                <tr>
-                    <td>Image Slice</td>
-                    <td><img id="imgSlice" /></td>
-                </tr>
-            </table>
-
+           
 
         </div>
     </div>
 </body>
+
+
+
+
 
 
 
