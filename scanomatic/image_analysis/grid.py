@@ -381,16 +381,16 @@ def get_validated_grid(im, grid, delta_dim1, delta_dim2, adjusted_values):
             grid[delta_slice_dim2].min() < np.ceil(delta_dim2 * 0.5)):
 
         print "*** Invalid grid (less than 0)"
-        return None, True
+        return grid, True, False
 
     # If max plus half grid cell is larger than im it's an overshoot too
     if (grid[delta_slice_dim1].max() >= im.shape[0] + np.ceil(delta_dim1 * 0.5) or
             grid[delta_slice_dim2].max() >= im.shape[1] + np.ceil(delta_dim2 * 0.5)):
 
         print "*** Invalid grid (more than max)"
-        return None, True
+        return grid, True, False
 
-    return grid, adjusted_values
+    return grid, adjusted_values, True
 
 
 def get_valid_parameters(center, spacing, expected_center, expected_spacing,

@@ -192,6 +192,7 @@ class GridArray(object):
         self._grid_cells = {}
         """:type:dict[tuple|scanomatic.image_analysis.grid_cell.GridCell]"""
         self._grid = None
+        self._valid_grid = False
         self._grid_cell_corners = None
 
         self._features = AnalysisFeaturesFactory.create(index=self._identifier[-1], shape=tuple(pinning), data=set())
@@ -200,6 +201,11 @@ class GridArray(object):
     def __getitem__(self, item):
         """:rtype: scanomatic.image_analysis.grid_cell.GridCell"""
         return self._grid_cells[item]
+
+    @property
+    def valid_grid(self):
+
+        return self._valid_grid and self._grid is not None
 
     @property
     def features(self):
@@ -323,7 +329,7 @@ class GridArray(object):
 
         spacings = self._calculate_grid_and_get_spacings(im, grid_correction=grid_correction)
 
-        if self._grid is None or np.isnan(spacings).any():
+        if self._grid is None or not self._valid_grid or np.isnan(spacings).any():
 
             if self._analysis_model.output_directory:
 
@@ -371,7 +377,7 @@ class GridArray(object):
 
         dx, dy = spacings
 
-        self._grid, _ = grid.get_validated_grid(
+        self._grid, _, self._valid_grid = grid.get_validated_grid(
             im, draft_grid, dy, dx, adjusted_values)
 
         return spacings
