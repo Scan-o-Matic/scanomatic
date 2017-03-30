@@ -298,8 +298,8 @@ def add_routes(app):
             for o, i in product(range(outer), range(inner)):
                 gc = grid_array[(o, i)]
 
-                xy1[o][i] = grid_array.xy1.tolist()
-                xy2[o][i] = grid_array.xy2.tolist()
+                xy1[o][i] = gc.xy1.tolist()
+                xy2[o][i] = gc.xy2.tolist()
 
             return xy1, xy2
 
