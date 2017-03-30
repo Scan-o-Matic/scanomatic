@@ -426,9 +426,9 @@ def add_routes(app):
             image_min=gc.source.min(),
             blob_max=blob_pixels.max() if blob_exists else -1,
             blob_min=blob_pixels.min() if blob_exists else -1,
-            blob_exists=blob_exists,
-            background_exists=background_exists,
-            background_reasonable=background_reasonable,
+            blob_exists=int(blob_exists),
+            background_exists=int(background_exists),
+            background_reasonable=int(background_reasonable),
             grid_position=(px_y, px_x),
         )
 
