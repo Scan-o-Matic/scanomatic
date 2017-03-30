@@ -294,12 +294,24 @@ def add_routes(app):
 
             xy1 = [[[None] for c in range(inner)] for r in range(outer)]
             xy2 = [[[None] for c in range(inner)] for r in range(outer)]
-
+            warn_once = False
             for o, i in product(range(outer), range(inner)):
                 gc = grid_array[(o, i)]
 
-                xy1[o][i] = gc.xy1.tolist()
-                xy2[o][i] = gc.xy2.tolist()
+                try:
+                    xy1[o][i] = gc.xy1.tolist()
+                    xy2[o][i] = gc.xy2.tolist()
+                except AttributeError:
+                    try:
+                        xy1[o][i] = gc.xy1
+                        xy2[o][i] = gc.xy2
+                    except (TypeError, IndexError, ValueError):
+                        if not warn_once:
+                            warn_once = True
+                            app.logger.error(
+                                "Could not parse the xy corner data of grid cells, example '{0}' '{1}'".format(
+                                    gc.xy1, gc.xy2
+                                ))
 
             return xy1, xy2
 
