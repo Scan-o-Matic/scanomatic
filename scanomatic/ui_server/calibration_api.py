@@ -409,12 +409,11 @@ def add_routes(app):
             blob=True, background=True, cell=True,
             run_detect=False)
 
-
         gc.detect(remember_filter=False)
         blob = gc.get_item(COMPARTMENTS.Blob).filter_array
         background = gc.get_item(COMPARTMENTS.Background).filter_array
         blob_exists = blob.any()
-        blob_pixels = colony_im[blob]
+        blob_pixels = gc.source[blob]
         background_exists = background.any()
         background_reasonable = background.sum() >= 20
 
@@ -422,14 +421,14 @@ def add_routes(app):
             success=True,
             blob=blob.tolist(),
             background=background.tolist(),
-            image=colony_im.tolist(),
-            image_max = colony_im.max(),
-            image_min = colony_im.min(),
-            blob_max = blob_pixels.max() if blob_exists else -1,
-            blob_min = blob_pixels.min() if blob_exists else -1,
-            blob_exists = blob_exists,
-            background_exists = background_exists,
-            background_reasonable = background_reasonable,
+            image=gc.source.tolist(),
+            image_max=gc.source.max(),
+            image_min=gc.source.min(),
+            blob_max=blob_pixels.max() if blob_exists else -1,
+            blob_min=blob_pixels.min() if blob_exists else -1,
+            blob_exists=blob_exists,
+            background_exists=background_exists,
+            background_reasonable=background_reasonable,
             grid_position=(px_y, px_x),
         )
 
