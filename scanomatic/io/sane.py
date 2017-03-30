@@ -221,7 +221,7 @@ class SaneBase(object):
     @staticmethod
     def get_program_version():
 
-        p = Popen(['scanimage', SCAN_FLAGS.ProgramVersion], shell=False, stdout=PIPE, stderr=PIPE)
+        p = Popen(['scanimage', SCAN_FLAGS.ProgramVersion.value], shell=False, stdout=PIPE, stderr=PIPE)
         stdout, _ = p.communicate()
         return stdout.strip()
 
