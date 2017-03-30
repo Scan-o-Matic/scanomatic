@@ -289,6 +289,20 @@ def add_routes(app):
     @decorate_api_access_restriction
     def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
 
+        def get_xy1_xy2(grid_array):
+            outer, inner = grid_array.grid_shape
+
+            xy1 = [[[None] for c in range(inner)] for r in range(outer)]
+            xy2 = [[[None] for c in range(inner)] for r in range(outer)]
+
+            for o, i in product(range(outer), range(inner)):
+                gc = grid_array[(o, i)]
+
+                xy1[o][i] = grid_array.xy1.tolist()
+                xy2[o][i] = grid_array.xy2.tolist()
+
+            return xy1, xy2
+
         image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
         if image_data is None:
             return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
@@ -323,24 +337,19 @@ def add_routes(app):
         ga = GridArray((None, plate - 1), pinning_format, analysis_model)
 
         if not ga.detect_grid(im, grid_correction=correction):
+            xy1, xy2 = get_xy1_xy2(ga)
+
             return jsonify(
                 success=False,
+                grid=ga.grid,
+                xy1=xy1,
+                xy2=xy2,
                 reason="Grid detection failed",
                 is_endpoint=True,
             )
 
         grid = ga.grid
-        outer, inner = ga.grid_shape
-
-        xy1 = [[[None] for c in range(inner)] for r in range(outer)]
-        xy2 = [[[None] for c in range(inner)] for r in range(outer)]
-
-        for o, i in product(range(outer), range(inner)):
-
-            gc = ga[(o, i)]
-
-            xy1[o][i] = gc.xy1.tolist()
-            xy2[o][i] = gc.xy2.tolist()
+        xy1, xy2 = get_xy1_xy2(ga)
 
         grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
         np.save(grid_path, grid)
@@ -355,6 +364,9 @@ def add_routes(app):
 
         if not success:
             return jsonify(success=False, is_endpoint=True,
+                           grid=grid,
+                           xy1=xy1,
+                           xy2=xy2,
                            reason="Probably bad access token, or trying to re-grid image after has been used")
 
         return jsonify(success=True, is_endpoint=True,
