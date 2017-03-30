@@ -390,7 +390,7 @@ def get_validated_grid(im, grid, delta_dim1, delta_dim2, adjusted_values):
         print "*** Invalid grid (more than max)"
         return grid, True, False
 
-    return grid, adjusted_values
+    return grid, adjusted_values, True
 
 
 def get_valid_parameters(center, spacing, expected_center, expected_spacing,
