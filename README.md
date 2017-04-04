@@ -10,9 +10,9 @@ If you are considering setting up Scan-o-matic at your lab, we would be very hap
 
 ## Current focus
 
-High attention is currently being focused on the new QC to make sure it has all it needs and works even better than the previous version.
-
 The ability to add new Cell Count Calibrations via UI is being developed.
+
+Completing and securing up the code for the first release of 2.x
 
 ## Reporting issues
 
