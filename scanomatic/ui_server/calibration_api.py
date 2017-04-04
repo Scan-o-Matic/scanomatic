@@ -15,6 +15,7 @@ from scanomatic.image_analysis.grid_cell import GridCell
 from scanomatic.image_analysis.grid_array import GridArray
 from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.image_analysis.image_grayscale import get_grayscale_image_analysis
+from scanomatic.image_analysis import image_basics
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
 from scanomatic.data_processing import calibration
@@ -288,6 +289,32 @@ def add_routes(app):
     @decorate_api_access_restriction
     def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
 
+        def get_xy1_xy2(grid_array):
+            outer, inner = grid_array.grid_shape
+
+            xy1 = [[[None] for c in range(inner)] for r in range(outer)]
+            xy2 = [[[None] for c in range(inner)] for r in range(outer)]
+            warn_once = False
+            for o, i in product(range(outer), range(inner)):
+                gc = grid_array[(o, i)]
+
+                try:
+                    xy1[o][i] = gc.xy1.tolist()
+                    xy2[o][i] = gc.xy2.tolist()
+                except AttributeError:
+                    try:
+                        xy1[o][i] = gc.xy1
+                        xy2[o][i] = gc.xy2
+                    except (TypeError, IndexError, ValueError):
+                        if not warn_once:
+                            warn_once = True
+                            app.logger.error(
+                                "Could not parse the xy corner data of grid cells, example '{0}' '{1}'".format(
+                                    gc.xy1, gc.xy2
+                                ))
+
+            return xy1, xy2
+
         image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
         if image_data is None:
             return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
@@ -322,28 +349,24 @@ def add_routes(app):
         ga = GridArray((None, plate - 1), pinning_format, analysis_model)
 
         if not ga.detect_grid(im, grid_correction=correction):
+            xy1, xy2 = get_xy1_xy2(ga)
+
             return jsonify(
                 success=False,
+                grid=ga.grid,
+                xy1=xy1,
+                xy2=xy2,
                 reason="Grid detection failed",
                 is_endpoint=True,
             )
 
         grid = ga.grid
-        inner = len(grid[0])
-        outer = len(grid)
-        xy1 = [[[None] for c in range(inner)] for r in range(outer)]
-        xy2 = [[[None] for c in range(inner)] for r in range(outer)]
-
-        for pos in product(range(outer), range(inner)):
-
-            o, i = pos
-            gc = ga[(i, o)]
-
-            xy1[o][i] = gc.xy1.tolist()
-            xy2[o][i] = gc.xy2.tolist()
+        xy1, xy2 = get_xy1_xy2(ga)
 
         grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
         np.save(grid_path, grid)
+
+        app.logger.info("xy1 shape {0}, xy2 shape {1}".format(np.asarray(xy1).shape, np.asarray(xy2).shape))
 
         success = calibration.set_plate_grid_info(
             ccc_identifier, image_identifier, plate,
@@ -353,6 +376,9 @@ def add_routes(app):
 
         if not success:
             return jsonify(success=False, is_endpoint=True,
+                           grid=grid,
+                           xy1=xy1,
+                           xy2=xy2,
                            reason="Probably bad access token, or trying to re-grid image after has been used")
 
         return jsonify(success=True, is_endpoint=True,
@@ -396,17 +422,37 @@ def add_routes(app):
 
         gc = GridCell(identifier, None, save_extra_data=False)
         gc.source = colony_im.astype(np.float64)
+
+        transpose_polynomial = image_basics.Image_Transpose(
+            sourceValues=image_json[calibration.CCCImage.grayscale_source_values],
+            targetValues=image_json[calibration.CCCImage.grayscale_target_values])
+
+        gc.source[...] = transpose_polynomial(gc.source)
+
         gc.attach_analysis(
             blob=True, background=True, cell=True,
             run_detect=False)
 
         gc.detect(remember_filter=False)
+        blob = gc.get_item(COMPARTMENTS.Blob).filter_array
+        background = gc.get_item(COMPARTMENTS.Background).filter_array
+        blob_exists = blob.any()
+        blob_pixels = gc.source[blob]
+        background_exists = background.any()
+        background_reasonable = background.sum() >= 20
 
         return jsonify(
             success=True,
-            blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
-            background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist(),
-            image=colony_im.tolist(),
+            blob=blob.tolist(),
+            background=background.tolist(),
+            image=gc.source.tolist(),
+            image_max=gc.source.max(),
+            image_min=gc.source.min(),
+            blob_max=blob_pixels.max() if blob_exists else -1,
+            blob_min=blob_pixels.min() if blob_exists else -1,
+            blob_exists=int(blob_exists),
+            background_exists=int(background_exists),
+            background_reasonable=int(background_reasonable),
             grid_position=(px_y, px_x),
         )
 
@@ -421,6 +467,7 @@ def add_routes(app):
             "image": The grayscale calibrated image
             "blob": The filter indicating what is the colony
             "background": The filter indicating what is the background
+            "override_small_background": boolean for allowing less than 20 pixel backgrounds
         Returns:
 
         """
@@ -445,7 +492,7 @@ def add_routes(app):
                            reason="Blob filter data is not understandable as a boolean array")
 
         try:
-            background_filter = np.array(data_object.get("background", [[]]))
+            background_filter = np.array(data_object.get("background", [[]]), dtype=bool)
         except TypeError:
             return jsonify(success=False, is_endpoint=True,
                            reason="Background filter data is not understandable as a boolean array")
@@ -466,14 +513,21 @@ def add_routes(app):
             return jsonify(success=False, is_endpoint=False,
                            reason="Blob is empty/there's no colony detected")
 
-        if not background_filter.any():
+        if background_filter.sum() < 3:
             return jsonify(success=False, is_endpoint=False,
-                           reason="Background is empty/there's no background detected")
+                           reason="Background must be consisting of at least 3 pixels")
+
+        if background_filter.sum() < 20 and not data_object.get("override_small_background", False):
+
+            return jsonify(success=False, is_endpoint=True,
+                           reason="Background must be at least 20 pixels. Currently only {0}.".format(
+                               background_filter.sum()) + " This check can be over-ridden.")
 
         if calibration.set_colony_compressed_data(
                 ccc_identifier, image_identifier, plate, x, y,
                 included=True,
-                image=image, blob_filter=blob_filter, background_filter=background_filter):
+                image=image, blob_filter=blob_filter, background_filter=background_filter,
+                access_token=data_object.get("access_token")):
 
             return jsonify(sucecss=True, is_endpoint=True)
 

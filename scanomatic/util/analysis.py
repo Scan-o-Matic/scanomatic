@@ -15,6 +15,9 @@ def produce_grid_images(path=".", plates=None, image=None, mark_position=None, c
 
     project_path = os.path.join(os.path.dirname(os.path.abspath(path)))
 
+    if plates:
+        plates = [plate_index + 1 for plate_index in plates]
+
     if compilation:
         if not os.path.isfile(compilation):
             raise ValueError("There's no compilation at {0}".format(compilation))

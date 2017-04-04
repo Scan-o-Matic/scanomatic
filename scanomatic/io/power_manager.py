@@ -267,6 +267,11 @@ class PowerManagerLan(PowerManagerNull):
                 self._logger.error("LAN PM, No known host and no MAC...no way to find PM")
                 raise InvalidInit()
 
+    @property
+    def host(self):
+
+        return self._host
+
     def _set_urls(self):
 
         host = self._host

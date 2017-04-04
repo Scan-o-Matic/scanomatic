@@ -59,6 +59,7 @@ class Paths(SingeltonOneInit):
         self.config_rpc = os.path.join(self.config, 'rpc.config')
         self.config_rpc_admin = os.path.join(self.config, 'rpc.admin')
         self.config_scanners = os.path.join(self.config, 'scanners.config')
+        self.config_sane = os.path.join(self.config, 'scanners.sane.json')
 
         self.rpc_queue = os.path.join(self.root, 'job_queue.cfg')
         self.rpc_jobs = os.path.join(self.root, 'jobs.cfg')

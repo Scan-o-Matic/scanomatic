@@ -17,10 +17,11 @@ def mid50_mean(data):
     if not isinstance(data, np.ma.masked_array):
         data = np.ma.masked_invalid(data)
 
-    data = data[data.mask == False]
-    threshold = np.floor(data.size * 0.25)
+    data = data.data[data.mask == False]
+    center_points = int(np.floor(data.size * 0.5))
+    flank = int(np.floor((data.size - center_points) / 2))
     data.sort()
-    return data[threshold:-threshold].mean()
+    return data[flank:-flank].mean()
 
 
 def quantiles_stable(data):

@@ -290,11 +290,32 @@ def next_subversion(branch, current=None):
 
 
 def increase_version(version):
-
     version = list(version)
     if len(version) == 2:
         version += [1]
+    elif len(version) == 1:
+        version += [0, 11]
     else:
         version[-1] += 1
 
-        return tuple(version)
+    return tuple(version)
+
+
+def get_minor_release_version(current_version):
+
+    current_version = list(current_version[:2])
+    if len(current_version) == 0:
+        return [0, 1]
+    elif len(current_version) == 1:
+        return current_version + [1]
+    else:
+        current_version[-1] += 1
+        return current_version
+
+def get_major_release_version(current_version):
+
+    current_version = list(current_version[:1])
+    if len(current_version):
+        return [current_version[0] + 1]
+    else:
+        return [1]

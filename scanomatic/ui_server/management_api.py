@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, redirect
 import time
 import os
 import sys
@@ -176,4 +176,33 @@ def add_routes(app, rpc_client):
 
         return jsonify(success=True, is_endpoint=True, can_possibly_mail=can_get_server_with_current_settings())
 
-    # END OF ADDING ROUTES
+    @app.route("/api/power_manager/status")
+    @decorate_api_access_restriction
+    def get_pm_status():
+
+        if rpc_client.online:
+            val = rpc_client.get_power_manager_info()
+            return jsonify(success=True, is_endpoint=True, **val)
+
+        else:
+            return jsonify(success=False, is_endpoint=True, reason="Server offline")
+
+    @app.route("/api/power_manager/test")
+    @decorate_api_access_restriction
+    def redirect_to_pm():
+
+        if rpc_client.online:
+            val = rpc_client.get_power_manager_info()
+            if 'host' in val and val['host']:
+                uri = val['host']
+                if not uri.startswith("http"):
+                    uri = "http://" + uri
+                return redirect(uri)
+            else:
+                return jsonify(success=False, is_endpoint=True, reason="Power Manager not know/found by Scan-o-Matic. Check your settings.")
+
+        else:
+            return jsonify(success=False, is_endpoint=True, reason="Server offline")
+
+
+            # END OF ADDING ROUTES
