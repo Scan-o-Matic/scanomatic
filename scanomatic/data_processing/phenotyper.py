@@ -41,6 +41,7 @@ from scanomatic.data_processing.norm import Offsets, get_normalized_data, get_re
 
 _logger = logger.Logger("Phenotyper")
 
+
 def time_based_gaussian_weighted_mean(data, time, sigma=1):
     center = (time.size - time.size % 2) / 2
     delta_time = np.abs(time - time[center])
@@ -900,7 +901,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 self._logger.info("Removing filter undo history")
             self._phenotype_filter_undo = None
 
-    def extract_phenotypes(self, keep_filter=False, smoothing=Smoothing.Keep, smoothing_coeffs={}):
+    def extract_phenotypes(self, keep_filter=False, smoothing=Smoothing.PolynomialWeightedMulti, smoothing_coeffs={}):
         """Extract phenotypes given the current inclusion level
 
         Args:
@@ -930,10 +931,12 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         """
         self.wipe_extracted_phenotypes(keep_filter)
 
-        self._logger.info("Extracting phenotypes. This will take a while...")
+        self._logger.info("Selecting smoothing.")
 
         if not self.has_smooth_growth_data and smoothing is Smoothing.Keep:
-            self._smoothen()
+            self._logger.warning(
+                "There was no previous smooth data but setting was to keep previous, will run default.")
+            self._poly_smoothen_raw_growth_weighted(**smoothing_coeffs)
         elif smoothing is Smoothing.MedianGauss:
             self._smoothen()
         elif smoothing is Smoothing.Polynomial:
