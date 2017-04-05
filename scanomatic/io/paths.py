@@ -34,7 +34,11 @@ class Paths(SingeltonOneInit):
         self.root = os.path.join(os.path.expanduser("~"), ".scan-o-matic")
 
         if os.path.isdir(self.root) is False:
-            raise InvalidRoot(self.root)
+
+            try:
+                os.makedirs(self.root)
+            except OSError:
+                raise InvalidRoot(self.root)
 
         self.config = os.path.join(self.root, "config")
         self.fixtures = os.path.join(self.config, "fixtures")
