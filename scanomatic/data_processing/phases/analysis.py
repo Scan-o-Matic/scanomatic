@@ -134,7 +134,7 @@ def _phenotype_phases(model, doublings):
             phenotypes.append((phase, current_phase_phenotypes))
 
     # Phenotypes sorted on phase start rather than type of phase
-    return sorted(phenotypes, key=lambda t, p: p[CurvePhasePhenotypes.Start] if p is not None else 9999)
+    return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
 
 
 def assign_common_phase_phenotypes(current_phase_phenotypes, model, left, right):
