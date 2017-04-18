@@ -42,8 +42,33 @@ def build_model(phenotyper_object, test_curve):
 def test_covering_functions():
 
     assert False, "Need real growth data in testing phenotyper"
+
+
+def test_no_growth_only_noise():
+
+    phenotyper_object = build_test_phenotyper()
+    model = build_model(phenotyper_object, 4)
+
     assert False, "Not testing assumptions around flat noise data"
-    assert False, "Not testing nan-data expectations"
+
+
+def test_no_data():
+
+    phenotyper_object = build_test_phenotyper()
+
+    model = build_model(phenotyper_object, 0)
+    data = {}
+    filt = np.ones_like(model.times, dtype=bool)
+    left, right = _locate_segment(filt)
+    left_time = model.times[left]
+    right_time = model.times[right - 1]
+
+    assign_common_phase_phenotypes(data, model, left, right)
+    assign_linear_phase_phenotypes(data, model, filt)
+    assign_non_linear_phase_phenotypes(data, model, left, right, left_time, right_time)
+
+    for phenotype in CurvePhasePhenotypes:
+        assert np.isnan(data[phenotype]) or data[phenotype] is None, "Got phenotype " + phenotype.name + " without data"
 
 
 def test_locate_segment():
