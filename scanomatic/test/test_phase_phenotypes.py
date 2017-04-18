@@ -49,7 +49,14 @@ def test_no_growth_only_noise():
     phenotyper_object = build_test_phenotyper()
     model = build_model(phenotyper_object, 4)
 
-    assert False, "Not testing assumptions around flat noise data"
+    data = {}
+    filt = np.ones_like(model.times, dtype=bool)
+    assign_linear_phase_phenotypes(data, model, filt)
+
+    assert np.isfinite(data[CurvePhasePhenotypes.LinearModelSlope]), "Invalid slope"
+    assert np.isfinite(data[CurvePhasePhenotypes.LinearModelIntercept]), "Invalid intercept"
+    assert np.allclose(data[CurvePhasePhenotypes.LinearModelIntercept], 17, atol=0.5), "Unexpected intercept"
+    assert np.allclose(data[CurvePhasePhenotypes.LinearModelSlope], 0, atol=0.05), "Unexpected intercept"
 
 
 def test_no_data():
