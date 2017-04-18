@@ -127,40 +127,48 @@ def _phenotype_phases(model, doublings):
 
             elif is_detected_linear(phase):
 
-                # B. For linear phases get the doubling time
-                slope, intercept, _, _, _ = linregress(model.times[filt], model.log2_curve[filt])
-                current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
-                current_phase_phenotypes[CurvePhasePhenotypes.LinearModelSlope] = slope
-                current_phase_phenotypes[CurvePhasePhenotypes.LinearModelIntercept] = intercept
+                assign_linear_phase_phenotypes(current_phase_phenotypes, model, filt)
 
-            # C. Get duration
-            current_phase_phenotypes[CurvePhasePhenotypes.Duration] = \
-                (model.times[right - 1] + model.times[min(right, model.log2_curve.size - 1)]) / 2 - \
-                (model.times[left] + model.times[max(0, left - 1)]) / 2
-
-            # D. Get Population Doublings
-            current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublings] = \
-                ((model.log2_curve[right - 1] + model.log2_curve[min(right, model.log2_curve.size - 1)]) / 2 -
-                 (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
-
-            # E. Get Yield
-            current_phase_phenotypes[CurvePhasePhenotypes.Yield] = \
-                np.power(
-                    2,
-                    (model.log2_curve[right - 1] +
-                     model.log2_curve[min(right, model.log2_curve.size - 1)]) / 2) - \
-                np.power(
-                    2,
-                    (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
-
-            # F. Get start of phase
-            current_phase_phenotypes[CurvePhasePhenotypes.Start] = \
-                (model.times[left] + model.times[max(0, left - 1)]) / 2
+            assign_common_phase_phenotypes(current_phase_phenotypes, model, left, right)
 
             phenotypes.append((phase, current_phase_phenotypes))
 
     # Phenotypes sorted on phase start rather than type of phase
-    return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
+    return sorted(phenotypes, key=lambda t, p: p[CurvePhasePhenotypes.Start] if p is not None else 9999)
+
+
+def assign_common_phase_phenotypes(current_phase_phenotypes, model, left, right):
+    # C. Get duration
+    current_phase_phenotypes[CurvePhasePhenotypes.Duration] = \
+        (model.times[right - 1] + model.times[min(right, model.log2_curve.size - 1)]) / 2 - \
+        (model.times[left] + model.times[max(0, left - 1)]) / 2
+
+    # D. Get Population Doublings
+    current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublings] = \
+        ((model.log2_curve[right - 1] + model.log2_curve[min(right, model.log2_curve.size - 1)]) / 2 -
+         (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
+
+    # E. Get Yield
+    current_phase_phenotypes[CurvePhasePhenotypes.Yield] = \
+        np.power(
+            2,
+            (model.log2_curve[right - 1] +
+             model.log2_curve[min(right, model.log2_curve.size - 1)]) / 2) - \
+        np.power(
+            2,
+            (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
+
+    # F. Get start of phase
+    current_phase_phenotypes[CurvePhasePhenotypes.Start] = \
+        (model.times[left] + model.times[max(0, left - 1)]) / 2
+
+
+def assign_linear_phase_phenotypes(current_phase_phenotypes, model, filt):
+    # B. For linear phases get the doubling time
+    slope, intercept, _, _, _ = linregress(model.times[filt], model.log2_curve[filt])
+    current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
+    current_phase_phenotypes[CurvePhasePhenotypes.LinearModelSlope] = slope
+    current_phase_phenotypes[CurvePhasePhenotypes.LinearModelIntercept] = intercept
 
 
 def assign_non_linear_phase_phenotypes(current_phase_phenotypes, model, left, right, time_left, time_right):
