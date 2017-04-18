@@ -122,21 +122,11 @@ def _phenotype_phases(model, doublings):
             current_phase_phenotypes = {}
 
             if is_detected_non_linear(phase):
-                # A. For non-linear phases use the X^2 coefficient as curvature measure
 
-                # TODO: Verify that values fall within the defined range of 0.5pi and pi
-
-                k1 = model.dydt[max(0, left - model.offset)]
-                k2 = model.dydt[right - 1 - model.offset]
-                m1 = model.log2_curve[left] - k1 * time_left
-                m2 = model.log2_curve[right - 1] - k2 * time_right
-                i_x = (m2 - m1) / (k1 - k2)
-                current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = \
-                    (i_x - time_left) / (time_right - time_left)
-                current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
-                    np.pi - np.abs(np.arctan2(k1, 1) - np.arctan2(k2, 1))
+                assign_non_linear_phase_phenotypes(current_phase_phenotypes, model, left, right, time_left, time_right)
 
             elif is_detected_linear(phase):
+
                 # B. For linear phases get the doubling time
                 slope, intercept, _, _, _ = linregress(model.times[filt], model.log2_curve[filt])
                 current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
@@ -171,6 +161,25 @@ def _phenotype_phases(model, doublings):
 
     # Phenotypes sorted on phase start rather than type of phase
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
+
+
+def assign_non_linear_phase_phenotypes(current_phase_phenotypes, model, left, right, time_left, time_right):
+    # A. For non-linear phases use the X^2 coefficient as curvature measure
+
+    # TODO: Verify that values fall within the defined range of 0.5pi and pi
+
+    k1 = model.dydt[max(0, left - model.offset)]
+    k2 = model.dydt[right - 1 - model.offset]
+    m1 = model.log2_curve[left] - k1 * time_left
+    m2 = model.log2_curve[right - 1] - k2 * time_right
+    i_x = (m2 - m1) / (k1 - k2)
+    current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = \
+        (i_x - time_left) / (time_right - time_left)
+
+    # Taking k2 - k1 here should imply positive values for Counter Clock-Wise rotations
+
+    current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
+        np.pi - np.abs(np.arctan2(k2, 1) - np.arctan2(k1, 1))
 
 
 def _locate_segment(filt):  # -> (int, int)
