@@ -6,6 +6,7 @@
 _*.lock
 .git/*
 .ropeproject
+.cache
 /experiments
 /build
 dev/*
