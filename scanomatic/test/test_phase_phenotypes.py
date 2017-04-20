@@ -23,7 +23,7 @@ def build_test_phenotyper():
         np.power(2, 17 + np.arange(100) * 0.02),  # 2: Linear sloped data
         np.hstack((np.ones(50) * 2 ** 17, np.power(2, np.arange(50) * 0.1 + 17))),  # 3: Flat to Sloped with kink
         np.power(2, np.random.normal(17, size=(100,))),  # 4: Flat noise data
-        np.hstack((np.ones(50) * 2 ** 17, 17 - np.power(2, np.arange(50) * 0.1))),  # 5: Flat to Neg Sloped with kink
+        np.hstack((np.ones(50) * 2 ** 17, np.power(2, 17 - np.arange(50) * 0.1))),  # 5: Flat to Neg Sloped with kink
     ]]], ndmin=4)
 
     phenotyper_object = Phenotyper(y_data, x_data)

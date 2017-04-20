@@ -162,6 +162,15 @@ def assign_common_phase_phenotypes(current_phase_phenotypes, model, left, right)
     current_phase_phenotypes[CurvePhasePhenotypes.Start] = \
         (model.times[left] + model.times[max(0, left - 1)]) / 2
 
+    if not np.isfinite(model.log2_curve[left]) or not np.isfinite(model.log2_curve[max(0, right - 1)]):
+
+        current_phase_phenotypes[CurvePhasePhenotypes.Duration] = np.nan
+        current_phase_phenotypes[CurvePhasePhenotypes.Yield] = np.nan
+        current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublings] = np.nan
+
+        if not np.isfinite(model.log2_curve[left]):
+            current_phase_phenotypes[CurvePhasePhenotypes.Start] = np.nan
+
 
 def assign_linear_phase_phenotypes(current_phase_phenotypes, model, filt):
     # B. For linear phases get the doubling time
@@ -186,8 +195,17 @@ def assign_non_linear_phase_phenotypes(current_phase_phenotypes, model, left, ri
 
     # Taking k2 - k1 here should imply positive values for Counter Clock-Wise rotations
 
-    current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
-        np.pi - np.abs(np.arctan2(k2, 1) - np.arctan2(k1, 1))
+    if not np.isfinite(k1) or not np.isfinite(k2) or np.ma.is_masked(k1) or np.ma.is_masked(k2):
+        current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = np.nan
+        current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = np.nan
+
+    else:
+
+        current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = np.arctan2(k2, 1) - np.arctan2(k1, 1)
+
+        if current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] > np.pi:
+            current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
+                2 * np.pi - current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle]
 
 
 def _locate_segment(filt):  # -> (int, int)
