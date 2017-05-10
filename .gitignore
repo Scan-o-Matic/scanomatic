@@ -2,6 +2,8 @@
 *.pyo
 *.tmp_config
 *.aux
+/.tox
+.coverage
 ../*
 _*.lock
 .git/*
