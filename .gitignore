@@ -3,6 +3,8 @@
 *.tmp_config
 *.aux
 /.tox
+/coverage.xml
+/result.xml
 .coverage
 ../*
 _*.lock
