@@ -2,6 +2,7 @@
 *.pyo
 *.tmp_config
 *.aux
+.*.swp
 /.tox
 /coverage.xml
 /result.xml
