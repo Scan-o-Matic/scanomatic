@@ -4,5 +4,6 @@ python:
 
 before_install:
     - sudo apt-get install -qq python-numpy python-scipy python-matplotlib
+    - pip install tox
 install: pip install -r test-requirements.txt
 script: sh run_travis.sh
