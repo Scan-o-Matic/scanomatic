@@ -39,11 +39,6 @@ def build_model(phenotyper_object, test_curve):
     return get_data_needed_for_segmentation(phenotyper_object, 0, (0, test_curve), DEFAULT_THRESHOLDS)
 
 
-def test_covering_functions():
-
-    assert False, "Need real growth data in testing phenotyper"
-
-
 def test_no_growth_only_noise():
 
     phenotyper_object = build_test_phenotyper()

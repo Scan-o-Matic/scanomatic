@@ -251,7 +251,7 @@ def get_data_needed_for_segmentation(phenotyper_object, plate, pos, thresholds, 
     model.offset = 0
 
     # Smoothing in kernel shape because only want reliable trends
-    d2yd2t = signal.convolve(dydt, [1, 0, -1], mode='valid')
+    d2yd2t = signal.convolve(dydt, [1., 0., -1.], mode='valid')
     d2yd2t = signal.convolve(d2yd2t, gauss, mode='valid')
 
     d2_offset = (model.times.size - d2yd2t.size) / 2
