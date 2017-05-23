@@ -1,4 +1,4 @@
-from . import calibration
+from scanomatic.data_processing import calibration
 import numpy as np
 import pytest
 
