@@ -41,7 +41,7 @@ class AnalysisRecipeAbstraction(object):
 
         if base_level:
             im = im.copy()
-            filter_array[...] = 0
+            filter_array[...] = False
 
         for a in self.analysis_order:
 
@@ -91,7 +91,7 @@ class AnalysisThresholdOtsu(AnalysisRecipeAbstraction):
         try:
             filter_array[...] = im > ski_filter.threshold_otsu(im) + self._thresholdUnitAdjust
         except (ValueError, TypeError):
-            filter_array[...] = 0
+            filter_array[...] = False
 
 
 class AnalysisRecipeErode(AnalysisRecipeAbstraction):
