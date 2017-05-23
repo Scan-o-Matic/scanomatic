@@ -5,16 +5,16 @@
 import numpy as np
 import operator
 from enum import Enum
-from scipy.ndimage import binary_erosion, \
-    center_of_mass, label, \
-    gaussian_filter
+from scipy.ndimage import (
+    binary_erosion, center_of_mass, label, gaussian_filter)
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import histogram
-import blob
-from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
+import scanomatic.image_analysis.histogram as histogram
+import scanomatic.image_analysis.blob as blob
+from scanomatic.models.factories.analysis_factories import (
+    AnalysisFeaturesFactory)
 from scanomatic.models.analysis_model import MEASURES
 from scanomatic.generics.maths import mid50_mean as iqr_mean, quantiles_stable
 

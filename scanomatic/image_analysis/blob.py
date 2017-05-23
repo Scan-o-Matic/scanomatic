@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.ndimage import binary_erosion, binary_dilation,\
-    gaussian_filter, median_filter
+from scipy.ndimage import (
+    binary_erosion, binary_dilation, gaussian_filter, median_filter)
 
 try:
     from skimage import filters as ski_filter
