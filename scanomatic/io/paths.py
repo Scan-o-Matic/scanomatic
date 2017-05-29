@@ -31,10 +31,16 @@ class Paths(SingeltonOneInit):
                 "Some class instantiated a Paths object wit parameters." +
                 " They are ignorded as this is no longer valid")
 
-        self.root = os.path.join(os.path.expanduser("~"), ".scan-o-matic")
+        self.root = os.path.abspath(
+            os.environ.get("SCANOMATIC_DATA",
+            os.path.join(os.path.expanduser("~"), ".scan-o-matic")))
 
         if os.path.isdir(self.root) is False:
-            raise InvalidRoot(self.root)
+
+            try:
+                os.makedirs(self.root)
+            except OSError:
+                raise InvalidRoot(self.root)
 
         self.config = os.path.join(self.root, "config")
         self.fixtures = os.path.join(self.config, "fixtures")
@@ -171,7 +177,7 @@ class Paths(SingeltonOneInit):
         self.scan_log_file_pattern = "{0}.scan.log"
 
     def join(self, attr, *other):
-        
+
         if hasattr(self, attr):
             return os.path.join(getattr(self, attr), *other)
         else:

@@ -13,3 +13,4 @@ scikit-image
 uuid
 setproctitle
 psutil
+chardet

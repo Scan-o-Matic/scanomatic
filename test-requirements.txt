@@ -4,6 +4,7 @@
 #
 #    pip-compile --output-file test-requirements.txt test-requirements.in
 #
+chardet==3.0.2
 click==6.7                # via flask
 coverage==4.4             # via pytest-cov
 cycler==0.10.0            # via matplotlib

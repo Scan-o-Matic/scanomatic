@@ -79,6 +79,8 @@ class PhenotypeDataType(Enum):
             Phenotypes.GenerationTimeWhen,
             Phenotypes.ExperimentEndAverage,
             Phenotypes.GenerationTimeStErrOfEstimate,
+            VectorPhenotypes.PhasesPhenotypes,
+            VectorPhenotypes.PhasesClassifications,
         )
 
         _under_development = (
@@ -104,8 +106,6 @@ class PhenotypeDataType(Enum):
             CurvePhaseMetaPhenotypes.Collapses,
             CurvePhaseMetaPhenotypes.MajorImpulseFlankAsymmetry,
             CurvePhaseMetaPhenotypes.TimeBeforeMajorGrowth,
-            VectorPhenotypes.PhasesPhenotypes,
-            VectorPhenotypes.PhasesClassifications,
         )
 
         if self is PhenotypeDataType.Scalar:

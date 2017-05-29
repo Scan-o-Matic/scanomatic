@@ -122,55 +122,90 @@ def _phenotype_phases(model, doublings):
             current_phase_phenotypes = {}
 
             if is_detected_non_linear(phase):
-                # A. For non-linear phases use the X^2 coefficient as curvature measure
 
-                # TODO: Verify that values fall within the defined range of 0.5pi and pi
-
-                k1 = model.dydt[max(0, left - model.offset)]
-                k2 = model.dydt[right - 1 - model.offset]
-                m1 = model.log2_curve[left] - k1 * time_left
-                m2 = model.log2_curve[right - 1] - k2 * time_right
-                i_x = (m2 - m1) / (k1 - k2)
-                current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = \
-                    (i_x - time_left) / (time_right - time_left)
-                current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
-                    np.pi - np.abs(np.arctan2(k1, 1) - np.arctan2(k2, 1))
+                assign_non_linear_phase_phenotypes(current_phase_phenotypes, model, left, right, time_left, time_right)
 
             elif is_detected_linear(phase):
-                # B. For linear phases get the doubling time
-                slope, intercept, _, _, _ = linregress(model.times[filt], model.log2_curve[filt])
-                current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
-                current_phase_phenotypes[CurvePhasePhenotypes.LinearModelSlope] = slope
-                current_phase_phenotypes[CurvePhasePhenotypes.LinearModelIntercept] = intercept
 
-            # C. Get duration
-            current_phase_phenotypes[CurvePhasePhenotypes.Duration] = \
-                (model.times[right - 1] + model.times[min(right, model.log2_curve.size - 1)]) / 2 - \
-                (model.times[left] + model.times[max(0, left - 1)]) / 2
+                assign_linear_phase_phenotypes(current_phase_phenotypes, model, filt)
 
-            # D. Get Population Doublings
-            current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublings] = \
-                ((model.log2_curve[right - 1] + model.log2_curve[min(right, model.log2_curve.size - 1)]) / 2 -
-                 (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
-
-            # E. Get Yield
-            current_phase_phenotypes[CurvePhasePhenotypes.Yield] = \
-                np.power(
-                    2,
-                    (model.log2_curve[right - 1] +
-                     model.log2_curve[min(right, model.log2_curve.size - 1)]) / 2) - \
-                np.power(
-                    2,
-                    (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
-
-            # F. Get start of phase
-            current_phase_phenotypes[CurvePhasePhenotypes.Start] = \
-                (model.times[left] + model.times[max(0, left - 1)]) / 2
+            assign_common_phase_phenotypes(current_phase_phenotypes, model, left, right)
 
             phenotypes.append((phase, current_phase_phenotypes))
 
     # Phenotypes sorted on phase start rather than type of phase
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
+
+
+def assign_common_phase_phenotypes(current_phase_phenotypes, model, left, right):
+    # C. Get duration
+    current_phase_phenotypes[CurvePhasePhenotypes.Duration] = \
+        (model.times[right - 1] + model.times[min(right, model.log2_curve.size - 1)]) / 2 - \
+        (model.times[left] + model.times[max(0, left - 1)]) / 2
+
+    # D. Get Population Doublings
+    current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublings] = \
+        ((model.log2_curve[right - 1] + model.log2_curve[min(right, model.log2_curve.size - 1)]) / 2 -
+         (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
+
+    # E. Get Yield
+    current_phase_phenotypes[CurvePhasePhenotypes.Yield] = \
+        np.power(
+            2,
+            (model.log2_curve[right - 1] +
+             model.log2_curve[min(right, model.log2_curve.size - 1)]) / 2) - \
+        np.power(
+            2,
+            (model.log2_curve[left] + model.log2_curve[max(0, left - 1)]) / 2)
+
+    # F. Get start of phase
+    current_phase_phenotypes[CurvePhasePhenotypes.Start] = \
+        (model.times[left] + model.times[max(0, left - 1)]) / 2
+
+    if not np.isfinite(model.log2_curve[left]) or not np.isfinite(model.log2_curve[max(0, right - 1)]):
+
+        current_phase_phenotypes[CurvePhasePhenotypes.Duration] = np.nan
+        current_phase_phenotypes[CurvePhasePhenotypes.Yield] = np.nan
+        current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublings] = np.nan
+
+        if not np.isfinite(model.log2_curve[left]):
+            current_phase_phenotypes[CurvePhasePhenotypes.Start] = np.nan
+
+
+def assign_linear_phase_phenotypes(current_phase_phenotypes, model, filt):
+    # B. For linear phases get the doubling time
+    slope, intercept, _, _, _ = linregress(model.times[filt], model.log2_curve[filt])
+    current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
+    current_phase_phenotypes[CurvePhasePhenotypes.LinearModelSlope] = slope
+    current_phase_phenotypes[CurvePhasePhenotypes.LinearModelIntercept] = intercept
+
+
+def assign_non_linear_phase_phenotypes(current_phase_phenotypes, model, left, right, time_left, time_right):
+    # A. For non-linear phases use the X^2 coefficient as curvature measure
+
+    # TODO: Verify that values fall within the defined range of 0.5pi and pi
+
+    k1 = model.dydt[max(0, left - model.offset)]
+    k2 = model.dydt[right - 1 - model.offset]
+    m1 = model.log2_curve[left] - k1 * time_left
+    m2 = model.log2_curve[right - 1] - k2 * time_right
+    i_x = (m2 - m1) / (k1 - k2)
+    current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = \
+        (i_x - time_left) / (time_right - time_left)
+
+    # Taking k2 - k1 here should imply positive values for Counter Clock-Wise rotations
+
+    if not np.isfinite(k1) or not np.isfinite(k2) or np.ma.is_masked(k1) or np.ma.is_masked(k2):
+        current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = np.nan
+        current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = np.nan
+
+    else:
+
+        current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = np.arctan2(k2, 1) - np.arctan2(k1, 1)
+
+        if current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] > np.pi:
+            current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
+                2 * np.pi - current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle]
 
 
 def _locate_segment(filt):  # -> (int, int)
