@@ -6,7 +6,13 @@ Scan-o-matic was published in [G3 September 2016](http://g3journal.org/content/6
 
 Please refer to the [Wiki](https://github.com/local-minimum/scanomatic/wiki) for instructions on use, installation and so on.
 
-If you are considering setting up Scan-o-matic at your lab, we would be very happy and would love to hear from you. But, before you decide on this, the Faculty of Science at University of Gothenburg has included Scan-o-matic among its high-throughput phenomics infrastructure and it is our expressed interest that external researchers come to us. If you are interested there's some more information and contact information here: [The center for large scale cell based screeening](http://cmb.gu.se/english/research/microbiology/center-for-large-scale-cell-based-screening). It is yet to become listed on the page, but don't worry, it will be part of the list.
+We have a newsletter that informs about important changes and updates to Scan-o-matic, you can sign up [here](http://cmb.us13.list-manage1.com/subscribe?u=a6a16e48af209606d0f418c95&id=2ebf1ce16f).
+
+If you are considering setting up Scan-o-matic at your lab, we would be very happy and would love to hear from you. 
+
+Gothenburg University is currently buying further development and service from private company Molflow. Expect to hear more about this soon.
+
+Before you decide on this, the Faculty of Science at University of Gothenburg has included Scan-o-matic among its high-throughput phenomics infrastructure and it is our expressed interest that external researchers come to us. If you are interested there's some more information and contact information here: [The center for large scale cell based screeening](http://cmb.gu.se/english/research/microbiology/center-for-large-scale-cell-based-screening). It is yet to become listed on the page, but don't worry, it is part of the list.
 
 ## Current focus
 
