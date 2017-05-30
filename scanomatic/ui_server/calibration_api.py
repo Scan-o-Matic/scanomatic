@@ -529,7 +529,7 @@ def add_routes(app):
                 image=image, blob_filter=blob_filter, background_filter=background_filter,
                 access_token=data_object.get("access_token")):
 
-            return jsonify(sucecss=True, is_endpoint=True)
+            return jsonify(success=True, is_endpoint=True)
 
         else:
 

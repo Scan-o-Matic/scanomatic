@@ -527,7 +527,10 @@ def save_image_slices(identifier, image_identifier, grayscale_slice=None, plate_
 
 def _get_im_slice(im, model):
 
-    return im[model.y1: model.y2, model.x1: model.x2]
+    return im[
+        int(np.floor(model.y1)): int(np.ceil(model.y2)),
+        int(np.floor(model.x1)): int(np.ceil(model.x2))
+    ]
 
 
 def get_grayscale_slice(identifier, image_identifier):

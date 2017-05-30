@@ -5,16 +5,16 @@
 import numpy as np
 import operator
 from enum import Enum
-from scipy.ndimage import binary_erosion, \
-    center_of_mass, label, \
-    gaussian_filter
+from scipy.ndimage import (
+    binary_erosion, center_of_mass, label, gaussian_filter)
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import histogram
-import blob
-from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
+import scanomatic.image_analysis.histogram as histogram
+import scanomatic.image_analysis.blob as blob
+from scanomatic.models.factories.analysis_factories import (
+    AnalysisFeaturesFactory)
 from scanomatic.models.analysis_model import MEASURES
 from scanomatic.generics.maths import mid50_mean as iqr_mean, quantiles_stable
 
@@ -64,7 +64,8 @@ def points_in_circle(circle):
 
 def get_round_kernel(radius=6.0, outline=False):
 
-    round_kernel = np.zeros(((radius + 1) * 2 + 1, (radius + 1) * 2 + 1))
+    round_kernel = np.zeros(((radius + 1) * 2 + 1, (radius + 1) * 2 + 1),
+                            dtype=np.bool)
 
     center_offset = radius + 1
 
@@ -180,7 +181,7 @@ class CellItem(object):
                             in the center."""
 
         self.grid_array = grid_array.copy()
-        self.filter_array = np.zeros(grid_array.shape, dtype=grid_array.dtype)
+        self.filter_array = np.zeros(grid_array.shape, dtype=np.bool)
 
         self._identifier = identifier
         self._compartment_type = identifier[-1]
@@ -209,7 +210,7 @@ class CellItem(object):
         if self.grid_array.shape != self.filter_array.shape:
 
             self.filter_array = np.zeros(self.grid_array.shape,
-                                         dtype=self.grid_array.dtype)
+                                         dtype=np.bool)
 
     #
     # DO functions
@@ -409,12 +410,12 @@ class Blob(CellItem):
                 Where origo is a tuple itself (x,y)
         """
 
-        self.filter_array *= 0
+        self.filter_array[...] = False
 
         if rect:
 
             self.filter_array[rect[0][0]: rect[1][0],
-                              rect[0][1]: rect[1][1]] = 1
+                              rect[0][1]: rect[1][1]] = True
 
         elif circle:
 
@@ -427,7 +428,7 @@ class Blob(CellItem):
             pts_iterator = points_in_circle(circle)  # , raster)
 
             for pt in pts_iterator:
-                self.filter_array[pt] = 1
+                self.filter_array[pt] = True
 
     def set_threshold(self, threshold=None, relative=False, im=None):
         """
@@ -574,7 +575,7 @@ class Blob(CellItem):
 
         if self.filter_array is not None:
 
-            self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
+            self.trash_array = np.zeros(self.filter_array.shape, dtype=np.bool)
 
         if detect_type is None:
 
@@ -595,7 +596,7 @@ class Blob(CellItem):
 
         if self.trash_array is None:
 
-            self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
+            self.trash_array = np.zeros(self.filter_array.shape, dtype=np.bool)
 
         if self.old_filter is not None:
 
@@ -672,7 +673,7 @@ class Blob(CellItem):
                     else:
                         diff_filter = self.old_filter - self.filter_array
 
-                    blob_diff = (np.abs(diff_filter)).sum()
+                    blob_diff = diff_filter.sum()
 
                     if blob_diff / float(sqrt_of_oldsum) > max_change_threshold:
 
@@ -733,19 +734,19 @@ class Blob(CellItem):
 
             color_logic = self.image_color_logic
 
-        self.filter_array *= 0
+        self.filter_array[...] = False
 
         if color_logic == "inv":
 
-            self.filter_array[np.where(im < self.threshold)] = 1
+            self.filter_array[np.where(im < self.threshold)] = True
 
         else:
 
-            self.filter_array[np.where(im > self.threshold)] = 1
+            self.filter_array[np.where(im > self.threshold)] = True
 
     def manual_detect(self, center, radius):
 
-        self.filter_array *= 0
+        self.filter_array[...] = False
 
         stencil = get_round_kernel(int(np.round(radius)))
         x_size = (stencil.shape[0] - 1) / 2
@@ -888,11 +889,11 @@ class Background(CellItem):
 
         if self.blob and self.blob.filter_array is not None:
 
-            self.filter_array[:, :] = 1
+            self.filter_array[...] = True
 
-            self.filter_array[np.where(self.blob.filter_array)] = 0
+            self.filter_array[np.where(self.blob.filter_array)] = False
 
-            self.filter_array[np.where(self.blob.trash_array)] = 0
+            self.filter_array[np.where(self.blob.trash_array)] = False
 
             self.filter_array = binary_erosion(
                 self.filter_array, iterations=3, border_value=1)
@@ -916,7 +917,7 @@ class Cell(CellItem):
 
         self.threshold = threshold
 
-        self.filter_array[:, :] = 1
+        self.filter_array[...] = True
 
         if run_detect:
 

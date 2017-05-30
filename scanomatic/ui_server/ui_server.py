@@ -194,7 +194,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     def _status(status_type=""):
 
         if status_type != "" and not rpc_client.online:
-            return jsonify(sucess=False, reason="Server offline")
+            return jsonify(success=False, reason="Server offline")
 
         if status_type == 'queue':
             return jsonify(success=True, data=rpc_client.get_queue_status())
