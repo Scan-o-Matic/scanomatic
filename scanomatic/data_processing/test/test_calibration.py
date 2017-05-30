@@ -1,6 +1,7 @@
-from scanomatic.data_processing import calibration
 import numpy as np
 import pytest
+from collections import namedtuple
+from scanomatic.data_processing import calibration
 
 data = calibration.load_data_file()
 
@@ -93,3 +94,11 @@ def test_polynomial():
 
     elif validity == calibration.CalibrationValidation.BadStatistics:
         raise AssertionError(calibration.CalibrationValidation.BadStatistics)
+
+
+def test_get_im_slice():
+    """Test that _get_im_slice handles floats"""
+    image = np.arange(0, 42).reshape((6, 7))
+    model_tuple = namedtuple("Model", ['x1', 'x2', 'y1', 'y2'])
+    model = model_tuple(1.5, 3.5, 2.5, 4.5)
+    assert calibration._get_im_slice(image, model).sum() == 207
