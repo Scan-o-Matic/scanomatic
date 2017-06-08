@@ -22,8 +22,9 @@ from scanomatic.data_processing import calibration
 from scanomatic.data_processing.calibration import add_calibration, calculate_polynomial, \
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
     get_data_file_path
-from .general import decorate_api_access_restriction, serve_numpy_as_image, get_grayscale_is_valid, \
-    valid_array_dimensions
+from .general import (
+    serve_numpy_as_image, get_grayscale_is_valid, valid_array_dimensions
+)
 
 _VALID_CHARACTERS = letters + "-._1234567890"
 
@@ -37,7 +38,6 @@ def add_routes(app):
     """
 
     @app.route("/api/calibration/active", methods=['GET'])
-    @decorate_api_access_restriction
     def get_active_calibrations():
 
         try:
@@ -50,7 +50,6 @@ def add_routes(app):
                            reason="There are no registered CCC, Scan-o-Matic won't work before at least one is added")
 
     @app.route("/api/calibration/under_construction", methods=['GET'])
-    @decorate_api_access_restriction
     def get_under_construction_calibrations():
 
         try:
@@ -63,7 +62,6 @@ def add_routes(app):
                            reason="No CCCs are under constructions")
 
     @app.route("/api/calibration/initiate_new", methods=['POST'])
-    @decorate_api_access_restriction
     def initiate_new_ccc():
 
         data_object = request.get_json(silent=True, force=True)
@@ -89,7 +87,6 @@ def add_routes(app):
             access_token=ccc[calibration.CellCountCalibration.edit_access_token])
 
     @app.route("/api/calibration/<ccc_identifier>/add_image", methods=['POST'])
-    @decorate_api_access_restriction
     def upload_ccc_image(ccc_identifier):
 
         data_object = request.get_json(silent=True, force=True)
@@ -109,7 +106,6 @@ def add_routes(app):
         return jsonify(success=True, is_endpoint=True, image_identifier=image_identifier)
 
     @app.route("/api/calibration/<ccc_identifier>/image_list", methods=['GET'])
-    @decorate_api_access_restriction
     def list_ccc_images(ccc_identifier):
 
         image_list = calibration.get_image_identifiers_in_ccc(ccc_identifier)
@@ -119,14 +115,12 @@ def add_routes(app):
         return jsonify(success=True, is_endpoint=True, image_identifiers=image_list)
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/get", methods=['GET'])
-    @decorate_api_access_restriction
     def download_ccc_image(ccc_identifier, image_identifier):
 
         im_path = Paths().ccc_image_pattern.format(ccc_identifier, image_identifier)
         return send_file(im_path, mimetype='Image/Tiff')
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/data/set", methods=['POST'])
-    @decorate_api_access_restriction
     def set_ccc_image_data(ccc_identifier, image_identifier):
         """ Sets any of the allowed image data fields
 
@@ -179,7 +173,6 @@ def add_routes(app):
         return jsonify(success=True, is_endpoint=True)
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/data/get", methods=['GET'])
-    @decorate_api_access_restriction
     def get_ccc_image_data(ccc_identifier, image_identifier):
 
         data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
@@ -190,7 +183,6 @@ def add_routes(app):
                        **{k.name: val for k, val in data.iteritems() if k is not calibration.CCCImage.plates})
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/set", methods=['POST'])
-    @decorate_api_access_restriction
     def slice_ccc_image(ccc_identifier, image_identifier):
 
         data_object = request.get_json(silent=True, force=True)
@@ -214,7 +206,6 @@ def add_routes(app):
         return jsonify(success=True, is_endpoint=True)
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/get/<slice>", methods=['GET'])
-    @decorate_api_access_restriction
     def get_ccc_image_slice(ccc_identifier, image_identifier, slice):
         """
 
@@ -233,7 +224,6 @@ def add_routes(app):
         return serve_numpy_as_image(im)
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/grayscale/analyse", methods=['POST'])
-    @decorate_api_access_restriction
     def get_ccc_image_grayscale_analysis(ccc_identifier, image_identifier):
 
         data_object = request.get_json(silent=True, force=True)
@@ -270,7 +260,6 @@ def add_routes(app):
                            reason='Refused to set image grayscale info, probably bad access token')
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/transform", methods=['POST'])
-    @decorate_api_access_restriction
     def get_ccc_image_plate_transform(ccc_identifier, image_identifier, plate):
 
         data_object = request.get_json(silent=True, force=True)
@@ -286,7 +275,6 @@ def add_routes(app):
         return jsonify(success=True, is_endpoint=True)
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/grid/set", methods=['POST'])
-    @decorate_api_access_restriction
     def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
 
         def get_xy1_xy2(grid_array):
@@ -389,7 +377,6 @@ def add_routes(app):
     @app.route(
         "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/detect/colony/<int:x>/<int:y>",
         methods=["POST"])
-    @decorate_api_access_restriction
     def detect_colony(ccc_identifier, image_identifier, plate, x, y):
 
         im = calibration.get_plate_slice(ccc_identifier, image_identifier, plate, True)
@@ -459,7 +446,6 @@ def add_routes(app):
     @app.route(
         "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/compress/colony/<int:x>/<int:y>",
         methods=["POST"])
-    @decorate_api_access_restriction
     def calibration_compress(ccc_identifier, image_identifier, plate, x, y):
         """Set compressed calibration entry
 
@@ -541,7 +527,6 @@ def add_routes(app):
 
     @app.route("/api/calibration/add/<name>")
     @app.route("/api/calibration/add/<name>/<int:degree>")
-    @decorate_api_access_restriction
     def calibration_add(name, degree=5):
 
         data_object = request.get_json(silent=True, force=True)
@@ -572,7 +557,6 @@ def add_routes(app):
     @app.route("/api/calibration/get")
     @app.route("/api/calibration/get/<name>")
     @app.route("/api/calibration/get/<name>/<int:degree>")
-    @decorate_api_access_restriction
     def calibration_get(name="", degree=None):
 
         try:
@@ -582,7 +566,6 @@ def add_routes(app):
 
     @app.route("/api/calibration/remove/<name>")
     @app.route("/api/calibration/remove/<name>/<int:degree>")
-    @decorate_api_access_restriction
     def calibration_remove(name, degree=None):
 
         if remove_calibration(label=name, degree=degree):
@@ -596,7 +579,6 @@ def add_routes(app):
 
     @app.route("/api/calibration/export")
     @app.route("/api/calibration/export/<name>")
-    @decorate_api_access_restriction
     def calibration_export(name=''):
 
         data_path = get_data_file_path(label=name)

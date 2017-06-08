@@ -7,7 +7,7 @@ from scanomatic.io.paths import Paths
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import DefaultPinningFormats
 from scanomatic.image_analysis.grid_array import GridArray
-from .general import decorate_api_access_restriction, get_image_data_as_array
+from .general import get_image_data_as_array
 
 
 def add_routes(app):
@@ -19,7 +19,6 @@ def add_routes(app):
     """
 
     @app.route("/api/analysis/pinning/formats")
-    @decorate_api_access_restriction
     def get_supported_pinning_formats():
 
         return jsonify(
@@ -35,7 +34,6 @@ def add_routes(app):
         )
 
     @app.route("/api/analysis/image/grid", methods=['POST'])
-    @decorate_api_access_restriction
     def get_gridding_image():
 
         pinning_format = request.values.get_list('pinning_format')
@@ -79,7 +77,6 @@ def add_routes(app):
     @app.route("/api/analysis/instructions", defaults={'project': ''})
     @app.route("/api/analysis/instructions/", defaults={'project': ''})
     @app.route("/api/analysis/instructions/<path:project>")
-    @decorate_api_access_restriction
     def get_analysis_instructions(project=None):
 
         base_url = "/api/analysis/instructions"

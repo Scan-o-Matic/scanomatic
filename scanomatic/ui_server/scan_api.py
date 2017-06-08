@@ -1,8 +1,9 @@
 import os
 from itertools import chain
 from flask import Flask, jsonify
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response, \
-    decorate_api_access_restriction
+from scanomatic.ui_server.general import (
+    convert_url_to_path, convert_path_to_url, get_search_results, json_response
+)
 from scanomatic.io.paths import Paths
 import scanomatic.io.sane as sane
 from glob import glob
@@ -20,7 +21,6 @@ def add_routes(app):
     @app.route("/api/scan/instructions", defaults={'project': ''})
     @app.route("/api/scan/instructions/", defaults={'project': ''})
     @app.route("/api/scan/instructions/<path:project>")
-    @decorate_api_access_restriction
     def get_scan_instructions(project=None):
 
         base_url = "/api/scan/instructions"
@@ -98,14 +98,12 @@ def add_routes(app):
 
 
     @app.route("/api/scan/sane/models")
-    @decorate_api_access_restriction
     def get_scanner_types():
 
         jsonify(success=True, is_endpoint=True, models=sane.get_scanner_models())
 
 
     @app.route("/api/scan/sane/modes/<model>")
-    @decorate_api_access_restriction
     def get_scanner_modes(model):
         modes = sane.get_scanning_modes(model)
         if not modes:
