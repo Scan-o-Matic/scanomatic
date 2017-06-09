@@ -540,11 +540,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     data_api.add_routes(app, rpc_client, debug)
     calibration_api.add_routes(app)
 
+    if debug:
+        _logger.info("Running in debug mode.")
     try:
-        if debug:
-                _logger.info("Running in debug mode.")
         app.run(port=port, host=host, debug=debug)
-
     except error:
         _logger.warning("Could not bind socket, probably server is already running and this is nothing to worry about."
                         "\n\tIf old server is not responding, try killing its process."
