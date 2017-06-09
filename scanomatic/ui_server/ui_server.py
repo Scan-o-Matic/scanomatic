@@ -32,8 +32,10 @@ from . import scan_api
 from . import management_api
 from . import tools_api
 from . import data_api
-from .general import get_2d_list, decorate_access_restriction, set_local_app, is_local_ip, get_app_is_local, \
-    serve_log_as_html, convert_url_to_path, get_search_results, convert_path_to_url
+from .general import (
+    get_2d_list, serve_log_as_html, convert_url_to_path, get_search_results,
+    convert_path_to_url
+)
 
 _url = None
 _logger = Logger("UI-server")
@@ -94,7 +96,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_help_file)
 
     @app.route("/qc_norm")
-    @decorate_access_restriction
     def _qc_norm():
         return send_from_directory(Paths().ui_root, Paths().ui_qc_norm_file)
 
@@ -103,7 +104,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return redirect("https://github.com/local-minimum/scanomatic/wiki")
 
     @app.route("/maintain")
-    @decorate_access_restriction
     def _maintain():
         return send_from_directory(Paths().ui_root, Paths().ui_maintain_file)
 
@@ -129,10 +129,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/home")
     def _show_homescreen():
-
-        if not get_app_is_local() or is_local_ip(request.remote_addr):
-            return redirect("/status")
-        return ""
+        return redirect("/status")
 
     @app.route("/logs/system/<log>")
     def _logs(log):
@@ -190,7 +187,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/status")
     @app.route("/status/<status_type>")
-    @decorate_access_restriction
     def _status(status_type=""):
 
         if status_type != "" and not rpc_client.online:
@@ -217,7 +213,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return jsonify(succes=False, reason='Unknown status request')
 
     @app.route("/settings", methods=['get', 'post'])
-    @decorate_access_restriction
     def _config():
 
         app_conf = Config()
@@ -251,7 +246,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return render_template(Paths().ui_settings_template, **app_conf.model_copy())
 
     @app.route("/feature_extract", methods=['get', 'post'])
-    @decorate_access_restriction
     def _feature_extract():
 
         action = request.args.get("action")
@@ -337,7 +331,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_feature_extract_file)
 
     @app.route("/analysis", methods=['get', 'post'])
-    @decorate_access_restriction
     def _analysis():
 
         action = request.args.get("action")
@@ -410,7 +403,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_analysis_file)
 
     @app.route("/experiment", methods=['get', 'post'])
-    @decorate_access_restriction
     def _experiment():
 
         if request.args.get("enqueue"):
@@ -462,7 +454,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
 
     @app.route("/compile", methods=['get', 'post'])
-    @decorate_access_restriction
     def _compile():
 
         data_object = request.get_json(silent=True, force=True)
@@ -520,7 +511,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
 
     @app.route("/scanners/<scanner_query>")
-    @decorate_access_restriction
     def _scanners(scanner_query=None):
         if scanner_query is None or scanner_query.lower() == 'all':
             return jsonify(scanners=rpc_client.get_scanner_status(), success=True)
@@ -537,7 +527,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     scanner_query))
 
     @app.route("/fixtures", methods=['post', 'get'])
-    @decorate_access_restriction
     def _fixtures():
 
         return send_from_directory(Paths().ui_root, Paths().ui_fixture_file)
@@ -551,17 +540,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     data_api.add_routes(app, rpc_client, debug)
     calibration_api.add_routes(app)
 
+    if debug:
+        _logger.info("Running in debug mode.")
     try:
-        if is_local:
-            if debug:
-                _logger.info("Running in debug mode.")
-            app.run(port=port, debug=debug)
-        else:
-            if debug:
-                _logger.warning("Debugging is only allowed on local servers")
-            else:
-                app.run(port=port, host=host)
-
+        app.run(port=port, host=host, debug=debug)
     except error:
         _logger.warning("Could not bind socket, probably server is already running and this is nothing to worry about."
                         "\n\tIf old server is not responding, try killing its process."

@@ -8,7 +8,8 @@ from threading import Thread
 from scanomatic import get_version
 from scanomatic.io.mail import can_get_server_with_current_settings
 from scanomatic.io.source import parse_version, upgrade, git_version, highest_version, get_source_information
-from .general import decorate_api_access_restriction
+
+
 _GIT_INFO = None
 _GIT_INFO_RECHECK = 3600 * 24
 
@@ -34,7 +35,6 @@ def shutdown_server():
 def add_routes(app, rpc_client):
 
     @app.route("/api/server/<action>", methods=['post', 'get'])
-    @decorate_api_access_restriction
     def _server_actions(action=None):
 
         if action == 'reboot':
@@ -103,7 +103,6 @@ def add_routes(app, rpc_client):
             return jsonify(success=True)
 
     @app.route("/api/app/<action>", methods=['post', 'get'])
-    @decorate_api_access_restriction
     def _app_actions(action=None):
 
         if action == 'reboot':
@@ -161,7 +160,6 @@ def add_routes(app, rpc_client):
             return jsonify(success=False, reason="Unknown action '{0}'".format(action))
 
     @app.route("/api/job/<job_id>/<job_command>")
-    @decorate_api_access_restriction
     def _communicate_with_job(job_id="", job_command=""):
 
         if rpc_client.online:
@@ -171,13 +169,11 @@ def add_routes(app, rpc_client):
         return jsonify(success=False, is_endpoint=True, reason="Server offline")
 
     @app.route("/api/settings/mail/possible")
-    @decorate_api_access_restriction
     def can_possibly_mail():
 
         return jsonify(success=True, is_endpoint=True, can_possibly_mail=can_get_server_with_current_settings())
 
     @app.route("/api/power_manager/status")
-    @decorate_api_access_restriction
     def get_pm_status():
 
         if rpc_client.online:
@@ -188,7 +184,6 @@ def add_routes(app, rpc_client):
             return jsonify(success=False, is_endpoint=True, reason="Server offline")
 
     @app.route("/api/power_manager/test")
-    @decorate_api_access_restriction
     def redirect_to_pm():
 
         if rpc_client.online:
