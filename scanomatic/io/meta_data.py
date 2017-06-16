@@ -261,6 +261,24 @@ class MetaData2(object):
 
         self.__dict__.update(state)
 
+    def get_column_index_from_all_plates(self, index):
+
+        plates = []
+        for id_plate, (outers, inners) in enumerate(self._plate_shapes):
+
+            plate = []
+            plates.append(plate)
+
+            for id_outer in range(outers):
+
+                data = []
+                plate.append(data)
+
+                for id_inner in range(inners):
+
+                    data.append(self(id_plate, id_outer, id_inner)[index])
+        return plates
+
     def get_header_row(self, plate):
         """
 
