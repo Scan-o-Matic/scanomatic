@@ -19,6 +19,7 @@ from scanomatic.generics.maths import mid50_mean
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
+from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.image_analysis.image_basics import load_image_to_numpy, Image_Transpose
 from scanomatic.image_analysis.first_pass_image import FixtureImage
 
@@ -62,6 +63,7 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
         ],
     CellCountCalibration.independent_data:
         [12300, 121258, 1241240, 141410, ...],  # Continuous list of measurements of population sizes from OD or FACS
+    CellCountCalibration.independent_data_source: string  # File format
     CellCountCalibration.polynomial:
         [0, 1.12, 0, 46.21, 127.0],  # The polynomial coefficients of the calibration
 }
@@ -89,6 +91,8 @@ class CellCountCalibration(Enum):
     polynomial = 6
     """:type : CellCountCalibration"""
     edit_access_token = 7
+    """:type : CellCountCalibration"""
+    independent_data_source = 8
     """:type : CellCountCalibration"""
 
 
@@ -208,7 +212,8 @@ def get_empty_ccc(species, reference):
         CellCountCalibration.edit_access_token: uuid1().hex,
         CellCountCalibration.polynomial: None,
         CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
-        CellCountCalibration.independent_data: []
+        CellCountCalibration.independent_data: [],
+        CellCountCalibration.independent_data_source: None
     }
 
 
@@ -971,3 +976,75 @@ def remove_calibration(label, degree=None, file_path=None):
         _logger.warning("No polynomial was found matching the criteria (label={0}, degree={1}".format(
             label, degree))
         return False
+
+
+def _get_all_grid_shapes(ccc):
+
+    plates = []
+    cells = []
+
+    for image in ccc[CellCountCalibration.images]:
+        for key in sorted(image[CCCImage.plates].keys()):
+            plate = image[CCCImage.plates][key]
+            if plate[CCCPlate.grid_shape]:
+                plates.append(plate[CCCPlate.grid_shape])
+                cells.append(plate[CCCPlate.compressed_ccc_data])
+
+    return plates, cells
+
+
+@_validate_ccc_edit_request
+def add_external_data_to_ccc(identifier, data_file, report):
+
+    report['warnings'] = []
+    filetype = data_file.split(".")[-1].lower()
+    if filetype not in ['.xls', '.xlsx', '.csv']:
+        report['errors'] = 'File format {0} not supported'.format(filetype)
+        return False
+
+    ccc = __CCC[identifier]
+
+    file_path = Paths().ccc_external_data_pattern.format(identifier, filetype)
+    data_file.save(file_path)
+    ccc[CellCountCalibration.independent_data_source] = filetype
+
+    grid_shapes, measurements = _get_all_grid_shapes(ccc)
+    meta_data = MetaData(grid_shapes, file_path)
+    if not meta_data.loaded:
+        report['errors'] = (
+            'File could not be understood in terms of plates included'
+            '(Grid shapes: {0})'.format(grid_shapes))
+        return False
+
+    report['errors'] = []
+    for id_plate, measurement_set in enumerate(measurements):
+        for id_outer, outer in enumerate(measurement_set):
+            for id_inner, compressed_measurement in enumerate(measurement_set):
+                measured = compressed_measurement[CCCMeasurement.included]
+                independent_data = meta_data[id_plate][id_outer][id_inner][-1]
+                independent_data = (
+                    (isinstance(independent_data, float) or
+                     isinstance(independent_data, int)) and
+                    independent_data > 0)
+
+                if independent_data and not measured:
+                    report['warnings'].append(
+                        "Plate {0}, Pos ({1}, {2}) is not included but has independent data {3}".format(
+                            id_plate, id_outer, id_inner,
+                            meta_data[id_plate][id_outer][id_inner]))
+
+                elif not independent_data and measured:
+
+                    report['errors'].append(
+                        "Plate {0}, Pos ({1}, {2}) is included but has no valid independent data {3}".format(
+                            id_plate, id_outer, id_inner,
+                            meta_data[id_plate][id_outer][id_inner]))
+
+    if report['errors']:
+        return False
+
+    ccc[CellCountCalibration.independent_data] = (
+        meta_data.get_column_index_from_all_plates(-1))
+
+    _save_ccc_to_disk(ccc)
+    return True
