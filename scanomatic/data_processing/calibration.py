@@ -199,6 +199,11 @@ def _validate_ccc_edit_request(f):
     return wrapped
 
 
+@_validate_ccc_edit_request
+def is_valid_token(identifier):
+    return identifier in __CCC
+
+
 def get_empty_ccc(species, reference):
     ccc_id = _get_ccc_identifier(species, reference)
     if ccc_id is None:
