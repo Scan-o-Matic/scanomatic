@@ -22,7 +22,7 @@ from scanomatic.data_processing import calibration
 from scanomatic.data_processing.calibration import (
     add_calibration, calculate_polynomial,
     load_calibration, validate_polynomial, CalibrationValidation,
-    remove_calibration, get_data_file_path,
+    delete_ccc, get_data_file_path,
 )
 from .general import (
     serve_numpy_as_image, get_grayscale_is_valid, valid_array_dimensions,
@@ -549,10 +549,98 @@ def add_routes(app):
                 is_endpoint=False,
                 reason="Probably invalid access token")
 
+    @app.route('/api/data/calibration/<ccc_identifier>/external_data/upload',
+               methods=['POST'])
+    def upload_external_data(ccc_identifier):
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        population_size_data = request.files.get(
+            'population_size_data', default=None)
+
+        if population_size_data is None:
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Didn't get any data")
+
+        if not calibration.is_valid_token(
+                ccc_identifier,
+                access_token=data_object.get("access_token")):
+
+            return json_abort(
+                403,
+                success=False,
+                is_endpoint=True,
+                reason="Invalid access token")
+
+        if not calbiration.save_and_parse_external_data(
+                ccc_identifier,
+                population_size_data,
+                access_token=data_object.get("access_token")):
+
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Data not understandable")
+
+        report = {}
+        if calibraion.validate_external_data(
+                ccc_identifier,
+                population_size_data,
+                access_token=data_object.get("access_token"),
+                report=report):
+
+            return jsonify(
+                success=True,
+                is_endpoint=True,
+                report=report)
+
+        else:
+
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                report=report)
+
+    @app.route('/api/data/calibration/delete/<identifier>', methods=['POST'])
+    def delete_non_deployed_calibration(identifier):
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        if not calibration.is_valid_token(
+                ccc_identifier,
+                access_token=data_object.get("access_token")):
+
+            return json_abort(
+                403,
+                success=False,
+                is_endpoint=True,
+                reason="Invalid access token")
+
+        if delete_ccc(identifier):
+
+            return jsonify(
+                success=True,
+                is_endpoint=True)
+
+        else:
+
+            return json_abort(
+                400,
+                success=False,
+                is_enpoint=True,
+                reason='Unexpected error removing CCC')
 
     """
     DEPRECATION WARNING BELOW
-    """
 
     @app.route("/api/calibration/add/<name>")
     @app.route("/api/calibration/add/<name>/<int:degree>")
@@ -583,29 +671,6 @@ def add_routes(app):
 
         return jsonify(success=True, poly=poly, name=name)
 
-    @app.route("/api/calibration/get")
-    @app.route("/api/calibration/get/<name>")
-    @app.route("/api/calibration/get/<name>/<int:degree>")
-    def calibration_get(name="", degree=None):
-
-        try:
-            return jsonify(success=True, poly=list(load_calibration(name, degree)))
-        except (TypeError, AttributeError):
-            return jsonify(success=False, reason="Can't find polynomial '{0}' (Degree: {1})".format(name, degree))
-
-    @app.route("/api/calibration/remove/<name>")
-    @app.route("/api/calibration/remove/<name>/<int:degree>")
-    def calibration_remove(name, degree=None):
-
-        if remove_calibration(label=name, degree=degree):
-            return jsonify(success=True)
-        else:
-            return jsonify(success=False,
-                           reason="No calibration found matching criteria (name={0}, degree={1})".format(
-                               name,
-                               "*" if degree is None else degree
-                           ))
-
     @app.route("/api/calibration/export")
     @app.route("/api/calibration/export/<name>")
     def calibration_export(name=''):
@@ -626,3 +691,4 @@ def add_routes(app):
             name = 'default'
 
         return send_file(memory_file, attachment_filename='calibration.{0}.zip'.format(name), as_attachment=True)
+    """
