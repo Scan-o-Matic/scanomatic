@@ -53,7 +53,7 @@ def init_logging():
     _logger.resume()
 
 
-def launch_server(port=None, host=None, debug=False):
+def launch_server(host, port, debug):
 
     global _url, _debug_mode
     _debug_mode = debug
@@ -67,7 +67,7 @@ def launch_server(port=None, host=None, debug=False):
     if port is None:
         port = Config().ui_server.port
     if host is None:
-        host = "0.0.0.0"
+        host = Config().ui_server.host
 
     _url = "http://{host}:{port}".format(host=host, port=port)
     init_logging()
@@ -558,14 +558,14 @@ def launch_webbrowser(delay=0.0):
         _logger.error("No server launched")
 
 
-def launch(open_browser_url=True, **kwargs):
+def launch(host, port, debug, open_browser_url=True):
     if open_browser_url:
         _logger.info("Getting ready to open browser")
         Thread(target=launch_webbrowser, kwargs={"delay": 2}).start()
     else:
         _logger.info("Will not open browser")
 
-    launch_server(**kwargs)
+    launch_server(host, port, debug)
 
 
 def ui_server_responsive():

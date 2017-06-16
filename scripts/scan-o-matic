@@ -32,10 +32,12 @@ if __name__ == "__main__":
                         help="Scan-o-Matic will not be launched (usable with --kill).")
 
     parser.add_argument(
-        "--port", type=int, dest="port", help="Manual override of default port")
+        "--port", type=int, dest="port",
+        help="Manual override of default port")
 
     parser.add_argument(
-        '--host', type=str, dest="host", help="Manually setting host address of server")
+        '--host', type=str, dest="host",
+        help="Manually setting host address of server")
 
     parser.add_argument(
         "--no-browser", dest="no_browser", default=False, action='store_true',
@@ -75,7 +77,7 @@ if __name__ == "__main__":
     sleep(1)
     _logger.info("Launching...")
     ui_server.launch(
-        open_browser_url=args.no_browser is False,
-        debug=args.debug,
-        port=args.port,
-        host=args.host)
+        args.host,
+        args.port,
+        args.debug,
+        open_browser_url=args.no_browser is False)
