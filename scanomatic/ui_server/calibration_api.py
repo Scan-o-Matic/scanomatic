@@ -19,11 +19,14 @@ from scanomatic.image_analysis import image_basics
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
 from scanomatic.data_processing import calibration
-from scanomatic.data_processing.calibration import add_calibration, calculate_polynomial, \
-    load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
-    get_data_file_path
+from scanomatic.data_processing.calibration import (
+    add_calibration, calculate_polynomial,
+    load_calibration, validate_polynomial, CalibrationValidation,
+    remove_calibration, get_data_file_path,
+)
 from .general import (
-    serve_numpy_as_image, get_grayscale_is_valid, valid_array_dimensions
+    serve_numpy_as_image, get_grayscale_is_valid, valid_array_dimensions,
+    json_abort
 )
 
 _VALID_CHARACTERS = letters + "-._1234567890"
@@ -463,63 +466,89 @@ def add_routes(app):
 
         image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
         if image_data is None:
-            return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="The image or CCC don't exist")
 
         try:
             image = np.array(data_object.get("image", [[]]), dtype=np.float64)
         except TypeError:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Image data is not understandable as a float array")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Image data is not understandable as a float array")
 
         try:
             blob_filter = np.array(data_object.get("blob", [[]]), dtype=bool)
         except TypeError:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Blob filter data is not understandable as a boolean array")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Blob filter data is not understandable as a boolean array")
 
         try:
             background_filter = np.array(data_object.get("background", [[]]), dtype=bool)
         except TypeError:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Background filter data is not understandable as a boolean array")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Background filter data is not understandable as a boolean array")
 
         if not valid_array_dimensions(2, image, blob_filter, background_filter):
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Supplied data does not have the correct dimensions." +
-                           " Image-shape is {0}, blob-shape {1}, and background-shape {2}.".format(
-                               image.shape, blob_filter.shape, background_filter.shape) +
-                           " All need to be identical shape and 2D."
-                           )
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Supplied data does not have the correct dimensions." +
+                " Image-shape is {0}, blob {1}, and bg {2}.".format(
+                    image.shape, blob_filter.shape, background_filter.shape) +
+                " All need to be identical shape and 2D.")
 
         if (blob_filter & background_filter).any():
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Blob and background filter may not overlap")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Blob and background filter may not overlap")
 
         if not blob_filter.any():
-            return jsonify(success=False, is_endpoint=False,
-                           reason="Blob is empty/there's no colony detected")
+            return json_abort(
+                400,
+                success=False, is_endpoint=False,
+                reason="Blob is empty/there's no colony detected")
 
         if background_filter.sum() < 3:
-            return jsonify(success=False, is_endpoint=False,
-                           reason="Background must be consisting of at least 3 pixels")
+            return json_abort(
+                400,
+                success=False, is_endpoint=False,
+                reason="Background must be consisting of at least 3 pixels")
 
-        if background_filter.sum() < 20 and not data_object.get("override_small_background", False):
+        if background_filter.sum() < 20 and not data_object.get(
+                "override_small_background", False):
 
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Background must be at least 20 pixels. Currently only {0}.".format(
-                               background_filter.sum()) + " This check can be over-ridden.")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Background must be at least 20 pixels." +
+                " Currently only {0}.".format(background_filter.sum()) +
+                " This check can be over-ridden.")
 
         if calibration.set_colony_compressed_data(
                 ccc_identifier, image_identifier, plate, x, y,
                 included=True,
-                image=image, blob_filter=blob_filter, background_filter=background_filter,
+                image=image, blob_filter=blob_filter,
+                background_filter=background_filter,
                 access_token=data_object.get("access_token")):
 
             return jsonify(success=True, is_endpoint=True)
 
         else:
 
-            return jsonify(success=False, is_endpoint=False, reason="Probably invalid access token")
+            return json_abort(
+                403,
+                success=False,
+                is_endpoint=False,
+                reason="Probably invalid access token")
+
 
     """
     DEPRECATION WARNING BELOW
