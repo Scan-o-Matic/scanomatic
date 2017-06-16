@@ -177,7 +177,7 @@ class Paths(SingeltonOneInit):
     @staticmethod
     def _make_directory(path):
 
-        if os.path.isdir(path) is False:
+        if not os.path.isdir(path):
 
             os.makedirs(path)
 
