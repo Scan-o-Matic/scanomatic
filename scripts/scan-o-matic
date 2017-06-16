@@ -35,14 +35,6 @@ if __name__ == "__main__":
         "--port", type=int, dest="port", help="Manual override of default port")
 
     parser.add_argument(
-        '--local', action='store_true', default=None,
-        dest="local", help="Manual override settings and only serve to the LAN")
-
-    parser.add_argument(
-        '--global', action='store_false',
-        dest="local", help="Manual override settings and serve to anyone on the Internet")
-
-    parser.add_argument(
         '--host', type=str, dest="host", help="Manually setting host address of server")
 
     parser.add_argument(
@@ -52,7 +44,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--debug", dest="debug", default=False, action='store_true',
-        help="Run in debug-mode (requires --local)."
+        help="Run in debug-mode."
     )
 
     parser.add_argument(
@@ -82,6 +74,8 @@ if __name__ == "__main__":
     _logger.info("Waiting 1 second before launch... please hold.")
     sleep(1)
     _logger.info("Launching...")
-    ui_server.launch(open_browser_url=args.no_browser is False,
-                     debug=args.debug,
-                     is_local=args.local, port=args.port, host=args.host)
+    ui_server.launch(
+        open_browser_url=args.no_browser is False,
+        debug=args.debug,
+        port=args.port,
+        host=args.host)
