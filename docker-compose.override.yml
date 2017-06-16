@@ -1,0 +1,5 @@
+scanomatic:
+    ports:
+        - 5000:5000
+        - 12451:12451
+    command: scan-o-matic --no-browser --debug
