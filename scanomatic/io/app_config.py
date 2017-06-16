@@ -1,5 +1,6 @@
-from ConfigParser import ConfigParser, NoOptionError
+from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 import uuid
+import os
 
 #
 # INTERNAL DEPENDENCIES
@@ -10,7 +11,8 @@ import paths
 import logger
 from scanomatic.generics.singleton import SingeltonOneInit
 import scanomatic.models.scanning_model as scanning_model
-from scanomatic.models.factories.settings_factories import ApplicationSettingsFactory
+from scanomatic.models.factories.settings_factories import (
+    ApplicationSettingsFactory)
 
 #
 # CLASSES
@@ -68,7 +70,7 @@ class Config(SingeltonOneInit):
 
         try:
             return type(conf_parser.get(section, key))
-        except NoOptionError:
+        except (NoOptionError, NoSectionError):
             return default
 
     @property
@@ -243,27 +245,39 @@ class Config(SingeltonOneInit):
 
     def reload_settings(self):
 
-        try:
-            self._settings = ApplicationSettingsFactory.serializer.load_first(self._paths.config_main_app)
-        except (IOError):
+        if os.path.isfile(self._paths.config_main_app):
+            try:
+                self._settings = (
+                    ApplicationSettingsFactory.serializer.load_first(
+                        self._paths.config_main_app))
+            except (IOError):
+                self._settings = ApplicationSettingsFactory.create()
+        else:
             self._settings = ApplicationSettingsFactory.create()
 
         if not self._settings:
-            self._logger.info("Don't worry, we'll use default settings for now.")
+            self._logger.info(
+                "We'll use default settings for now.")
             self._settings = ApplicationSettingsFactory.create()
 
         if self._use_local_rpc_settings:
             self.apply_local_rpc_settings()
 
-        self._PM = power_manager.get_pm_class(self._settings.power_manager.type)
+        self._PM = power_manager.get_pm_class(
+            self._settings.power_manager.type)
 
     def apply_local_rpc_settings(self):
 
         rpc_conf = ConfigParser(allow_no_value=True)
-        rpc_conf.read(self._paths.config_rpc)
+        if not rpc_conf.read(self._paths.config_rpc):
+            self._logger.warning(
+                "Could not read from '{0}',".format(self._paths.config_rpc) +
+                "though local settings were indicated to exist")
 
-        self._settings.rpc_server.host = Config._safe_get(rpc_conf, "Communication", "host", '127.0.0.1', str)
-        self._settings.rpc_server.port = Config._safe_get(rpc_conf, "Communication", "port", 12451, int)
+        self._settings.rpc_server.host = Config._safe_get(
+            rpc_conf, "Communication", "host", '127.0.0.1', str)
+        self._settings.rpc_server.port = Config._safe_get(
+            rpc_conf, "Communication", "port", 12451, int)
 
         try:
             self._settings.rpc_server.admin = open(self._paths.config_rpc_admin, 'r').read().strip()
@@ -352,7 +366,7 @@ class Config(SingeltonOneInit):
 
     def get_min_model(self, model, factory):
 
-        return factory.create(**self._minMaxModels[type(model)]['min'])  
+        return factory.create(**self._minMaxModels[type(model)]['min'])
 
     def get_max_model(self, model, factory):
 
