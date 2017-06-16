@@ -9,14 +9,6 @@ import logger
 from scanomatic.generics.singleton import SingeltonOneInit
 
 #
-# EXCEPTIONS
-#
-
-
-class InvalidRoot(Exception):
-    pass
-
-#
 # CLASSES
 #
 
@@ -35,15 +27,12 @@ class Paths(SingeltonOneInit):
             os.environ.get("SCANOMATIC_DATA",
             os.path.join(os.path.expanduser("~"), ".scan-o-matic")))
 
-        if os.path.isdir(self.root) is False:
-
-            try:
-                os.makedirs(self.root)
-            except OSError:
-                raise InvalidRoot(self.root)
+        Paths._make_directory(self.root)
 
         self.config = os.path.join(self.root, "config")
+        Paths._make_directory(self.config)
         self.fixtures = os.path.join(self.config, "fixtures")
+        Paths._make_directory(self.fixtures)
         self.images = os.path.join(self.root, "images")
 
         self.source_location_file = os.path.join(self.root, "source_location.txt")
@@ -109,6 +98,7 @@ class Paths(SingeltonOneInit):
         self.fixture_grid_history_pattern = "{0}.grid.history"
 
         self.log = os.path.join(self.root, "logs")
+        Paths._make_directory(self.log)
         self.log_ui_server = os.path.join(self.log, "ui_server.log")
         self.log_server = os.path.join(self.log, "server.log")
         self.log_scanner_out = os.path.join(self.log, "scanner_{0}.stdout")
@@ -128,13 +118,21 @@ class Paths(SingeltonOneInit):
             self.config, "grayscales.cfg")
 
         self.ccc_folder = os.path.join(self.config, "ccc")
+        Paths._make_directory(self.ccc_folder)
         self.ccc_file_pattern = os.path.join(self.ccc_folder, "{0}.ccc")
         self.ccc_image_pattern = os.path.join(self.ccc_folder, "{0}.{1}.tiff")
-        self.ccc_image_plate_slice_pattern = os.path.join(self.ccc_folder, "{0}.{1}.plate_{2}.npy")
-        self.ccc_image_plate_transformed_slice_pattern = \
-            os.path.join(self.ccc_folder, "{0}.{1}.plate_{2}.transformed.npy")
-        self.ccc_image_gs_slice_pattern = os.path.join(self.ccc_folder, "{0}.{1}.gs.npy")
-        self.ccc_image_plate_grid_pattern = os.path.join(self.ccc_folder, "{0}.{1}.plate{2}.grid.npy")
+        self.ccc_image_plate_slice_pattern = os.path.join(
+            self.ccc_folder, "{0}.{1}.plate_{2}.npy")
+        self.ccc_image_plate_transformed_slice_pattern = os.path.join(
+            self.ccc_folder, "{0}.{1}.plate_{2}.transformed.npy")
+        self.ccc_image_gs_slice_pattern = os.path.join(
+            self.ccc_folder, "{0}.{1}.gs.npy")
+        self.ccc_image_plate_grid_pattern = os.path.join(
+            self.ccc_folder,
+            "{0}.{1}.plate{2}.grid.npy")
+        self.ccc_external_data_pattern = os.path.join(
+            self.ccc_folder, "{0}.external_data.{1}"
+        )
         self.analysis_run_log = 'analysis.log'
         self.analysis_model_file = 'analysis.model'
 
@@ -175,6 +173,13 @@ class Paths(SingeltonOneInit):
 
         self.scan_project_file_pattern = "{0}.scan.instructions"
         self.scan_log_file_pattern = "{0}.scan.log"
+
+    @staticmethod
+    def _make_directory(path):
+
+        if os.path.isdir(path) is False:
+
+            os.makedirs(path)
 
     def join(self, attr, *other):
 
