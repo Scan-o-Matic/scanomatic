@@ -5,7 +5,8 @@ from StringIO import StringIO
 import io
 from scipy.misc import imread
 from itertools import chain
-from flask import send_file, request, send_from_directory, jsonify, render_template
+from flask import (
+    send_file, request, send_from_directory, jsonify, render_template)
 from werkzeug.datastructures import FileStorage
 import numpy as np
 import zipfile
@@ -27,6 +28,13 @@ _no_super = re.compile(r"/?\.{2}/")
 _logger = Logger("UI API helpers")
 _ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.tiff'}
 _TOO_LARGE_GRAYSCALE_AREA = 300000
+
+
+def json_abort(status_code, *args, **kwargs):
+
+    response = jsonify(*args, **kwargs)
+    response.status_code = status_code
+    return response
 
 
 def image_is_allowed(ext):

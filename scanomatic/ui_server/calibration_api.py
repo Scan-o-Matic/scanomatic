@@ -19,11 +19,14 @@ from scanomatic.image_analysis import image_basics
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
 from scanomatic.data_processing import calibration
-from scanomatic.data_processing.calibration import add_calibration, calculate_polynomial, \
-    load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
-    get_data_file_path
+from scanomatic.data_processing.calibration import (
+    add_calibration, calculate_polynomial,
+    load_calibration, validate_polynomial, CalibrationValidation,
+    delete_ccc, get_data_file_path,
+)
 from .general import (
-    serve_numpy_as_image, get_grayscale_is_valid, valid_array_dimensions
+    serve_numpy_as_image, get_grayscale_is_valid, valid_array_dimensions,
+    json_abort
 )
 
 _VALID_CHARACTERS = letters + "-._1234567890"
@@ -463,67 +466,181 @@ def add_routes(app):
 
         image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
         if image_data is None:
-            return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="The image or CCC don't exist")
 
         try:
             image = np.array(data_object.get("image", [[]]), dtype=np.float64)
         except TypeError:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Image data is not understandable as a float array")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Image data is not understandable as a float array")
 
         try:
             blob_filter = np.array(data_object.get("blob", [[]]), dtype=bool)
         except TypeError:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Blob filter data is not understandable as a boolean array")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Blob filter data is not understandable as a boolean array")
 
         try:
             background_filter = np.array(data_object.get("background", [[]]), dtype=bool)
         except TypeError:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Background filter data is not understandable as a boolean array")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Background filter data is not understandable as a boolean array")
 
         if not valid_array_dimensions(2, image, blob_filter, background_filter):
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Supplied data does not have the correct dimensions." +
-                           " Image-shape is {0}, blob-shape {1}, and background-shape {2}.".format(
-                               image.shape, blob_filter.shape, background_filter.shape) +
-                           " All need to be identical shape and 2D."
-                           )
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Supplied data does not have the correct dimensions." +
+                " Image-shape is {0}, blob {1}, and bg {2}.".format(
+                    image.shape, blob_filter.shape, background_filter.shape) +
+                " All need to be identical shape and 2D.")
 
         if (blob_filter & background_filter).any():
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Blob and background filter may not overlap")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Blob and background filter may not overlap")
 
         if not blob_filter.any():
-            return jsonify(success=False, is_endpoint=False,
-                           reason="Blob is empty/there's no colony detected")
+            return json_abort(
+                400,
+                success=False, is_endpoint=False,
+                reason="Blob is empty/there's no colony detected")
 
         if background_filter.sum() < 3:
-            return jsonify(success=False, is_endpoint=False,
-                           reason="Background must be consisting of at least 3 pixels")
+            return json_abort(
+                400,
+                success=False, is_endpoint=False,
+                reason="Background must be consisting of at least 3 pixels")
 
-        if background_filter.sum() < 20 and not data_object.get("override_small_background", False):
+        if background_filter.sum() < 20 and not data_object.get(
+                "override_small_background", False):
 
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Background must be at least 20 pixels. Currently only {0}.".format(
-                               background_filter.sum()) + " This check can be over-ridden.")
+            return json_abort(
+                400,
+                success=False, is_endpoint=True,
+                reason="Background must be at least 20 pixels." +
+                " Currently only {0}.".format(background_filter.sum()) +
+                " This check can be over-ridden.")
 
         if calibration.set_colony_compressed_data(
                 ccc_identifier, image_identifier, plate, x, y,
                 included=True,
-                image=image, blob_filter=blob_filter, background_filter=background_filter,
+                image=image, blob_filter=blob_filter,
+                background_filter=background_filter,
                 access_token=data_object.get("access_token")):
 
             return jsonify(success=True, is_endpoint=True)
 
         else:
 
-            return jsonify(success=False, is_endpoint=False, reason="Probably invalid access token")
+            return json_abort(
+                403,
+                success=False,
+                is_endpoint=False,
+                reason="Probably invalid access token")
+
+    @app.route('/api/data/calibration/<ccc_identifier>/external_data/upload',
+               methods=['POST'])
+    def upload_external_data(ccc_identifier):
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        population_size_data = request.files.get(
+            'population_size_data', default=None)
+
+        if population_size_data is None:
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Didn't get any data")
+
+        if not calibration.is_valid_token(
+                ccc_identifier,
+                access_token=data_object.get("access_token")):
+
+            return json_abort(
+                403,
+                success=False,
+                is_endpoint=True,
+                reason="Invalid access token")
+
+        if not calbiration.save_and_parse_external_data(
+                ccc_identifier,
+                population_size_data,
+                access_token=data_object.get("access_token")):
+
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Data not understandable")
+
+        report = {}
+        if calibraion.validate_external_data(
+                ccc_identifier,
+                population_size_data,
+                access_token=data_object.get("access_token"),
+                report=report):
+
+            return jsonify(
+                success=True,
+                is_endpoint=True,
+                report=report)
+
+        else:
+
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                report=report)
+
+    @app.route('/api/data/calibration/delete/<identifier>', methods=['POST'])
+    def delete_non_deployed_calibration(identifier):
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        if not calibration.is_valid_token(
+                ccc_identifier,
+                access_token=data_object.get("access_token")):
+
+            return json_abort(
+                403,
+                success=False,
+                is_endpoint=True,
+                reason="Invalid access token")
+
+        if delete_ccc(identifier):
+
+            return jsonify(
+                success=True,
+                is_endpoint=True)
+
+        else:
+
+            return json_abort(
+                400,
+                success=False,
+                is_enpoint=True,
+                reason='Unexpected error removing CCC')
 
     """
     DEPRECATION WARNING BELOW
-    """
 
     @app.route("/api/calibration/add/<name>")
     @app.route("/api/calibration/add/<name>/<int:degree>")
@@ -554,29 +671,6 @@ def add_routes(app):
 
         return jsonify(success=True, poly=poly, name=name)
 
-    @app.route("/api/calibration/get")
-    @app.route("/api/calibration/get/<name>")
-    @app.route("/api/calibration/get/<name>/<int:degree>")
-    def calibration_get(name="", degree=None):
-
-        try:
-            return jsonify(success=True, poly=list(load_calibration(name, degree)))
-        except (TypeError, AttributeError):
-            return jsonify(success=False, reason="Can't find polynomial '{0}' (Degree: {1})".format(name, degree))
-
-    @app.route("/api/calibration/remove/<name>")
-    @app.route("/api/calibration/remove/<name>/<int:degree>")
-    def calibration_remove(name, degree=None):
-
-        if remove_calibration(label=name, degree=degree):
-            return jsonify(success=True)
-        else:
-            return jsonify(success=False,
-                           reason="No calibration found matching criteria (name={0}, degree={1})".format(
-                               name,
-                               "*" if degree is None else degree
-                           ))
-
     @app.route("/api/calibration/export")
     @app.route("/api/calibration/export/<name>")
     def calibration_export(name=''):
@@ -597,3 +691,4 @@ def add_routes(app):
             name = 'default'
 
         return send_file(memory_file, attachment_filename='calibration.{0}.zip'.format(name), as_attachment=True)
+    """
