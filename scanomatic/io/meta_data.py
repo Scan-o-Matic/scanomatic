@@ -77,7 +77,8 @@ class DataLoader(object):
 
         if self._headers[self._sheet] is None:
             if self.sheet_is_valid_with_headers(plate_size):
-                self._headers[self._sheet] = self._get_next_row(self._row_iterators[self._sheet].next())
+                self._headers[self._sheet] = self._get_next_row(
+                    self._row_iterators[self._sheet].next())
             elif self.sheet_is_valid_without_headers(plate_size):
                 self._headers[self._sheet] = self._get_empty_headers()
 
@@ -141,7 +142,9 @@ class DataLoader(object):
 
         if 0 <= self._sheet < len(self._entries):
 
-            return self.sheet_is_valid_with_headers(plate_size) or self.sheet_is_valid_without_headers(plate_size)
+            return (
+                self.sheet_is_valid_with_headers(plate_size) or
+                self.sheet_is_valid_without_headers(plate_size))
 
         return False
 
@@ -222,7 +225,11 @@ class MetaData2(object):
 
         self._logger = logger.Logger("MetaData")
         self._plate_shapes = plate_shapes
-        self._data = tuple(None if shape is None else np.empty(shape, dtype=np.object) for shape in plate_shapes)
+
+        self._data = tuple(
+            None if shape is None else np.empty(shape, dtype=np.object)
+            for shape in plate_shapes)
+
         self._headers = list(None for _ in plate_shapes)
         """:type self._headers: list[(int, int) | None]"""
         self._loading_plate = 0
@@ -325,7 +332,8 @@ class MetaData2(object):
             loader = MetaData2._get_loader(path)
             """:type : DataLoader"""
             if loader is None:
-                self._logger.warning("Unknown file format, can't load {0}".format(path))
+                self._logger.warning(
+                    "Unknown file format, can't load {0}".format(path))
                 continue
 
             size = self._get_sought_size()
@@ -349,7 +357,8 @@ class MetaData2(object):
                     continue
 
                 self._logger.info("Using {0}:{1} for plate {2}".format(
-                    path, loader.get_sheet_name(sheet_id), self._loading_plate))
+                    path, loader.get_sheet_name(sheet_id),
+                    self._loading_plate))
                 self._update_headers_if_needed(headers)
                 self._update_meta_data(loader)
                 self._update_loading_offsets()
@@ -392,11 +401,14 @@ class MetaData2(object):
         elif all(h is None for h in self._headers[self._loading_plate]):
             return True
         else:
-            return all(a == b for a, b in zip(self._headers[self._loading_plate], headers))
+            return all(a == b for a, b in
+                       zip(self._headers[self._loading_plate], headers))
 
     def _update_headers_if_needed(self, headers):
 
-        if self._headers[self._loading_plate] is None or all(h is None for h in self._headers[self._loading_plate]):
+        if (self._headers[self._loading_plate] is None or
+                all(h is None for h in self._headers[self._loading_plate])):
+
             self._headers[self._loading_plate] = headers
 
     def _update_meta_data(self, loader):
@@ -427,8 +439,10 @@ class MetaData2(object):
                 if outer >= max_outer:
                     outer %= max_outer
 
-        factor = np.log2(self._data[self._loading_plate].size / (loader.rows - loader.sheet_is_valid_with_headers(
-            np.prod(self._plate_shapes[self._loading_plate]))))
+        factor = np.log2(
+            self._data[self._loading_plate].size /
+            (loader.rows - loader.sheet_is_valid_with_headers(
+                np.prod(self._plate_shapes[self._loading_plate]))))
 
         if factor != int(factor):
             return None
@@ -443,9 +457,15 @@ class MetaData2(object):
             # Partial plate
             factor = int(factor)
             if factor > len(self._loading_offset):
-                self._loading_offset += [(0, 0) for _ in range(factor - len(self._loading_offset))]
 
-            outer, inner = map(sum, zip(*((o*2**l, i*2**l) for l, (o, i) in enumerate(self._loading_offset))))
+                self._loading_offset += [
+                    (0, 0) for _ in range(factor - len(self._loading_offset))]
+
+            outer, inner = map(
+                sum,
+                zip(*((o*2**l, i*2**l) for l, (o, i)
+                      in enumerate(self._loading_offset))))
+
             factor = 2 ** len(self._loading_offset)
             max_outer, max_inner = self._plate_shapes[self._loading_plate]
 
@@ -506,7 +526,8 @@ class MetaData2(object):
 
     def generate_coordinates(self, plate=None):
 
-        plates = ((i, p) for i, p in enumerate(self._plate_shapes) if plate is None or i is plate)
+        plates = ((i, p) for i, p in enumerate(self._plate_shapes)
+                  if plate is None or i is plate)
 
         for id_plate, shape in plates:
 

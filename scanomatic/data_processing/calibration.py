@@ -325,6 +325,7 @@ def add_ccc(ccc):
                 ccc[CellCountCalibration.identifier]))
         return False
 
+
 @_validate_ccc_edit_request
 def activate_ccc(identifier):
 
@@ -389,7 +390,8 @@ def _save_ccc_to_disk(data):
     identifier = data[CellCountCalibration.identifier]
 
     try:
-        os.makedirs(os.path.dirname(Paths().ccc_file_pattern.format(identifier)))
+        os.makedirs(
+            os.path.dirname(Paths().ccc_file_pattern.format(identifier)))
     except os.error:
         pass
 
@@ -735,8 +737,8 @@ def set_colony_compressed_data(
         if included and not (
                 plate[CCCPlate.compressed_ccc_data][x][y][
                     CCCMeasurement.source_values] or
-                plate[CCCPlate.compressed_ccc_data][x][y]
-                    [CCCMeasurement.source_value_counts]):
+                plate[CCCPlate.compressed_ccc_data][x][y][
+                    CCCMeasurement.source_value_counts]):
 
             _logger.warning(
                 "Attempting to include CCC Measurement for position " +

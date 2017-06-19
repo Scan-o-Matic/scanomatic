@@ -18,7 +18,7 @@ class TestMetaDataXLSX:
     def test_load(self, grids):
 
         md = MetaData(grids, self.DATA_PATH)
-        assert md.loaded == True
+        assert md.loaded is True
 
     @pytest.mark.parametrize(
         'bad_grids',
@@ -31,7 +31,7 @@ class TestMetaDataXLSX:
     def test_load_fail(self, bad_grids):
 
         md = MetaData(bad_grids, self.DATA_PATH)
-        assert md.loaded == False
+        assert not md.loaded
 
     def test_getting_data_column(self):
 
@@ -44,4 +44,3 @@ class TestMetaDataXLSX:
 
         md = MetaData([[8, 12]], self.DATA_PATH)
         assert md[0][2][0] == [3, 1, 0.269]
-

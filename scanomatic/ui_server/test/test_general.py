@@ -1,6 +1,6 @@
 import pytest
 
-from flask import Flask, request
+from flask import Flask
 
 from scanomatic.ui_server import general
 
@@ -18,7 +18,7 @@ class TestJsonAbort:
         "status_code,args,kwargs",
         [
             (300, [], {}),
-            (400, [1, 2,], {}),
+            (400, [1, 2], {}),
             (500, [], {'3': 1, '1': 20}),
         ]
     )
@@ -31,4 +31,4 @@ class TestJsonAbort:
     def test_json_abort_raises(self, app):
         with app.test_request_context():
             with pytest.raises(TypeError):
-                assert general.json_abort(600, *[42,], **{'20': 21, '21': 20})
+                assert general.json_abort(600, *[42], **{'20': 21, '21': 20})

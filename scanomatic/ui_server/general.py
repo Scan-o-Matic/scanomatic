@@ -6,7 +6,7 @@ import io
 from scipy.misc import imread
 from itertools import chain
 from flask import (
-    send_file, request, send_from_directory, jsonify, render_template)
+    send_file, jsonify, render_template)
 from werkzeug.datastructures import FileStorage
 import numpy as np
 import zipfile
@@ -20,10 +20,12 @@ from scanomatic.io.logger import Logger, parse_log_file
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scipy.misc import toimage
 from scanomatic.image_analysis.first_pass_image import FixtureImage
-from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
+from scanomatic.models.fixture_models import (
+    GrayScaleAreaModel, FixturePlateModel)
 from scanomatic.image_analysis.image_grayscale import is_valid_grayscale
 
-_safe_dir = re.compile(r"^[A-Za-z_0-9.%/ \\]*$" if os.sep == "\\" else r"^[A-Za-z_0-9.%/ ]*$")
+_safe_dir = re.compile(
+    r"^[A-Za-z_0-9.%/ \\]*$" if os.sep == "\\" else r"^[A-Za-z_0-9.%/ ]*$")
 _no_super = re.compile(r"/?\.{2}/")
 _logger = Logger("UI API helpers")
 _ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.tiff'}
