@@ -577,19 +577,8 @@ def add_routes(app):
                 is_endpoint=True,
                 reason="Invalid access token")
 
-        if not calbiration.save_and_parse_external_data(
-                ccc_identifier,
-                population_size_data,
-                access_token=data_object.get("access_token")):
-
-            return json_abort(
-                400,
-                success=False,
-                is_endpoint=True,
-                reason="Data not understandable")
-
         report = {}
-        if calibraion.validate_external_data(
+        if calibraion.add_external_data_to_ccc(
                 ccc_identifier,
                 population_size_data,
                 access_token=data_object.get("access_token"),

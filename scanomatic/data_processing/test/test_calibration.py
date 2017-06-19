@@ -6,6 +6,15 @@ from scanomatic.data_processing import calibration
 data = calibration.load_data_file()
 
 
+@pytest.fixture(scope='module')
+def ccc():
+
+    _ccc = calibration.get_empty_ccc('test-ccc', 'pytest')
+    calibration.__CCC[_ccc[calibration.CellCountCalibration.identifier]] = _ccc
+    yield _ccc
+    del calibration.__CCC[_ccc[calibration.CellCountCalibration.identifier]]
+
+
 def test_load_data():
 
     assert calibration.load_data_file() is not None
@@ -102,3 +111,24 @@ def test_get_im_slice():
     model_tuple = namedtuple("Model", ['x1', 'x2', 'y1', 'y2'])
     model = model_tuple(1.5, 3.5, 2.5, 4.5)
     assert calibration._get_im_slice(image, model).sum() == 207
+
+
+
+class TestAccessToken:
+
+    def test_invalid_token(self, ccc):
+
+        assert not calibration.is_valid_token(
+            ccc[calibration.CellCountCalibration.identifier])
+
+        assert not calibration.is_valid_token(
+            ccc[calibration.CellCountCalibration.identifier],
+            access_token='bad')
+
+
+    def test_valid_token(self, ccc):
+
+        assert calibration.is_valid_token(
+            ccc[calibration.CellCountCalibration.identifier],
+            access_token=ccc[
+                calibration.CellCountCalibration.edit_access_token]) is True
