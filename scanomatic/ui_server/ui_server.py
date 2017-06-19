@@ -53,7 +53,7 @@ def init_logging():
     _logger.resume()
 
 
-def launch_server(is_local=None, port=None, host=None, debug=False):
+def launch_server(host, port, debug):
 
     global _url, _debug_mode
     _debug_mode = debug
@@ -66,19 +66,13 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     if port is None:
         port = Config().ui_server.port
-
-    if is_local is True or (Config().ui_server.local and is_local is None):
-        set_local_app()
-        host = "localhost"
-        is_local = True
-    elif host is None:
-        host = "0.0.0.0"
-        is_local = False
+    if host is None:
+        host = Config().ui_server.host
 
     _url = "http://{host}:{port}".format(host=host, port=port)
     init_logging()
-    _logger.info("Requested to launch UI-server at {0} being local={1} and debug={2}".format(
-        _url, is_local, debug))
+    _logger.info("Requested to launch UI-server at {0} being debug={1}".format(
+        _url, debug))
 
     app.log_recycler = Timer(LOG_RECYCLE_TIME, init_logging)
     app.log_recycler.start()
@@ -564,14 +558,14 @@ def launch_webbrowser(delay=0.0):
         _logger.error("No server launched")
 
 
-def launch(open_browser_url=True, **kwargs):
+def launch(host, port, debug, open_browser_url=True):
     if open_browser_url:
         _logger.info("Getting ready to open browser")
         Thread(target=launch_webbrowser, kwargs={"delay": 2}).start()
     else:
         _logger.info("Will not open browser")
 
-    launch_server(**kwargs)
+    launch_server(host, port, debug)
 
 
 def ui_server_responsive():
