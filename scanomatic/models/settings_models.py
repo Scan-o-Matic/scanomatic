@@ -47,12 +47,9 @@ class RPCServerModel(model.Model):
 
 class UIServerModel(model.Model):
 
-    def __init__(self, port=5000, local=True, host=None, master_key=None):
+    def __init__(self, port=5000, host="0.0.0.0", master_key=None):
 
         self.port = port
-
-        self.local = local if local is not None else True
-
         self.host = host
         self.master_key = master_key if master_key else str(uuid1())
         super(UIServerModel, self).__init__()
