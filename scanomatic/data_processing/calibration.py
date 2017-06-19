@@ -20,17 +20,27 @@ from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
 from scanomatic.io.meta_data import MetaData2 as MetaData
-from scanomatic.image_analysis.image_basics import load_image_to_numpy, Image_Transpose
+from scanomatic.image_analysis.image_basics import (
+    load_image_to_numpy, Image_Transpose)
 from scanomatic.image_analysis.first_pass_image import FixtureImage
 
 """ Data structure for CCC-jsons
 {
-    CellCountCalibration.status: CalibrationEntryStatus,  # One of UnderConstruction, Active, Deleted
-    CellCountCalibration.edit_access_token:  # During CalibrationEntryStatus.UnderConstruction this is needed to edit.
-    CellCountCalibration.species: string,  # The species & possibly strain, combo of this and reference must be unique.
-    CellCountCalibration.reference: string,  # Typically publication reference or contact info i.e. email
-    CellCountCalibration.identifier: string,  # Unique ID of CCC
-    CellCountCalibration.images:  # The images in sequence added, must correspond to order in reference data (below)
+    CellCountCalibration.status:
+        CalibrationEntryStatus,  # One of UnderConstruction, Active, Deleted
+    CellCountCalibration.edit_access_token:
+        string, # During CalibrationEntryStatus.UnderConstruction this is
+                # needed to edit.
+    CellCountCalibration.species:
+        string,  # The species & possibly strain, combo of this and reference
+                 # must be unique.
+    CellCountCalibration.reference:
+        string,  # Typically publication reference or contact info i.e. email
+    CellCountCalibration.identifier:
+        string,  # Unique ID of CCC
+    CellCountCalibration.images:
+        list,  # The images in sequence added, must correspond to order
+               # in reference data (below)
         [
             {
             CCCImage.identifier: string,  # How to find the saved image
@@ -38,15 +48,23 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
                 {
                 int :  # plate index (get valid from fixture),
                     {
-                    CCCPlate.grid_shape: (16, 24),  # Number of rows and columns of colonies on plate
-                    CCCPlate.grid_cell_size: (52.5, 53.1),  # Number of pixels for each colony (yes is in decimal)
-                    CCCPlate.compressed_ccc_data:  # Row, column info on CCC analysis of each colony
+                    CCCPlate.grid_shape: (16, 24),
+                        # Number of rows and columns of colonies on plate
+                    CCCPlate.grid_cell_size: (52.5, 53.1),
+                        # Number of pixels for each colony (yes is in decimal)
+                    CCCPlate.compressed_ccc_data:
+                        # Row, column info on CCC analysis of each colony
                         [
                             [
                                 {
-                                    CCCMeasurement.included: bool,  # If included
-                                    CCCMeasurement.source_values: [123.1, 10.4, ...],  # GS transf pixel transparencies
-                                    CCCMeasurement.source_value_counts: [100, 1214, ...],  # Num of corresponding pixels
+                                    CCCMeasurement.included: bool,
+                                        # If included
+                                    CCCMeasurement.source_values:
+                                        [123.1, 10.4, ...],
+                                        # GS transf pixel transparencies
+                                    CCCMeasurement.source_value_counts:
+                                        [100, 1214, ...],
+                                        # Num of corresponding pixels
                                 },
                                 ...
                             ],
@@ -55,17 +73,22 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
                     }
                 },
             CCCImage.grayscale_name: string,
-            CCCImage.grayscale_source_values: [123, 2.14, ...],  # reference values
-            CCCImage.grayscale_target_values: [123, 12412, ...], # Analysis values
+            CCCImage.grayscale_source_values:
+                [123, 2.14, ...],  # reference values
+            CCCImage.grayscale_target_values:
+                [123, 12412, ...], # Analysis values
             CCCImage.fixture: string,
             },
             ...
         ],
     CellCountCalibration.independent_data:
-        [12300, 121258, 1241240, 141410, ...],  # Continuous list of measurements of population sizes from OD or FACS
+        [[[12300, 121258, 1241240, 141410, ...], ..., ...]
+        # Continuous list of measurements of population sizes from OD or FACS
+        # Plates, columns, row
     CellCountCalibration.independent_data_source: string  # File format
     CellCountCalibration.polynomial:
-        [0, 1.12, 0, 46.21, 127.0],  # The polynomial coefficients of the calibration
+        [0, 1.12, 0, 46.21, 127.0],
+        # The polynomial coefficients of the calibration
 }
 
 """
@@ -176,11 +199,13 @@ def _validate_ccc_edit_request(f):
 
             ccc = __CCC[identifier]
 
-            if "access_token" in kwargs \
-                    and ccc[CellCountCalibration.edit_access_token] == kwargs["access_token"] \
-                    and kwargs["access_token"]:
+            if ("access_token" in kwargs and
+                    ccc[CellCountCalibration.edit_access_token] ==
+                    kwargs["access_token"] and
+                    kwargs["access_token"]):
 
-                if ccc[CellCountCalibration.status] == CalibrationEntryStatus.UnderConstruction:
+                if (ccc[CellCountCalibration.status] ==
+                        CalibrationEntryStatus.UnderConstruction):
 
                     del kwargs["access_token"]
                     return f(identifier, *args, **kwargs)
@@ -234,7 +259,10 @@ def _get_ccc_identifier(species, reference):
         return None
 
     candidate = re.sub(r'[^A-Z]', r'', species.upper())[:6]
-    while any(True for ccc in __CCC.itervalues() if ccc[CellCountCalibration.identifier] == candidate):
+
+    while any(True for ccc in __CCC.itervalues()
+              if ccc[CellCountCalibration.identifier] == candidate):
+
         candidate += "qwxz"[np.random.randint(0, 4)]
 
     return candidate
@@ -249,34 +277,52 @@ def __load_cccs():
 
         data = _parse_ccc(data)
 
-        if data is None or CellCountCalibration.identifier not in data or not data[CellCountCalibration.identifier]:
+        if (data is None or
+                CellCountCalibration.identifier not in data or
+                not data[CellCountCalibration.identifier]):
+
             _logger.error("Data file '{0}' is corrupt.".format(ccc_path))
+
         elif data[CellCountCalibration.identifier] in __CCC:
-            _logger.error("Duplicated identifier {0} is not allowed!".format(data[CellCountCalibration.identifier]))
+
+            _logger.error(
+                "Duplicated identifier {0} is not allowed!".format(
+                    data[CellCountCalibration.identifier]))
+
         else:
+
             __CCC[data[CellCountCalibration.identifier]] = data
 
 
 def get_active_cccs():
 
-    return {identifier: ccc for identifier, ccc in __CCC.iteritems()
-            if ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active}
+    return {
+        identifier: ccc for identifier, ccc in __CCC.iteritems()
+        if ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active}
 
 
 def get_under_construction_cccs():
 
-    return {identifier: ccc for identifier, ccc in __CCC.iteritems()
-            if ccc[CellCountCalibration.status] == CalibrationEntryStatus.UnderConstruction}
+    return {
+        identifier: ccc for identifier, ccc in __CCC.iteritems()
+        if ccc[CellCountCalibration.status] ==
+        CalibrationEntryStatus.UnderConstruction}
 
 
 def add_ccc(ccc):
 
-    if ccc[CellCountCalibration.identifier] and ccc[CellCountCalibration.identifier] not in __CCC:
+    if (ccc[CellCountCalibration.identifier] and
+            ccc[CellCountCalibration.identifier] not in __CCC):
+
         __CCC[ccc[CellCountCalibration.identifier]] = ccc
         save_ccc_to_disk(ccc[CellCountCalibration.identifier])
         return True
+
     else:
-        _logger.error("'{0}' is not a valid new CCC identifier".format(ccc[CellCountCalibration.identifier]))
+
+        _logger.error(
+            "'{0}' is not a valid new CCC identifier".format(
+                ccc[CellCountCalibration.identifier]))
         return False
 
 @_validate_ccc_edit_request
@@ -312,13 +358,17 @@ def delete_ccc(identifier):
 
 def save_ccc_to_disk(identifier):
 
-    if identifier in __CCC and \
-            __CCC[identifier][CellCountCalibration.status] is CalibrationEntryStatus.UnderConstruction:
+    if (identifier in __CCC and
+            __CCC[identifier][CellCountCalibration.status] is
+            CalibrationEntryStatus.UnderConstruction):
+
         _save_ccc_to_disk(__CCC[identifier])
+
     elif identifier not in __CCC:
         _logger.error("Unknown CCC identifier {0}".format(identifier))
     else:
-        _logger.error("Can only save changes to CCC:s that are under construction")
+        _logger.error(
+            "Can only save changes to CCC:s that are under construction")
 
 
 def _encode_val(v):
@@ -364,7 +414,9 @@ def _parse_ccc(data):
 
     for ccc_data_type in CellCountCalibration:
         if ccc_data_type not in data:
-            _logger.error("Corrupt CCC-data, missing {0} in {1}".format(ccc_data_type, data))
+            _logger.error(
+                "Corrupt CCC-data, missing {0} in {1}".format(
+                    ccc_data_type, data))
             return None
 
     return data
@@ -416,7 +468,10 @@ def get_image_identifiers_in_ccc(identifier):
 
         ccc = __CCC[identifier]
 
-        return [im_json[CCCImage.identifier] for im_json in ccc[CellCountCalibration.images]]
+        return [
+            im_json[CCCImage.identifier] for im_json in
+            ccc[CellCountCalibration.images]
+        ]
 
     return False
 
@@ -443,7 +498,9 @@ def set_image_info(identifier, image_identifier, **kwargs):
 
 
 @_validate_ccc_edit_request
-def set_plate_grid_info(identifier, image_identifier, plate, grid_shape=None, grid_cell_size=None, **kwargs):
+def set_plate_grid_info(
+        identifier, image_identifier, plate,
+        grid_shape=None, grid_cell_size=None, **kwargs):
 
     ccc = __CCC[identifier]
     im_json = get_image_json_from_ccc(identifier, image_identifier)
@@ -452,7 +509,10 @@ def set_plate_grid_info(identifier, image_identifier, plate, grid_shape=None, gr
         if plate_json[CCCPlate.compressed_ccc_data]:
             return False
     else:
-        plate_json = {CCCPlate.grid_cell_size: None, CCCPlate.grid_shape: None, CCCPlate.compressed_ccc_data: []}
+        plate_json = {
+            CCCPlate.grid_cell_size: None,
+            CCCPlate.grid_shape: None, CCCPlate.compressed_ccc_data: []
+        }
         im_json[CCCImage.plates][plate] = plate_json
 
     plate_json[CCCPlate.grid_cell_size] = grid_cell_size
@@ -507,8 +567,10 @@ def get_local_fixture_for_image(identifier, image_identifier):
 
     fixture = FixtureImage(fixture_settings)
     current_settings = fixture['current']
-    current_settings.model.orientation_marks_x = np.array(im_json[CCCImage.marker_x])
-    current_settings.model.orientation_marks_y = np.array(im_json[CCCImage.marker_y])
+    current_settings.model.orientation_marks_x = np.array(
+        im_json[CCCImage.marker_x])
+    current_settings.model.orientation_marks_y = np.array(
+        im_json[CCCImage.marker_y])
     issues = {}
     fixture.set_current_areas(issues)
 
@@ -520,17 +582,25 @@ def get_local_fixture_for_image(identifier, image_identifier):
 
 
 @_validate_ccc_edit_request
-def save_image_slices(identifier, image_identifier, grayscale_slice=None, plate_slices=None):
+def save_image_slices(
+        identifier, image_identifier, grayscale_slice=None, plate_slices=None):
 
-    im = load_image_to_numpy(Paths().ccc_image_pattern.format(identifier, image_identifier), dtype=np.uint8)
+    im = load_image_to_numpy(
+        Paths().ccc_image_pattern.format(identifier, image_identifier),
+        dtype=np.uint8)
+
     if grayscale_slice:
-        np.save(Paths().ccc_image_gs_slice_pattern.format(identifier, image_identifier),
-                _get_im_slice(im, grayscale_slice))
+        np.save(
+            Paths().ccc_image_gs_slice_pattern.format(
+                identifier, image_identifier),
+            _get_im_slice(im, grayscale_slice))
 
     if plate_slices:
         for plate_model in plate_slices:
-            np.save(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, plate_model.index),
-                    _get_im_slice(im, plate_model))
+            np.save(
+                Paths().ccc_image_plate_slice_pattern.format(
+                    identifier, image_identifier, plate_model.index),
+                _get_im_slice(im, plate_model))
 
     return True
 
@@ -546,27 +616,35 @@ def _get_im_slice(im, model):
 def get_grayscale_slice(identifier, image_identifier):
 
     try:
-        return np.load(Paths().ccc_image_gs_slice_pattern.format(identifier, image_identifier))
+        return np.load(Paths().ccc_image_gs_slice_pattern.format(
+            identifier, image_identifier))
     except IOError:
         return None
 
 
-def get_plate_slice(identifier, image_identifier, id_plate, gs_transformed=False):
+def get_plate_slice(
+        identifier, image_identifier, id_plate, gs_transformed=False):
 
     if gs_transformed:
         try:
-            return np.load(Paths().ccc_image_plate_transformed_slice_pattern.format(
-                identifier, image_identifier, id_plate))
+            return np.load(
+                Paths().ccc_image_plate_transformed_slice_pattern.format(
+                    identifier, image_identifier, id_plate))
         except IOError:
-            _logger.error("Problem loading: {0}".format(Paths().ccc_image_plate_transformed_slice_pattern.format(
-                identifier, image_identifier, id_plate)))
+            _logger.error("Problem loading: {0}".format(
+                Paths().ccc_image_plate_transformed_slice_pattern.format(
+                    identifier, image_identifier, id_plate)))
             return None
     else:
         try:
-            return np.load(Paths().ccc_image_plate_slice_pattern.format(identifier, image_identifier, id_plate))
+            return np.load(
+                Paths().ccc_image_plate_slice_pattern.format(
+                    identifier, image_identifier, id_plate))
         except IOError:
-            _logger.error("Problem loading: {0}".format(Paths().ccc_image_plate_slice_pattern.format(
-                identifier, image_identifier, id_plate)))
+            _logger.error(
+                "Problem loading: {0}".format(
+                    Paths().ccc_image_plate_slice_pattern.format(
+                        identifier, image_identifier, id_plate)))
             return None
 
 
@@ -575,13 +653,18 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
 
     im_json = get_image_json_from_ccc(identifier, image_identifier)
     if not im_json:
-        _logger.error("CCC {0} Image {1} has not been setup, you must first add the image before working on it.".format(
-            identifier, image_identifier))
+        _logger.error(
+            "CCC {0} Image {1} has not been setup,".format(
+                identifier, image_identifier) +
+            " you must first add the image before working on it.")
 
-    plate = get_plate_slice(identifier, image_identifier, plate_id, gs_transformed=False)
+    plate = get_plate_slice(
+        identifier, image_identifier, plate_id, gs_transformed=False)
+
     if plate is None:
-        _logger.error("No plate slice has been saved for {0}:{1}: plate {2}".format(
-            identifier, image_identifier, plate_id))
+        _logger.error(
+            "No plate slice has been saved for {0}:{1}: plate {2}".format(
+                identifier, image_identifier, plate_id))
         return False
 
     grayscale_values = im_json[CCCImage.grayscale_source_values]
@@ -595,18 +678,22 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
         targetValues=grayscale_targets)
 
     try:
-        np.save(Paths().ccc_image_plate_transformed_slice_pattern.format(identifier, image_identifier, plate_id),
-                transpose_polynomial(plate))
+        np.save(
+            Paths().ccc_image_plate_transformed_slice_pattern.format(
+                identifier, image_identifier, plate_id),
+            transpose_polynomial(plate))
         return True
     except IOError:
-        _logger.error("Problem saving: {0}".format(Paths().ccc_image_plate_transformed_slice_pattern.format(
-            identifier, image_identifier, plate_id)))
+        _logger.error("Problem saving: {0}".format(
+            Paths().ccc_image_plate_transformed_slice_pattern.format(
+                identifier, image_identifier, plate_id)))
         return False
 
 
 @_validate_ccc_edit_request
-def set_colony_compressed_data(identifier, image_identifier, plate_id, x, y, included=True,
-                               image=None, blob_filter=None, background_filter=None):
+def set_colony_compressed_data(
+        identifier, image_identifier, plate_id, x, y, included=True,
+        image=None, blob_filter=None, background_filter=None):
 
     ccc = __CCC[identifier]
     only_update_included = True
@@ -614,15 +701,19 @@ def set_colony_compressed_data(identifier, image_identifier, plate_id, x, y, inc
         only_update_included = False
         background = mid50_mean(image[background_filter].ravel())
         if np.isnan(background):
-            _logger.error("The background had too little information to make mid50 mean")
+            _logger.error(
+                "The background had too little information to make mid50 mean")
             return False
 
         colony = image[blob_filter].ravel() - background
 
-        values, counts = zip(*{k: (colony == k).sum() for k in np.unique(colony).tolist()}.iteritems())
+        values, counts = zip(
+            *{k: (colony == k).sum() for k in
+              np.unique(colony).tolist()}.iteritems())
 
         if np.sum(counts) != blob_filter.sum():
-            _logger.error("Counting mismatch between compressed format and blob filter")
+            _logger.error(
+                "Counting mismatch between compressed format and blob filter")
             return False
 
         image_data = get_image_json_from_ccc(identifier, image_identifier)
@@ -641,20 +732,28 @@ def set_colony_compressed_data(identifier, image_identifier, plate_id, x, y, inc
 
     if only_update_included:
 
-        if included and not (plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_values] or
-                             plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_value_counts]):
+        if included and not (
+                plate[CCCPlate.compressed_ccc_data][x][y][
+                    CCCMeasurement.source_values] or
+                plate[CCCPlate.compressed_ccc_data][x][y]
+                    [CCCMeasurement.source_value_counts]):
 
             _logger.warning(
-                "Attempting to include CCC Measurement for position {0}, {1} while it has no data".format(x, y))
+                "Attempting to include CCC Measurement for position " +
+                "{0}, {1} while it has no data".format(x, y))
 
             return False
 
-        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.included] = included
+        plate[CCCPlate.compressed_ccc_data][x][y][
+            CCCMeasurement.included] = included
 
     else:
-        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.included] = included
-        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_value_counts] = counts
-        plate[CCCPlate.compressed_ccc_data][x][y][CCCMeasurement.source_values] = values
+        plate[CCCPlate.compressed_ccc_data][x][y][
+            CCCMeasurement.included] = included
+        plate[CCCPlate.compressed_ccc_data][x][y][
+            CCCMeasurement.source_value_counts] = counts
+        plate[CCCPlate.compressed_ccc_data][x][y][
+            CCCMeasurement.source_values] = values
 
     _save_ccc_to_disk(ccc)
 
@@ -707,7 +806,8 @@ def _parse_data(entry):
         entry = json.loads(entry)
     except ValueError:
         # Try parsing old format
-        entry = {k.name: _eval_deprecated_format(eval(entry), k) for k in CalibrationEntry}
+        entry = {k.name: _eval_deprecated_format(eval(entry), k)
+                 for k in CalibrationEntry}
 
     return {CalibrationEntry[k]: v for k, v in entry.iteritems()}
 
@@ -716,7 +816,11 @@ def _valid_entry(entry):
 
     if entry is None:
         return False
-    return CalibrationEntry.target_value in entry and CalibrationEntry.source_value_counts in entry and CalibrationEntry.source_values in entry
+
+    return (
+        CalibrationEntry.target_value in entry and
+        CalibrationEntry.source_value_counts in entry and
+        CalibrationEntry.source_values in entry)
 
 
 def _jsonify_entry(entry):
@@ -770,15 +874,20 @@ def load_data_file(file_path=None, label=''):
                         entry = None
 
                     if _valid_entry(entry):
-                        data_store[CalibrationEntry.source_value_counts].append(
-                            entry[CalibrationEntry.source_value_counts])
-                        data_store[CalibrationEntry.source_values].append(
-                            entry[CalibrationEntry.source_values])
-                        data_store[CalibrationEntry.target_value].append(
-                            entry[CalibrationEntry.target_value])
+                        data_store[
+                            CalibrationEntry.source_value_counts].append(
+                                entry[CalibrationEntry.source_value_counts])
+                        data_store[
+                            CalibrationEntry.source_values].append(
+                                entry[CalibrationEntry.source_values])
+                        data_store[
+                            CalibrationEntry.target_value].append(
+                                entry[CalibrationEntry.target_value])
 
                     else:
-                        _logger.warning("Could not parse line {0}: '{1}' in {2}".format(i, line.strip(), file_path))
+                        _logger.warning(
+                            "Could not parse line {0}: '{1}' in {2}".format(
+                                i, line.strip(), file_path))
 
     except IOError:
         raise IOError("File at {0} not found".format(file_path))
@@ -812,7 +921,9 @@ def get_calibration_polynomial(coefficients_array):
 def _get_expanded_data(data_store):
 
     measures = min(len(data_store[k]) for k in
-                   (CalibrationEntry.target_value, CalibrationEntry.source_values, CalibrationEntry.source_value_counts))
+                   (CalibrationEntry.target_value,
+                    CalibrationEntry.source_values,
+                    CalibrationEntry.source_value_counts))
 
     x = np.empty((measures,), dtype=object)
     y = np.zeros((measures,), dtype=np.float64)
@@ -825,7 +936,8 @@ def _get_expanded_data(data_store):
 
     for pos in range(measures):
 
-        x[pos] = _expand_compressed_vector(values[pos], counts[pos], dtype=np.float64)
+        x[pos] = _expand_compressed_vector(
+            values[pos], counts[pos], dtype=np.float64)
         y[pos] = targets[pos]
 
         if x_min is None or x_min > x[pos].min():
@@ -841,7 +953,8 @@ def _get_expanded_data(data_store):
 
 def _expand_compressed_vector(values, counts, dtype):
 
-    return np.hstack((np.repeat(value, count) for value, count in izip(values, counts))).astype(dtype)
+    return np.hstack((np.repeat(value, count)
+                      for value, count in izip(values, counts))).astype(dtype)
 
 
 def poly_as_text(poly):
@@ -892,7 +1005,9 @@ def load_calibrations(file_path=None):
                         key, value = eval(l)
                         data[key] = value
                     except (TypeError, ValueError):
-                        _logger.info("Skipping line {0}: '{0}' (can't parse)".format(i, l.strip()))
+                        _logger.info(
+                            "Skipping line {0}: '{0}' (can't parse)".format(
+                                i, l.strip()))
 
     except IOError:
         _logger.warning("Could not locate file '{0}'".format(file_path))
@@ -912,7 +1027,8 @@ def load_calibration(label="", poly_degree=None, file_path=None):
         if k.startswith(label):
 
             if poly_degree is None:
-                _logger.info("Using polynomial {0}: {1}".format(k, poly_as_text(data[k])))
+                _logger.info("Using polynomial {0}: {1}".format(
+                    k, poly_as_text(data[k])))
 
             return data[k]
 
@@ -925,7 +1041,8 @@ def _safe_copy_file_if_needed(file_path):
         local_zone = tz.gettz()
         stamp = datetime.fromtimestamp(time.time(), local_zone).isoformat()
 
-        target = "{0}.{1}.polynomials".format(file_path.rstrip("polynomials"), stamp)
+        target = "{0}.{1}.polynomials".format(
+            file_path.rstrip("polynomials"), stamp)
         shutil.copy(file_path, target)
 
 
@@ -940,7 +1057,8 @@ def add_calibration(label, poly, file_path=None):
 
     key = "{0}_{1}".format(label, len(poly) - 1)
     if key in data:
-        _logger.warning("Replacing previous calibration {0}: {1}".format(key, data[key]))
+        _logger.warning(
+            "Replacing previous calibration {0}: {1}".format(key, data[key]))
 
     data[key] = poly.tolist() if hasattr(poly, 'tolist') else poly
 
@@ -978,8 +1096,9 @@ def remove_calibration(label, degree=None, file_path=None):
         return True
 
     else:
-        _logger.warning("No polynomial was found matching the criteria (label={0}, degree={1}".format(
-            label, degree))
+        _logger.warning(
+            "No polynomial was found matching the criteria" +
+            " (label={0}, degree={1}".format(label, degree))
         return False
 
 
@@ -1002,7 +1121,7 @@ def _get_all_grid_shapes(ccc):
 def add_external_data_to_ccc(identifier, data_file, report):
 
     report['warnings'] = []
-    filetype = data_file.split(".")[-1].lower()
+    filetype = data_file.filename.split(".")[-1].lower()
     if filetype not in ['.xls', '.xlsx', '.csv']:
         report['errors'] = 'File format {0} not supported'.format(filetype)
         return False
@@ -1024,7 +1143,7 @@ def add_external_data_to_ccc(identifier, data_file, report):
     report['errors'] = []
     for id_plate, measurement_set in enumerate(measurements):
         for id_outer, outer in enumerate(measurement_set):
-            for id_inner, compressed_measurement in enumerate(measurement_set):
+            for id_inner, compressed_measurement in enumerate(outer):
                 measured = compressed_measurement[CCCMeasurement.included]
                 independent_data = meta_data[id_plate][id_outer][id_inner][-1]
                 independent_data = (
