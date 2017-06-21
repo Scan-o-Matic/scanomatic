@@ -4,6 +4,7 @@ import glob
 import time
 import webbrowser
 from flask import Flask, request, send_from_directory, redirect, jsonify, render_template
+from flask_cors import CORS
 
 from socket import error
 from threading import Thread, Timer
@@ -535,13 +536,25 @@ def launch_server(host, port, debug):
     calibration_api.add_routes(app)
 
     if debug:
-        _logger.info("Running in debug mode.")
+        CORS(app)
+        _logger.warning(
+            "\nRunning in debug mode, causes sequrity vunerabilities:\n" +
+            " * Remote code execution\n" +
+            " * Cross-site request forgery\n" +
+            "   (https://en.wikipedia.org/wiki/Cross-site_request_forgery)\n" +
+            "\nAnd possibly more issues"
+
+        )
     try:
         app.run(port=port, host=host, debug=debug)
     except error:
-        _logger.warning("Could not bind socket, probably server is already running and this is nothing to worry about."
-                        "\n\tIf old server is not responding, try killing its process."
-                        "\n\tIf something else is blocking the port, try setting another port using --help.")
+        _logger.warning(
+            "Could not bind socket, probably server is already running and" +
+            " this is nothing to worry about." +
+            "\n\tIf old server is not responding, try killing its process." +
+            "\n\tIf something else is blocking the port," +
+            " try setting another port" +
+            " (see `scan-o-matic --help` for instructions).")
         return False
     return True
 
