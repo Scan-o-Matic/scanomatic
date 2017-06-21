@@ -4,6 +4,7 @@ import glob
 import time
 import webbrowser
 from flask import Flask, request, send_from_directory, redirect, jsonify, render_template
+from flask_cors import CORS
 
 from socket import error
 from threading import Thread, Timer
@@ -535,7 +536,8 @@ def launch_server(host, port, debug):
     calibration_api.add_routes(app)
 
     if debug:
-        _logger.info("Running in debug mode.")
+        CORS(app)
+        _logger.info("Running in debug mode, allowing CORS.")
     try:
         app.run(port=port, host=host, debug=debug)
     except error:
