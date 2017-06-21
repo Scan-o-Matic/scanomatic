@@ -3,6 +3,7 @@
 *.tmp_config
 *.aux
 .*.swp
+.~*
 /.tox
 /coverage.xml
 /result.xml
@@ -26,3 +27,4 @@ GIT_HELP
 scripts/scan-o-matic_job
 /.idea
 nohup.out
+data/config/rpc.admin

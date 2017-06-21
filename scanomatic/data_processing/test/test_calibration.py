@@ -6,6 +6,15 @@ from scanomatic.data_processing import calibration
 data = calibration.load_data_file()
 
 
+@pytest.fixture(scope='module')
+def ccc():
+
+    _ccc = calibration.get_empty_ccc('test-ccc', 'pytest')
+    calibration.__CCC[_ccc[calibration.CellCountCalibration.identifier]] = _ccc
+    yield _ccc
+    del calibration.__CCC[_ccc[calibration.CellCountCalibration.identifier]]
+
+
 def test_load_data():
 
     assert calibration.load_data_file() is not None
@@ -20,14 +29,16 @@ def test_expand_data_lenghts():
 
     counts = data[calibration.CalibrationEntry.source_value_counts]
     exp_vals, _, _, _ = calibration._get_expanded_data(data)
-    assert all(np.sum(c) == len(v) for c, v in zip(counts, exp_vals)), list((np.sum(c), len(v)) for c, v in zip(counts, exp_vals))
+    assert all(np.sum(c) == len(v) for c, v in zip(counts, exp_vals))
 
 
 def test_expand_data_sums():
 
     counts = data[calibration.CalibrationEntry.source_value_counts]
     values = data[calibration.CalibrationEntry.source_values]
-    data_sums = np.array(tuple(np.sum(np.array(c) * np.array(v)) for c, v in zip(counts, values)))
+    data_sums = np.array(
+        tuple(np.sum(np.array(c) * np.array(v))
+              for c, v in zip(counts, values)))
 
     exp_vals, _, _, _ = calibration._get_expanded_data(data)
     expanded_sums = np.array(tuple(v.sum() for v in exp_vals), dtype=np.float)
@@ -37,7 +48,9 @@ def test_expand_data_sums():
 def test_expand_data_targets():
 
     _, targets, _, _ = calibration._get_expanded_data(data)
-    np.testing.assert_allclose(targets.astype(np.float), data[calibration.CalibrationEntry.target_value])
+    np.testing.assert_allclose(
+        targets.astype(np.float),
+        data[calibration.CalibrationEntry.target_value])
 
 
 def test_expand_vector_length():
@@ -102,3 +115,22 @@ def test_get_im_slice():
     model_tuple = namedtuple("Model", ['x1', 'x2', 'y1', 'y2'])
     model = model_tuple(1.5, 3.5, 2.5, 4.5)
     assert calibration._get_im_slice(image, model).sum() == 207
+
+
+class TestAccessToken:
+
+    def test_invalid_token(self, ccc):
+
+        assert not calibration.is_valid_token(
+            ccc[calibration.CellCountCalibration.identifier])
+
+        assert not calibration.is_valid_token(
+            ccc[calibration.CellCountCalibration.identifier],
+            access_token='bad')
+
+    def test_valid_token(self, ccc):
+
+        assert calibration.is_valid_token(
+            ccc[calibration.CellCountCalibration.identifier],
+            access_token=ccc[
+                calibration.CellCountCalibration.edit_access_token]) is True

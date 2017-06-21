@@ -14,16 +14,13 @@ from scanomatic.models.analysis_model import COMPARTMENTS, VALUES
 from scanomatic.image_analysis.grid_cell import GridCell
 from scanomatic.image_analysis.grid_array import GridArray
 from scanomatic.image_analysis.grayscale import getGrayscale
-from scanomatic.image_analysis.image_grayscale import get_grayscale_image_analysis
+from scanomatic.image_analysis.image_grayscale import (
+    get_grayscale_image_analysis)
 from scanomatic.image_analysis import image_basics
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
 from scanomatic.data_processing import calibration
-from scanomatic.data_processing.calibration import (
-    add_calibration, calculate_polynomial,
-    load_calibration, validate_polynomial, CalibrationValidation,
-    delete_ccc, get_data_file_path,
-)
+from scanomatic.data_processing.calibration import delete_ccc
 from .general import (
     serve_numpy_as_image, get_grayscale_is_valid, valid_array_dimensions,
     json_abort
@@ -577,19 +574,8 @@ def add_routes(app):
                 is_endpoint=True,
                 reason="Invalid access token")
 
-        if not calbiration.save_and_parse_external_data(
-                ccc_identifier,
-                population_size_data,
-                access_token=data_object.get("access_token")):
-
-            return json_abort(
-                400,
-                success=False,
-                is_endpoint=True,
-                reason="Data not understandable")
-
         report = {}
-        if calibraion.validate_external_data(
+        if calibration.add_external_data_to_ccc(
                 ccc_identifier,
                 population_size_data,
                 access_token=data_object.get("access_token"),
@@ -616,7 +602,7 @@ def add_routes(app):
             data_object = request.values
 
         if not calibration.is_valid_token(
-                ccc_identifier,
+                identifier,
                 access_token=data_object.get("access_token")):
 
             return json_abort(
