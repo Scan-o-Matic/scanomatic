@@ -537,13 +537,23 @@ def launch_server(host, port, debug):
 
     if debug:
         CORS(app)
-        _logger.info("Running in debug mode, allowing CORS.")
+        _logger.warning(
+            "\nRunning in debug mode, causes sequrity vunerabilities:\n" +
+            " * Remote code execution\n" +
+            " * Cross-site request forgery\n" +
+            "   (https://en.wikipedia.org/wiki/Cross-site_request_forgery)\n" +
+            "\nAnd possibly more issues"
+
+        )
     try:
         app.run(port=port, host=host, debug=debug)
     except error:
-        _logger.warning("Could not bind socket, probably server is already running and this is nothing to worry about."
-                        "\n\tIf old server is not responding, try killing its process."
-                        "\n\tIf something else is blocking the port, try setting another port using --help.")
+        _logger.warning(
+            "Could not bind socket, probably server is already running and" +
+            " this is nothing to worry about." +
+            "\n\tIf old server is not responding, try killing its process." +
+            "\n\tIf something else is blocking the port," +
+            " try setting another port using --help.")
         return False
     return True
 
