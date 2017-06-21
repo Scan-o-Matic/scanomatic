@@ -1122,10 +1122,15 @@ def _get_all_grid_shapes(ccc):
 @_validate_ccc_edit_request
 def add_external_data_to_ccc(identifier, data_file, report):
 
-    report['warnings'] = []
+    warnings = report.get('warnings', [])
+    report['warnings'] = warnings
+
+    errors = report.get('errors', [])
+    report['errors'] = errors
+
     filetype = data_file.filename.split(".")[-1].lower()
     if filetype not in ['.xls', '.xlsx', '.csv']:
-        report['errors'] = 'File format {0} not supported'.format(filetype)
+        errors.append('File format {0} not supported'.format(filetype))
         return False
 
     ccc = __CCC[identifier]
@@ -1137,12 +1142,12 @@ def add_external_data_to_ccc(identifier, data_file, report):
     grid_shapes, measurements = _get_all_grid_shapes(ccc)
     meta_data = MetaData(grid_shapes, file_path)
     if not meta_data.loaded:
-        report['errors'] = (
+        errors.append(
             'File could not be understood in terms of plates included'
             '(Grid shapes: {0})'.format(grid_shapes))
         return False
 
-    report['errors'] = []
+    data_errors = False
     for id_plate, measurement_set in enumerate(measurements):
         for id_outer, outer in enumerate(measurement_set):
             for id_inner, compressed_measurement in enumerate(outer):
@@ -1154,19 +1159,21 @@ def add_external_data_to_ccc(identifier, data_file, report):
                     independent_data > 0)
 
                 if independent_data and not measured:
-                    report['warnings'].append(
+                    warnings.append(
                         "Plate {0}, Pos ({1}, {2}) is not included but has independent data {3}".format(
                             id_plate, id_outer, id_inner,
                             meta_data[id_plate][id_outer][id_inner]))
 
                 elif not independent_data and measured:
 
-                    report['errors'].append(
+                    errors.append(
                         "Plate {0}, Pos ({1}, {2}) is included but has no valid independent data {3}".format(
                             id_plate, id_outer, id_inner,
                             meta_data[id_plate][id_outer][id_inner]))
 
-    if report['errors']:
+                    data_errors = True
+
+    if data_errors:
         return False
 
     ccc[CellCountCalibration.independent_data] = (
