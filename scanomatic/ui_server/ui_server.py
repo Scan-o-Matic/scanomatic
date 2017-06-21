@@ -553,7 +553,8 @@ def launch_server(host, port, debug):
             " this is nothing to worry about." +
             "\n\tIf old server is not responding, try killing its process." +
             "\n\tIf something else is blocking the port," +
-            " try setting another port using --help.")
+            " try setting another port" +
+            " (see `scan-o-matic --help` for instructions).")
         return False
     return True
 
