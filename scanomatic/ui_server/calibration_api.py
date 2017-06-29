@@ -42,24 +42,50 @@ def add_routes(app):
 
         try:
             identifiers, cccs = zip(*calibration.get_active_cccs().iteritems())
-            return jsonify(success=True, is_endpoint=True, identifiers=identifiers,
-                           species=[ccc[calibration.CellCountCalibration.species] for ccc in cccs],
-                           references=[ccc[calibration.CellCountCalibration.reference] for ccc in cccs])
+            return jsonify(
+                success=True,
+                is_endpoint=True,
+                identifiers=identifiers,
+                species=[
+                    ccc[calibration.CellCountCalibration.species]
+                    for ccc in cccs],
+                references=[
+                    ccc[calibration.CellCountCalibration.reference]
+                    for ccc in cccs]
+            )
         except ValueError:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="There are no registered CCC, Scan-o-Matic won't work before at least one is added")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="There are no registered CCC, Scan-o-Matic won't " +
+                "work before at least one is added"
+            )
 
     @app.route("/api/calibration/under_construction", methods=['GET'])
     def get_under_construction_calibrations():
 
         try:
-            identifiers, cccs = zip(*calibration.get_under_construction_cccs().iteritems())
-            return jsonify(success=True, is_endpoint=True, identifiers=identifiers,
-                           species=[ccc[calibration.CellCountCalibration.species] for ccc in cccs],
-                           references=[ccc[calibration.CellCountCalibration.reference] for ccc in cccs])
+            identifiers, cccs = zip(
+                *calibration.get_under_construction_cccs().iteritems())
+            return jsonify(
+                success=True,
+                is_endpoint=True,
+                identifiers=identifiers,
+                species=[
+                    ccc[calibration.CellCountCalibration.species]
+                    for ccc in cccs],
+                references=[
+                    ccc[calibration.CellCountCalibration.reference]
+                    for ccc in cccs]
+            )
         except ValueError:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="No CCCs are under constructions")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="No CCCs are under constructions"
+            )
 
     @app.route("/api/calibration/initiate_new", methods=['POST'])
     def initiate_new_ccc():
@@ -72,19 +98,30 @@ def add_routes(app):
         reference = data_object.get("reference")
         ccc = calibration.get_empty_ccc(species, reference)
         if ccc is None:
-            return jsonify(success=False, is_endpoint=True, reason="Combination of species and reference not unique")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Combination of species and reference not unique"
+            )
 
         success = calibration.add_ccc(ccc)
 
         if not success:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Possibly someone just beat you to that combination of species and reference!")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Possibly someone just beat you to that combination " +
+                "of species and reference!"
+            )
 
         return jsonify(
             success=True,
             is_endpoint=True,
             identifier=ccc[calibration.CellCountCalibration.identifier],
-            access_token=ccc[calibration.CellCountCalibration.edit_access_token])
+            access_token=ccc[calibration.CellCountCalibration.edit_access_token]
+        )
 
     @app.route("/api/calibration/<ccc_identifier>/add_image", methods=['POST'])
     def upload_ccc_image(ccc_identifier):
@@ -95,24 +132,47 @@ def add_routes(app):
 
         image = request.files.get('image', default=None)
         if image is None:
-            return jsonify(success=False, is_endpoint=True, reason="Didn't get any image")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Didn't get any image"
+            )
 
         image_identifier = calibration.add_image_to_ccc(
             ccc_identifier, image, access_token=data_object.get("access_token"))
 
         if not image_identifier:
-            return jsonify(success=False, is_endpoint=True, reason="Refused to save image, probably bad access token")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Refused to save image, probably bad access token"
+            )
 
-        return jsonify(success=True, is_endpoint=True, image_identifier=image_identifier)
+        return jsonify(
+            success=True,
+            is_endpoint=True,
+            image_identifier=image_identifier
+        )
 
     @app.route("/api/calibration/<ccc_identifier>/image_list", methods=['GET'])
     def list_ccc_images(ccc_identifier):
 
         image_list = calibration.get_image_identifiers_in_ccc(ccc_identifier)
         if image_list is False:
-            return jsonify(success=False, is_endpoint=True, reason="No such ccc known")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="No such ccc known"
+            )
 
-        return jsonify(success=True, is_endpoint=True, image_identifiers=image_list)
+        return jsonify(
+            success=True,
+            is_endpoint=True,
+            image_identifiers=image_list
+        )
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/get", methods=['GET'])
     def download_ccc_image(ccc_identifier, image_identifier):
@@ -168,19 +228,37 @@ def add_routes(app):
             ccc_identifier, image_identifier, access_token=data_object.get("access_token"), **data_update)
 
         if not success:
-            return jsonify(success=False, is_endpoint=True, reason="Update refused, probably bad access token")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Update refused, probably bad access token"
+            )
 
-        return jsonify(success=True, is_endpoint=True)
+        return jsonify(
+            success=True,
+            is_endpoint=True
+        )
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/data/get", methods=['GET'])
     def get_ccc_image_data(ccc_identifier, image_identifier):
 
         data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
         if data is None:
-            return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="The image or CCC don't exist"
+            )
 
-        return jsonify(success=True, is_endpoint=True,
-                       **{k.name: val for k, val in data.iteritems() if k is not calibration.CCCImage.plates})
+        return jsonify(
+            success=True,
+            is_endpoint=True,
+            **{
+                k.name: val for k, val in data.iteritems()
+                if k is not calibration.CCCImage.plates}
+        )
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/set", methods=['POST'])
     def slice_ccc_image(ccc_identifier, image_identifier):
@@ -191,8 +269,13 @@ def add_routes(app):
 
         data = calibration.get_local_fixture_for_image(ccc_identifier, image_identifier)
         if data is None:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="The image or CCC don't exist or not enough info set to do slice")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="The image or CCC don't exist or not enough info set " +
+                "to do slice"
+            )
 
         success = calibration.save_image_slices(
             ccc_identifier, image_identifier,
@@ -201,9 +284,17 @@ def add_routes(app):
             access_token=data_object.get("access_token"))
 
         if not success:
-            return jsonify(success=False, is_endpoint=True, reason="Probably not the correct access token.")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Probably not the correct access token."
+            )
 
-        return jsonify(success=True, is_endpoint=True)
+        return jsonify(
+            success=True,
+            is_endpoint=True
+        )
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/get/<slice>", methods=['GET'])
     def get_ccc_image_slice(ccc_identifier, image_identifier, slice):
@@ -215,12 +306,19 @@ def add_routes(app):
         :return:
         """
         if slice.lower() == 'gs':
-            im = calibration.get_grayscale_slice(ccc_identifier, image_identifier)
+            im = calibration.get_grayscale_slice(
+                ccc_identifier, image_identifier)
         else:
-            im = calibration.get_plate_slice(ccc_identifier, image_identifier, slice, gs_transformed=False)
+            im = calibration.get_plate_slice(
+                ccc_identifier, image_identifier, slice, gs_transformed=False)
 
         if im is None:
-            return jsonify(success=False, is_endpoint=True, reason="No such image slice exists, has it been sliced?")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="No such image slice exists, has it been sliced?"
+            )
         return serve_numpy_as_image(im)
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/grayscale/analyse", methods=['POST'])
@@ -235,13 +333,23 @@ def add_routes(app):
         try:
             gs_name = image_data[calibration.CCCImage.grayscale_name]
         except TypeError:
-            return jsonify(success=False, is_endpoint=True, reason='Unknown image or CCC')
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason='Unknown image or CCC'
+            )
 
         _, values = get_grayscale_image_analysis(gs_image, gs_name, debug=False)
         grayscale_object = getGrayscale(gs_name)
         valid = get_grayscale_is_valid(values, grayscale_object)
         if not valid:
-            return jsonify(success=False, is_endpoint=True, reason='Grayscale results are not valid')
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason='Grayscale results are not valid'
+            )
 
         success = calibration.set_image_info(
             ccc_identifier, image_identifier,
@@ -251,13 +359,22 @@ def add_routes(app):
 
         if success:
 
-            return jsonify(success=True, is_endpoint=True, source_values=values,
-                           target_values=grayscale_object['targets'])
+            return jsonify(
+                success=True,
+                is_endpoint=True,
+                source_values=values,
+                target_values=grayscale_object['targets']
+            )
 
         else:
 
-            return jsonify(success=False, is_endpoint=True,
-                           reason='Refused to set image grayscale info, probably bad access token')
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Refused to set image grayscale info, probably bad " +
+                "access token"
+            )
 
     @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/transform", methods=['POST'])
     def get_ccc_image_plate_transform(ccc_identifier, image_identifier, plate):
@@ -269,10 +386,18 @@ def add_routes(app):
         success = calibration.transform_plate_slice(ccc_identifier, image_identifier, plate,
                                                     access_token=data_object.get("access_token"))
         if not success:
-            return jsonify(success=False, is_endpoint=True,
-                           reason="Probably bad access token or not having sliced image and analysed grayscale first")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Probably bad access token or not having sliced " +
+                "image and analysed grayscale first"
+            )
 
-        return jsonify(success=True, is_endpoint=True)
+        return jsonify(
+            success=True,
+            is_endpoint=True
+        )
 
     @app.route(
         "/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/" +
@@ -309,7 +434,8 @@ def add_routes(app):
         image_data = calibration.get_image_json_from_ccc(
             ccc_identifier, image_identifier)
         if image_data is None:
-            return jsonify(
+            return json_abort(
+                400,
                 success=False,
                 is_endpoint=True,
                 reason="The image or CCC don't exist",
@@ -318,7 +444,8 @@ def add_routes(app):
         image = calibration.get_plate_slice(
             ccc_identifier, image_identifier, plate, gs_transformed=False)
         if image is None:
-            return jsonify(
+            return json_abort(
+                400,
                 success=False,
                 is_endpoint=True,
                 reason="No such image slice exists, has it been sliced?",
@@ -336,7 +463,8 @@ def add_routes(app):
                 "Pinning-format not understood ({0})".format(
                     data_object.get("pinning_format"))
             )
-            return jsonify(
+            return json_abort(
+                400,
                 success=False,
                 is_endpoint=True,
                 reason="Bad pinning format",
@@ -351,7 +479,8 @@ def add_routes(app):
                     "Correction-format not understood ({0})".format(
                         correction)
                 )
-                return jsonify(
+                return json_abort(
+                    400,
                     success=False,
                     is_endpoint=True,
                     reason="Bad grid correction {0}".format(correction),
@@ -367,7 +496,8 @@ def add_routes(app):
         if not grid_array.detect_grid(image, grid_correction=correction):
             xy1, xy2 = get_xy1_xy2(grid_array)
 
-            return jsonify(
+            return json_abort(
+                400,
                 success=False,
                 grid=grid_array.grid[:, ::-1, :],
                 xy1=xy1,
@@ -395,7 +525,8 @@ def add_routes(app):
             access_token=data_object.get("access_token"))
 
         if not success:
-            return jsonify(
+            return json_abort(
+                400,
                 success=False,
                 is_endpoint=True,
                 grid=grid[:, ::-1, :],
@@ -421,19 +552,34 @@ def add_routes(app):
         im = calibration.get_plate_slice(ccc_identifier, image_identifier, plate, True)
 
         if im is None:
-            return jsonify(success=False, is_endpoint=True, reason="Image plate slice hasn't been prepared probably")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Image plate slice hasn't been prepared probably"
+            )
 
         grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
         try:
             grid = np.load(grid_path)
         except IOError:
-            return jsonify(success=False, is_endpoint=True, reason="Gridding is missing")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Gridding is missing"
+            )
 
         image_json = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
 
         if not image_json or plate not in image_json[calibration.CCCImage.plates]:
 
-            return jsonify(success=False, is_endpoint=True, reason="Image id not known or plate not know")
+            return json_abort(
+                400,
+                success=False,
+                is_endpoint=True,
+                reason="Image id not known or plate not know"
+            )
 
         plate_json = image_json[calibration.CCCImage.plates][plate]
         h, w = plate_json[calibration.CCCPlate.grid_cell_size]
@@ -504,69 +650,89 @@ def add_routes(app):
         if image_data is None:
             return json_abort(
                 400,
-                success=False, is_endpoint=True,
-                reason="The image or CCC don't exist")
+                success=False,
+                is_endpoint=True,
+                reason="The image or CCC don't exist"
+            )
 
         try:
             image = np.array(data_object.get("image", [[]]), dtype=np.float64)
         except TypeError:
             return json_abort(
                 400,
-                success=False, is_endpoint=True,
-                reason="Image data is not understandable as a float array")
+                success=False,
+                is_endpoint=True,
+                reason="Image data is not understandable as a float array"
+            )
 
         try:
             blob_filter = np.array(data_object.get("blob", [[]]), dtype=bool)
         except TypeError:
             return json_abort(
                 400,
-                success=False, is_endpoint=True,
-                reason="Blob filter data is not understandable as a boolean array")
+                success=False,
+                is_endpoint=True,
+                reason="Blob filter data is not understandable as a boolean " +
+                "array"
+            )
 
         try:
             background_filter = np.array(data_object.get("background", [[]]), dtype=bool)
         except TypeError:
             return json_abort(
                 400,
-                success=False, is_endpoint=True,
-                reason="Background filter data is not understandable as a boolean array")
+                success=False,
+                is_endpoint=True,
+                reason="Background filter data is not understandable as a " +
+                "boolean array"
+            )
 
         if not valid_array_dimensions(2, image, blob_filter, background_filter):
             return json_abort(
                 400,
-                success=False, is_endpoint=True,
+                success=False,
+                is_endpoint=True,
                 reason="Supplied data does not have the correct dimensions." +
                 " Image-shape is {0}, blob {1}, and bg {2}.".format(
                     image.shape, blob_filter.shape, background_filter.shape) +
-                " All need to be identical shape and 2D.")
+                " All need to be identical shape and 2D."
+            )
 
         if (blob_filter & background_filter).any():
             return json_abort(
                 400,
-                success=False, is_endpoint=True,
-                reason="Blob and background filter may not overlap")
+                success=False,
+                is_endpoint=True,
+                reason="Blob and background filter may not overlap"
+            )
 
         if not blob_filter.any():
             return json_abort(
                 400,
-                success=False, is_endpoint=False,
-                reason="Blob is empty/there's no colony detected")
+                success=False,
+                is_endpoint=False,
+                reason="Blob is empty/there's no colony detected"
+            )
 
         if background_filter.sum() < 3:
             return json_abort(
                 400,
-                success=False, is_endpoint=False,
-                reason="Background must be consisting of at least 3 pixels")
+                success=False,
+                is_endpoint=False,
+                reason="Background must be consisting of at least 3 pixels"
+            )
 
         if background_filter.sum() < 20 and not data_object.get(
                 "override_small_background", False):
 
             return json_abort(
                 400,
-                success=False, is_endpoint=True,
+                success=False,
+                is_endpoint=True,
                 reason="Background must be at least 20 pixels." +
                 " Currently only {0}.".format(background_filter.sum()) +
-                " This check can be over-ridden.")
+                " This check can be over-ridden."
+            )
 
         if calibration.set_colony_compressed_data(
                 ccc_identifier, image_identifier, plate, x, y,
@@ -575,7 +741,10 @@ def add_routes(app):
                 background_filter=background_filter,
                 access_token=data_object.get("access_token")):
 
-            return jsonify(success=True, is_endpoint=True)
+            return jsonify(
+                success=True,
+                is_endpoint=True
+            )
 
         else:
 
@@ -583,7 +752,8 @@ def add_routes(app):
                 403,
                 success=False,
                 is_endpoint=False,
-                reason="Probably invalid access token")
+                reason="Probably invalid access token"
+            )
 
     @app.route('/api/data/calibration/<ccc_identifier>/external_data/upload',
                methods=['POST'])
@@ -601,7 +771,8 @@ def add_routes(app):
                 400,
                 success=False,
                 is_endpoint=True,
-                reason="Didn't get any data")
+                reason="Didn't get any data"
+            )
 
         if not calibration.is_valid_token(
                 ccc_identifier,
@@ -611,7 +782,8 @@ def add_routes(app):
                 403,
                 success=False,
                 is_endpoint=True,
-                reason="Invalid access token")
+                reason="Invalid access token"
+            )
 
         report = {}
         if calibration.add_external_data_to_ccc(
@@ -623,7 +795,8 @@ def add_routes(app):
             return jsonify(
                 success=True,
                 is_endpoint=True,
-                report=report)
+                report=report
+            )
 
         else:
 
@@ -654,7 +827,8 @@ def add_routes(app):
 
             return jsonify(
                 success=True,
-                is_endpoint=True)
+                is_endpoint=True
+            )
 
         else:
 
@@ -662,7 +836,8 @@ def add_routes(app):
                 400,
                 success=False,
                 is_enpoint=True,
-                reason='Unexpected error removing CCC')
+                reason='Unexpected error removing CCC'
+            )
 
     """
     DEPRECATION WARNING BELOW
@@ -680,13 +855,13 @@ def add_routes(app):
 
         validity = validate_polynomial(entries, poly)
         if validity != CalibrationValidation.OK:
-            return jsonify(success=False, reason=validity.name)
+            return json_abort(400, success=False, reason=validity.name)
 
         name = re.sub(r'[ .,]]', '_', name)
         name = "".join(c for c in name if c in _VALID_CHARACTERS)
 
         if not name:
-            return jsonify(success=False, reason="Name contains no valid characters ({0})".format(_VALID_CHARACTERS))
+            return json_abort(400, success=False, reason="Name contains no valid characters ({0})".format(_VALID_CHARACTERS))
 
         save_data_to_file(entries, label=name)
 
