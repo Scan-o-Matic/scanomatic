@@ -76,6 +76,9 @@ class GridCell(object):
         return self.__str__()
 
     def set_grid_coordinates(self, grid_cell_corners):
+        """Set grid coordinates, flipping vertical (rows) axis so that the
+        coordinate system is defined as right-handed x-y, not the native image
+        left-handed y-x, with y reaching down."""
 
         flipped_long_axis_position = grid_cell_corners.shape[2] - self.position[0] - 1
         self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]].astype(np.int)

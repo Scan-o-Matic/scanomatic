@@ -369,7 +369,7 @@ def add_routes(app):
 
             return jsonify(
                 success=False,
-                grid=grid_array.grid,
+                grid=grid_array.grid[:, ::-1, :],
                 xy1=xy1,
                 xy2=xy2,
                 reason="Grid detection failed",
@@ -398,7 +398,7 @@ def add_routes(app):
             return jsonify(
                 success=False,
                 is_endpoint=True,
-                grid=grid,
+                grid=grid[:, ::-1, :],
                 xy1=xy1,
                 xy2=xy2,
                 reason="Probably bad access token, or trying to re-grid " +
@@ -408,7 +408,7 @@ def add_routes(app):
         return jsonify(
             success=True,
             is_endpoint=True,
-            grid=grid,
+            grid=grid[:, ::-1, :],
             xy1=xy1,
             xy2=xy2
         )
@@ -438,7 +438,7 @@ def add_routes(app):
         plate_json = image_json[calibration.CCCImage.plates][plate]
         h, w = plate_json[calibration.CCCPlate.grid_cell_size]
 
-        px_y, px_x = grid[:, y, x]
+        px_y, px_x = grid[:, grid.shape[1] - y, x]
 
         colony_im = im[
             int(round(px_y - h/2)): int(round(px_y + h/2) + 1),

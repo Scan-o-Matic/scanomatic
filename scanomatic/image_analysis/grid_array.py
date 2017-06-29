@@ -224,7 +224,7 @@ class GridArray(object):
     def grid_shape(self):
 
         return self._grid.shape[1:]
-    
+
     @property
     def index(self):
         return self._identifier[-1]
@@ -263,7 +263,7 @@ class GridArray(object):
 
         if offset and not all(o == 0 for o in offset):
 
-            # The direction of the first axis is flipped to make offsetting more logical from user perspective
+            # The direction of the first (not zeroth) axis is flipped to make offsetting more logical from user perspective
             # this inversion must be matched by equal inversion in detect_grid
 
             o = offset[0] * -1
