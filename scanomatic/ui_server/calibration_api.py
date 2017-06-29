@@ -136,7 +136,8 @@ def add_routes(app):
             )
 
         image_identifier = calibration.add_image_to_ccc(
-            ccc_identifier, image, access_token=data_object.get("access_token"))
+            ccc_identifier, image, access_token=data_object.get("access_token")
+        )
 
         if not image_identifier:
             return json_abort(
@@ -170,13 +171,18 @@ def add_routes(app):
             image_identifiers=image_list
         )
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/get", methods=['GET'])
+    @app.route(
+        "/api/calibration/<ccc_identifier>/image/<image_identifier>/get",
+        methods=['GET'])
     def download_ccc_image(ccc_identifier, image_identifier):
 
-        im_path = Paths().ccc_image_pattern.format(ccc_identifier, image_identifier)
+        im_path = Paths().ccc_image_pattern.format(
+            ccc_identifier, image_identifier)
         return send_file(im_path, mimetype='Image/Tiff')
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/data/set", methods=['POST'])
+    @app.route(
+        "/api/calibration/<ccc_identifier>/image/<image_identifier>/data/set",
+        methods=['POST'])
     def set_ccc_image_data(ccc_identifier, image_identifier):
         """ Sets any of the allowed image data fields
 
@@ -202,26 +208,37 @@ def add_routes(app):
                 continue
             val = data_object.get(data_type.name, None)
             if val:
-                if data_type is calibration.CCCImage.marker_x or data_type is calibration.CCCImage.marker_y and \
+                if data_type is calibration.CCCImage.marker_x or \
+                        data_type is calibration.CCCImage.marker_y and \
                         isinstance(val, StringTypes):
 
                     try:
                         val = [float(v) for v in val.split(",")]
                     except ValueError:
-                        app.logger.warning("The parameter {0} value '{1}' not understood".format(data_type, val))
+                        app.logger.warning(
+                            "The parameter " +
+                            "{0} value '{1}' not understood".format(
+                                data_type, val))
                         continue
 
                 data_update[data_type.name] = val
 
                 if data_type is calibration.CCCImage.fixture and \
-                        calibration.CCCImage.grayscale_name.name not in data_object.keys():
+                        calibration.CCCImage.grayscale_name.name not in \
+                        data_object.keys():
 
                     fixture_settings = Fixtures()[val]
                     if fixture_settings is not None:
-                        data_update[calibration.CCCImage.grayscale_name.name] = fixture_settings.model.grayscale.name
+                        data_update[
+                            calibration.CCCImage.grayscale_name.name] = \
+                            fixture_settings.model.grayscale.name
 
         success = calibration.set_image_info(
-            ccc_identifier, image_identifier, access_token=data_object.get("access_token"), **data_update)
+            ccc_identifier,
+            image_identifier,
+            access_token=data_object.get("access_token"),
+            **data_update
+        )
 
         if not success:
             return json_abort(
@@ -236,10 +253,13 @@ def add_routes(app):
             is_endpoint=True
         )
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/data/get", methods=['GET'])
+    @app.route(
+        "/api/calibration/<ccc_identifier>/image/<image_identifier>/data/get",
+        methods=['GET'])
     def get_ccc_image_data(ccc_identifier, image_identifier):
 
-        data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        data = calibration.get_image_json_from_ccc(
+            ccc_identifier, image_identifier)
         if data is None:
             return json_abort(
                 400,
@@ -256,14 +276,17 @@ def add_routes(app):
                 if k is not calibration.CCCImage.plates}
         )
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/set", methods=['POST'])
+    @app.route(
+        "/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/set",
+        methods=['POST'])
     def slice_ccc_image(ccc_identifier, image_identifier):
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
             data_object = request.values
 
-        data = calibration.get_local_fixture_for_image(ccc_identifier, image_identifier)
+        data = calibration.get_local_fixture_for_image(
+            ccc_identifier, image_identifier)
         if data is None:
             return json_abort(
                 400,
@@ -292,7 +315,9 @@ def add_routes(app):
             is_endpoint=True
         )
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/slice/get/<slice>", methods=['GET'])
+    @app.route(
+        "/api/calibration/<ccc_identifier>/image/<image_identifier>/slice" +
+        "/get/<slice>", methods=['GET'])
     def get_ccc_image_slice(ccc_identifier, image_identifier, slice):
         """
 
@@ -302,30 +327,34 @@ def add_routes(app):
         :return:
         """
         if slice.lower() == 'gs':
-            im = calibration.get_grayscale_slice(
+            image = calibration.get_grayscale_slice(
                 ccc_identifier, image_identifier)
         else:
-            im = calibration.get_plate_slice(
+            image = calibration.get_plate_slice(
                 ccc_identifier, image_identifier, slice, gs_transformed=False)
 
-        if im is None:
+        if image is None:
             return json_abort(
                 400,
                 success=False,
                 is_endpoint=True,
                 reason="No such image slice exists, has it been sliced?"
             )
-        return serve_numpy_as_image(im)
+        return serve_numpy_as_image(image)
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/grayscale/analyse", methods=['POST'])
+    @app.route(
+        "/api/calibration/<ccc_identifier>/image/<image_identifier>" +
+        "/grayscale/analyse", methods=['POST'])
     def get_ccc_image_grayscale_analysis(ccc_identifier, image_identifier):
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
             data_object = request.values
 
-        gs_image = calibration.get_grayscale_slice(ccc_identifier, image_identifier)
-        image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        gs_image = calibration.get_grayscale_slice(
+            ccc_identifier, image_identifier)
+        image_data = calibration.get_image_json_from_ccc(
+            ccc_identifier, image_identifier)
         try:
             gs_name = image_data[calibration.CCCImage.grayscale_name]
         except TypeError:
@@ -336,7 +365,8 @@ def add_routes(app):
                 reason='Unknown image or CCC'
             )
 
-        _, values = get_grayscale_image_analysis(gs_image, gs_name, debug=False)
+        _, values = get_grayscale_image_analysis(
+            gs_image, gs_name, debug=False)
         grayscale_object = getGrayscale(gs_name)
         valid = get_grayscale_is_valid(values, grayscale_object)
         if not valid:
@@ -351,7 +381,8 @@ def add_routes(app):
             ccc_identifier, image_identifier,
             grayscale_source_values=values,
             grayscale_target_values=grayscale_object['targets'],
-            access_token=data_object.get("access_token"))
+            access_token=data_object.get("access_token")
+        )
 
         if success:
 
@@ -372,15 +403,21 @@ def add_routes(app):
                 "access token"
             )
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/transform", methods=['POST'])
+    @app.route(
+        "/api/calibration/<ccc_identifier>/image/<image_identifier>/plate" +
+        "/<int:plate>/transform", methods=['POST'])
     def get_ccc_image_plate_transform(ccc_identifier, image_identifier, plate):
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
             data_object = request.values
 
-        success = calibration.transform_plate_slice(ccc_identifier, image_identifier, plate,
-                                                    access_token=data_object.get("access_token"))
+        success = calibration.transform_plate_slice(
+            ccc_identifier,
+            image_identifier,
+            plate,
+            access_token=data_object.get("access_token")
+        )
         if not success:
             return json_abort(
                 400,
@@ -541,13 +578,14 @@ def add_routes(app):
         )
 
     @app.route(
-        "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/detect/colony/<int:x>/<int:y>",
-        methods=["POST"])
+        "/api/data/calibration/<ccc_identifier>/image/<image_identifier>" +
+        "/plate/<int:plate>/detect/colony/<int:x>/<int:y>", methods=["POST"])
     def detect_colony(ccc_identifier, image_identifier, plate, x, y):
 
-        im = calibration.get_plate_slice(ccc_identifier, image_identifier, plate, True)
+        image = calibration.get_plate_slice(
+            ccc_identifier, image_identifier, plate, True)
 
-        if im is None:
+        if image is None:
             return json_abort(
                 400,
                 success=False,
@@ -555,7 +593,8 @@ def add_routes(app):
                 reason="Image plate slice hasn't been prepared probably"
             )
 
-        grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
+        grid_path = Paths().ccc_image_plate_grid_pattern.format(
+            ccc_identifier, image_identifier, plate)
         try:
             grid = np.load(grid_path)
         except IOError:
@@ -566,9 +605,11 @@ def add_routes(app):
                 reason="Gridding is missing"
             )
 
-        image_json = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        image_json = calibration.get_image_json_from_ccc(
+            ccc_identifier, image_identifier)
 
-        if not image_json or plate not in image_json[calibration.CCCImage.plates]:
+        if not image_json or plate not in \
+                image_json[calibration.CCCImage.plates]:
 
             return json_abort(
                 400,
@@ -582,30 +623,35 @@ def add_routes(app):
 
         px_y, px_x = grid[:, grid.shape[1] - y, x]
 
-        colony_im = im[
-            int(round(px_y - h/2)): int(round(px_y + h/2) + 1),
-            int(round(px_x - w / 2)): int(round(px_x + w / 2) + 1)]
+        colony_im = image[
+            int(round(px_y - h / 2)): int(round(px_y + h / 2) + 1),
+            int(round(px_x - w / 2)): int(round(px_x + w / 2) + 1)
+        ]
 
-        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+        # first plate, upper left colony (just need something):
+        identifier = ["unknown_image", 0, [0, 0]]
 
-        gc = GridCell(identifier, None, save_extra_data=False)
-        gc.source = colony_im.astype(np.float64)
+        grid_cell = GridCell(identifier, None, save_extra_data=False)
+        grid_cell.source = colony_im.astype(np.float64)
 
         transpose_polynomial = image_basics.Image_Transpose(
-            sourceValues=image_json[calibration.CCCImage.grayscale_source_values],
-            targetValues=image_json[calibration.CCCImage.grayscale_target_values])
+            sourceValues=image_json[
+                calibration.CCCImage.grayscale_source_values],
+            targetValues=image_json[
+                calibration.CCCImage.grayscale_target_values]
+        )
 
-        gc.source[...] = transpose_polynomial(gc.source)
+        grid_cell.source[...] = transpose_polynomial(grid_cell.source)
 
-        gc.attach_analysis(
+        grid_cell.attach_analysis(
             blob=True, background=True, cell=True,
             run_detect=False)
 
-        gc.detect(remember_filter=False)
-        blob = gc.get_item(COMPARTMENTS.Blob).filter_array
-        background = gc.get_item(COMPARTMENTS.Background).filter_array
+        grid_cell.detect(remember_filter=False)
+        blob = grid_cell.get_item(COMPARTMENTS.Blob).filter_array
+        background = grid_cell.get_item(COMPARTMENTS.Background).filter_array
         blob_exists = blob.any()
-        blob_pixels = gc.source[blob]
+        blob_pixels = grid_cell.source[blob]
         background_exists = background.any()
         background_reasonable = background.sum() >= 20
 
@@ -613,9 +659,9 @@ def add_routes(app):
             success=True,
             blob=blob.tolist(),
             background=background.tolist(),
-            image=gc.source.tolist(),
-            image_max=gc.source.max(),
-            image_min=gc.source.min(),
+            image=grid_cell.source.tolist(),
+            image_max=grid_cell.source.max(),
+            image_min=grid_cell.source.min(),
             blob_max=blob_pixels.max() if blob_exists else -1,
             blob_min=blob_pixels.min() if blob_exists else -1,
             blob_exists=int(blob_exists),
@@ -625,8 +671,8 @@ def add_routes(app):
         )
 
     @app.route(
-        "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/compress/colony/<int:x>/<int:y>",
-        methods=["POST"])
+        "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/" +
+        "plate/<int:plate>/compress/colony/<int:x>/<int:y>", methods=["POST"])
     def calibration_compress(ccc_identifier, image_identifier, plate, x, y):
         """Set compressed calibration entry
 
@@ -634,7 +680,8 @@ def add_routes(app):
             "image": The grayscale calibrated image
             "blob": The filter indicating what is the colony
             "background": The filter indicating what is the background
-            "override_small_background": boolean for allowing less than 20 pixel backgrounds
+            "override_small_background": boolean for allowing less than
+                20 pixel backgrounds
         Returns:
 
         """
@@ -642,7 +689,8 @@ def add_routes(app):
         if not data_object:
             data_object = request.values
 
-        image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        image_data = calibration.get_image_json_from_ccc(
+            ccc_identifier, image_identifier)
         if image_data is None:
             return json_abort(
                 400,
@@ -673,7 +721,8 @@ def add_routes(app):
             )
 
         try:
-            background_filter = np.array(data_object.get("background", [[]]), dtype=bool)
+            background_filter = np.array(
+                data_object.get("background", [[]]), dtype=bool)
         except TypeError:
             return json_abort(
                 400,
@@ -857,7 +906,12 @@ def add_routes(app):
         name = "".join(c for c in name if c in _VALID_CHARACTERS)
 
         if not name:
-            return json_abort(400, success=False, reason="Name contains no valid characters ({0})".format(_VALID_CHARACTERS))
+            return json_abort(
+                400,
+                success=False,
+                reason="Name contains no valid characters " +
+                "({0})".format(_VALID_CHARACTERS)
+            )
 
         save_data_to_file(entries, label=name)
 
@@ -865,7 +919,11 @@ def add_routes(app):
 
         add_calibration(name, poly, data_path)
 
-        return jsonify(success=True, poly=poly, name=name)
+        return jsonify(
+            success=True,
+            poly=poly,
+            name=name
+        )
 
     @app.route("/api/calibration/export")
     @app.route("/api/calibration/export/<name>")
@@ -886,5 +944,9 @@ def add_routes(app):
         if not name:
             name = 'default'
 
-        return send_file(memory_file, attachment_filename='calibration.{0}.zip'.format(name), as_attachment=True)
+        return send_file(
+            memory_file,
+            attachment_filename='calibration.{0}.zip'.format(name),
+            as_attachment=True
+        )
     """
