@@ -1,16 +1,12 @@
-from flask import Flask, jsonify, request, send_file
-import numpy as np
-import re
 from string import letters
-from io import BytesIO
-import zipfile
-import time
-import os
 from itertools import product
 from types import StringTypes
 
+from flask import jsonify, request, send_file
+import numpy as np
+
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.analysis_model import COMPARTMENTS, VALUES
+from scanomatic.models.analysis_model import COMPARTMENTS
 from scanomatic.image_analysis.grid_cell import GridCell
 from scanomatic.image_analysis.grid_array import GridArray
 from scanomatic.image_analysis.grayscale import getGrayscale
