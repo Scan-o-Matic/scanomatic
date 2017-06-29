@@ -274,42 +274,55 @@ def add_routes(app):
 
         return jsonify(success=True, is_endpoint=True)
 
-    @app.route("/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/grid/set", methods=['POST'])
+    @app.route(
+        "/api/calibration/<ccc_identifier>/image/<image_identifier>/plate/" +
+        "<int:plate>/grid/set", methods=['POST'])
     def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
 
         def get_xy1_xy2(grid_array):
             outer, inner = grid_array.grid_shape
 
-            xy1 = [[[None] for c in range(inner)] for r in range(outer)]
-            xy2 = [[[None] for c in range(inner)] for r in range(outer)]
+            xy1 = [[[None] for col in range(inner)] for row in range(outer)]
+            xy2 = [[[None] for col in range(inner)] for row in range(outer)]
             warn_once = False
-            for o, i in product(range(outer), range(inner)):
-                gc = grid_array[(o, i)]
+            for row, col in product(range(outer), range(inner)):
+                grid_cell = grid_array[(row, col)]
 
                 try:
-                    xy1[o][i] = gc.xy1.tolist()
-                    xy2[o][i] = gc.xy2.tolist()
+                    xy1[row][col] = grid_cell.xy1.tolist()
+                    xy2[row][col] = grid_cell.xy2.tolist()
                 except AttributeError:
                     try:
-                        xy1[o][i] = gc.xy1
-                        xy2[o][i] = gc.xy2
+                        xy1[row][col] = grid_cell.xy1
+                        xy2[row][col] = grid_cell.xy2
                     except (TypeError, IndexError, ValueError):
                         if not warn_once:
                             warn_once = True
                             app.logger.error(
-                                "Could not parse the xy corner data of grid cells, example '{0}' '{1}'".format(
-                                    gc.xy1, gc.xy2
-                                ))
+                                "Could not parse the xy corner data of grid " +
+                                "cells, example '{0}' '{1}'".format(
+                                    grid_cell.xy1, grid_cell.xy2)
+                            )
 
             return xy1, xy2
 
-        image_data = calibration.get_image_json_from_ccc(ccc_identifier, image_identifier)
+        image_data = calibration.get_image_json_from_ccc(
+            ccc_identifier, image_identifier)
         if image_data is None:
-            return jsonify(success=False, is_endpoint=True, reason="The image or CCC don't exist")
+            return jsonify(
+                success=False,
+                is_endpoint=True,
+                reason="The image or CCC don't exist",
+            )
 
-        im = calibration.get_plate_slice(ccc_identifier, image_identifier, plate, gs_transformed=False)
-        if im is None:
-            return jsonify(success=False, is_endpoint=True, reason="No such image slice exists, has it been sliced?")
+        image = calibration.get_plate_slice(
+            ccc_identifier, image_identifier, plate, gs_transformed=False)
+        if image is None:
+            return jsonify(
+                success=False,
+                is_endpoint=True,
+                reason="No such image slice exists, has it been sliced?",
+            )
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
@@ -319,60 +332,86 @@ def add_routes(app):
         try:
             pinning_format = tuple(int(v) for v in pinning_format.split(u","))
         except (ValueError, TypeError):
-            app.logger.error("Pinning-format not understood ({0})".format(data_object.get("pinning_format")))
-            return jsonify(success=False, is_endpoint=True, reason="Bad pinning format")
+            app.logger.error(
+                "Pinning-format not understood ({0})".format(
+                    data_object.get("pinning_format"))
+            )
+            return jsonify(
+                success=False,
+                is_endpoint=True,
+                reason="Bad pinning format",
+            )
 
         correction = data_object.get('gridding_correction')
         if correction:
             try:
                 correction = tuple(int(v) for v in correction.split(u","))
             except ValueError:
-                app.logger.error("Correction-format not understood ({0})".format(correction))
-                return jsonify(success=False, is_endpoint=True, reason="Bad grid correction {0}".format(correction))
+                app.logger.error(
+                    "Correction-format not understood ({0})".format(
+                        correction)
+                )
+                return jsonify(
+                    success=False,
+                    is_endpoint=True,
+                    reason="Bad grid correction {0}".format(correction),
+                )
         else:
             correction = None
 
         analysis_model = AnalysisModelFactory.create()
         analysis_model.output_directory = ""
-        ga = GridArray((None, plate - 1), pinning_format, analysis_model)
+        grid_array = GridArray(
+            (None, plate - 1), pinning_format, analysis_model)
 
-        if not ga.detect_grid(im, grid_correction=correction):
-            xy1, xy2 = get_xy1_xy2(ga)
+        if not grid_array.detect_grid(image, grid_correction=correction):
+            xy1, xy2 = get_xy1_xy2(grid_array)
 
             return jsonify(
                 success=False,
-                grid=ga.grid,
+                grid=grid_array.grid,
                 xy1=xy1,
                 xy2=xy2,
                 reason="Grid detection failed",
                 is_endpoint=True,
             )
 
-        grid = ga.grid
-        xy1, xy2 = get_xy1_xy2(ga)
+        grid = grid_array.grid
+        xy1, xy2 = get_xy1_xy2(grid_array)
 
-        grid_path = Paths().ccc_image_plate_grid_pattern.format(ccc_identifier, image_identifier, plate)
+        grid_path = Paths().ccc_image_plate_grid_pattern.format(
+            ccc_identifier, image_identifier, plate)
         np.save(grid_path, grid)
 
-        app.logger.info("xy1 shape {0}, xy2 shape {1}".format(np.asarray(xy1).shape, np.asarray(xy2).shape))
+        app.logger.info(
+            "xy1 shape {0}, xy2 shape {1}".format(
+                np.asarray(xy1).shape, np.asarray(xy2).shape)
+        )
 
         success = calibration.set_plate_grid_info(
             ccc_identifier, image_identifier, plate,
             grid_shape=pinning_format,
-            grid_cell_size=ga.grid_cell_size,
+            grid_cell_size=grid_array.grid_cell_size,
             access_token=data_object.get("access_token"))
 
         if not success:
-            return jsonify(success=False, is_endpoint=True,
-                           grid=grid,
-                           xy1=xy1,
-                           xy2=xy2,
-                           reason="Probably bad access token, or trying to re-grid image after has been used")
+            return jsonify(
+                success=False,
+                is_endpoint=True,
+                grid=grid,
+                xy1=xy1,
+                xy2=xy2,
+                reason="Probably bad access token, or trying to re-grid " +
+                "image after has been used"
+            )
 
-        return jsonify(success=True, is_endpoint=True,
-                       grid=grid,
-                       xy1=xy1,
-                       xy2=xy2)
+        return jsonify(
+            success=True,
+            is_endpoint=True,
+            grid=grid,
+            xy1=xy1,
+            xy2=xy2
+        )
 
     @app.route(
         "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/detect/colony/<int:x>/<int:y>",
