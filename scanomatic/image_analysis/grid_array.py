@@ -237,7 +237,7 @@ class GridArray(object):
     @property
     def grid(self):
 
-        return self._grid.tolist()
+        return self._grid[:, ::-1, :].tolist()
 
     @property
     def grid_shape(self):

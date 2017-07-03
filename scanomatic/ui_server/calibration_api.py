@@ -532,7 +532,7 @@ def add_routes(app):
             return json_abort(
                 400,
                 success=False,
-                grid=grid_array.grid[:][::-1][:],
+                grid=grid_array.grid,
                 xy1=xy1,
                 xy2=xy2,
                 reason="Grid detection failed",
@@ -562,7 +562,7 @@ def add_routes(app):
                 400,
                 success=False,
                 is_endpoint=True,
-                grid=grid_array.grid[:][::-1][:],
+                grid=grid_array.grid,
                 xy1=xy1,
                 xy2=xy2,
                 reason="Probably bad access token, or trying to re-grid " +
@@ -572,7 +572,7 @@ def add_routes(app):
         return jsonify(
             success=True,
             is_endpoint=True,
-            grid=grid_array.grid[:][::-1][:],
+            grid=grid_array.grid,
             xy1=xy1,
             xy2=xy2
         )
