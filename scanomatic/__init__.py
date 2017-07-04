@@ -10,7 +10,7 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
-__branch = "dev"
+__branch = "master"
 
 
 def get_version():
