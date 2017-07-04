@@ -236,6 +236,9 @@ class GridArray(object):
 
     @property
     def grid(self):
+        """Return grid as list with direction of the first (not zeroth)
+        axis flipped to make offsetting more logical from user perspective.
+        """
 
         return self._grid[:, ::-1, :].tolist()
 
