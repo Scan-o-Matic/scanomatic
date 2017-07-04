@@ -141,7 +141,7 @@ def add_routes(app):
 
         if not image_identifier:
             return json_abort(
-                400,
+                401,
                 success=False,
                 is_endpoint=True,
                 reason="Refused to save image, probably bad access token"
@@ -242,7 +242,7 @@ def add_routes(app):
 
         if not success:
             return json_abort(
-                400,
+                401,
                 success=False,
                 is_endpoint=True,
                 reason="Update refused, probably bad access token"
@@ -304,7 +304,7 @@ def add_routes(app):
 
         if not success:
             return json_abort(
-                400,
+                401,
                 success=False,
                 is_endpoint=True,
                 reason="Probably not the correct access token."
@@ -396,7 +396,7 @@ def add_routes(app):
         else:
 
             return json_abort(
-                400,
+                401,
                 success=False,
                 is_endpoint=True,
                 reason="Refused to set image grayscale info, probably bad " +
@@ -420,10 +420,10 @@ def add_routes(app):
         )
         if not success:
             return json_abort(
-                400,
+                401,
                 success=False,
                 is_endpoint=True,
-                reason="Probably bad access token or not having sliced " +
+                reason="Probably bad access token, or not having sliced " +
                 "image and analysed grayscale first"
             )
 
@@ -559,7 +559,7 @@ def add_routes(app):
 
         if not success:
             return json_abort(
-                400,
+                401,
                 success=False,
                 is_endpoint=True,
                 grid=grid_array.grid,
@@ -794,7 +794,7 @@ def add_routes(app):
         else:
 
             return json_abort(
-                403,
+                401,
                 success=False,
                 is_endpoint=False,
                 reason="Probably invalid access token"
@@ -824,7 +824,7 @@ def add_routes(app):
                 access_token=data_object.get("access_token")):
 
             return json_abort(
-                403,
+                401,
                 success=False,
                 is_endpoint=True,
                 reason="Invalid access token"
@@ -863,7 +863,7 @@ def add_routes(app):
                 access_token=data_object.get("access_token")):
 
             return json_abort(
-                403,
+                401,
                 success=False,
                 is_endpoint=True,
                 reason="Invalid access token")
