@@ -15,10 +15,10 @@ def grid_array():
     analysis_model = AnalysisModelFactory.create()
     analysis_model.output_directory = ""
     image = ndimage.io.imread(
-        './scanomatic/image_analysis/test/testdata/test_fixture.tiff')
+        './scanomatic/image_analysis/test/testdata/test_fixture_easy.tiff')
     grid_array_instance = grid_array_module.GridArray(
         image_identifier, pinning, analysis_model)
-    correction = (3, 0)
+    correction = (0, 0)
     grid_array_instance.detect_grid(image, grid_correction=correction)
     return grid_array_instance
 
