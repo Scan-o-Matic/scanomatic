@@ -388,7 +388,7 @@ class GridArray(object):
                 np.save(error_file, im)
 
             self._LOGGER.warning(
-                "Failed to detect grid on plate {0}".format(self.index))
+                "Failed to detect grid on plate {0}".format(self.index + 1))
 
             return False
 
