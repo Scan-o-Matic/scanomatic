@@ -7,16 +7,18 @@ grid-array with a potential blob at the center).
 # DEPENDENCIES
 #
 
-import numpy as np
 import os
+
+import numpy as np
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import grid_cell_extra as grid_cell_extra
+import scanomatic.image_analysis.grid_cell_extra as grid_cell_extra
 from scanomatic.models.analysis_model import VALUES, COMPARTMENTS
-from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
+from scanomatic.models.factories.analysis_factories import \
+    AnalysisFeaturesFactory
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
 from scanomatic.generics.maths import mid50_mean as iqr_mean
@@ -44,9 +46,10 @@ class GridCell(object):
         self.ready = False
         self._previous_image = None
         self.image_index = -1
-        self.features = AnalysisFeaturesFactory.create(index=tuple(self.position), data={})
+        self.features = AnalysisFeaturesFactory.create(
+            index=tuple(self.position), data={})
         self._analysis_items = {}
-        """:type: dict[scanomatic.models.analysis_model.COMPARTMENTS | scanomatic.image_analysis.grid_cell_extra.CellItem]"""
+        """:type: dict[scanomatic.models.analysis_model.COMPARTMENTS |scanomatic.image_analysis.grid_cell_extra.CellItem]"""
         self._set_empty_analysis_items()
 
     def _set_empty_analysis_items(self):
@@ -57,31 +60,38 @@ class GridCell(object):
 
     def __str__(self):
 
-        s = "< {0}".format(self._identifier)
+        text = "< {0}".format(self._identifier)
 
         if self.source is None:
 
-            s += " No image set"
+            text += " No image set"
 
         else:
 
-            s += " Image size: {0}".format(self.source.shape)
+            text += " Image size: {0}".format(self.source.shape)
 
-        s += " Layers: {0} >".format(self._analysis_items.keys())
+        text += " Layers: {0} >".format(self._analysis_items.keys())
 
-        return s
+        return text
 
     def __repr__(self):
 
         return self.__str__()
 
     def set_grid_coordinates(self, grid_cell_corners):
+        """Set grid coordinates, flipping vertical (rows) axis so that the
+        coordinate system is defined as right-handed x-y, not the native image
+        left-handed y-x, with y reaching down."""
 
-        flipped_long_axis_position = grid_cell_corners.shape[2] - self.position[0] - 1
-        self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]].astype(np.int)
-        self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]].astype(np.int)
+        flipped_long_axis_position = (
+            grid_cell_corners.shape[2] - self.position[0] - 1)
+        self.xy1 = grid_cell_corners[
+            :, 0, flipped_long_axis_position, self.position[1]].astype(np.int)
+        self.xy2 = grid_cell_corners[
+            :, 1, flipped_long_axis_position, self.position[1]].astype(np.int)
 
-    def set_new_data_source_space(self, space=VALUES.Cell_Estimates, bg_sub_source=None, polynomial_coeffs=None):
+    def set_new_data_source_space(self, space=VALUES.Cell_Estimates,
+                                  bg_sub_source=None, polynomial_coeffs=None):
 
         if space is VALUES.Cell_Estimates:
 
@@ -93,7 +103,8 @@ class GridCell(object):
                 bg_sub = iqr_mean(feature_array)
                 if not np.isfinite(bg_sub):
                     bg_sub = np.mean(feature_array)
-                    GridCell._logger.warning("{0} caused background mean ({1}) due to inf".format(
+                    GridCell._logger.warning(
+                        "{0} caused background mean ({1}) due to inf".format(
                             self._identifier, bg_sub))
 
                 self.source -= bg_sub
@@ -115,15 +126,18 @@ class GridCell(object):
         if self._adjustment_warning != max_detect_filter.any():
             self._adjustment_warning = not self._adjustment_warning
             if self._adjustment_warning:
-                self._logger.warning("{0} got {1} pixel-values overshooting {2}.".format(
-                    self._identifier, max_detect_filter.sum(), self.MAX_THRESHOLD) +
-                                     " Further warnings for this colony suppressed.")
+                self._logger.warning(
+                    "{0} got {1} pixel-values overshooting {2}.".format(
+                        self._identifier, max_detect_filter.sum(),
+                        self.MAX_THRESHOLD) +
+                    " Further warnings for this colony suppressed.")
             else:
-                self._logger.info("{0} no longer have pixels that reach {1} depth.".format(
-                    self._identifier, self.MAX_THRESHOLD))
+                self._logger.info(
+                    "{0} no longer have pixels that reach {1} depth.".format(
+                        self._identifier, self.MAX_THRESHOLD))
 
     def push_source_data_to_cell_items(self):
-        for item_names in self._analysis_items.keys():
+        for item_names in self._analysis_items:
             self._analysis_items[item_names].grid_array = self.source
 
     def get_item(self, item_name):
@@ -163,7 +177,9 @@ class GridCell(object):
             base_path = Paths().log
 
         return os.path.join(base_path, "grid_cell_{0}_{1}_{2}".format(
-            self.image_index, self._identifier[0][1], "_".join(map(str, self._identifier[-1][::-1]))))
+            self.image_index, self._identifier[0][1], "_".join(
+                map(str, self._identifier[-1][::-1]))
+        ))
 
     def save_data_image(self, suffix="", base_path=None):
 
@@ -195,8 +211,11 @@ class GridCell(object):
 
         background = self._analysis_items[COMPARTMENTS.Background]
 
-        self.set_new_data_source_space(space=VALUES.Cell_Estimates, bg_sub_source=background.filter_array,
-                                       polynomial_coeffs=self._polynomial_coeffs)
+        self.set_new_data_source_space(
+            space=VALUES.Cell_Estimates,
+            bg_sub_source=background.filter_array,
+            polynomial_coeffs=self._polynomial_coeffs
+        )
 
         for item in self._analysis_items.itervalues():
 
@@ -269,7 +288,7 @@ class GridCell(object):
             self.features.data[item.features.index] = item.features
             self._analysis_items[item.features.index] = item
 
-        self.features.shape = (len(self.features.data),)
+        self.features.shape = (len(self.features.data), )
         self.set_ready_state()
 
     def set_ready_state(self):

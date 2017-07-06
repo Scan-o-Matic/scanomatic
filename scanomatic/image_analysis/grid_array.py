@@ -18,7 +18,8 @@ from scanomatic.io.pickler import unpickle_with_unpickler
 import image_basics
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.image_analysis.grayscale import getGrayscale
-from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
+from scanomatic.models.factories.analysis_factories import \
+    AnalysisFeaturesFactory
 from scanomatic.data_processing.calibration import load_calibration
 #
 # EXCEPTIONS
@@ -28,7 +29,8 @@ class InvalidGridException(Exception):
     pass
 
 
-def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semaphore=None, analysis_job_model=None):
+def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index,
+                       semaphore=None, analysis_job_model=None):
 
     """
 
@@ -38,7 +40,8 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semapho
 
     grid_cell.source = _get_image_slice(im, grid_cell).astype(np.float64)
     if grid_cell.source is None:
-        GridArray._LOGGER.error("Tried to analyse grid cell that doesn't have any area")
+        GridArray._LOGGER.error(
+            "Tried to analyse grid cell that doesn't have any area")
         if semaphore is not None:
             semaphore.release()
         return
@@ -46,15 +49,19 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semapho
     grid_cell.image_index = image_index
 
     if save_extra_data:
-        grid_cell.save_data_image(suffix=".raw",
-                                  base_path=analysis_job_model.output_directory if analysis_job_model else None)
+        grid_cell.save_data_image(
+            suffix=".raw",
+            base_path=analysis_job_model.output_directory
+            if analysis_job_model else None)
 
     if transpose_polynomial is not None:
         _set_image_transposition(grid_cell, transpose_polynomial)
 
     if save_extra_data:
-        grid_cell.save_data_image(suffix=".calibrated",
-                                  base_path=analysis_job_model.output_directory if analysis_job_model else None)
+        grid_cell.save_data_image(
+            suffix=".calibrated",
+            base_path=analysis_job_model.output_directory
+            if analysis_job_model else None)
 
     if not grid_cell.ready:
         grid_cell.attach_analysis(
@@ -65,7 +72,9 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semapho
     grid_cell.analyse(remember_filter=True)
 
     if save_extra_data:
-        grid_cell.save_data_detections(base_path=analysis_job_model.output_directory if analysis_job_model else None)
+        grid_cell.save_data_detections(
+            base_path=analysis_job_model.output_directory
+            if analysis_job_model else None)
 
     if semaphore is not None:
         semaphore.release()
@@ -125,8 +134,9 @@ def _get_grid_to_im_axis_mapping(pm, im):
     else:
         return (1, 0)
 
+
 #
-# CLASS: Grid_Array
+# CLASS: GridCellSizes
 #
 
 
@@ -149,7 +159,8 @@ class GridCellSizes(object):
 
         """
         if not isinstance(item, tuple):
-            GridCellSizes._LOGGER.error("Grid formats can only be tuples {0}".format(type(item)))
+            GridCellSizes._LOGGER.error(
+                "Grid formats can only be tuples {0}".format(type(item)))
             return None
 
         approximate_size = None
@@ -162,7 +173,8 @@ class GridCellSizes(object):
                 continue
 
             elif item in GridCellSizes._APPROXIMATE_GRID_CELL_SIZES:
-                approximate_size = GridCellSizes._APPROXIMATE_GRID_CELL_SIZES[item]
+                approximate_size = \
+                    GridCellSizes._APPROXIMATE_GRID_CELL_SIZES[item]
                 if rotation is IMAGE_ROTATIONS.Portrait:
                     approximate_size = approximate_size[reverse_slice]
                 break
@@ -170,9 +182,15 @@ class GridCellSizes(object):
                 item = item[reverse_slice]
 
         if not approximate_size:
-            GridCellSizes._LOGGER.warning("Unknown pinning format {0}".format(item))
+            GridCellSizes._LOGGER.warning(
+                "Unknown pinning format {0}".format(item))
 
         return approximate_size
+
+
+#
+# CLASS: GridArray
+#
 
 
 class GridArray(object):
@@ -195,7 +213,8 @@ class GridArray(object):
         self._valid_grid = False
         self._grid_cell_corners = None
 
-        self._features = AnalysisFeaturesFactory.create(index=self._identifier[-1], shape=tuple(pinning), data=set())
+        self._features = AnalysisFeaturesFactory.create(
+            index=self._identifier[-1], shape=tuple(pinning), data=set())
         self._first_analysis = True
 
     def __getitem__(self, item):
@@ -217,14 +236,17 @@ class GridArray(object):
 
     @property
     def grid(self):
+        """Return grid as list with direction of the first (not zeroth)
+        axis flipped to make offsetting more logical from user perspective.
+        """
 
-        return self._grid.tolist()
+        return self._grid[:, ::-1, :].tolist()
 
     @property
     def grid_shape(self):
 
         return self._grid.shape[1:]
-    
+
     @property
     def index(self):
         return self._identifier[-1]
@@ -244,54 +266,67 @@ class GridArray(object):
 
     def set_grid(self, im, analysis_directory=None, offset=None, grid=None):
 
-        self._LOGGER.info("Setting manual re-gridding for plate {0} using offset {1} on reference grid {2}".format(
-            self.index + 1, offset, grid))
+        self._LOGGER.info(
+            "Setting manual re-gridding for plate " +
+            "{0} using offset {1} on reference grid {2}".format(
+                self.index + 1, offset, grid))
 
         if not offset:
-            return self.detect_grid(im, analysis_directory=analysis_directory, grid_correction=offset)
+            return self.detect_grid(
+                im,
+                analysis_directory=analysis_directory,
+                grid_correction=offset)
 
         try:
             grid = unpickle_with_unpickler(np.load, grid)
         except IOError:
             self._LOGGER.error("No grid file named '{0}'".format(grid))
             self._LOGGER.info("Invoking grid detection instead")
-            return self.detect_grid(im, analysis_directory=analysis_directory, grid_correction=offset)
+            return self.detect_grid(
+                im,
+                analysis_directory=analysis_directory,
+                grid_correction=offset)
 
-        self._init_grid_cells(_get_grid_to_im_axis_mapping(self._pinning_matrix, im))
+        self._init_grid_cells(
+            _get_grid_to_im_axis_mapping(self._pinning_matrix, im))
 
-        spacings = ((grid[0, 1:] - grid[0, :-1]).ravel().mean(), (grid[1, :, 1:] - grid[1, :, :-1]).ravel().mean())
+        spacings = (
+            (grid[0, 1:] - grid[0, :-1]).ravel().mean(),
+            (grid[1, :, 1:] - grid[1, :, :-1]).ravel().mean()
+        )
 
-        if offset and not all(o == 0 for o in offset):
+        if offset and not all(offs == 0 for offs in offset):
 
-            # The direction of the first axis is flipped to make offsetting more logical from user perspective
-            # this inversion must be matched by equal inversion in detect_grid
+            # The direction of the first (not zeroth) axis is flipped to make
+            # offsetting more logical from user perspective.
+            # This inversion must be matched by equal inversion in detect_grid
 
-            o = offset[0] * -1
+            offs = offset[0] * -1
             delta = spacings[0]
-            if o > 0:
+            if offs > 0:
 
-                grid[0, :-o] = grid[0, o:]
-                for idx in range(-o, 0):
+                grid[0, :-offs] = grid[0, offs:]
+                for idx in range(-offs, 0):
                     grid[0, idx] = grid[0, idx - 1] + delta
 
-            elif o < 0:
+            elif offs < 0:
 
-                grid[0, -o:] = grid[0, :o]
-                for idx in range(-o)[::-1]:
+                grid[0, -offs:] = grid[0, :offs]
+                for idx in range(-offs)[::-1]:
                     grid[0, idx] = grid[0, idx + 1] - delta
 
-            o = offset[1]
+            offs = offset[1]
             delta = spacings[1]
-            if o > 0:
+            if offs > 0:
 
-                grid[1, :, :-o] = grid[1, :, o:]
-                for idx in range(-o, 0):
+                grid[1, :, :-offs] = grid[1, :, offs:]
+                for idx in range(-offs, 0):
                     grid[1, :, idx] = grid[1, :, idx - 1] + delta
 
-            elif o < 0:
+            elif offs < 0:
 
-                grid[1, :, -o:] = grid[1, :, :o]
-                for idx in range(-o)[::-1]:
+                grid[1, :, -offs:] = grid[1, :, :offs]
+                for idx in range(-offs)[::-1]:
                     grid[1, :, idx] = grid[1, :, idx + 1] - delta
 
         self._grid = grid
@@ -299,7 +334,8 @@ class GridArray(object):
         if not self._is_valid_grid_shape():
 
             raise InvalidGridException(
-                "Grid shape {0} missmatch with pinning matrix {1}".format(self._grid.shape, self._pinning_matrix))
+                "Grid shape {0} missmatch with pinning matrix {1}".format(
+                    self._grid.shape, self._pinning_matrix))
 
         self._grid_cell_size = map(lambda x: int(round(x)), spacings)
         self._set_grid_cell_corners()
@@ -307,29 +343,41 @@ class GridArray(object):
 
         if analysis_directory is not None:
 
-            np.save(os.path.join(analysis_directory, self._paths.grid_pattern.format(self.index + 1)), self._grid)
+            np.save(
+                os.path.join(
+                    analysis_directory,
+                    self._paths.grid_pattern.format(self.index + 1)),
+                self._grid)
 
-            np.save(os.path.join(analysis_directory,
-                                 self._paths.grid_size_pattern.format(self.index + 1)), self._grid_cell_size)
+            np.save(
+                os.path.join(
+                    analysis_directory,
+                    self._paths.grid_size_pattern.format(self.index + 1)),
+                self._grid_cell_size)
         return True
 
     def detect_grid(self, im, analysis_directory=None, grid_correction=None):
 
-        self._LOGGER.info("Detecting grid on plate {0} using grid correction {1}".format(
-            self.index + 1, grid_correction))
+        self._LOGGER.info(
+            "Detecting grid on plate {0} using grid correction {1}".format(
+                self.index + 1, grid_correction))
 
-        # The direction of the first axis is flipped to make offsetting more logical from user perspective
-        # this inversion must be matched by equal inversion in set_grid
+        # The direction of the first (not zeroth) axis is flipped to make
+        # offsetting more logical from user perspective.
+        # This inversion must be matched by equal inversion in set_grid
 
         if grid_correction:
             grid_correction = list(grid_correction)
             grid_correction[0] *= -1
 
-        self._init_grid_cells(_get_grid_to_im_axis_mapping(self._pinning_matrix, im))
+        self._init_grid_cells(
+            _get_grid_to_im_axis_mapping(self._pinning_matrix, im))
 
-        spacings = self._calculate_grid_and_get_spacings(im, grid_correction=grid_correction)
+        spacings = self._calculate_grid_and_get_spacings(
+            im, grid_correction=grid_correction)
 
-        if self._grid is None or not self._valid_grid or np.isnan(spacings).any():
+        if self._grid is None or not self._valid_grid or \
+                np.isnan(spacings).any():
 
             if self._analysis_model.output_directory:
 
@@ -339,14 +387,16 @@ class GridArray(object):
 
                 np.save(error_file, im)
 
-            self._LOGGER.warning("Failed to detect grid on plate {0}".format(self.index))
+            self._LOGGER.warning(
+                "Failed to detect grid on plate {0}".format(self.index + 1))
 
             return False
 
         if not self._is_valid_grid_shape():
 
             raise InvalidGridException(
-                "Grid shape {0} missmatch with pinning matrix {1}".format(self._grid.shape, self._pinning_matrix))
+                "Grid shape {0} missmatch with pinning matrix {1}".format(
+                    self._grid.shape, self._pinning_matrix))
 
         self._grid_cell_size = map(lambda x: int(round(x)), spacings)
         self._set_grid_cell_corners()
@@ -354,10 +404,17 @@ class GridArray(object):
 
         if analysis_directory is not None:
 
-            np.save(os.path.join(analysis_directory, self._paths.grid_pattern.format(self.index + 1)), self._grid)
+            np.save(
+                os.path.join(
+                    analysis_directory,
+                    self._paths.grid_pattern.format(self.index + 1)),
+                self._grid)
 
-            np.save(os.path.join(analysis_directory,
-                                 self._paths.grid_size_pattern.format(self.index + 1)), self._grid_cell_size)
+            np.save(
+                os.path.join(
+                    analysis_directory,
+                    self._paths.grid_size_pattern.format(self.index + 1)),
+                self._grid_cell_size)
 
         return True
 
@@ -384,19 +441,25 @@ class GridArray(object):
 
     def _is_valid_grid_shape(self):
 
-        return all(g == i for g, i in zip(self._grid.shape[1:], self._pinning_matrix))
+        return all(
+            g == i for g, i in zip(self._grid.shape[1:], self._pinning_matrix))
 
     def _set_grid_cell_corners(self):
 
-        self._grid_cell_corners = np.zeros((2, 2, self._grid.shape[1], self._grid.shape[2]))
+        self._grid_cell_corners = np.zeros(
+            (2, 2, self._grid.shape[1], self._grid.shape[2]))
 
         # For all sets lower values boundaries
-        self._grid_cell_corners[0, 0, :, :] = self._grid[0] - self._grid_cell_size[0] / 2.0
-        self._grid_cell_corners[1, 0, :, :] = self._grid[1] - self._grid_cell_size[1] / 2.0
+        self._grid_cell_corners[0, 0, :, :] = (
+            self._grid[0] - self._grid_cell_size[0] * 0.5)
+        self._grid_cell_corners[1, 0, :, :] = (
+            self._grid[1] - self._grid_cell_size[1] * 0.5)
 
         # For both dimensions sets higher value boundaries
-        self._grid_cell_corners[0, 1, :, :] = self._grid[0] + self._grid_cell_size[0] / 2.0
-        self._grid_cell_corners[1, 1, :, :] = self._grid[1] + self._grid_cell_size[1] / 2.0
+        self._grid_cell_corners[0, 1, :, :] = (
+            self._grid[0] + self._grid_cell_size[0] * 0.5)
+        self._grid_cell_corners[1, 1, :, :] = (
+            self._grid[1] + self._grid_cell_size[1] * 0.5)
 
     def _update_grid_cells(self):
 
@@ -406,7 +469,10 @@ class GridArray(object):
 
     def _init_grid_cells(self, dimension_order=(0, 1)):
 
-        self._pinning_matrix = (self._pinning_matrix[dimension_order[0]], self._pinning_matrix[dimension_order[1]])
+        self._pinning_matrix = (
+            self._pinning_matrix[dimension_order[0]],
+            self._pinning_matrix[dimension_order[1]]
+        )
         pinning_matrix = self._pinning_matrix
 
         self._guess_grid_cell_size = GridCellSizes.get(pinning_matrix)
@@ -416,18 +482,26 @@ class GridArray(object):
         self._features.data.clear()
 
         polynomial_coeffs = get_calibration_polynomial_coeffs()
-        focus_position = (self._analysis_model.focus_position[0],
-                          self._analysis_model.focus_position[2],
-                          self._analysis_model.focus_position[1]) if self._analysis_model.focus_position else None
+        focus_position = (
+            self._analysis_model.focus_position[0],
+            self._analysis_model.focus_position[2],
+            self._analysis_model.focus_position[1]
+        ) if self._analysis_model.focus_position else None
 
         for row in xrange(pinning_matrix[0]):
 
             for column in xrange(pinning_matrix[1]):
                 cur_position = (self.index, row, column)
-                if not self._analysis_model.suppress_non_focal or focus_position == cur_position:
+                if not self._analysis_model.suppress_non_focal or \
+                        focus_position == cur_position:
 
-                    is_focus = focus_position == cur_position if focus_position else False
-                    grid_cell = GridCell([self._identifier, (row, column)], polynomial_coeffs, save_extra_data=is_focus)
+                    is_focus = focus_position == cur_position \
+                        if focus_position else False
+                    grid_cell = GridCell(
+                        [self._identifier, (row, column)],
+                        polynomial_coeffs,
+                        save_extra_data=is_focus
+                    )
                     self._features.data.add(grid_cell.features)
                     self._grid_cells[grid_cell.position] = grid_cell
 
@@ -444,13 +518,15 @@ class GridArray(object):
 
         index = image_model.image.index
         self.image_index = index
-        self._LOGGER.info("Processing {0}, index {1}".format(self._identifier, index))
+        self._LOGGER.info(
+            "Processing {0}, index {1}".format(self._identifier, index))
 
         # noinspection PyBroadException
         try:
             transpose_polynomial = image_basics.Image_Transpose(
                 sourceValues=image_model.fixture.grayscale.values,
-                targetValues=getGrayscale(image_model.fixture.grayscale.name)['targets'])
+                targetValues=getGrayscale(
+                    image_model.fixture.grayscale.name)['targets'])
 
         except Exception:
 
@@ -466,7 +542,10 @@ class GridArray(object):
         for grid_cell in self._grid_cells.itervalues():
 
             if grid_cell.save_extra_data:
-                self._LOGGER.info("Starting analysis of extra monitored position {0}".format(grid_cell.position))
-            _analyse_grid_cell(grid_cell, im, transpose_polynomial, index, None, m)
+                self._LOGGER.info(
+                    "Starting analysis of extra monitored position {0}".format(
+                        grid_cell.position))
+            _analyse_grid_cell(
+                grid_cell, im, transpose_polynomial, index, None, m)
 
         self._LOGGER.info("Plate {0} completed".format(self._identifier))

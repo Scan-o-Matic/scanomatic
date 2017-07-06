@@ -1,5 +1,3 @@
-import pytest
-
 import numpy as np
 
 from scanomatic.image_analysis import grid_cell_extra
