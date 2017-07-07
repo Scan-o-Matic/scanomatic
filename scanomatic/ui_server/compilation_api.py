@@ -4,14 +4,15 @@ from glob import glob
 
 from flask import jsonify
 
-from scanomatic.ui_server.general import (
-    convert_url_to_path, convert_path_to_url, get_search_results,
-    json_response, serve_numpy_as_image)
 from scanomatic.io.paths import Paths
-from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
+from scanomatic.models.factories.compile_project_factory import (
+    CompileProjectFactory)
 from scanomatic.io import image_loading
 from scanomatic.data_processing import phenotyper
-from .general import json_abort
+from .general import (
+    json_abort, convert_url_to_path, convert_path_to_url, get_search_results,
+    json_response, serve_numpy_as_image
+)
 
 
 def add_routes(app):
