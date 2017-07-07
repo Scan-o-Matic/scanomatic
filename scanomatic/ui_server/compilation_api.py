@@ -2,11 +2,11 @@ import os
 from itertools import chain
 from glob import glob
 
-from flask import Flask, jsonify
+from flask import jsonify
 
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response, \
-    serve_numpy_as_image
-
+from scanomatic.ui_server.general import (
+    convert_url_to_path, convert_path_to_url, get_search_results,
+    json_response, serve_numpy_as_image)
 from scanomatic.io.paths import Paths
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.io import image_loading
@@ -23,9 +23,12 @@ def add_routes(app):
 
     @app.route("/api/compile/colony_image")
     @app.route("/api/compile/colony_image/")
-    @app.route("/api/compile/colony_image/<int:time_index>/<int:plate>/<int:outer>/<int:inner>/<path:project>")
-    @app.route("/api/compile/colony_image/<int:plate>/<int:outer>/<int:inner>/<path:project>")
-    def get_colony_image(time_index=0, plate=None, outer=None, inner=None, project=None):
+    @app.route("/api/compile/colony_image/<int:time_index>/<int:plate>" +
+               "/<int:outer>/<int:inner>/<path:project>")
+    @app.route("/api/compile/colony_image/<int:plate>/<int:outer>" +
+               "/<int:inner>/<path:project>")
+    def get_colony_image(time_index=0, plate=None, outer=None, inner=None,
+                         project=None):
         base_url = "/api/compile/colony_image"
 
         path = convert_url_to_path(project)
@@ -36,7 +39,11 @@ def add_routes(app):
             return jsonify(success=True, is_project=False, is_endpoint=False,
                            **get_search_results(path, base_url))
 
-        im = image_loading.load_colony_image((plate, outer, inner), analysis_directory=path, time_index=time_index)
+        im = image_loading.load_colony_image(
+            (plate, outer, inner),
+            analysis_directory=path,
+            time_index=time_index
+        )
 
         return serve_numpy_as_image(im)
 
@@ -53,25 +60,43 @@ def add_routes(app):
         """:type model: scanomatic.models.compile_project_model.CompileInstructionsModel"""
 
         if model is None:
-            scan_instructions = [convert_path_to_url("/api/scan/instructions", p) for p in
-                                 glob(os.path.join(path, Paths().scan_project_file_pattern.format("*")))]
+            scan_instructions = [
+                convert_path_to_url("/api/scan/instructions", p) for p in
+                glob(os.path.join(
+                    path, Paths().scan_project_file_pattern.format("*")
+                ))]
         else:
-            scan_instructions = [convert_path_to_url("/api/scan/instructions", p) for p in
-                                 glob(os.path.join(os.path.dirname(path),
-                                                   Paths().scan_project_file_pattern.format("*")))]
+            scan_instructions = [
+                convert_path_to_url("/api/scan/instructions", p) for p in
+                glob(os.path.join(
+                    os.path.dirname(path),
+                    Paths().scan_project_file_pattern.format("*")
+                ))]
 
-        compile_instructions = [convert_path_to_url(base_url, c) for c in
-                                glob(os.path.join(path, Paths().project_compilation_instructions_pattern.format("*")))]
+        compile_instructions = [
+            convert_path_to_url(base_url, c) for c in
+            glob(os.path.join(
+                path,
+                Paths().project_compilation_instructions_pattern.format("*")
+            ))]
 
         compile_logs = tuple(chain(((
             convert_path_to_url("/api/tools/logs/0/0", c),
-            convert_path_to_url("/api/tools/logs/WARNING_ERROR_CRITICAL/0/0", c)) for c in
-            glob(os.path.join(path, Paths().project_compilation_log_pattern.format("*"))))))
+            convert_path_to_url(
+                "/api/tools/logs/WARNING_ERROR_CRITICAL/0/0", c)
+        ) for c in glob(os.path.join(
+            path, Paths().project_compilation_log_pattern.format("*")
+        )))))
 
         if model is not None:
 
             return jsonify(**json_response(
-                ["urls", "compile_instructions", "scan_instructions", "compile_logs"],
+                [
+                    "urls",
+                    "compile_instructions",
+                    "scan_instructions",
+                    "compile_logs"
+                ],
                 dict(
                     instructions={
                         'fixture': model.fixture_name,
@@ -84,11 +109,17 @@ def add_routes(app):
                     compile_instructions=compile_instructions,
                     scan_instructions=scan_instructions,
                     compile_logs=compile_logs,
-                    **get_search_results(path, base_url))))
+                    **get_search_results(path, base_url))
+            ))
 
         else:
             return jsonify(**json_response(
-                ["urls", "compile_instructions", "scan_instructions", "compile_logs"],
+                [
+                    "urls",
+                    "compile_instructions",
+                    "scan_instructions",
+                    "compile_logs"
+                ],
                 dict(
                     compile_instructions=compile_instructions,
                     scan_instructions=scan_instructions,
@@ -103,4 +134,7 @@ def add_routes(app):
 
         path = convert_url_to_path(project)
         model = CompileProjectFactory.dict_from_path_and_fixture(path)
-        return jsonify(images=[{"index": m['index'], 'file': os.path.basename(m['path'])} for m in model['images']])
+        return jsonify(images=[{
+            "index": m['index'],
+            'file': os.path.basename(m['path'])
+        } for m in model['images']])
