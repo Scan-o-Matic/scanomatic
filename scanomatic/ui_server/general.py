@@ -247,14 +247,11 @@ def strip_empty_exits(exits, data):
             _logger.info("Removing {0} from exits because not in data {1}, exits now {2}".format(e, data, exits))
 
 
-def json_response(exits, data, success=True):
+def json_response(exits, data):
 
     strip_empty_exits(exits, data)
     is_endpoint = len(exits) == 0
     data["is_endpoint"] = is_endpoint
-
-    if success is not None:
-        data["success"] = success
 
     if is_endpoint:
         if "exits" in data:
