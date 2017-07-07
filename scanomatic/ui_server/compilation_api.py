@@ -11,6 +11,7 @@ from scanomatic.io.paths import Paths
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.io import image_loading
 from scanomatic.data_processing import phenotyper
+from .general import json_abort
 
 
 def add_routes(app):
@@ -36,8 +37,11 @@ def add_routes(app):
         is_project = phenotyper.path_has_saved_project_state(path)
 
         if not is_project:
-            return jsonify(success=True, is_project=False, is_endpoint=False,
-                           **get_search_results(path, base_url))
+            return jsonify(
+                is_project=False,
+                is_endpoint=False,
+                **get_search_results(path, base_url)
+            )
 
         im = image_loading.load_colony_image(
             (plate, outer, inner),
@@ -130,7 +134,10 @@ def add_routes(app):
     def get_compile_image_list(location='root', project=None):
 
         if location != 'root':
-            return jsonify(success=False, reason='Illegal location')
+            return json_abort(
+                403,
+                reason='Illegal location'
+            )
 
         path = convert_url_to_path(project)
         model = CompileProjectFactory.dict_from_path_and_fixture(path)
