@@ -1,8 +1,10 @@
 import os
 from itertools import chain, product
 from glob import glob
-from flask import Flask, jsonify, request
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response
+from flask import jsonify, request
+from scanomatic.ui_server.general import (
+    convert_url_to_path, convert_path_to_url, get_search_results, json_response
+)
 from scanomatic.io.paths import Paths
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import DefaultPinningFormats
@@ -40,20 +42,20 @@ def add_routes(app):
         correction = request.values.getlist('gridding_correction')
         if not correction:
             correction = None
-        im = get_image_data_as_array(request.files.get('image'))
+        image = get_image_data_as_array(request.files.get('image'))
 
         analysis_model = AnalysisModelFactory.create()
         analysis_model.output_directory = ""
-        ga = GridArray((None, None), pinning_format, analysis_model)
+        grid_array = GridArray((None, None), pinning_format, analysis_model)
 
-        if not ga.detect_grid(im, grid_correction=correction):
+        if not grid_array.detect_grid(image, grid_correction=correction):
             return jsonify(
                 success=False,
                 reason="Grid detection failed",
                 is_endpoint=True,
             )
 
-        grid = ga.grid
+        grid = grid_array.grid
         inner = len(grid[0])
         outer = len(grid)
         xy1 = [([None] for _ in range(inner)) for _ in range(outer)]
@@ -61,10 +63,10 @@ def add_routes(app):
 
         for pos in product(range(outer), range(inner)):
 
-            o, i = pos
-            gc = ga[pos]
-            xy1[o][i] = gc.xy1
-            xy2[o][i] = gc.xy2
+            outr, innr = pos
+            grid_cell = grid_array[pos]
+            xy1[outr][innr] = grid_cell.xy1
+            xy2[outr][innr] = grid_cell.xy2
 
         return jsonify(
             success=True,
@@ -89,7 +91,8 @@ def add_routes(app):
 
         analysis_logs = tuple(chain(((
             convert_path_to_url("/api/tools/logs/0/0", c),
-            convert_path_to_url("/api/tools/logs/WARNING_ERROR_CRITICAL/0/0", c)) for c in
+            convert_path_to_url(
+                "/api/tools/logs/WARNING_ERROR_CRITICAL/0/0", c)) for c in
             glob(os.path.join(path, Paths().analysis_run_log)))))
 
         if model is None:
@@ -104,15 +107,21 @@ def add_routes(app):
             ["urls", "compile_instructions", "analysis_logs"],
             dict(
                 instructions={
-                    'grayscale': "one-time" if model.one_time_grayscale else "dynamic",
-                    'positioning': "one-time" if model.one_time_positioning else "dynamic",
+                    'grayscale': "one-time" if model.one_time_grayscale \
+                        else "dynamic",
+                    'positioning': "one-time" if model.one_time_positioning \
+                        else "dynamic",
                     'compilation': model.compilation,
                     'compile_instructions': model.compile_instructions,
                     'email': model.email,
                     'pinning_matrices': model.pinning_matrices,
-                    'grid_model': {'gridding_offsets': model.grid_model.gridding_offsets,
-                                   'reference_grid_folder': model.grid_model.reference_grid_folder},
+                    'grid_model': {
+                        'gridding_offsets': model.grid_model.gridding_offsets,
+                        'reference_grid_folder':
+                        model.grid_model.reference_grid_folder
+                    },
                 },
                 analysis_logs=analysis_logs,
-                compile_instructions=[convert_path_to_url("/api/compile/instructions", model.compile_instructions)],
+                compile_instructions=[convert_path_to_url(
+                    "/api/compile/instructions", model.compile_instructions)],
                 **get_search_results(path, base_url))))
