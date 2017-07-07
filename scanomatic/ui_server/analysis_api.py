@@ -9,7 +9,7 @@ from scanomatic.io.paths import Paths
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import DefaultPinningFormats
 from scanomatic.image_analysis.grid_array import GridArray
-from .general import get_image_data_as_array
+from .general import get_image_data_as_array, json_abort
 
 
 def add_routes(app):
@@ -24,7 +24,6 @@ def add_routes(app):
     def get_supported_pinning_formats():
 
         return jsonify(
-            success=True,
             is_endpoint=True,
             pinning_formats=[
                 dict(
@@ -49,8 +48,8 @@ def add_routes(app):
         grid_array = GridArray((None, None), pinning_format, analysis_model)
 
         if not grid_array.detect_grid(image, grid_correction=correction):
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Grid detection failed",
                 is_endpoint=True,
             )
@@ -69,7 +68,6 @@ def add_routes(app):
             xy2[outr][innr] = grid_cell.xy2
 
         return jsonify(
-            success=True,
             is_endpoint=True,
             xy1=xy1,
             xy2=xy2,
@@ -107,10 +105,10 @@ def add_routes(app):
             ["urls", "compile_instructions", "analysis_logs"],
             dict(
                 instructions={
-                    'grayscale': "one-time" if model.one_time_grayscale \
-                        else "dynamic",
-                    'positioning': "one-time" if model.one_time_positioning \
-                        else "dynamic",
+                    'grayscale': "one-time" if model.one_time_grayscale
+                    else "dynamic",
+                    'positioning': "one-time" if model.one_time_positioning
+                    else "dynamic",
                     'compilation': model.compilation,
                     'compile_instructions': model.compile_instructions,
                     'email': model.email,
