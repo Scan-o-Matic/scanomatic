@@ -140,9 +140,10 @@ def add_routes(app, rpc_client, is_debug_mode):
             data_object = request.values
 
         if len(data_object) == 0:
-            return jsonify(
-                success=False,
-                reason="No valid json or post is empty")
+            return json_abort(
+                400,
+                reason="No valid json or post is empty"
+            )
         else:
             raw_growth_data = data_object.get("raw_growth_data", [])
             times_data = data_object.get("times_data", [])
@@ -177,7 +178,6 @@ def add_routes(app, rpc_client, is_debug_mode):
                 phenotyper.Offsets[reference_offset])
 
             return jsonify(
-                success=True,
                 smooth_growth_data=json_data(state.smooth_growth_data),
                 phenotypes={
                     pheno.name: [
@@ -217,7 +217,6 @@ def add_routes(app, rpc_client, is_debug_mode):
             default = None
 
         return jsonify(
-            success=True,
             grayscales=grayscales,
             default=default
         )
@@ -239,12 +238,11 @@ def add_routes(app, rpc_client, is_debug_mode):
             'target_values' as an array of the reference values supplied by the
                 manufacturer
             'grayscale' as the name of the grayscale
-            'success' if analysis completed and if not 'reason' is added as to
-                why not.
             'exits' lists the suggested further requests
             'transform_grayscale' list with the uri to transform image in
                 grayscale calibrated space using the results of the current
                 request
+            'reason' is added if analysis failed to indicate the error
 
         See Also:
             _grayscales @ route /api/data/grayscales:
@@ -267,8 +265,8 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         if get_area_too_large_for_grayscale(grayscale_area_model):
 
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 source_values=None,
                 target_values=None,
                 grayscale=None,
@@ -276,29 +274,36 @@ def add_routes(app, rpc_client, is_debug_mode):
             )
 
         try:
+            # TODO: fixture undefined?
             _, values = get_grayscale(
                 fixture, grayscale_area_model, debug=is_debug_mode)
         except TypeError:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 is_endpoint=True,
                 reason="Grayscale detection failed"
             )
 
         grayscale_object = getGrayscale(grayscale_area_model.name)
-        valid = get_grayscale_is_valid(values, grayscale_object)
-
-        return jsonify(
-            success=valid,
-            source_values=values,
-            target_values=grayscale_object['targets'],
-            grayscale=grayscale_area_model.name,
-            reason=None if valid else
-            "No valid grayscale detected for {0}".format(
-                dict(**grayscale_area_model)),
-            exits=["transform_grayscale"],
-            transform_grayscale=["/api/data/image/transform/grayscale"]
-        )
+        if get_grayscale_is_valid(values, grayscale_object):
+            return jsonify(
+                source_values=values,
+                target_values=grayscale_object['targets'],
+                grayscale=grayscale_area_model.name,
+                exits=["transform_grayscale"],
+                transform_grayscale=["/api/data/image/transform/grayscale"]
+            )
+        else:
+            return json_abort(
+                422,
+                source_values=values,
+                target_values=grayscale_object['targets'],
+                grayscale=grayscale_area_model.name,
+                reason="No valid grayscale detected for {0}".format(
+                    dict(**grayscale_area_model)),
+                exits=["transform_grayscale"],
+                transform_grayscale=["/api/data/image/transform/grayscale"]
+            )
 
     @app.route(
         "/api/data/grayscale/fixture/<fixture_name>", methods=['POST', 'GET'])
@@ -316,8 +321,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             'target_values' as an array of the reference values supplied by the
                 manufacturer
             'grayscale' as the name of the grayscale
-            'success' if analysis completed and if not 'reason' is added as to
-                why not.
+            'reason' is added if analysis failed to indicate the error
         """
 
         grayscale_area_model = GrayScaleAreaModel(
@@ -331,7 +335,6 @@ def add_routes(app, rpc_client, is_debug_mode):
         if get_area_too_large_for_grayscale(grayscale_area_model):
 
             return jsonify(
-                success=True,
                 source_values=None,
                 target_values=None,
                 grayscale=False,
@@ -347,22 +350,27 @@ def add_routes(app, rpc_client, is_debug_mode):
             _, values = get_grayscale(
                 fixture, grayscale_area_model, debug=is_debug_mode)
         except TypeError:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 is_endpoint=True,
                 reason="Grayscale detection failed"
             )
 
         grayscale_object = getGrayscale(grayscale_area_model.name)
-        valid = get_grayscale_is_valid(values, grayscale_object)
-
-        return jsonify(
-            success=True,  # TODO: should be `valid`, not `True`?
-            source_values=values,
-            target_values=grayscale_object['targets'],
-            grayscale=valid,
-            reason=None if valid else "No Grayscale"
-        )
+        if get_grayscale_is_valid(values, grayscale_object):
+            return jsonify(
+                source_values=values,
+                target_values=grayscale_object['targets'],
+                grayscale=True,
+            )
+        else:
+            return json_abort(
+                400,
+                source_values=values,
+                target_values=grayscale_object['targets'],
+                grayscale=False,
+                reason="No Grayscale"
+            )
 
     @app.route("/api/data/fixture/names")
     def _fixure_names():
@@ -370,19 +378,18 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         Returns: json-object with keys
             "fixtures" as the an array of strings, the names
-            "success" if could be obtained and if not "reason" to explain why
+            "reason" is added if analysis failed to indicate the error
 
         """
 
         if rpc_client.online:
             return jsonify(
                 fixtures=rpc_client.get_fixtures(),
-                success=True
             )
         else:
-            return jsonify(
+            return json_abort(
+                503,
                 fixtures=[],
-                success=False,
                 reason="Scan-o-Matic server offline"
             )
 
@@ -396,24 +403,24 @@ def add_routes(app, rpc_client, is_debug_mode):
         try:
             fixture = FixtureFactory.serializer.load_first(path)
             if fixture is None:
-                return jsonify(
-                    success=False,
-                    reason="File is missing")
+                return json_abort(
+                    400,
+                    reason="File is missing"
+                )
             return jsonify(
-                success=True,
                 grayscale=dict(**fixture.grayscale),
                 plates=[dict(**plate) for plate in fixture.plates],
                 markers=zip(
                     fixture.orientation_marks_x, fixture.orientation_marks_y)
             )
         except IndexError:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Fixture without data"
             )
         except ConfigError:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Fixture data corrupted"
             )
 
@@ -429,13 +436,12 @@ def add_routes(app, rpc_client, is_debug_mode):
                 included plates specs
             "grayscale" is a key-value array of its specs
             "markers" is a 2D array of the marker centra
-            "success" if the fixture was found and valid else
-            "reason" to explain why not.
+            "reason" is added if analysis failed to explain why
 
         """
         if not rpc_client.online:
-            return jsonify(
-                success=False,
+            return json_abort(
+                503,
                 reason="Scan-o-Matic server offline"
             )
         elif name in rpc_client.get_fixtures():
@@ -443,30 +449,30 @@ def add_routes(app, rpc_client, is_debug_mode):
             try:
                 fixture = FixtureFactory.serializer.load_first(path)
                 if fixture is None:
-                    return jsonify(
-                        success=False,
+                    return json_abort(
+                        400,
                         reason="File is missing"
                     )
                 return jsonify(
-                    success=True, grayscale=dict(**fixture.grayscale),
+                    grayscale=dict(**fixture.grayscale),
                     plates=[dict(**plate) for plate in fixture.plates],
                     markers=zip(
                         fixture.orientation_marks_x,
                         fixture.orientation_marks_y)
                 )
             except IndexError:
-                return jsonify(
-                    success=False,
+                return json_abort(
+                    400,
                     reason="Fixture without data"
                 )
             except ConfigError:
-                return jsonify(
-                    success=False,
+                return json_abort(
+                    400,
                     reason="Fixture data corrupted"
                 )
         else:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Unknown fixture"
             )
 
@@ -478,8 +484,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             name: The name of the fixture to remove
 
         Returns: json-object with keys
-            "success" if removed else
-            "reason" to explain why not.
+            "reason" is added if analysis failed to explain why
 
         """
         name = Paths().get_fixture_name(name)
@@ -487,8 +492,8 @@ def add_routes(app, rpc_client, is_debug_mode):
             Paths().get_fixture_name(f) for f in rpc_client.get_fixtures())
 
         if name not in known_fixtures:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Unknown fixture"
             )
 
@@ -501,12 +506,11 @@ def add_routes(app, rpc_client, is_debug_mode):
         try:
             shutil.move(source, pattern.format(path, i))
         except IOError:
-            return jsonify(
-                success=False,
+            return json_abort(
+                500,
                 reason="Error while removing"
             )
         return jsonify(
-            success=True,
             reason="Happy"
         )
 
@@ -528,8 +532,8 @@ def add_routes(app, rpc_client, is_debug_mode):
     def _fixture_set(name):
 
         if not rpc_client.online:
-            return jsonify(
-                success=False,
+            return json_abort(
+                503,
                 reason="Scan-o-Matic server offline"
             )
 
@@ -538,8 +542,8 @@ def add_routes(app, rpc_client, is_debug_mode):
             data_object = request.values
 
         if len(data_object) == 0:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="No valid json or post is empty"
             )
 
@@ -549,8 +553,8 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         name = Paths().get_fixture_name(name)
         if not name:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Fixtures need a name"
             )
 
@@ -561,14 +565,14 @@ def add_routes(app, rpc_client, is_debug_mode):
         try:
             fixture = get_fixture_image_by_name(name)
         except IOError:
-            return jsonify(
-                success=False,
+            return json_abort(
+                404,
                 reason="Fixture image not on server"
             )
 
         if not usable_markers(markers, fixture.im):
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Bad markers"
             )
 
@@ -580,13 +584,13 @@ def add_routes(app, rpc_client, is_debug_mode):
         if grayscale_area_model:
 
             if grayscale_name not in getGrayscales():
-                return jsonify(
-                    success=False,
+                return json_abort(
+                    400,
                     reason="Unknown grayscale type"
                 )
             if get_area_too_large_for_grayscale(grayscale_area_model):
-                return jsonify(
-                    success=False,
+                return json_abort(
+                    422,
                     reason="Area too large for grayscale"
                 )
 
@@ -596,8 +600,8 @@ def add_routes(app, rpc_client, is_debug_mode):
                 _, values = get_grayscale(fixture, grayscale_area_model)
             except TypeError:
 
-                return jsonify(
-                    success=False,
+                return json_abort(
+                    422,
                     reason="Could not detect grayscale"
                 )
 
@@ -605,16 +609,16 @@ def add_routes(app, rpc_client, is_debug_mode):
             valid = get_grayscale_is_valid(values, grayscale_object)
 
             if not valid:
-                return jsonify(
-                    success=False,
+                return json_abort(
+                    422,
                     reason="Could not detect valid grayscale"
                 )
 
             grayscale_area_model.values = values
 
         if not usable_plates(plates):
-            return jsonify(
-                success=False,
+            return json_abort(
+                422,
                 reason="Bad plate selections"
             )
 
@@ -630,14 +634,14 @@ def add_routes(app, rpc_client, is_debug_mode):
             scale=1.0)
 
         if not FixtureFactory.validate(fixture_model):
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Final compilation doesn't validate"
             )
 
         FixtureFactory.serializer.dump(fixture_model, fixture_model.path)
         return jsonify(
-            success=True  # TODO: how to handle this one?
+            reason="Happy!"
         )
 
     @app.route("/api/data/fixture/calculate/<fixture_name>", methods=['POST'])
@@ -673,8 +677,8 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         if markers.ndim != 2 and markers.shape[0] != 2 and \
                 markers.shape[1] < 3:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Markers should be a 2D array with shape (2, 3) or " +
                 "greater for last dimension",
                 is_endpoint=True,
@@ -683,8 +687,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         fixture_settings = Fixtures()[fixture_name]
 
         if fixture_settings is None:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Fixture '{0}' is not known".format(fixture_name),
                 is_endpoint=True,
             )
@@ -697,7 +701,6 @@ def add_routes(app, rpc_client, is_debug_mode):
         fixture.set_current_areas(issues)
 
         return jsonify(
-            success=True,
             is_endpoint=True,
             plates=[
                 dict(
@@ -768,7 +771,6 @@ def add_routes(app, rpc_client, is_debug_mode):
                 save_image_as_png(path)
 
                 return jsonify(
-                    success=True,
                     is_endpoint=True,
                     markers=json_data(
                         fixture['current'].get_marker_positions()),
@@ -780,7 +782,6 @@ def add_routes(app, rpc_client, is_debug_mode):
                 fixture.run_marker_analysis(markings=markers)
 
                 return jsonify(
-                    success=True,
                     is_endpoint=True,
                     markers=json_data(
                         fixture['current'].get_marker_positions())
@@ -790,8 +791,8 @@ def add_routes(app, rpc_client, is_debug_mode):
             "Refused detection (keys files: {0} values: {1})".format(
                 request.files.keys(), request.values.keys()))
 
-        return jsonify(
-            success=False,
+        return json_abort(
+            400,
             is_endpoint=True,
             reason="No fixture image name" if image_is_allowed(ext) else
             "Image type not allowed"
@@ -811,11 +812,10 @@ def add_routes(app, rpc_client, is_debug_mode):
             "grayscale_targets": the manufacturer's target values.
 
         Returns: json-object with keys
-            "success" if successfully converted
-            "reason" why not
             "image" the converted image
             "exits" list keys with suggested further requests
             "detect_colony" list with URI for detecting a colony in an image
+            "reason" is added if analysis failed to explain why
 
         See Also:
             _gs_get_from_image @ route "/api/data/grayscale/image/<grayscale_name>":
@@ -842,7 +842,6 @@ def add_routes(app, rpc_client, is_debug_mode):
             targetValues=grayscale_targets)
 
         return jsonify(
-            success=True,
             image=transpose_polynomial(image).tolist(),
             exits=["detect_colony"],
             detect_colony=["/api/data/image/detect/colony"]
@@ -860,8 +859,6 @@ def add_routes(app, rpc_client, is_debug_mode):
                 values
 
         Returns: json-object
-            "success" if successfully detected
-            "reason" why not
             "blob" a 2D boolean array identifying pixels as blob
             "background" a 2D boolean array identifying pixels as
                 background
@@ -869,6 +866,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             "transform_cells" list of the URI for transforming grayscale
                 calibrated values to cells.
             "analyse_compartments": list of URI for analysing compartments
+            "reason" is added if analysis failed to explain why
         """
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
@@ -894,7 +892,6 @@ def add_routes(app, rpc_client, is_debug_mode):
         grid_cell.detect(remember_filter=False)
 
         return jsonify(
-            success=True,
             blob=grid_cell.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
             background=grid_cell.get_item(
                 COMPARTMENTS.Background).filter_array.tolist(),
@@ -918,13 +915,12 @@ def add_routes(app, rpc_client, is_debug_mode):
                 values
 
         Returns: json-object
-            "success" if successfully detected
-            "reason" why not
             "blob" a 2D boolean array identifying pixels as blob
             "background" a 2D boolean array identifying pixels as
                 background
             "features" nested key-value array structure containing
                 all analysis results.
+            "reason" is added if analysis failed to explain why
         """
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
@@ -951,7 +947,6 @@ def add_routes(app, rpc_client, is_debug_mode):
         grid_cell.analyse(detect=True, remember_filter=False)
 
         return jsonify(
-            success=True,
             blob=grid_cell.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
             background=grid_cell.get_item(
                 COMPARTMENTS.Background).filter_array.tolist(),
@@ -972,8 +967,6 @@ def add_routes(app, rpc_client, is_debug_mode):
                 values indicating pixels being part of the background
 
         Returns: json-object
-            "success": if successfully detected
-            "reason": why not
             "image": a 2D array of cells per pixel
             "exits": list of suggested further URI requests
             "analyse_compartment: list of request URIs to analyse detections
@@ -1006,7 +999,6 @@ def add_routes(app, rpc_client, is_debug_mode):
         )
 
         return jsonify(
-            success=True,
             image=grid_cell.source.tolist(),
             exits=['analyse_compartment'],
             analyse_compartment=[
@@ -1045,8 +1037,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         elif compartment == 'total':
             grid_cell_compartment = grid_cell.get_item(COMPARTMENTS.Total)
         else:
-            return jsonify(
-                success=False,
+            return json_abort(
+                400,
                 reason="Unknown compartment {0}".format(compartment)
             )
 
@@ -1056,7 +1048,6 @@ def add_routes(app, rpc_client, is_debug_mode):
         grid_cell_compartment.do_analysis()
 
         return jsonify(
-            success=True,
             features=json_data(AnalysisFeaturesFactory.deep_to_dict(
                 grid_cell_compartment.features))
         )
