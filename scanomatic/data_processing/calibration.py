@@ -504,7 +504,7 @@ def set_image_info(identifier, image_identifier, **kwargs):
             _logger.error("{0} is not a known property of images".format(key))
             return False
 
-    return save_ccc_to_disk(ccc):
+    return save_ccc_to_disk(ccc)
 
 
 @_validate_ccc_edit_request
