@@ -904,32 +904,37 @@ def load_data_file(file_path=None, label=''):
 
 def _collect_all_included_data(ccc):
 
-    data_store = {
-        CalibrationEntry.target_value: [],
-        CalibrationEntry.source_values: [],
-        CalibrationEntry.source_value_counts: []}
-    source_values = data_store[CalibrationEntry.source_values]
-    source_value_counts = data_store[CalibrationEntry.source_value_counts]
-    target_value = data_store[CalibrationEntry.target_value]
+    source_values = []
+    source_value_counts = []
+    target_value = []
+    inclusion_filter = []
 
     for image_data in ccc[CellCountCalibration.images]:
 
         for plate in image_data[CCCImage.plates].values():
 
-            for row in plate:
+            for row in plate[CCCPlate.compressed_ccc_data]:
 
                 for item in row:
 
-                    if item[CalibrationEntry.included]:
+                    inclusion_filter.append(item[CCCMeasurement.included])
 
-                        source_value_counts.append(
-                            item[CalibrationEntry.source_value_counts])
-                        source_values.append(
-                            item[CalibrationEntry.source_values])
-                        target_value.append(
-                            item[CalibrationEntry.target_value])
+                    source_value_counts.append(
+                        item[CCCMeasurement.source_value_counts])
+                    source_values.append(
+                        item[CCCMeasurement.source_values])
 
-    return data_store
+    target_value = np.array(ccc[CellCountCalibration.independent_data]).ravel()
+
+
+    return {
+        CalibrationEntry.target_value:
+            target_value[inclusion_filter].tolist(),
+        CalibrationEntry.source_values:
+            np.array(source_values)[inclusion_filter].tolist(),
+        CalibrationEntry.source_value_counts:
+            np.array(source_value_counts)[inclusion_filter].tolist(),
+    }
 
 
 def get_calibration_optimization_function(degree=5, include_intercept=False):
