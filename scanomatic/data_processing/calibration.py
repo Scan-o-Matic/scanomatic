@@ -1234,7 +1234,7 @@ def constuct_polynomial(identifier, poly_name, power):
 
     if validation is not CalibrationValidation.OK:
         return {
-            validation: validation
+            'validation': validation
         }
     _add_poly(ccc, poly_name, power, poly_coeffs)
     if not save_ccc_to_disk(ccc):
@@ -1248,13 +1248,13 @@ def constuct_polynomial(identifier, poly_name, power):
         data_store[CalibrationEntry.source_value_counts]).sum(axis=1).tolist()
 
     return {
-        ccc: identifier,
-        polynomial_coefficients: poly_coeffs,
-        polynomial_name: poly_name,
-        polynomial_degree: power,
-        measured_sizes: data_store[CalibrationEntry.target_value],
-        calculated_sizes: calc_sizes,
-        validation: validation,
+        'ccc': identifier,
+        'polynomial_coefficients': poly_coeffs,
+        'polynomial_name': poly_name,
+        'polynomial_degree': power,
+        'measured_sizes': data_store[CalibrationEntry.target_value],
+        'calculated_sizes': calc_sizes,
+        'validation': validation,
     }
 
 
