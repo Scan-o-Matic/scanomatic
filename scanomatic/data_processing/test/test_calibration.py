@@ -1,6 +1,10 @@
+import os
+import json
+from collections import namedtuple
+
 import numpy as np
 import pytest
-from collections import namedtuple
+
 from scanomatic.data_processing import calibration
 
 data = calibration.load_data_file()
@@ -134,3 +138,67 @@ class TestAccessToken:
             ccc[calibration.CellCountCalibration.identifier],
             access_token=ccc[
                 calibration.CellCountCalibration.edit_access_token]) is True
+
+
+@pytest.fixture(scope='function')
+def edit_ccc():
+    parent = os.path.dirname(__file__)
+    with open(os.path.join(parent, 'data/test.ccc'), 'rb') as fh:
+        data = json.load(fh)
+    ccc = calibration._parse_ccc(data)
+    if ccc:
+        calibration.__CCC['test'] = ccc
+        return ccc
+    raise ValueError("The test.ccc is not valid/doesn't parse")
+
+
+@pytest.fixture(scope='function')
+def data_store(edit_ccc):
+    return calibration._collect_all_included_data(edit_ccc)
+
+class TestEditCCC:
+
+    def test_ccc_is_in_edit_mode(self, edit_ccc):
+
+        assert (
+            edit_ccc[calibration.CellCountCalibration.status] is
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "Not edit mode"
+
+        assert (
+            edit_ccc[calibration.CellCountCalibration.identifier]
+        ), "Missing Identifier"
+
+    def test_ccc_collect_all_data_has_equal_length(self, data_store):
+
+        lens = [len(value) for value in data_store.values()]
+        assert all(v == lens[0] for v in lens)
+
+    def test_ccc_collect_all_data_entries_has_equal_length(self, data_store):
+
+        values = data_store[calibration.CalibrationEntry.source_values]
+        counts = data_store[calibration.CalibrationEntry.source_value_counts]
+        assert all(len(v) == len(c) for v, c in zip(values, counts))
+
+    def test_ccc_calculate_polynomial(self, data_store):
+
+        poly_coeffs = calibration.calculate_polynomial(data_store, 5)
+        assert len(poly_coeffs) == 6
+        assert poly_coeffs[0] != 0
+        assert poly_coeffs[-2] != 0
+        assert poly_coeffs[-1] == 0
+        assert all(v == 0 for v in poly_coeffs[1:4])
+
+    def test_construct_polynomial(self):
+
+        identifier = 'test'
+        poly_name = 'test'
+        power = 5
+        token = 'password'
+
+        response = calibration.constuct_polynomial(
+            identifier, poly_name, power, access_token=token)
+
+        assert (
+            response['validation'] is
+            calibration.CalibrationValidation.BadSlope)
