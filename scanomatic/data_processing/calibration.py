@@ -1181,3 +1181,9 @@ def add_external_data_to_ccc(identifier, data_file, report):
 
     _save_ccc_to_disk(ccc)
     return True
+
+@_validate_ccc_edit_request
+def constuct_polynomial(identifier, poly_name, power):
+
+    return False
+

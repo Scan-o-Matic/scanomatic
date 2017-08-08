@@ -803,10 +803,37 @@ def add_routes(app):
 
             return json_abort(
                 400,
-                success=False,
-                is_enpoint=True,
                 reason='Unexpected error removing CCC'
             )
+
+    @app.route('/api/data/calibration/<ccc_identifier>/construct/<poly_name>',
+               defaults={'power': 5})
+    @app.route('/api/data/calibration/<ccc_identifier>/construct/<poly_name>/<int: power>')
+    def construct_calibration(ccc_identifier, poly_name, power):
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        if not calibration.is_valid_token(
+                identifier,
+                access_token=data_object.get("access_token")):
+
+            return json_abort(
+                401,
+                reason="Invalid access token")
+
+        if calibration.constuct_polynomial(
+                ccc_identifier,
+                poly_name,
+                power,
+                access_token=data_object.get("access_token")):
+
+            pass
+
+        return json_abort(
+            400,
+            reason="Construction refused, probably because CCC is deployed or no data.")
 
     """
     DEPRECATION WARNING BELOW
