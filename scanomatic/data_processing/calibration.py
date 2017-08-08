@@ -897,6 +897,36 @@ def load_data_file(file_path=None, label=''):
     return data_store
 
 
+def _collect_all_included_data(ccc):
+
+    data_store = {
+        CalibrationEntry.target_value: [],
+        CalibrationEntry.source_values: [],
+        CalibrationEntry.source_value_counts: []}
+    source_values = data_store[CalibrationEntry.source_values]
+    source_value_counts = data_store[CalibrationEntry.source_value_counts]
+    target_value = data_store[CalibrationEntry.target_value]
+
+    for image_data in ccc[CellCountCalibration.images]:
+
+        for plate in image_data[CCCImage.plates].values():
+
+            for row in plate:
+
+                for item in row:
+
+                    if item[CalibrationEntry.included]:
+
+                        source_value_counts.append(
+                            item[CalibrationEntry.source_value_counts])
+                        source_values.append(
+                            item[CalibrationEntry.source_values])
+                        target_value.append(
+                            item[CalibrationEntry.target_value])
+
+    return data_store
+
+
 def get_calibration_optimization_function(degree=5, include_intercept=False):
 
     arr = np.zeros((degree + 1,), np.float)
