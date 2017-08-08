@@ -363,13 +363,14 @@ def save_ccc_to_disk(identifier):
             __CCC[identifier][CellCountCalibration.status] is
             CalibrationEntryStatus.UnderConstruction):
 
-        _save_ccc_to_disk(__CCC[identifier])
+        return _save_ccc_to_disk(__CCC[identifier])
 
     elif identifier not in __CCC:
         _logger.error("Unknown CCC identifier {0}".format(identifier))
     else:
         _logger.error(
             "Can only save changes to CCC:s that are under construction")
+    return False
 
 
 def _encode_val(v):
@@ -397,6 +398,8 @@ def _save_ccc_to_disk(data):
 
     with open(Paths().ccc_file_pattern.format(identifier), 'wb') as fh:
         json.dump(_encode_dict(data), fh)
+
+    return True
 
 
 def _parse_ccc(data):
@@ -459,7 +462,8 @@ def add_image_to_ccc(identifier, image):
     image.save(Paths().ccc_image_pattern.format(identifier, im_identifier))
 
     ccc[CellCountCalibration.images].append(im_json)
-    _save_ccc_to_disk(ccc)
+    if not save_ccc_to_disk(ccc):
+        False
 
     return im_identifier
 
@@ -495,8 +499,7 @@ def set_image_info(identifier, image_identifier, **kwargs):
             _logger.error("{0} is not a known property of images".format(key))
             return False
 
-    _save_ccc_to_disk(ccc)
-    return True
+    return save_ccc_to_disk(ccc):
 
 
 @_validate_ccc_edit_request
@@ -520,8 +523,7 @@ def set_plate_grid_info(
     plate_json[CCCPlate.grid_cell_size] = grid_cell_size
     plate_json[CCCPlate.grid_shape] = grid_shape
 
-    _save_ccc_to_disk(ccc)
-    return True
+    return save_ccc_to_disk(ccc)
 
 
 def get_image_json_from_ccc(identifier, image_identifier):
@@ -757,9 +759,7 @@ def set_colony_compressed_data(
         plate[CCCPlate.compressed_ccc_data][x][y][
             CCCMeasurement.source_values] = values
 
-    _save_ccc_to_disk(ccc)
-
-    return True
+    return save_ccc_to_disk(ccc)
 
 if not __CCC:
     __load_cccs()
@@ -1209,8 +1209,7 @@ def add_external_data_to_ccc(identifier, data_file, report):
     ccc[CellCountCalibration.independent_data] = (
         meta_data.get_column_index_from_all_plates(-1))
 
-    _save_ccc_to_disk(ccc)
-    return True
+    return save_ccc_to_disk(ccc)
 
 
 @_validate_ccc_edit_request
@@ -1228,7 +1227,8 @@ def constuct_polynomial(identifier, poly_name, power):
             validation: validation
         }
     _add_poly(ccc, poly_name, power, poly_coeffs)
-    _save_ccc_to_disk(ccc)
+    if not save_ccc_to_disk(ccc):
+        return False
 
     # Darkening -> Cell Count Per pixel
     # Then multiply by number of such pixels in colony

@@ -844,6 +844,10 @@ def add_routes(app):
                 is_endpoint=True,
                 **response
             )
+        elif response is False:
+            return json_abort(
+                400,
+                reason="Failed to save ccc")
 
         return json_abort(
             400,
