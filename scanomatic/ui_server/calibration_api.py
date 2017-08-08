@@ -823,17 +823,34 @@ def add_routes(app):
                 401,
                 reason="Invalid access token")
 
-        if calibration.constuct_polynomial(
+        poly_name = re.sub(r'[ .,]]', '_', poly_name)
+        checked_name = "".join(c for c in poly_name if c in _VALID_CHARACTERS)
+
+        if poly_name != checked_name:
+            return json_abort(
+                400,
+                reason="Name is containing invalid characters"
+            )
+
+        response = calibration.constuct_polynomial(
                 ccc_identifier,
                 poly_name,
                 power,
                 access_token=data_object.get("access_token")):
 
-            pass
+        if response["validation"] is calibration.CalibrationValidation.OK:
+            return jsonify(
+                success=True,
+                is_endpoint=True,
+                **response
+            )
 
         return json_abort(
             400,
-            reason="Construction refused, probably because CCC is deployed or no data.")
+            reason=
+            "Construction refused. Validation of polynomial says: ".format(
+                response["validation"].name
+            ))
 
     """
     DEPRECATION WARNING BELOW
