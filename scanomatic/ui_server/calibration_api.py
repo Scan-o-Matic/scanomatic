@@ -859,44 +859,6 @@ def add_routes(app):
     """
     DEPRECATION WARNING BELOW
 
-    @app.route("/api/calibration/add/<name>")
-    @app.route("/api/calibration/add/<name>/<int:degree>")
-    def calibration_add(name, degree=5):
-
-        data_object = request.get_json(silent=True, force=True)
-        if not data_object:
-            data_object = request.values
-
-        entries = data_object.get("entries", [])
-        poly = calculate_polynomial(entries, degree)
-
-        validity = validate_polynomial(entries, poly)
-        if validity != CalibrationValidation.OK:
-            return json_abort(400, success=False, reason=validity.name)
-
-        name = re.sub(r'[ .,]]', '_', name)
-        name = "".join(c for c in name if c in _VALID_CHARACTERS)
-
-        if not name:
-            return json_abort(
-                400,
-                success=False,
-                reason="Name contains no valid characters " +
-                "({0})".format(_VALID_CHARACTERS)
-            )
-
-        save_data_to_file(entries, label=name)
-
-        data_path = None
-
-        add_calibration(name, poly, data_path)
-
-        return jsonify(
-            success=True,
-            poly=poly,
-            name=name
-        )
-
     @app.route("/api/calibration/export")
     @app.route("/api/calibration/export/<name>")
     def calibration_export(name=''):
