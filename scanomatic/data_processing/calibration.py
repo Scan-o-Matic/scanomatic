@@ -1212,8 +1212,38 @@ def add_external_data_to_ccc(identifier, data_file, report):
     _save_ccc_to_disk(ccc)
     return True
 
+
 @_validate_ccc_edit_request
 def constuct_polynomial(identifier, poly_name, power):
 
-    return False
+    ccc = __CCC[identifier]
+    data_store = _collect_all_included_data(ccc)
+    poly_coeffs = calculate_polynomial(data_store, power).tolist()
+    poly = get_calibration_polynomial(poly_coeffs)
+
+    validation = validate_polynomial(data_store, poly)
+
+    if validation is not CalibrationValidation.OK:
+        return {
+            validation: validation
+        }
+    _add_poly(ccc, poly_name, power, poly_coeffs)
+    _save_ccc_to_disk(ccc)
+
+    # Darkening -> Cell Count Per pixel
+    # Then multiply by number of such pixels in colony
+    # Then Sum cell counts per colony
+    calc_sizes = (
+        poly(data_store[CalibrationEntry.source_values]) *
+        data_store[CalibrationEntry.source_value_counts]).sum(axis=1).tolist()
+
+    return {
+        ccc: identifier,
+        polynomial_coefficients: poly_coeffs,
+        polynomial_name: poly_name,
+        polynomial_degree: power,
+        measured_sizes: data_store[CalibrationEntry.target_value],
+        calculated_sizes: calc_sizes,
+        validation: validation,
+    }
 
