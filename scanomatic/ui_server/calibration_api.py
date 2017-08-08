@@ -777,7 +777,7 @@ def add_routes(app):
                 400,
                 report=report)
 
-    @app.route('/api/data/calibration/delete/<identifier>', methods=['POST'])
+    @app.route('/api/data/calibration/<identifier>/delete', methods=['POST'])
     def delete_non_deployed_calibration(identifier):
 
         data_object = request.get_json(silent=True, force=True)
