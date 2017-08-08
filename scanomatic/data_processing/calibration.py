@@ -86,9 +86,11 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
         # Continuous list of measurements of population sizes from OD or FACS
         # Plates, columns, row
     CellCountCalibration.independent_data_source: string  # File format
-    CellCountCalibration.polynomial:
-        [0, 1.12, 0, 46.21, 127.0],
-        # The polynomial coefficients of the calibration
+    CellCountCalibration.polynomial: {
+        string: {'power': int, 'coefficients': [10, 0, 0, 0, 150, 0]},
+        ....
+    }
+    CellCountCalibration.deployed_polynomial: string
 }
 
 """
@@ -116,6 +118,8 @@ class CellCountCalibration(Enum):
     edit_access_token = 7
     """:type : CellCountCalibration"""
     independent_data_source = 8
+    """:type : CellCountCalibration"""
+    deployed_polynomial = 9
     """:type : CellCountCalibration"""
 
 
@@ -243,7 +247,8 @@ def get_empty_ccc(species, reference):
         CellCountCalibration.polynomial: None,
         CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
         CellCountCalibration.independent_data: [],
-        CellCountCalibration.independent_data_source: None
+        CellCountCalibration.independent_data_source: None,
+        CellCountCalibration.deployed_polynomial: None,
     }
 
 
