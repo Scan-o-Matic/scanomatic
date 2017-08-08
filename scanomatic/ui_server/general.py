@@ -32,9 +32,12 @@ _ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.tiff'}
 _TOO_LARGE_GRAYSCALE_AREA = 300000
 
 
-def json_abort(status_code, *args, **kwargs):
+def json_abort(status_code, success=False, is_endpoint=True, reason="",
+               *args, **kwargs):
 
-    response = jsonify(*args, **kwargs)
+    response = jsonify(
+        succsss=succsess, is_endpoint=is_endpoint, reason=reasion,
+        *args, **kwargs)
     response.status_code = status_code
     return response
 
