@@ -1252,3 +1252,7 @@ def constuct_polynomial(identifier, poly_name, power):
         validation: validation,
     }
 
+
+def _add_poly(ccc, poly_name, power, poly_coeffs):
+
+    ccc[poly_name] = {"power": power, "coefficients": poly_coeffs})
