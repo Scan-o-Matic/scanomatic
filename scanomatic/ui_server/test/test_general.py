@@ -27,8 +27,3 @@ class TestJsonAbort:
         with app.test_request_context():
             assert general.json_abort(
                 status_code, *args, **kwargs).status_code == status_code
-
-    def test_json_abort_raises(self, app):
-        with app.test_request_context():
-            with pytest.raises(TypeError):
-                assert general.json_abort(600, *[42], **{'20': 21, '21': 20})
