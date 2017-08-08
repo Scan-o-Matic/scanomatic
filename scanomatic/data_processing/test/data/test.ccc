@@ -1,315 +1,306 @@
 {
-    CellCountCalibration.status:
-        CalibrationEntryStatus.UnderConstructioni
-    CellCountCalibration.edit_access_token:
-        "password"
-    CellCountCalibration.species:
-        "Homo ludensis"
-    CellCountCalibration.reference:
-        "Local Minimum"
-    CellCountCalibration.identifier:
-        "test"
-    CellCountCalibration.images: [
+    "CellCountCalibration.status":
+        "CalibrationEntryStatus.UnderConstruction",
+    "CellCountCalibration.edit_access_token":
+        "password",
+    "CellCountCalibration.species":
+        "Homo ludensis",
+    "CellCountCalibration.reference":
+        "Local Minimum",
+    "CellCountCalibration.identifier":
+        "test",
+    "CellCountCalibration.images": [
         {
-            CCCImage.identifier: string, "image2.tiff"
-            CCCImage.plates: {
-                1 :
+            "CCCImage.identifier": "image1",
+            "CCCImage.plates": {
+                "1":
                     {
-                    CCCPlate.grid_shape: (2, 4),
-                    CCCPlate.grid_cell_size: (52.5, 53.1),
-                    CCCPlate.compressed_ccc_data:
+                    "CCCPlate.grid_shape": [2, 4],
+                    "CCCPlate.grid_cell_size": [52.5, 53.1],
+                    "CCCPlate.compressed_ccc_data":
                         [
                             [
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: False,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": false,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
-                                },
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
+                                }
                             ],
                             [
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
-                                },
-                            ],
-                        ],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
+                                }
+                            ]
+                        ]
                     },
-                4 :
-                    {
-                    CCCPlate.grid_shape: (2, 4),
-                    CCCPlate.grid_cell_size: (52.5, 53.1),
-                    CCCPlate.compressed_ccc_data:
+                "4": {
+                    "CCCPlate.grid_shape": [2, 4],
+                    "CCCPlate.grid_cell_size": [52.5, 53.1],
+                    "CCCPlate.compressed_ccc_data":
                         [
                             [
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: False,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": false,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
-                                },
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
+                                }
                             ],
                             [
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
-                                },
-                            ],
-                        ],
-                    },
-
-                }
-            ],
-            CCCImage.grayscale_name: "bogus",
-            CCCImage.grayscale_source_values:
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
+                                }
+                            ]
+                        ]
+                    }},
+            "CCCImage.grayscale_name": "bogus",
+            "CCCImage.grayscale_source_values":
                 [123, 2.14],
-            CCCImage.grayscale_target_values:
+            "CCCImage.grayscale_target_values":
                 [123, 12412],
-            CCCImage.fixture: "fake",
+            "CCCImage.fixture": "fake"
         },
         {
-            CCCImage.identifier: string, "image2.tiff"
-            CCCImage.plates: {
-                1 :
-                    {
-                    CCCPlate.grid_shape: (2, 4),
-                    CCCPlate.grid_cell_size: (52.5, 53.1),
-                    CCCPlate.compressed_ccc_data:
+            "CCCImage.identifier": "image2",
+            "CCCImage.plates": {
+                "1": {
+                    "CCCPlate.grid_shape": [2, 4],
+                    "CCCPlate.grid_cell_size": [52.5, 53.1],
+                    "CCCPlate.compressed_ccc_data":
                         [
                             [
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: False,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": false,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
-                                },
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
+                                }
                             ],
                             [
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
-                                },
-                            ],
-                        ],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
+                                }
+                            ]
+                        ]
                     },
-                4 :
-                    {
-                    CCCPlate.grid_shape: (2, 4),
-                    CCCPlate.grid_cell_size: (52.5, 53.1),
-                    CCCPlate.compressed_ccc_data:
+                "4": {
+                    "CCCPlate.grid_shape": [2, 4],
+                    "CCCPlate.grid_cell_size": [52.5, 53.1],
+                    "CCCPlate.compressed_ccc_data":
                         [
                             [
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: False,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": false,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
-                                },
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
+                                }
                             ],
                             [
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
                                 },
                                 {
-                                    CCCMeasurement.included: True,
-                                    CCCMeasurement.source_values:
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
                                         [123.1, 10.4],
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214],
-                                },
-                            ],
-                        ],
-                    },
-
-                }
-            ],
-            CCCImage.grayscale_name: "bogus",
-            CCCImage.grayscale_source_values:
+                                    "CCCMeasurement.source_value_counts":
+                                        [100, 1214]
+                                }
+                            ]
+                        ]
+                    }},
+            "CCCImage.grayscale_name": "bogus",
+            "CCCImage.grayscale_source_values":
                 [123, 2.14],
-            CCCImage.grayscale_target_values:
+            "CCCImage.grayscale_target_values":
                 [123, 12412],
-            CCCImage.fixture: "fake",
-        },
+            "CCCImage.fixture": "fake"
+        }
     ],
-    CellCountCalibration.independent_data:
+    "CellCountCalibration.independent_data":
         [
             [
                 [12300, 121258, 1241240, 141410],
@@ -327,12 +318,10 @@
                 [12300, 121258, 1241240, 141410],
                 [12300, 121258, 1241240, 141410]
             ]
-        ]
-    CellCountCalibration.independent_data_source: "data.xlsx"
-    CellCountCalibration.polynomial:
-        [1.12, 0, 46.21, 127.0, 0],
-    CellCountCalibration.polynomial: {
-        'stiff': {'power': 3, 'coefficients': [10, 0, 150, 0]},
-    }
-    CellCountCalibration.deployed_polynomial: None
+        ],
+    "CellCountCalibration.independent_data_source": "data.xlsx",
+    "CellCountCalibration.polynomial": {
+        "stiff": {"power": 3, "coefficients": [10, 0, 150, 0]}
+    },
+    "CellCountCalibration.deployed_polynomial": null
 }
