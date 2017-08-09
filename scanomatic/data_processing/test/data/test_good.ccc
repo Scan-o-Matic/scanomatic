@@ -1,0 +1,175 @@
+{
+    "CellCountCalibration.status":
+        "CalibrationEntryStatus.UnderConstruction",
+    "CellCountCalibration.edit_access_token":
+        "password",
+    "CellCountCalibration.species":
+        "Homo ludensis",
+    "CellCountCalibration.reference":
+        "Local Minimum",
+    "CellCountCalibration.identifier":
+        "testgoodedit",
+    "CellCountCalibration.images": [
+        {
+            "CCCImage.identifier": "image1",
+            "CCCImage.plates": {
+                "1":
+                    {
+                    "CCCPlate.grid_shape": [2, 4],
+                    "CCCPlate.grid_cell_size": [52.5, 53.1],
+                    "CCCPlate.compressed_ccc_data":
+                        [
+                            [
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [45.16004129, 22.17612698],
+                                    "CCCMeasurement.source_value_counts":
+                                        [24, 25]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [36.26979328, 30.78214002],
+                                    "CCCMeasurement.source_value_counts":
+                                        [20, 29]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [36.00695412, 15.86556884],
+                                    "CCCMeasurement.source_value_counts":
+                                        [28, 24]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [22.85255992, 26.81420645],
+                                    "CCCMeasurement.source_value_counts":
+                                        [27, 29]
+                                }
+                            ],
+                            [
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [22.93495991, 17.2904436],
+                                    "CCCMeasurement.source_value_counts":
+                                        [68, 31]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [14.88412968, 18.0802335],
+                                    "CCCMeasurement.source_value_counts":
+                                        [26, 38]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [8.30762939, 26.97070555],
+                                    "CCCMeasurement.source_value_counts":
+                                        [32, 91]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [0.17137029, 4.9129377],
+                                    "CCCMeasurement.source_value_counts":
+                                        [88, 83]
+                                }
+                            ]
+                        ]
+                    },
+                "4": {
+                    "CCCPlate.grid_shape": [2, 4],
+                    "CCCPlate.grid_cell_size": [52.5, 53.1],
+                    "CCCPlate.compressed_ccc_data":
+                        [
+                            [
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [53.58380837, 53.51758031],
+                                    "CCCMeasurement.source_value_counts":
+                                        [51, 29]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [75.84430207, 78.46665706],
+                                    "CCCMeasurement.source_value_counts":
+                                        [69, 65]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [72.90754284, 79.25544585],
+                                    "CCCMeasurement.source_value_counts":
+                                        [75, 94]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [74.28924273, 51.00548795],
+                                    "CCCMeasurement.source_value_counts":
+                                        [66, 37]
+                                }
+                            ],
+                            [
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [21.56703083,  20.22603643],
+                                    "CCCMeasurement.source_value_counts":
+                                        [24, 24]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [19.95330234, 19.34540778],
+                                    "CCCMeasurement.source_value_counts":
+                                        [23, 29]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [20.03014365, 17.96996922],
+                                    "CCCMeasurement.source_value_counts":
+                                        [29, 25]
+                                },
+                                {
+                                    "CCCMeasurement.included": true,
+                                    "CCCMeasurement.source_values":
+                                        [19.04275555, 18.63206526],
+                                    "CCCMeasurement.source_value_counts":
+                                        [29, 27]
+                                }
+                            ]
+                        ]
+                    }},
+            "CCCImage.grayscale_name": "bogus",
+            "CCCImage.grayscale_source_values":
+                [123, 2.14],
+            "CCCImage.grayscale_target_values":
+                [123, 12412],
+            "CCCImage.fixture": "fake"
+        }
+    ],
+    "CellCountCalibration.independent_data":
+        [
+            [
+                [237151.12778025, 148786.33457975, 126138.86040711, 87598.10591175],
+				[118867.36294194, 55741.00152089, 177198.82378379, 20723.92707305]
+            ],
+            [
+				[1401641.28829954, 12893683.91018582, 15789501.05701486, 5811713.51891096],
+                [55669.8420485, 55081.94181727, 55209.8508661, 56203.51048056]
+            ]
+        ],
+    "CellCountCalibration.independent_data_source": "data.xlsx",
+    "CellCountCalibration.polynomial": {
+        "stiff": {"power": 3, "coefficients": [10, 0, 150, 0]}
+    },
+    "CellCountCalibration.deployed_polynomial": null
+}
