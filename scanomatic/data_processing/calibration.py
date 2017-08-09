@@ -1256,7 +1256,7 @@ def constuct_polynomial(identifier, poly_name, power):
             'validation': validation
         }
     _add_poly(ccc, poly_name, power, poly_coeffs)
-    if not save_ccc_to_disk(ccc):
+    if not save_ccc_to_disk(identifier):
         return False
 
     # Darkening -> Cell Count Per pixel
