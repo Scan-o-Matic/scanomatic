@@ -915,20 +915,28 @@ def _collect_all_included_data(ccc):
     target_value = []
     inclusion_filter = []
 
-    for image_data in ccc[CellCountCalibration.images]:
+    for id_image, image_data in enumerate(ccc[CellCountCalibration.images]):
 
-        for plate in image_data[CCCImage.plates].values():
+        for id_plate, plate in image_data[CCCImage.plates].items():
 
-            for row in plate[CCCPlate.compressed_ccc_data]:
+            for id_row, row in enumerate(plate[CCCPlate.compressed_ccc_data]):
 
-                for item in row:
+                for id_col, item in enumerate(row):
 
-                    inclusion_filter.append(item[CCCMeasurement.included])
+                    try:
+                        inclusion_filter.append(item[CCCMeasurement.included])
 
-                    source_value_counts.append(
-                        item[CCCMeasurement.source_value_counts])
-                    source_values.append(
-                        item[CCCMeasurement.source_values])
+                        source_value_counts.append(
+                            item[CCCMeasurement.source_value_counts])
+                        source_values.append(
+                            item[CCCMeasurement.source_values])
+                    except KeyError as e:
+                        raise type(e), type(e)(
+                            str(e.message) +
+                            ' not in img {0} plate {1}, pos {2}, {3} '.format(
+                                id_image, id_plate, id_row, id_col) +
+                            '\nContents:{0}'.format(item))
+
 
     target_value = np.array(ccc[CellCountCalibration.independent_data]).ravel()
 
