@@ -86,33 +86,6 @@ def test_calibration_opt_func():
     assert poly([2], 0, 1)[0] == 16
 
 
-@pytest.mark.skip("There is no data to test on yet")
-def test_calculate_polynomial():
-    degree = 4
-    poly = calibration.calculate_polynomial(data, degree=degree)
-    assert poly.size == degree + 1
-    np.testing.assert_allclose(poly[1:-2], 0)
-    np.testing.assert_allclose(poly[-1], 0)
-    assert np.unique(poly).size > 1
-
-
-@pytest.mark.skip("There is no data to test on yet")
-def test_polynomial():
-
-    poly_coeffs = calibration.calculate_polynomial(data)
-    poly = calibration.get_calibration_polynomial(poly_coeffs)
-    validity = calibration.validate_polynomial(data, poly)
-
-    if validity == calibration.CalibrationValidation.BadSlope:
-        raise AssertionError(calibration.CalibrationValidation.BadSlope)
-
-    elif validity == calibration.CalibrationValidation.BadIntercept:
-        raise AssertionError(calibration.CalibrationValidation.BadIntercept)
-
-    elif validity == calibration.CalibrationValidation.BadStatistics:
-        raise AssertionError(calibration.CalibrationValidation.BadStatistics)
-
-
 def test_get_im_slice():
     """Test that _get_im_slice handles floats"""
     image = np.arange(0, 42).reshape((6, 7))
@@ -140,23 +113,50 @@ class TestAccessToken:
                 calibration.CellCountCalibration.edit_access_token]) is True
 
 
-@pytest.fixture(scope='function')
-def edit_ccc():
+
+def _fixture_load_ccc(rel_path):
     parent = os.path.dirname(__file__)
-    with open(os.path.join(parent, 'data/test.ccc'), 'rb') as fh:
+    with open(os.path.join(parent, rel_path), 'rb') as fh:
         data = json.load(fh)
     ccc = calibration._parse_ccc(data)
     if ccc:
-        calibration.__CCC['test'] = ccc
+        calibration.__CCC[
+            ccc[calibration.CellCountCalibration.identifier]] = ccc
         return ccc
-    raise ValueError("The test.ccc is not valid/doesn't parse")
+    raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
 
 
 @pytest.fixture(scope='function')
-def data_store(edit_ccc):
-    return calibration._collect_all_included_data(edit_ccc)
+def edit_ccc():
+    return _fixture_load_ccc('data/test_good.ccc')
+
+
+@pytest.fixture(scope='function')
+def edit_bad_slope_ccc():
+    return _fixture_load_ccc('data/test_badslope.ccc')
+
+
+@pytest.fixture(scope='function')
+def data_store_bad_ccc(edit_bad_slope_ccc):
+    return calibration._collect_all_included_data(edit_bad_slope_ccc)
+
 
 class TestEditCCC:
+
+    def test_validate_bad_coefficients(self):
+
+        poly = np.poly1d([0, -1, 0, 0])
+        assert (
+            calibration.validate_polynomial(None, poly) is \
+            calibration.CalibrationValidation.BadCoefficients)
+
+
+    def test_validate_bad_correlation(self, data_store_bad_ccc):
+
+        poly = np.poly1d([2, 1])
+        assert (
+            calibration.validate_polynomial(data_store_bad_ccc, poly) is \
+            calibration.CalibrationValidation.BadSlope)
 
     def test_ccc_is_in_edit_mode(self, edit_ccc):
 
@@ -169,29 +169,33 @@ class TestEditCCC:
             edit_ccc[calibration.CellCountCalibration.identifier]
         ), "Missing Identifier"
 
-    def test_ccc_collect_all_data_has_equal_length(self, data_store):
+    def test_ccc_collect_all_data_has_equal_length(self, data_store_bad_ccc):
 
-        lens = [len(value) for value in data_store.values()]
+        lens = [len(value) for value in data_store_bad_ccc.values()]
         assert all(v == lens[0] for v in lens)
 
-    def test_ccc_collect_all_data_entries_has_equal_length(self, data_store):
+    def test_ccc_collect_all_data_entries_has_equal_length(
+            self, data_store_bad_ccc):
 
-        values = data_store[calibration.CalibrationEntry.source_values]
-        counts = data_store[calibration.CalibrationEntry.source_value_counts]
+        values = data_store_bad_ccc[
+            calibration.CalibrationEntry.source_values]
+        counts = data_store_bad_ccc[
+            calibration.CalibrationEntry.source_value_counts]
         assert all(len(v) == len(c) for v, c in zip(values, counts))
 
-    def test_ccc_calculate_polynomial(self, data_store):
+    def test_ccc_calculate_polynomial(self, data_store_bad_ccc):
 
-        poly_coeffs = calibration.calculate_polynomial(data_store, 5)
+        poly_coeffs = calibration.calculate_polynomial(data_store_bad_ccc, 5)
         assert len(poly_coeffs) == 6
         assert poly_coeffs[0] != 0
         assert poly_coeffs[-2] != 0
         assert poly_coeffs[-1] == 0
         assert all(v == 0 for v in poly_coeffs[1:4])
 
-    def test_construct_polynomial(self):
-
-        identifier = 'test'
+    def test_construct_bad_polynomial(self, edit_bad_slope_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = edit_bad_slope_ccc[
+            calibration.CellCountCalibration.identifier]
         poly_name = 'test'
         power = 5
         token = 'password'
@@ -201,4 +205,30 @@ class TestEditCCC:
 
         assert (
             response['validation'] is
-            calibration.CalibrationValidation.BadSlope)
+            calibration.CalibrationValidation.BadCoefficients)
+
+    def test_construct_good_polynomial(self, edit_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = edit_ccc[calibration.CellCountCalibration.identifier]
+        poly_name = 'test'
+        power = 5
+        token = 'password'
+        print(identifier)
+
+        response = calibration.constuct_polynomial(
+            identifier, poly_name, power, access_token=token)
+
+        assert (
+            response['validation'] is
+            calibration.CalibrationValidation.OK)
+
+        assert response['polynomial_name'] == poly_name
+        assert response['polynomial_degree'] == power
+        assert response['ccc'] == identifier
+
+        coefs = [3.379796310880545e-05, 0, 0, 0, 48.99061427688507, 0]
+        np.testing.assert_allclose(
+            response['polynomial_coefficients'], coefs)
+
+        assert len(response['calculated_sizes']) == 16
+        assert len(response['measured_sizes']) == 16
