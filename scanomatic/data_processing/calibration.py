@@ -1025,10 +1025,14 @@ def poly_as_text(poly):
 def calculate_polynomial(data_store, degree=5):
 
     x, y, _, _ = _get_expanded_data(data_store)
-
     poly = get_calibration_optimization_function(degree)
 
     p0 = np.zeros((2,), np.float)
+    if degree == 5:
+        # This is a known solution for a specific set of Sc data
+        # it is hopefully a good startingpoint
+        p0[0] = 48.99061427688507
+        p0[1] = 3.379796310880545e-05
 
     (c1, cn), pcov = curve_fit(poly, x, y, p0=p0)
 
