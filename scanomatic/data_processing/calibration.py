@@ -193,6 +193,8 @@ class CalibrationValidation(Enum):
     """:type : CalibrationValidation"""
     BadStatistics = 3
     """:type : CalibrationValidation"""
+    BadCoefficients = 4
+    """:type : CalibrationValidation"""
 
 
 def _validate_ccc_edit_request(f):
@@ -776,6 +778,9 @@ if not __CCC:
 
 def validate_polynomial(data, poly):
 
+    if any(poly.coeffs < 0):
+        return CalibrationValidation.BadCoefficients
+
     expanded, targets, _, _ = _get_expanded_data(data)
     expanded_sums = np.array(tuple(v.sum() for v in poly(expanded)))
     slope, intercept, _, p_value, stderr = linregress(expanded_sums, targets)
@@ -783,6 +788,7 @@ def validate_polynomial(data, poly):
     try:
         np.testing.assert_almost_equal(slope, 1.0, decimal=3)
     except AssertionError:
+        _logger.error("Bad slope for polynomial: {0}".format(slope))
         return CalibrationValidation.BadSlope
 
     if abs(intercept) > 75000:
