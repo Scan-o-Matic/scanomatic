@@ -28,3 +28,4 @@ scripts/scan-o-matic_job
 /.idea
 nohup.out
 data/config/rpc.admin
+/htmlcov
