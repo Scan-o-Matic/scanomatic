@@ -1040,8 +1040,9 @@ def calculate_polynomial(data_store, degree=5):
     poly_vals[-2] = c1
     poly_vals[0] = cn
 
-    _logger.info("Data produced polynomial {0} with 1 sigma per term (x^1, x^{2}) {1}".format(
-        poly_as_text(poly_vals), np.sqrt(np.diag(pcov)), degree))
+    _logger.info(
+        "Data produced polynomial {0} with 1 sigma per term (x^1, x^{2}) {1}".format(
+            poly_as_text(poly_vals), np.sqrt(np.diag(pcov)), degree))
 
     return poly_vals
 
