@@ -468,7 +468,7 @@ def add_image_to_ccc(identifier, image):
 
     ccc[CellCountCalibration.images].append(im_json)
     if not save_ccc_to_disk(ccc):
-        False
+        return False
 
     return im_identifier
 
