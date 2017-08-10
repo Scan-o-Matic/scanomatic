@@ -143,14 +143,6 @@ def data_store_bad_ccc(edit_bad_slope_ccc):
 
 class TestEditCCC:
 
-    def test_validate_bad_coefficients(self):
-
-        poly = np.poly1d([0, -1, 0, 0])
-        assert (
-            calibration.validate_polynomial(None, poly) is \
-            calibration.CalibrationValidation.BadCoefficients)
-
-
     def test_validate_bad_correlation(self, data_store_bad_ccc):
 
         poly = np.poly1d([2, 1])
@@ -205,7 +197,7 @@ class TestEditCCC:
 
         assert (
             response['validation'] is
-            calibration.CalibrationValidation.BadCoefficients)
+            calibration.CalibrationValidation.BadSlope)
 
     def test_construct_good_polynomial(self, edit_ccc):
         # The fixture needs to be included, otherwise test is not correct

@@ -193,8 +193,6 @@ class CalibrationValidation(Enum):
     """:type : CalibrationValidation"""
     BadStatistics = 3
     """:type : CalibrationValidation"""
-    BadCoefficients = 4
-    """:type : CalibrationValidation"""
 
 
 def _validate_ccc_edit_request(f):
@@ -778,9 +776,6 @@ if not __CCC:
 
 def validate_polynomial(data, poly):
 
-    if any(poly.coeffs < 0):
-        return CalibrationValidation.BadCoefficients
-
     expanded, targets, _, _ = _get_expanded_data(data)
     expanded_sums = np.array(tuple(v.sum() for v in poly(expanded)))
     slope, intercept, _, p_value, stderr = linregress(expanded_sums, targets)
@@ -1034,7 +1029,7 @@ def calculate_polynomial(data_store, degree=5):
         p0[0] = 48.99061427688507
         p0[1] = 3.379796310880545e-05
 
-    (c1, cn), pcov = curve_fit(poly, x, y, p0=p0)
+    (c1, cn), pcov = curve_fit(poly, x, y, p0=p0, bounds=[0, np.inf])
 
     poly_vals = np.zeros((degree + 1))
     poly_vals[-2] = c1
