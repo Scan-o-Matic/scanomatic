@@ -13,6 +13,7 @@ import re
 from uuid import uuid1
 from glob import iglob
 from types import StringTypes
+from collections import namedtuple
 
 
 from scanomatic.generics.maths import mid50_mean
@@ -161,17 +162,8 @@ class CCCMeasurement(Enum):
     """:type : CCCMeasurement"""
 
 
-class CalibrationEntry(Enum):
-    image = 0
-    """:type : CalibrationEntry"""
-    colony_name = 1
-    """:type : CalibrationEntry"""
-    target_value = 2
-    """:type : CalibrationEntry"""
-    source_values = (3, 0)
-    """:type : CalibrationEntry"""
-    source_value_counts = (3, 1)
-    """:type : CalibrationEntry"""
+CalibrationEntry = namedtuple("CalibrationEntry", [
+    'image', 'colony_name', 'target_value', 'source_values', 'source_value_counts'])
 
 
 class CalibrationEntryStatus(Enum):
@@ -817,18 +809,7 @@ def _parse_data(entry):
         entry = {k.name: _eval_deprecated_format(eval(entry), k)
                  for k in CalibrationEntry}
 
-    return {CalibrationEntry[k]: v for k, v in entry.iteritems()}
-
-
-def _valid_entry(entry):
-
-    if entry is None:
-        return False
-
-    return (
-        CalibrationEntry.target_value in entry and
-        CalibrationEntry.source_value_counts in entry and
-        CalibrationEntry.source_values in entry)
+    return CalibrationEntry(**entry)
 
 
 def _jsonify_entry(entry):
@@ -869,10 +850,12 @@ def load_data_file(file_path=None, label=''):
 
             except ValueError:
 
-                data_store = {
-                    CalibrationEntry.target_value: [],
-                    CalibrationEntry.source_values: [],
-                    CalibrationEntry.source_value_counts: []}
+                data_store = CalibrationEntry(
+                    target_value=[],
+                    source_values=[],
+                    source_value_counts=[],
+                    image=None,
+                    colony_name=None)
 
                 for i, line in enumerate(fs):
 
@@ -881,16 +864,11 @@ def load_data_file(file_path=None, label=''):
                     except (ValueError, TypeError):
                         entry = None
 
-                    if _valid_entry(entry):
-                        data_store[
-                            CalibrationEntry.source_value_counts].append(
-                                entry[CalibrationEntry.source_value_counts])
-                        data_store[
-                            CalibrationEntry.source_values].append(
-                                entry[CalibrationEntry.source_values])
-                        data_store[
-                            CalibrationEntry.target_value].append(
-                                entry[CalibrationEntry.target_value])
+                    if entry:
+                        data_store.source_value_counts.append(
+                            entry.source_value_counts)
+                        data_store.source_values.append(entry.source_values)
+                        data_store.target_value.append(entry.target_value)
 
                     else:
                         _logger.warning(
@@ -936,14 +914,13 @@ def _collect_all_included_data(ccc):
     target_value = np.array(ccc[CellCountCalibration.independent_data]).ravel()
 
 
-    return {
-        CalibrationEntry.target_value:
-            target_value[inclusion_filter].tolist(),
-        CalibrationEntry.source_values:
-            np.array(source_values)[inclusion_filter].tolist(),
-        CalibrationEntry.source_value_counts:
-            np.array(source_value_counts)[inclusion_filter].tolist(),
-    }
+    return CalibrationEntry(
+        target_value=target_value[inclusion_filter].tolist(),
+        source_values=np.array(source_values)[inclusion_filter].tolist(),
+        source_value_counts=np.array(
+            source_value_counts)[inclusion_filter].tolist(),
+        image=None,
+        colony_name=None)
 
 
 def get_calibration_optimization_function(degree=5, include_intercept=False):
@@ -971,19 +948,17 @@ def get_calibration_polynomial(coefficients_array):
 
 def _get_expanded_data(data_store):
 
-    measures = min(len(data_store[k]) for k in
-                   (CalibrationEntry.target_value,
-                    CalibrationEntry.source_values,
-                    CalibrationEntry.source_value_counts))
+    measures = min(len(getattr(data_store, k)) for k in
+                   ('target_value', 'source_values', 'source_value_counts'))
 
     x = np.empty((measures,), dtype=object)
     y = np.zeros((measures,), dtype=np.float64)
     x_min = None
     x_max = None
 
-    values = data_store[CalibrationEntry.source_values]
-    counts = data_store[CalibrationEntry.source_value_counts]
-    targets = data_store[CalibrationEntry.target_value]
+    values = data_store.source_values
+    counts = data_store.source_value_counts
+    targets = data_store.target_value
 
     for pos in range(measures):
 
@@ -1257,16 +1232,19 @@ def constuct_polynomial(identifier, poly_name, power):
     # Darkening -> Cell Count Per pixel
     # Then multiply by number of such pixels in colony
     # Then Sum cell counts per colony
-    calc_sizes = (
-        poly(data_store[CalibrationEntry.source_values]) *
-        data_store[CalibrationEntry.source_value_counts]).sum(axis=1).tolist()
+    calc_sizes = [
+        (poly(intensities) * counts).sum()
+        for intensities, counts in
+        zip(
+            data_store.source_values,
+            data_store.source_value_counts)]
 
     return {
         'ccc': identifier,
         'polynomial_coefficients': poly_coeffs,
         'polynomial_name': poly_name,
         'polynomial_degree': power,
-        'measured_sizes': data_store[CalibrationEntry.target_value],
+        'measured_sizes': data_store.target_value,
         'calculated_sizes': calc_sizes,
         'validation': validation,
     }

@@ -31,15 +31,15 @@ def test_load_calibration():
 
 def test_expand_data_lenghts():
 
-    counts = data[calibration.CalibrationEntry.source_value_counts]
+    counts = data.source_value_counts
     exp_vals, _, _, _ = calibration._get_expanded_data(data)
     assert all(np.sum(c) == len(v) for c, v in zip(counts, exp_vals))
 
 
 def test_expand_data_sums():
 
-    counts = data[calibration.CalibrationEntry.source_value_counts]
-    values = data[calibration.CalibrationEntry.source_values]
+    counts = data.source_value_counts
+    values = data.source_values
     data_sums = np.array(
         tuple(np.sum(np.array(c) * np.array(v))
               for c, v in zip(counts, values)))
@@ -54,7 +54,7 @@ def test_expand_data_targets():
     _, targets, _, _ = calibration._get_expanded_data(data)
     np.testing.assert_allclose(
         targets.astype(np.float),
-        data[calibration.CalibrationEntry.target_value])
+        data.target_value)
 
 
 def test_expand_vector_length():
@@ -163,16 +163,15 @@ class TestEditCCC:
 
     def test_ccc_collect_all_data_has_equal_length(self, data_store_bad_ccc):
 
-        lens = [len(value) for value in data_store_bad_ccc.values()]
+        lens = [len(getattr(data_store_bad_ccc, k)) for k in
+                    ('target_value', 'source_values', 'source_value_counts')]
         assert all(v == lens[0] for v in lens)
 
     def test_ccc_collect_all_data_entries_has_equal_length(
             self, data_store_bad_ccc):
 
-        values = data_store_bad_ccc[
-            calibration.CalibrationEntry.source_values]
-        counts = data_store_bad_ccc[
-            calibration.CalibrationEntry.source_value_counts]
+        values = data_store_bad_ccc.source_values
+        counts = data_store_bad_ccc.source_value_counts
         assert all(len(v) == len(c) for v, c in zip(values, counts))
 
     def test_ccc_calculate_polynomial(self, data_store_bad_ccc):
