@@ -181,8 +181,6 @@ class CalibrationValidation(Enum):
     """:type : CalibrationValidation"""
     BadSlope = 1
     """:type : CalibrationValidation"""
-    BadIntercept = 2
-    """:type : CalibrationValidation"""
     BadStatistics = 3
     """:type : CalibrationValidation"""
 
@@ -772,14 +770,9 @@ def validate_polynomial(data, poly):
     expanded_sums = np.array(tuple(v.sum() for v in poly(expanded)))
     slope, intercept, _, p_value, stderr = linregress(expanded_sums, targets)
 
-    try:
-        np.testing.assert_almost_equal(slope, 1.0, decimal=3)
-    except AssertionError:
+    if abs(1.0 - slope) > 0.005:
         _logger.error("Bad slope for polynomial: {0}".format(slope))
         return CalibrationValidation.BadSlope
-
-    if abs(intercept) > 75000:
-        return CalibrationValidation.BadIntercept
 
     if stderr > 0.05 or p_value > 0.1:
         return CalibrationValidation.BadStatistics
