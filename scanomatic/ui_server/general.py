@@ -66,7 +66,8 @@ def string_parse_2d_list(data_string, dtype=float):
             return []
 
 
-def get_2d_list(data, key, getlist_kwargs=None, use_fallback=True, dtype=float):
+def get_2d_list(data, key, getlist_kwargs=None, use_fallback=True,
+                dtype=float):
     """
 
     :param data: Example a request.values
@@ -89,7 +90,8 @@ def get_2d_list(data, key, getlist_kwargs=None, use_fallback=True, dtype=float):
             else:
                 break
 
-    value = tuple(data.getlist(k, **getlist_kwargs) for k in _list_enumerator())
+    value = tuple(
+        data.getlist(k, **getlist_kwargs) for k in _list_enumerator())
 
     if not value and use_fallback:
         value = string_parse_2d_list(data.get(key, type=dtype))
@@ -112,8 +114,10 @@ def valid_array_dimensions(dims, *arrs):
 
 def get_area_too_large_for_grayscale(grayscale_area_model):
     global _TOO_LARGE_GRAYSCALE_AREA
-    area_size = (grayscale_area_model.x2 - grayscale_area_model.x1) * \
-                (grayscale_area_model.y2 - grayscale_area_model.y1)
+    area_size = (
+        (grayscale_area_model.x2 - grayscale_area_model.x1) *
+        (grayscale_area_model.y2 - grayscale_area_model.y1)
+    )
 
     return area_size > _TOO_LARGE_GRAYSCALE_AREA
 
@@ -137,7 +141,9 @@ def usable_plates(plates):
 
     def unique_valid_indices():
 
-        return tuple(sorted(plate.index - 1 for plate in plates)) == tuple(range(len(plates)))
+        return tuple(
+            sorted(plate.index - 1 for plate in plates)
+        ) == tuple(range(len(plates)))
 
     if not all(usable_plate(plate) for plate in plates):
         _logger.warning("Some plate coordinates are wrong")
@@ -166,9 +172,11 @@ def convert_url_to_path(url):
 
 def convert_path_to_url(prefix, path):
     if prefix:
-        path = "/".join(chain([prefix], os.path.relpath(path, Config().paths.projects_root).split(os.sep)))
+        path = "/".join(chain([prefix], os.path.relpath(
+            path, Config().paths.projects_root).split(os.sep)))
     else:
-        path = "/".join(os.path.relpath(path, Config().paths.projects_root).split(os.sep))
+        path = "/".join(os.path.relpath(
+            path, Config().paths.projects_root).split(os.sep))
 
     path = quote(path.encode('utf8'))
 
@@ -189,7 +197,8 @@ def get_search_results(path, url_prefix):
     urls = list(convert_path_to_url(url_prefix, p) for p in projects)
     if None in urls:
         try:
-            names, urls = zip(*tuple((n, u) for n, u in zip(names, urls) if u is not None))
+            names, urls = zip(
+                *tuple((n, u) for n, u in zip(names, urls) if u is not None))
         except ValueError:
             pass
     return {'names': names, 'urls': urls}
@@ -213,7 +222,8 @@ def get_project_name(project_path):
     if not path_is_in_jail(project_path):
         return no_name
 
-    candidates = glob.glob(os.path.join(project_path, Paths().scan_project_file_pattern.format("*")))
+    candidates = glob.glob(os.path.join(
+        project_path, Paths().scan_project_file_pattern.format("*")))
     if candidates:
         for candidate in candidates:
             model = ScanningModelFactory.serializer.load_first(candidate)
@@ -238,23 +248,24 @@ def strip_empty_exits(exits, data):
 
     for e in all_exits:
         if e in data and (data[e] is None or len(data[e]) == 0):
-            _logger.info("Removing {0} from exits because {1} is empty".format(e, data[e]))
+            _logger.info(
+                "Removing {0} from exits because {1} is empty".format(
+                    e, data[e]))
             del data[e]
             exits.remove(e)
             _logger.info("Exits now {0}".format(exits))
         elif e not in data:
             exits.remove(e)
-            _logger.info("Removing {0} from exits because not in data {1}, exits now {2}".format(e, data, exits))
+            _logger.info((
+                "Removing {0} from exits because not in data {1}, exits " +
+                "now {2}").format(e, data, exits))
 
 
-def json_response(exits, data, success=True):
+def json_response(exits, data):
 
     strip_empty_exits(exits, data)
     is_endpoint = len(exits) == 0
     data["is_endpoint"] = is_endpoint
-
-    if success is not None:
-        data["success"] = success
 
     if is_endpoint:
         if "exits" in data:
@@ -267,7 +278,8 @@ def json_response(exits, data, success=True):
 
 def get_common_root_and_relative_paths(*file_list):
 
-    dir_list = set(tuple(os.path.dirname(f) if os.path.isfile(f) else f for f in file_list))
+    dir_list = set(tuple(
+        os.path.dirname(f) if os.path.isfile(f) else f for f in file_list))
     common_test = zip(*(p.split(os.sep) for p in dir_list))
     root = ""
     for d_list in common_test:
@@ -289,14 +301,14 @@ def serve_zip_file(zip_name, *file_list):
     Code inspired by:
     http://stackoverflow.com/questions/2463770/python-in-memory-zip-library#2463818
 
-    The filesystem in the zip will use the deepest common denominator in the filelist
-    as its root.
+    The filesystem in the zip will use the deepest common denominator in the
+    filelist as its root.
 
     :param file_list: local paths
     :return: Flask sending of data
     """
 
-    # file_list = tuple(str(f) for f in file_list)
+    # file_list = tuple(str(f) for f in file_list)  # TODO: dead code?
     data_buffer = StringIO()
     zf = zipfile.ZipFile(data_buffer, 'a', zipfile.ZIP_DEFLATED, False)
     root, local_names = get_common_root_and_relative_paths(*file_list)
@@ -312,10 +324,12 @@ def serve_zip_file(zip_name, *file_list):
     data_buffer.flush()
     data_buffer.seek(0)
 
-    return send_file(data_buffer,
-                     mimetype='application/zip, application/octet-stream',
-                     as_attachment=True,
-                     attachment_filename=str(zip_name))
+    return send_file(
+        data_buffer,
+        mimetype='application/zip, application/octet-stream',
+        as_attachment=True,
+        attachment_filename=str(zip_name)
+    )
 
 
 def serve_pil_image(pil_img):
@@ -367,7 +381,7 @@ def remove_pad_decode_base64(data):
         data = data.encode("utf-8")
 
     remainder = len(data) % 4
-    return base64.decodestring(data[:-remainder if remainder else 4])
+    return base64.decodestring(data[: -remainder if remainder else 4])
 
 
 def get_image_data_as_array(image_data, reshape=None):
@@ -412,16 +426,22 @@ def get_fixture_image_from_data(name, image_data):
 def usable_markers(markers, image):
 
     def marker_inside_image(marker):
-        """Compares marker to image shape
+        """Comparess marker to image shape
 
-        Note that image shape comes in y, x order while markers come in x, y order
+        Note that image shape comes in (y, x) order while markers come in
+        (x, y) order
 
         Args:
             marker: (x, y) coordinates
         """
-        val = (marker > 0).all() and marker[0] < image.shape[1] and marker[1] < image.shape[0]
+        val = (
+            (marker > 0).all() and
+            marker[0] < image.shape[1] and
+            marker[1] < image.shape[0]
+        )
         if not val:
-            _logger.error("Marker {marker} is outside image {shape}".format(marker=marker, shape=image.shape))
+            _logger.error("Marker {marker} is outside image {shape}".format(
+                marker=marker, shape=image.shape))
         return val
 
     try:
@@ -429,12 +449,15 @@ def usable_markers(markers, image):
     except ValueError:
         return False
 
-    if markers_array.ndim != 2 or markers_array.shape[0] < 3 or markers_array.shape[1] != 2:
-        _logger.error("Markers have bad shape {markers}".format(markers=markers))
+    if markers_array.ndim != 2 or markers_array.shape[0] < 3 or \
+            markers_array.shape[1] != 2:
+        _logger.error("Markers have bad shape {markers}".format(
+            markers=markers))
         return False
 
     if len(set(map(tuple, markers_array))) != len(markers):
-        _logger.error("Some marker is duplicated {markers}".format(markers=markers))
+        _logger.error("Some marker is duplicated {markers}".format(
+            markers=markers))
         return False
 
     return all(marker_inside_image(marker) for marker in markers_array)
@@ -442,31 +465,39 @@ def usable_markers(markers, image):
 
 def split_areas_into_grayscale_and_plates(areas):
 
-    gs = None
+    grey_scale = None
     plates = []
 
     for area in areas:
 
         try:
             if area['grayscale']:
-                gs = GrayScaleAreaModel(x1=area['x1'], x2=area['x2'], y1=area['y1'], y2=area['y2'])
+                grey_scale = GrayScaleAreaModel(
+                    x1=area['x1'], x2=area['x2'], y1=area['y1'], y2=area['y2'])
             else:
-                plates.append(FixturePlateModel(x1=area['x1'], x2=area['x2'], y1=area['y1'], y2=area['y2'],
-                                                index=area['plate']))
+                plates.append(FixturePlateModel(
+                    x1=area['x1'],
+                    x2=area['x2'],
+                    y1=area['y1'],
+                    y2=area['y2'],
+                    index=area['plate']
+                ))
 
         except (AttributeError, KeyError, TypeError):
 
-            _logger.warning("Bad data: '{0}' does not have the expected area attributes".format(area))
+            _logger.warning((
+                "Bad data: '{0}' does not have the expected area " +
+                "attributes").format(area))
 
-    return gs, plates
+    return grey_scale, plates
 
 
 def serve_log_as_html(log_path, title):
 
     data = parse_log_file(log_path)
     data['garbage'] = [l.replace("\n", "<br>") for l in data['garbage']]
-    for e in data['records']:
-        e['message'] = e['message'].split("\n")
+    for record in data['records']:
+        record['message'] = record['message'].split("\n")
 
     if data:
         return render_template(
@@ -474,5 +505,4 @@ def serve_log_as_html(log_path, title):
             title=title,
             **data)
     else:
-        return render_template(Paths().ui_log_not_found_template,
-                               title=title)
+        return render_template(Paths().ui_log_not_found_template, title=title)
