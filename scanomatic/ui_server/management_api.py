@@ -1,13 +1,19 @@
-from flask import request, jsonify, redirect
+"""asdkhask"""
 import time
 import os
 import sys
 import signal
 from subprocess import Popen, PIPE
 from threading import Thread
+
+from flask import request, jsonify, redirect
+
 from scanomatic import get_version
 from scanomatic.io.mail import can_get_server_with_current_settings
-from scanomatic.io.source import parse_version, upgrade, git_version, highest_version, get_source_information
+from scanomatic.io.source import (
+    parse_version, upgrade, git_version, highest_version,
+    get_source_information
+)
 
 
 _GIT_INFO = None
@@ -39,7 +45,9 @@ def add_routes(app, rpc_client):
 
         if action == 'reboot':
 
-            if rpc_client.local and (request.args.get('force') == '1' or not rpc_client.working_on_job_or_has_queue):
+            if rpc_client.local and (
+                    request.args.get('force') == '1' or not
+                    rpc_client.working_on_job_or_has_queue):
 
                 rpc_client.shutdown()
                 time.sleep(5)
@@ -47,7 +55,10 @@ def add_routes(app, rpc_client):
                 while rpc_client.online and time.time() - t < 370:
                     time.sleep(0.5)
                 if rpc_client.online:
-                    return jsonify(success=False, reason="Failed to close the server")
+                    return jsonify(
+                        success=False,
+                        reason="Failed to close the server"
+                    )
                 rpc_client.launch_local()
                 t = time.time()
                 while not rpc_client.online and time.time() - t < 60:
@@ -55,7 +66,10 @@ def add_routes(app, rpc_client):
                 if rpc_client.online:
                     return jsonify(success=True)
                 else:
-                    return jsonify(success=False, reason="Failed to restart the server")
+                    return jsonify(
+                        success=False,
+                        reason="Failed to restart the server"
+                    )
 
         elif action == 'shutdown':
 
@@ -64,13 +78,19 @@ def add_routes(app, rpc_client):
             while rpc_client.online and time.time() - t < 370:
                 time.sleep(0.5)
             if rpc_client.online:
-                return jsonify(success=False, reason="Failed to shut down server")
+                return jsonify(
+                    success=False,
+                    reason="Failed to shut down server"
+                )
             return jsonify(success=True)
 
         elif action == 'launch':
 
             if rpc_client.online:
-                return jsonify(success=False, reason="Server is already running")
+                return jsonify(
+                    success=False,
+                    reason="Server is already running"
+                )
 
             rpc_client.launch_local()
             t = time.time()
@@ -79,7 +99,10 @@ def add_routes(app, rpc_client):
             if rpc_client.online:
                 return jsonify(success=True)
             else:
-                return jsonify(success=False, reason="Could not launch the server")
+                return jsonify(
+                    success=False,
+                    reason="Could not launch the server"
+                )
 
         elif action == 'kill':
 
@@ -87,18 +110,26 @@ def add_routes(app, rpc_client):
             stdout, _ = p.communicate()
             server_ids = set()
 
-            for server_proc in (proc for proc in stdout if "SoM Server" in proc):
+            for server_proc in (
+                    proc for proc in stdout if "SoM Server" in proc):
                 try:
                     proc_id = int(server_proc.strip().split(" ")[0])
                 except ValueError:
-                    return jsonify(success=False, reason="Could not parse process id of '{0}'".format(server_proc))
+                    return jsonify(
+                        success=False,
+                        reason="Could not parse process id of '{0}'".format(
+                            server_proc)
+                    )
 
                 os.kill(proc_id, signal.SIGKILL)
                 server_ids.add(proc_id)
 
             if rpc_client.online:
-                return jsonify(success=False,
-                               reason="Tried to kill processes {0}, but somehow server is online".format(server_ids))
+                return jsonify(
+                    success=False,
+                    reason="Tried to kill processes " +
+                    "{0}, but somehow server is online".format(server_ids)
+                )
 
             return jsonify(success=True)
 
@@ -118,14 +149,20 @@ def add_routes(app, rpc_client):
 
         elif action == 'version':
 
-            return jsonify(success=True, version=get_version(), version_ints=parse_version(get_version()),
-                           source_information=get_source_information(test_info=True))
+            return jsonify(
+                success=True,
+                version=get_version(),
+                version_ints=parse_version(get_version()),
+                source_information=get_source_information(test_info=True)
+            )
 
         elif action == 'upgradable':
 
             global _GIT_INFO
 
-            if not _GIT_INFO or request.values.get('force_check', False, type=bool) or time_to_cache_git_info():
+            if not _GIT_INFO or \
+                    request.values.get('force_check', False, type=bool) or \
+                    time_to_cache_git_info():
                 git_ver_as_text = git_version()
                 _GIT_INFO = {
                     "check_time": time.time(),
@@ -143,9 +180,15 @@ def add_routes(app, rpc_client):
                     "cached": False
             }
 
-            return jsonify(success=True, remote_version=_GIT_INFO, local_version=local_version,
-                           upgradable=highest_version(local_version["version_tuple"],
-                                                      _GIT_INFO["version_tuple"]) != local_version["version_tuple"])
+            return jsonify(
+                success=True,
+                remote_version=_GIT_INFO,
+                local_version=local_version,
+                upgradable=highest_version(
+                    local_version["version_tuple"],
+                    _GIT_INFO["version_tuple"]) !=
+                local_version["version_tuple"]
+            )
 
         elif action == 'upgrade':
 
@@ -154,34 +197,60 @@ def add_routes(app, rpc_client):
             if success:
                 return jsonify(success=True)
             else:
-                return jsonify(success=False, reason="Could be no update is available or installation failed.")
+                return jsonify(
+                    success=False,
+                    reason=
+                    "Could be no update is available or installation failed."
+                )
 
         else:
-            return jsonify(success=False, reason="Unknown action '{0}'".format(action))
+            return jsonify(
+                success=False,
+                reason="Unknown action '{0}'".format(action)
+            )
 
     @app.route("/api/job/<job_id>/<job_command>")
     def _communicate_with_job(job_id="", job_command=""):
 
         if rpc_client.online:
             val = rpc_client.communicate(job_id, job_command)
-            return jsonify(success=val, reason=None if val else "Refused by server")
+            return jsonify(
+                success=val,
+                reason=None if val else "Refused by server"
+            )
 
-        return jsonify(success=False, is_endpoint=True, reason="Server offline")
+        return jsonify(
+            success=False,
+            is_endpoint=True,
+            reason="Server offline"
+        )
 
     @app.route("/api/settings/mail/possible")
     def can_possibly_mail():
 
-        return jsonify(success=True, is_endpoint=True, can_possibly_mail=can_get_server_with_current_settings())
+        return jsonify(
+            success=True,
+            is_endpoint=True,
+            can_possibly_mail=can_get_server_with_current_settings()
+        )
 
     @app.route("/api/power_manager/status")
     def get_pm_status():
 
         if rpc_client.online:
             val = rpc_client.get_power_manager_info()
-            return jsonify(success=True, is_endpoint=True, **val)
+            return jsonify(
+                success=True,
+                is_endpoint=True,
+                **val
+            )
 
         else:
-            return jsonify(success=False, is_endpoint=True, reason="Server offline")
+            return jsonify(
+                success=False,
+                is_endpoint=True,
+                reason="Server offline"
+            )
 
     @app.route("/api/power_manager/test")
     def redirect_to_pm():
@@ -194,10 +263,18 @@ def add_routes(app, rpc_client):
                     uri = "http://" + uri
                 return redirect(uri)
             else:
-                return jsonify(success=False, is_endpoint=True, reason="Power Manager not know/found by Scan-o-Matic. Check your settings.")
+                return jsonify(
+                    success=False,
+                    is_endpoint=True,
+                    reason="Power Manager not know/found by Scan-o-Matic. " +
+                    "Check your settings."
+                )
 
         else:
-            return jsonify(success=False, is_endpoint=True, reason="Server offline")
-
+            return jsonify(
+                success=False,
+                is_endpoint=True,
+                reason="Server offline"
+            )
 
             # END OF ADDING ROUTES
