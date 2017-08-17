@@ -280,7 +280,6 @@ def add_routes(app, rpc_client, is_debug_mode):
         except TypeError:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Grayscale detection failed"
             )
 
@@ -352,7 +351,6 @@ def add_routes(app, rpc_client, is_debug_mode):
         except TypeError:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Grayscale detection failed"
             )
 
@@ -681,7 +679,6 @@ def add_routes(app, rpc_client, is_debug_mode):
                 400,
                 reason="Markers should be a 2D array with shape (2, 3) or " +
                 "greater for last dimension",
-                is_endpoint=True,
             )
 
         fixture_settings = Fixtures()[fixture_name]
@@ -690,7 +687,6 @@ def add_routes(app, rpc_client, is_debug_mode):
             return json_abort(
                 400,
                 reason="Fixture '{0}' is not known".format(fixture_name),
-                is_endpoint=True,
             )
 
         fixture = FixtureImage(fixture_settings)
@@ -793,7 +789,6 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         return json_abort(
             400,
-            is_endpoint=True,
             reason="No fixture image name" if image_is_allowed(ext) else
             "Image type not allowed"
         )

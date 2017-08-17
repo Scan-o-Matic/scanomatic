@@ -51,7 +51,6 @@ def add_routes(app):
             return json_abort(
                 400,
                 reason="Grid detection failed",
-                is_endpoint=True,
             )
 
         grid = grid_array.grid

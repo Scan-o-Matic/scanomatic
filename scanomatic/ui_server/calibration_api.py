@@ -51,7 +51,6 @@ def add_routes(app):
         except ValueError:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="There are no registered CCC, Scan-o-Matic won't " +
                 "work before at least one is added"
             )
@@ -75,7 +74,6 @@ def add_routes(app):
         except ValueError:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="No CCCs are under constructions"
             )
 
@@ -92,7 +90,6 @@ def add_routes(app):
         if ccc is None:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Combination of species and reference not unique"
             )
 
@@ -101,7 +98,6 @@ def add_routes(app):
         if not success:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Possibly someone just beat you to that combination " +
                 "of species and reference!"
             )
@@ -124,7 +120,6 @@ def add_routes(app):
         if image is None:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Didn't get any image"
             )
 
@@ -135,7 +130,6 @@ def add_routes(app):
         if not image_identifier:
             return json_abort(
                 401,
-                is_endpoint=True,
                 reason="Refused to save image, probably bad access token"
             )
 
@@ -151,7 +145,6 @@ def add_routes(app):
         if image_list is False:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="No such ccc known"
             )
 
@@ -232,7 +225,6 @@ def add_routes(app):
         if not success:
             return json_abort(
                 401,
-                is_endpoint=True,
                 reason="Update refused, probably bad access token"
             )
 
@@ -248,7 +240,6 @@ def add_routes(app):
         if data is None:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="The image or CCC don't exist"
             )
 
@@ -273,7 +264,6 @@ def add_routes(app):
         if data is None:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="The image or CCC don't exist or not enough info set " +
                 "to do slice"
             )
@@ -287,7 +277,6 @@ def add_routes(app):
         if not success:
             return json_abort(
                 401,
-                is_endpoint=True,
                 reason="Probably not the correct access token."
             )
 
@@ -316,7 +305,6 @@ def add_routes(app):
         if image is None:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="No such image slice exists, has it been sliced?"
             )
         return serve_numpy_as_image(image)
@@ -339,7 +327,6 @@ def add_routes(app):
         except TypeError:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason='Unknown image or CCC'
             )
 
@@ -350,7 +337,6 @@ def add_routes(app):
         if not valid:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason='Grayscale results are not valid'
             )
 
@@ -373,7 +359,6 @@ def add_routes(app):
 
             return json_abort(
                 401,
-                is_endpoint=True,
                 reason="Refused to set image grayscale info, probably bad " +
                 "access token"
             )
@@ -396,7 +381,6 @@ def add_routes(app):
         if not success:
             return json_abort(
                 401,
-                is_endpoint=True,
                 reason="Probably bad access token, or not having sliced " +
                 "image and analysed grayscale first"
             )
@@ -442,7 +426,6 @@ def add_routes(app):
         if image_data is None:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="The image or CCC don't exist",
             )
 
@@ -451,7 +434,6 @@ def add_routes(app):
         if image is None:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="No such image slice exists, has it been sliced?",
             )
 
@@ -469,7 +451,6 @@ def add_routes(app):
             )
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Bad pinning format",
             )
 
@@ -484,7 +465,6 @@ def add_routes(app):
                 )
                 return json_abort(
                     400,
-                    is_endpoint=True,
                     reason="Bad grid correction {0}".format(correction),
                 )
         else:
@@ -504,7 +484,6 @@ def add_routes(app):
                 xy1=xy1,
                 xy2=xy2,
                 reason="Grid detection failed",
-                is_endpoint=True,
             )
 
         grid = grid_array.grid
@@ -528,7 +507,6 @@ def add_routes(app):
         if not success:
             return json_abort(
                 401,
-                is_endpoint=True,
                 grid=grid_array.grid,
                 xy1=xy1,
                 xy2=xy2,
@@ -554,7 +532,6 @@ def add_routes(app):
         if image is None:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Image plate slice hasn't been prepared probably"
             )
 
@@ -565,7 +542,6 @@ def add_routes(app):
         except IOError:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Gridding is missing"
             )
 
@@ -577,7 +553,6 @@ def add_routes(app):
 
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Image id not known or plate not know"
             )
 
@@ -656,7 +631,6 @@ def add_routes(app):
         if image_data is None:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="The image or CCC don't exist"
             )
 
@@ -665,7 +639,6 @@ def add_routes(app):
         except TypeError:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Image data is not understandable as a float array"
             )
 
@@ -674,7 +647,6 @@ def add_routes(app):
         except TypeError:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Blob filter data is not understandable as a boolean " +
                 "array"
             )
@@ -685,7 +657,6 @@ def add_routes(app):
         except TypeError:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Background filter data is not understandable as a " +
                 "boolean array"
             )
@@ -694,7 +665,6 @@ def add_routes(app):
                 2, image, blob_filter, background_filter):
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Supplied data does not have the correct dimensions." +
                 " Image-shape is {0}, blob {1}, and bg {2}.".format(
                     image.shape, blob_filter.shape, background_filter.shape) +
@@ -704,21 +674,18 @@ def add_routes(app):
         if (blob_filter & background_filter).any():
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Blob and background filter may not overlap"
             )
 
         if not blob_filter.any():
             return json_abort(
                 400,
-                is_endpoint=False,
                 reason="Blob is empty/there's no colony detected"
             )
 
         if background_filter.sum() < 3:
             return json_abort(
                 400,
-                is_endpoint=False,
                 reason="Background must be consisting of at least 3 pixels"
             )
 
@@ -727,7 +694,6 @@ def add_routes(app):
 
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Background must be at least 20 pixels." +
                 " Currently only {0}.".format(background_filter.sum()) +
                 " This check can be over-ridden."
@@ -748,7 +714,6 @@ def add_routes(app):
 
             return json_abort(
                 401,
-                is_endpoint=False,
                 reason="Probably invalid access token"
             )
 
@@ -766,7 +731,6 @@ def add_routes(app):
         if population_size_data is None:
             return json_abort(
                 400,
-                is_endpoint=True,
                 reason="Didn't get any data"
             )
 
@@ -776,7 +740,6 @@ def add_routes(app):
 
             return json_abort(
                 401,
-                is_endpoint=True,
                 reason="Invalid access token"
             )
 
@@ -796,7 +759,6 @@ def add_routes(app):
 
             return json_abort(
                 400,
-                is_endpoint=True,
                 report=report)
 
     @app.route('/api/data/calibration/delete/<identifier>', methods=['POST'])
@@ -812,7 +774,6 @@ def add_routes(app):
 
             return json_abort(
                 401,
-                is_endpoint=True,
                 reason="Invalid access token")
 
         if delete_ccc(identifier):
