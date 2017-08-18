@@ -13,6 +13,7 @@ import re
 from uuid import uuid1
 from glob import iglob
 from types import StringTypes
+from collections import namedtuple
 
 
 from scanomatic.generics.maths import mid50_mean
@@ -86,9 +87,11 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
         # Continuous list of measurements of population sizes from OD or FACS
         # Plates, columns, row
     CellCountCalibration.independent_data_source: string  # File format
-    CellCountCalibration.polynomial:
-        [0, 1.12, 0, 46.21, 127.0],
-        # The polynomial coefficients of the calibration
+    CellCountCalibration.polynomial: {
+        string: {'power': int, 'coefficients': [10, 0, 0, 0, 150, 0]},
+        ....
+    }
+    CellCountCalibration.deployed_polynomial: string
 }
 
 """
@@ -116,6 +119,8 @@ class CellCountCalibration(Enum):
     edit_access_token = 7
     """:type : CellCountCalibration"""
     independent_data_source = 8
+    """:type : CellCountCalibration"""
+    deployed_polynomial = 9
     """:type : CellCountCalibration"""
 
 
@@ -157,17 +162,8 @@ class CCCMeasurement(Enum):
     """:type : CCCMeasurement"""
 
 
-class CalibrationEntry(Enum):
-    image = 0
-    """:type : CalibrationEntry"""
-    colony_name = 1
-    """:type : CalibrationEntry"""
-    target_value = 2
-    """:type : CalibrationEntry"""
-    source_values = (3, 0)
-    """:type : CalibrationEntry"""
-    source_value_counts = (3, 1)
-    """:type : CalibrationEntry"""
+CalibrationEntry = namedtuple("CalibrationEntry", [
+    'image', 'colony_name', 'target_value', 'source_values', 'source_value_counts'])
 
 
 class CalibrationEntryStatus(Enum):
@@ -184,8 +180,6 @@ class CalibrationValidation(Enum):
     OK = 0
     """:type : CalibrationValidation"""
     BadSlope = 1
-    """:type : CalibrationValidation"""
-    BadIntercept = 2
     """:type : CalibrationValidation"""
     BadStatistics = 3
     """:type : CalibrationValidation"""
@@ -243,7 +237,8 @@ def get_empty_ccc(species, reference):
         CellCountCalibration.polynomial: None,
         CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
         CellCountCalibration.independent_data: [],
-        CellCountCalibration.independent_data_source: None
+        CellCountCalibration.independent_data_source: None,
+        CellCountCalibration.deployed_polynomial: None,
     }
 
 
@@ -363,13 +358,14 @@ def save_ccc_to_disk(identifier):
             __CCC[identifier][CellCountCalibration.status] is
             CalibrationEntryStatus.UnderConstruction):
 
-        _save_ccc_to_disk(__CCC[identifier])
+        return _save_ccc_to_disk(__CCC[identifier])
 
     elif identifier not in __CCC:
         _logger.error("Unknown CCC identifier {0}".format(identifier))
     else:
         _logger.error(
             "Can only save changes to CCC:s that are under construction")
+    return False
 
 
 def _encode_val(v):
@@ -397,6 +393,8 @@ def _save_ccc_to_disk(data):
 
     with open(Paths().ccc_file_pattern.format(identifier), 'wb') as fh:
         json.dump(_encode_dict(data), fh)
+
+    return True
 
 
 def _parse_ccc(data):
@@ -459,7 +457,8 @@ def add_image_to_ccc(identifier, image):
     image.save(Paths().ccc_image_pattern.format(identifier, im_identifier))
 
     ccc[CellCountCalibration.images].append(im_json)
-    _save_ccc_to_disk(ccc)
+    if not save_ccc_to_disk(ccc):
+        return False
 
     return im_identifier
 
@@ -495,8 +494,7 @@ def set_image_info(identifier, image_identifier, **kwargs):
             _logger.error("{0} is not a known property of images".format(key))
             return False
 
-    _save_ccc_to_disk(ccc)
-    return True
+    return save_ccc_to_disk(ccc)
 
 
 @_validate_ccc_edit_request
@@ -520,8 +518,7 @@ def set_plate_grid_info(
     plate_json[CCCPlate.grid_cell_size] = grid_cell_size
     plate_json[CCCPlate.grid_shape] = grid_shape
 
-    _save_ccc_to_disk(ccc)
-    return True
+    return save_ccc_to_disk(ccc)
 
 
 def get_image_json_from_ccc(identifier, image_identifier):
@@ -757,9 +754,7 @@ def set_colony_compressed_data(
         plate[CCCPlate.compressed_ccc_data][x][y][
             CCCMeasurement.source_values] = values
 
-    _save_ccc_to_disk(ccc)
-
-    return True
+    return save_ccc_to_disk(ccc)
 
 if not __CCC:
     __load_cccs()
@@ -775,13 +770,9 @@ def validate_polynomial(data, poly):
     expanded_sums = np.array(tuple(v.sum() for v in poly(expanded)))
     slope, intercept, _, p_value, stderr = linregress(expanded_sums, targets)
 
-    try:
-        np.testing.assert_almost_equal(slope, 1.0, decimal=3)
-    except AssertionError:
+    if abs(1.0 - slope) > 0.005:
+        _logger.error("Bad slope for polynomial: {0}".format(slope))
         return CalibrationValidation.BadSlope
-
-    if abs(intercept) > 75000:
-        return CalibrationValidation.BadIntercept
 
     if stderr > 0.05 or p_value > 0.1:
         return CalibrationValidation.BadStatistics
@@ -811,18 +802,7 @@ def _parse_data(entry):
         entry = {k.name: _eval_deprecated_format(eval(entry), k)
                  for k in CalibrationEntry}
 
-    return {CalibrationEntry[k]: v for k, v in entry.iteritems()}
-
-
-def _valid_entry(entry):
-
-    if entry is None:
-        return False
-
-    return (
-        CalibrationEntry.target_value in entry and
-        CalibrationEntry.source_value_counts in entry and
-        CalibrationEntry.source_values in entry)
+    return CalibrationEntry(**entry)
 
 
 def _jsonify_entry(entry):
@@ -863,10 +843,12 @@ def load_data_file(file_path=None, label=''):
 
             except ValueError:
 
-                data_store = {
-                    CalibrationEntry.target_value: [],
-                    CalibrationEntry.source_values: [],
-                    CalibrationEntry.source_value_counts: []}
+                data_store = CalibrationEntry(
+                    target_value=[],
+                    source_values=[],
+                    source_value_counts=[],
+                    image=None,
+                    colony_name=None)
 
                 for i, line in enumerate(fs):
 
@@ -875,16 +857,11 @@ def load_data_file(file_path=None, label=''):
                     except (ValueError, TypeError):
                         entry = None
 
-                    if _valid_entry(entry):
-                        data_store[
-                            CalibrationEntry.source_value_counts].append(
-                                entry[CalibrationEntry.source_value_counts])
-                        data_store[
-                            CalibrationEntry.source_values].append(
-                                entry[CalibrationEntry.source_values])
-                        data_store[
-                            CalibrationEntry.target_value].append(
-                                entry[CalibrationEntry.target_value])
+                    if entry:
+                        data_store.source_value_counts.append(
+                            entry.source_value_counts)
+                        data_store.source_values.append(entry.source_values)
+                        data_store.target_value.append(entry.target_value)
 
                     else:
                         _logger.warning(
@@ -895,6 +872,48 @@ def load_data_file(file_path=None, label=''):
         raise IOError("File at {0} not found".format(file_path))
 
     return data_store
+
+
+def _collect_all_included_data(ccc):
+
+    source_values = []
+    source_value_counts = []
+    target_value = []
+    inclusion_filter = []
+
+    for id_image, image_data in enumerate(ccc[CellCountCalibration.images]):
+
+        for id_plate, plate in image_data[CCCImage.plates].items():
+
+            for id_row, row in enumerate(plate[CCCPlate.compressed_ccc_data]):
+
+                for id_col, item in enumerate(row):
+
+                    try:
+                        inclusion_filter.append(item[CCCMeasurement.included])
+
+                        source_value_counts.append(
+                            item[CCCMeasurement.source_value_counts])
+                        source_values.append(
+                            item[CCCMeasurement.source_values])
+                    except KeyError as e:
+                        raise type(e), type(e)(
+                            str(e.message) +
+                            ' not in img {0} plate {1}, pos {2}, {3} '.format(
+                                id_image, id_plate, id_row, id_col) +
+                            '\nContents:{0}'.format(item))
+
+
+    target_value = np.array(ccc[CellCountCalibration.independent_data]).ravel()
+
+
+    return CalibrationEntry(
+        target_value=target_value[inclusion_filter].tolist(),
+        source_values=np.array(source_values)[inclusion_filter].tolist(),
+        source_value_counts=np.array(
+            source_value_counts)[inclusion_filter].tolist(),
+        image=None,
+        colony_name=None)
 
 
 def get_calibration_optimization_function(degree=5, include_intercept=False):
@@ -922,19 +941,17 @@ def get_calibration_polynomial(coefficients_array):
 
 def _get_expanded_data(data_store):
 
-    measures = min(len(data_store[k]) for k in
-                   (CalibrationEntry.target_value,
-                    CalibrationEntry.source_values,
-                    CalibrationEntry.source_value_counts))
+    measures = min(len(getattr(data_store, k)) for k in
+                   ('target_value', 'source_values', 'source_value_counts'))
 
     x = np.empty((measures,), dtype=object)
     y = np.zeros((measures,), dtype=np.float64)
     x_min = None
     x_max = None
 
-    values = data_store[CalibrationEntry.source_values]
-    counts = data_store[CalibrationEntry.source_value_counts]
-    targets = data_store[CalibrationEntry.target_value]
+    values = data_store.source_values
+    counts = data_store.source_value_counts
+    targets = data_store.target_value
 
     for pos in range(measures):
 
@@ -971,19 +988,24 @@ def poly_as_text(poly):
 def calculate_polynomial(data_store, degree=5):
 
     x, y, _, _ = _get_expanded_data(data_store)
-
     poly = get_calibration_optimization_function(degree)
 
     p0 = np.zeros((2,), np.float)
+    if degree == 5:
+        # This is a known solution for a specific set of Sc data
+        # it is hopefully a good startingpoint
+        p0[0] = 48.99061427688507
+        p0[1] = 3.379796310880545e-05
 
-    (c1, cn), pcov = curve_fit(poly, x, y, p0=p0)
+    (c1, cn), pcov = curve_fit(poly, x, y, p0=p0, bounds=[0, np.inf])
 
     poly_vals = np.zeros((degree + 1))
     poly_vals[-2] = c1
     poly_vals[0] = cn
 
-    _logger.info("Data produced polynomial {0} with 1 sigma per term (x^1, x^{2}) {1}".format(
-        poly_as_text(poly_vals), np.sqrt(np.diag(pcov)), degree))
+    _logger.info(
+        "Data produced polynomial {0} with 1 sigma per term (x^1, x^{2}) {1}".format(
+            poly_as_text(poly_vals), np.sqrt(np.diag(pcov)), degree))
 
     return poly_vals
 
@@ -1179,5 +1201,48 @@ def add_external_data_to_ccc(identifier, data_file, report):
     ccc[CellCountCalibration.independent_data] = (
         meta_data.get_column_index_from_all_plates(-1))
 
-    _save_ccc_to_disk(ccc)
-    return True
+    return save_ccc_to_disk(ccc)
+
+
+@_validate_ccc_edit_request
+def constuct_polynomial(identifier, poly_name, power):
+
+    ccc = __CCC[identifier]
+    data_store = _collect_all_included_data(ccc)
+    poly_coeffs = calculate_polynomial(data_store, power).tolist()
+    poly = get_calibration_polynomial(poly_coeffs)
+
+    validation = validate_polynomial(data_store, poly)
+
+    if validation is not CalibrationValidation.OK:
+        return {
+            'validation': validation
+        }
+    _add_poly(ccc, poly_name, power, poly_coeffs)
+    if not save_ccc_to_disk(identifier):
+        return False
+
+    # Darkening -> Cell Count Per pixel
+    # Then multiply by number of such pixels in colony
+    # Then Sum cell counts per colony
+    calc_sizes = [
+        (poly(intensities) * counts).sum()
+        for intensities, counts in
+        zip(
+            data_store.source_values,
+            data_store.source_value_counts)]
+
+    return {
+        'ccc': identifier,
+        'polynomial_coefficients': poly_coeffs,
+        'polynomial_name': poly_name,
+        'polynomial_degree': power,
+        'measured_sizes': data_store.target_value,
+        'calculated_sizes': calc_sizes,
+        'validation': validation,
+    }
+
+
+def _add_poly(ccc, poly_name, power, poly_coeffs):
+
+    ccc[poly_name] = {"power": power, "coefficients": poly_coeffs}

@@ -1,6 +1,10 @@
+import os
+import json
+from collections import namedtuple
+
 import numpy as np
 import pytest
-from collections import namedtuple
+
 from scanomatic.data_processing import calibration
 
 data = calibration.load_data_file()
@@ -27,15 +31,15 @@ def test_load_calibration():
 
 def test_expand_data_lenghts():
 
-    counts = data[calibration.CalibrationEntry.source_value_counts]
+    counts = data.source_value_counts
     exp_vals, _, _, _ = calibration._get_expanded_data(data)
     assert all(np.sum(c) == len(v) for c, v in zip(counts, exp_vals))
 
 
 def test_expand_data_sums():
 
-    counts = data[calibration.CalibrationEntry.source_value_counts]
-    values = data[calibration.CalibrationEntry.source_values]
+    counts = data.source_value_counts
+    values = data.source_values
     data_sums = np.array(
         tuple(np.sum(np.array(c) * np.array(v))
               for c, v in zip(counts, values)))
@@ -50,7 +54,7 @@ def test_expand_data_targets():
     _, targets, _, _ = calibration._get_expanded_data(data)
     np.testing.assert_allclose(
         targets.astype(np.float),
-        data[calibration.CalibrationEntry.target_value])
+        data.target_value)
 
 
 def test_expand_vector_length():
@@ -82,33 +86,6 @@ def test_calibration_opt_func():
     assert poly([2], 0, 1)[0] == 16
 
 
-@pytest.mark.skip("There is no data to test on yet")
-def test_calculate_polynomial():
-    degree = 4
-    poly = calibration.calculate_polynomial(data, degree=degree)
-    assert poly.size == degree + 1
-    np.testing.assert_allclose(poly[1:-2], 0)
-    np.testing.assert_allclose(poly[-1], 0)
-    assert np.unique(poly).size > 1
-
-
-@pytest.mark.skip("There is no data to test on yet")
-def test_polynomial():
-
-    poly_coeffs = calibration.calculate_polynomial(data)
-    poly = calibration.get_calibration_polynomial(poly_coeffs)
-    validity = calibration.validate_polynomial(data, poly)
-
-    if validity == calibration.CalibrationValidation.BadSlope:
-        raise AssertionError(calibration.CalibrationValidation.BadSlope)
-
-    elif validity == calibration.CalibrationValidation.BadIntercept:
-        raise AssertionError(calibration.CalibrationValidation.BadIntercept)
-
-    elif validity == calibration.CalibrationValidation.BadStatistics:
-        raise AssertionError(calibration.CalibrationValidation.BadStatistics)
-
-
 def test_get_im_slice():
     """Test that _get_im_slice handles floats"""
     image = np.arange(0, 42).reshape((6, 7))
@@ -134,3 +111,113 @@ class TestAccessToken:
             ccc[calibration.CellCountCalibration.identifier],
             access_token=ccc[
                 calibration.CellCountCalibration.edit_access_token]) is True
+
+
+
+def _fixture_load_ccc(rel_path):
+    parent = os.path.dirname(__file__)
+    with open(os.path.join(parent, rel_path), 'rb') as fh:
+        data = json.load(fh)
+    ccc = calibration._parse_ccc(data)
+    if ccc:
+        calibration.__CCC[
+            ccc[calibration.CellCountCalibration.identifier]] = ccc
+        return ccc
+    raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
+
+
+@pytest.fixture(scope='function')
+def edit_ccc():
+    return _fixture_load_ccc('data/test_good.ccc')
+
+
+@pytest.fixture(scope='function')
+def edit_bad_slope_ccc():
+    return _fixture_load_ccc('data/test_badslope.ccc')
+
+
+@pytest.fixture(scope='function')
+def data_store_bad_ccc(edit_bad_slope_ccc):
+    return calibration._collect_all_included_data(edit_bad_slope_ccc)
+
+
+class TestEditCCC:
+
+    def test_validate_bad_correlation(self, data_store_bad_ccc):
+
+        poly = np.poly1d([2, 1])
+        assert (
+            calibration.validate_polynomial(data_store_bad_ccc, poly) is \
+            calibration.CalibrationValidation.BadSlope)
+
+    def test_ccc_is_in_edit_mode(self, edit_ccc):
+
+        assert (
+            edit_ccc[calibration.CellCountCalibration.status] is
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "Not edit mode"
+
+        assert (
+            edit_ccc[calibration.CellCountCalibration.identifier]
+        ), "Missing Identifier"
+
+    def test_ccc_collect_all_data_has_equal_length(self, data_store_bad_ccc):
+
+        lens = [len(getattr(data_store_bad_ccc, k)) for k in
+                    ('target_value', 'source_values', 'source_value_counts')]
+        assert all(v == lens[0] for v in lens)
+
+    def test_ccc_collect_all_data_entries_has_equal_length(
+            self, data_store_bad_ccc):
+
+        values = data_store_bad_ccc.source_values
+        counts = data_store_bad_ccc.source_value_counts
+        assert all(len(v) == len(c) for v, c in zip(values, counts))
+
+    def test_ccc_calculate_polynomial(self, data_store_bad_ccc):
+
+        poly_coeffs = calibration.calculate_polynomial(data_store_bad_ccc, 5)
+        assert len(poly_coeffs) == 6
+        assert poly_coeffs[0] != 0
+        assert poly_coeffs[-2] != 0
+        assert poly_coeffs[-1] == 0
+        assert all(v == 0 for v in poly_coeffs[1:4])
+
+    def test_construct_bad_polynomial(self, edit_bad_slope_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = edit_bad_slope_ccc[
+            calibration.CellCountCalibration.identifier]
+        poly_name = 'test'
+        power = 5
+        token = 'password'
+
+        response = calibration.constuct_polynomial(
+            identifier, poly_name, power, access_token=token)
+
+        assert (
+            response['validation'] is
+            calibration.CalibrationValidation.BadSlope)
+
+
+    @pytest.mark.disable("Unreliable with current data")
+    def test_construct_good_polynomial(self, edit_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = edit_ccc[calibration.CellCountCalibration.identifier]
+        poly_name = 'test'
+        power = 5
+        token = 'password'
+        print(identifier)
+
+        response = calibration.constuct_polynomial(
+            identifier, poly_name, power, access_token=token)
+
+        assert (
+            response['validation'] is
+            calibration.CalibrationValidation.OK)
+
+        assert response['polynomial_name'] == poly_name
+        assert response['polynomial_degree'] == power
+        assert response['ccc'] == identifier
+
+        assert len(response['calculated_sizes']) == 16
+        assert len(response['measured_sizes']) == 16
