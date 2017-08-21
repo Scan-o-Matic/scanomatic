@@ -826,6 +826,7 @@ def add_routes(app):
                 401,
                 reason="Invalid access token")
 
+        # TODO: regex not imported?
         poly_name = re.sub(r'[ .,]]', '_', poly_name)
         checked_name = "".join(c for c in poly_name if c in _VALID_CHARACTERS)
 
@@ -836,10 +837,10 @@ def add_routes(app):
             )
 
         response = calibration.constuct_polynomial(
-                ccc_identifier,
-                poly_name,
-                power,
-                access_token=data_object.get("access_token")
+            ccc_identifier,
+            poly_name,
+            power,
+            access_token=data_object.get("access_token")
         )
 
         if response["validation"] is calibration.CalibrationValidation.OK:
@@ -856,35 +857,34 @@ def add_routes(app):
         return json_abort(
             400,
             reason=
-            "Construction refused. Validation of polynomial says: ".format(
+            "Construction refused. Validation of polynomial says: {}".format(
                 response["validation"].name
             ))
 
-    """
-    DEPRECATION WARNING BELOW
+    @app.route('/api/data/calibration/<ccc_identifier>/finalize')
+    def finalize_calibration(ccc_identifier):
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
 
-    @app.route("/api/calibration/export")
-    @app.route("/api/calibration/export/<name>")
-    def calibration_export(name=''):
+        if not calibration.is_valid_token(
+                ccc_identifier,
+                access_token=data_object.get("access_token")):
 
-        data_path = get_data_file_path(label=name)
+            return json_abort(
+                401,
+                reason="Invalid access token"
+            )
 
-        memory_file = BytesIO()
-        with zipfile.ZipFile(memory_file, 'w') as zf:
-
-            data = zipfile.ZipInfo(os.path.basename(data_path))
-            data.date_time = time.localtime(time.time())[:6]
-            data.compress_type = zipfile.ZIP_DEFLATED
-            zf.writestr(data, open(data_path, 'r').read())
-
-        memory_file.flush()
-        memory_file.seek(0)
-        if not name:
-            name = 'default'
-
-        return send_file(
-            memory_file,
-            attachment_filename='calibration.{0}.zip'.format(name),
-            as_attachment=True
-        )
-    """
+        if calibration.activate_ccc(
+                ccc_identifier,
+                access_token=data_object.get("access_token")):
+            jsonify(
+                success=True,
+                is_endpoint=True
+            )
+        else:
+            return json_abort(
+                400,
+                reason="Failed to activate ccc"
+            )
