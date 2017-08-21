@@ -221,3 +221,36 @@ class TestEditCCC:
 
         assert len(response['calculated_sizes']) == 16
         assert len(response['measured_sizes']) == 16
+
+
+class TestActivateCCC:
+
+    @pytest.mark.parametrize("polynomial", [
+        {"power": "apa", "coefficients": [0, 1]},
+        {"power": 1.0, "coefficients": [0, 1]},
+        {"power": 2, "coefficients": [0, 1]},
+        {"browser": 2, "coffee": [0, 1]},
+    ])
+    def test_polynomial_malformed(self, polynomial):
+        with pytest.raises(calibration.ActivationError):
+            calibration.is_valid_polynomial(polynomial)
+
+    @pytest.mark.parametrize("polynomial", [
+        {"power": 0, "coefficients": [0]},
+        {"power": 1, "coefficients": [0, 1]},
+        {"power": 2, "coefficients": [1, 2, 3]},
+    ])
+    def test_polynomial_correct(self, polynomial):
+        assert calibration.is_valid_polynomial(polynomial) is True
+
+    def test_no_has_selected_polynomial(self):
+        raise NotImplementedError
+
+    def test_has_selected_polynomial(self):
+        raise NotImplementedError
+
+    def test_activated_status_is_set(self):
+        raise NotImplementedError
+
+    def test_activated_ccc_not_editable(self):
+        raise NotImplementedError

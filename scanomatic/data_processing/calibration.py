@@ -236,14 +236,19 @@ def is_valid_token(identifier):
 
 def is_valid_polynomial(polynomial):
     try:
-        return (
-            isinstance(polynomial['power'], int) and
-            isinstance(polynomial['coefficients'], list)
-        )
+        if (not (
+                isinstance(polynomial['power'], int) and
+                isinstance(polynomial['coefficients'], list) and
+                len(polynomial['coefficients']) == polynomial['power'] + 1)):
+            _logger.error(
+                "Validation of polynomial {} failed".format(polynomial))
+            raise ActivationError("Invalid polynomial: {}".format(polynomial))
     except (KeyError, TypeError) as err:
         _logger.error(
-            "Validation of polynomial failed with {}".format(err))
-        raise ActivationError(err)
+            "Validation of polynomial failed with {}".format(err.message))
+        raise ActivationError(err.message)
+
+    return True
 
 
 def has_valid_polynomial(identifier):
@@ -256,8 +261,8 @@ def has_valid_polynomial(identifier):
     except (KeyError, TypeError) as err:
         _logger.error(
             "Checking that CCC has valid polynomial failed with {}".format(
-                err))
-        raise ActivationError(err)
+                err.message))
+        raise ActivationError(err.message)
 
 
 def get_empty_ccc(species, reference):
