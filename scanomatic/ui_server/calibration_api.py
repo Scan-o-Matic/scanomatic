@@ -777,22 +777,23 @@ def add_routes(app):
                 400,
                 report=report)
 
-    @app.route('/api/data/calibration/<identifier>/delete', methods=['POST'])
-    def delete_non_deployed_calibration(identifier):
+    @app.route(
+        '/api/data/calibration/<ccc_identifier>/delete', methods=['POST'])
+    def delete_non_deployed_calibration(ccc_identifier):
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
             data_object = request.values
 
         if not calibration.is_valid_token(
-                identifier,
+                ccc_identifier,
                 access_token=data_object.get("access_token")):
 
             return json_abort(
                 401,
                 reason="Invalid access token")
 
-        if delete_ccc(identifier):
+        if delete_ccc(ccc_identifier):
 
             return jsonify(
                 success=True,
@@ -808,7 +809,9 @@ def add_routes(app):
 
     @app.route('/api/data/calibration/<ccc_identifier>/construct/<poly_name>',
                defaults={'power': 5})
-    @app.route('/api/data/calibration/<ccc_identifier>/construct/<poly_name>/<int: power>')
+    @app.route(
+        '/api/data/calibration/<ccc_identifier>/construct/<poly_name>' +
+        '/<int: power>')
     def construct_calibration(ccc_identifier, poly_name, power):
 
         data_object = request.get_json(silent=True, force=True)
@@ -816,7 +819,7 @@ def add_routes(app):
             data_object = request.values
 
         if not calibration.is_valid_token(
-                identifier,
+                ccc_identifier,
                 access_token=data_object.get("access_token")):
 
             return json_abort(
@@ -836,7 +839,8 @@ def add_routes(app):
                 ccc_identifier,
                 poly_name,
                 power,
-                access_token=data_object.get("access_token")):
+                access_token=data_object.get("access_token")
+        )
 
         if response["validation"] is calibration.CalibrationValidation.OK:
             return jsonify(
