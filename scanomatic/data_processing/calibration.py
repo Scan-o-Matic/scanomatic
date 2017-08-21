@@ -166,6 +166,10 @@ CalibrationEntry = namedtuple("CalibrationEntry", [
     'image', 'colony_name', 'target_value', 'source_values', 'source_value_counts'])
 
 
+class ActivationError(Exception):
+    pass
+
+
 class CalibrationEntryStatus(Enum):
 
     UnderConstruction = 0
@@ -221,6 +225,32 @@ def _validate_ccc_edit_request(f):
 @_validate_ccc_edit_request
 def is_valid_token(identifier):
     return identifier in __CCC
+
+
+def is_valid_polynomial(polynomial):
+    try:
+        return (
+            isinstance(polynomial['power'], int) and
+            isinstance(polynomial['coefficients'], list)
+        )
+    except (KeyError, TypeError) as err:
+        _logger.error(
+            "Validation of polynomial failed with {}".format(err))
+        raise ActivationError(err)
+
+
+def has_valid_polynomial(identifier):
+    try:
+        return is_valid_polynomial(
+            __CCC[identifier].polynomial[
+                __CCC[identifier].deployed_polynomial
+            ]
+        )
+    except (KeyError, TypeError) as err:
+        _logger.error(
+            "Checking that CCC has valid polynomial failed with {}".format(
+                err))
+        raise ActivationError(err)
 
 
 def get_empty_ccc(species, reference):
@@ -325,12 +355,19 @@ def add_ccc(ccc):
 def activate_ccc(identifier):
 
     ccc = __CCC[identifier]
+    try:
+        if not has_valid_polynomial(identifier):
+            return False
+    except ActivationError:
+        return False
+
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
     ccc[CellCountCalibration.edit_access_token] = uuid1().hex
-    save_ccc_to_disk(identifier)
-    return True
+
+    return save_ccc_to_disk(identifier)
 
 
+@_validate_ccc_edit_request
 def delete_ccc(identifier):
 
     if identifier in __CCC:
@@ -354,18 +391,14 @@ def delete_ccc(identifier):
 
 def save_ccc_to_disk(identifier):
 
-    if (identifier in __CCC and
-            __CCC[identifier][CellCountCalibration.status] is
-            CalibrationEntryStatus.UnderConstruction):
+    if identifier in __CCC:
 
         return _save_ccc_to_disk(__CCC[identifier])
 
-    elif identifier not in __CCC:
-        _logger.error("Unknown CCC identifier {0}".format(identifier))
     else:
-        _logger.error(
-            "Can only save changes to CCC:s that are under construction")
-    return False
+
+        _logger.error("Unknown CCC identifier {0}".format(identifier))
+        return False
 
 
 def _encode_val(v):
