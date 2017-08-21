@@ -110,7 +110,8 @@ def add_routes(app):
             success=True,
             is_endpoint=True,
             identifier=ccc[calibration.CellCountCalibration.identifier],
-            access_token=ccc[calibration.CellCountCalibration.edit_access_token]
+            access_token=ccc[
+                calibration.CellCountCalibration.edit_access_token]
         )
 
     @app.route("/api/calibration/<ccc_identifier>/add_image", methods=['POST'])
@@ -676,7 +677,8 @@ def add_routes(app):
                 "boolean array"
             )
 
-        if not valid_array_dimensions(2, image, blob_filter, background_filter):
+        if not valid_array_dimensions(
+                2, image, blob_filter, background_filter):
             return json_abort(
                 400,
                 reason="Supplied data does not have the correct dimensions." +
@@ -856,8 +858,8 @@ def add_routes(app):
 
         return json_abort(
             400,
-            reason=
-            "Construction refused. Validation of polynomial says: {}".format(
+            reason="Construction refused. " +
+            "Validation of polynomial says: {}".format(
                 response["validation"].name
             ))
 

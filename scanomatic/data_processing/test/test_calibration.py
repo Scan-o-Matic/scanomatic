@@ -113,7 +113,6 @@ class TestAccessToken:
                 calibration.CellCountCalibration.edit_access_token]) is True
 
 
-
 def _fixture_load_ccc(rel_path):
     parent = os.path.dirname(__file__)
     with open(os.path.join(parent, rel_path), 'rb') as fh:
@@ -147,8 +146,9 @@ class TestEditCCC:
 
         poly = np.poly1d([2, 1])
         assert (
-            calibration.validate_polynomial(data_store_bad_ccc, poly) is \
-            calibration.CalibrationValidation.BadSlope)
+            calibration.validate_polynomial(data_store_bad_ccc, poly) is
+            calibration.CalibrationValidation.BadSlope
+        )
 
     def test_ccc_is_in_edit_mode(self, edit_ccc):
 
@@ -163,8 +163,10 @@ class TestEditCCC:
 
     def test_ccc_collect_all_data_has_equal_length(self, data_store_bad_ccc):
 
-        lens = [len(getattr(data_store_bad_ccc, k)) for k in
-                    ('target_value', 'source_values', 'source_value_counts')]
+        lens = [
+            len(getattr(data_store_bad_ccc, k)) for k in
+            ('target_value', 'source_values', 'source_value_counts')
+        ]
         assert all(v == lens[0] for v in lens)
 
     def test_ccc_collect_all_data_entries_has_equal_length(
@@ -197,7 +199,6 @@ class TestEditCCC:
         assert (
             response['validation'] is
             calibration.CalibrationValidation.BadSlope)
-
 
     @pytest.mark.disable("Unreliable with current data")
     def test_construct_good_polynomial(self, edit_ccc):

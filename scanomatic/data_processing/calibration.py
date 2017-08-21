@@ -162,8 +162,15 @@ class CCCMeasurement(Enum):
     """:type : CCCMeasurement"""
 
 
-CalibrationEntry = namedtuple("CalibrationEntry", [
-    'image', 'colony_name', 'target_value', 'source_values', 'source_value_counts'])
+CalibrationEntry = namedtuple(
+    "CalibrationEntry", [
+        'image',
+        'colony_name',
+        'target_value',
+        'source_values',
+        'source_value_counts'
+    ]
+)
 
 
 class ActivationError(Exception):
@@ -210,11 +217,16 @@ def _validate_ccc_edit_request(f):
 
                 else:
 
-                    _logger.error("Can only modify the CCC {0} because it is not under construction".format(identifier))
+                    _logger.error(
+                        "Can not modify the CCC " +
+                        "{0} because it is not under construction".format(
+                            identifier))
 
             else:
 
-                _logger.error("You don't have the correct access token for {0}, request refused".format(identifier))
+                _logger.error(
+                    "You don't have the correct access token for " +
+                    "{0}, request refused".format(identifier))
         else:
 
             _logger.error("Unknown CCC {0}".format(identifier))
@@ -235,6 +247,9 @@ def is_valid_token(identifier):
 
 
 def is_valid_polynomial(polynomial):
+    """Checks that the polynomial is of the correct format, but _not_
+    that it is reasonable, which is taken care of by the function
+    `validate_polynomial()`"""
     try:
         if (not (
                 isinstance(polynomial['power'], int) and
@@ -948,9 +963,7 @@ def _collect_all_included_data(ccc):
                                 id_image, id_plate, id_row, id_col) +
                             '\nContents:{0}'.format(item))
 
-
     target_value = np.array(ccc[CellCountCalibration.independent_data]).ravel()
-
 
     return CalibrationEntry(
         target_value=target_value[inclusion_filter].tolist(),
@@ -1049,7 +1062,8 @@ def calculate_polynomial(data_store, degree=5):
     poly_vals[0] = cn
 
     _logger.info(
-        "Data produced polynomial {0} with 1 sigma per term (x^1, x^{2}) {1}".format(
+        "Data produced polynomial " +
+        "{0} with 1 sigma per term (x^1, x^{2}) {1}".format(
             poly_as_text(poly_vals), np.sqrt(np.diag(pcov)), degree))
 
     return poly_vals
@@ -1226,15 +1240,17 @@ def add_external_data_to_ccc(identifier, data_file, report):
                     independent_data > 0)
 
                 if independent_data and not measured:
-                    warnings.append(
-                        "Plate {0}, Pos ({1}, {2}) is not included but has independent data {3}".format(
+                    warnings.append((
+                        "Plate {0}, Pos ({1}, {2}) is not included but has " +
+                        "independent data {3}").format(
                             id_plate, id_outer, id_inner,
                             meta_data[id_plate][id_outer][id_inner]))
 
                 elif not independent_data and measured:
 
-                    errors.append(
-                        "Plate {0}, Pos ({1}, {2}) is included but has no valid independent data {3}".format(
+                    errors.append((
+                        "Plate {0}, Pos ({1}, {2}) is included but has no " +
+                        "valid independent data {3}").format(
                             id_plate, id_outer, id_inner,
                             meta_data[id_plate][id_outer][id_inner]))
 
