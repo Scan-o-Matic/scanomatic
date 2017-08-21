@@ -1,6 +1,7 @@
 from string import letters
 from itertools import product
 from types import StringTypes
+import re
 
 from flask import jsonify, request, send_file
 import numpy as np
@@ -828,7 +829,6 @@ def add_routes(app):
                 401,
                 reason="Invalid access token")
 
-        # TODO: regex not imported?
         poly_name = re.sub(r'[ .,]]', '_', poly_name)
         checked_name = "".join(c for c in poly_name if c in _VALID_CHARACTERS)
 
