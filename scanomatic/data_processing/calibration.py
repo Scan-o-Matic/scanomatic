@@ -246,29 +246,27 @@ def is_valid_token(identifier):
     return True
 
 
-def is_valid_polynomial(polynomial):
-    """Checks that the polynomial is of the correct format, but _not_
-    that it is reasonable, which is taken care of by the function
-    `validate_polynomial()`"""
+def is_valid_polynomial_repr(polynomial):
     try:
         if (not (
                 isinstance(polynomial['power'], int) and
                 isinstance(polynomial['coefficients'], list) and
                 len(polynomial['coefficients']) == polynomial['power'] + 1)):
             _logger.error(
-                "Validation of polynomial {} failed".format(polynomial))
-            raise ActivationError("Invalid polynomial: {}".format(polynomial))
+                "Validation of polynomial representaiton {} failed".format(
+                    polynomial))
+            raise ActivationError(
+                "Invalid polynomial representation: {}".format(polynomial))
     except (KeyError, TypeError) as err:
         _logger.error(
-            "Validation of polynomial failed with {}".format(err.message))
+            "Validation of polynomial representation failed with {}".format(
+                err.message))
         raise ActivationError(err.message)
-
-    return True
 
 
 def has_valid_polynomial(identifier):
     try:
-        return is_valid_polynomial(
+        return is_valid_polynomial_repr(
             __CCC[identifier][CellCountCalibration.polynomial][
                 __CCC[identifier][CellCountCalibration.deployed_polynomial]
             ]
@@ -383,8 +381,7 @@ def activate_ccc(identifier):
 
     ccc = __CCC[identifier]
     try:
-        if not has_valid_polynomial(identifier):
-            return False
+        has_valid_polynomial(identifier)
     except ActivationError:
         return False
 

@@ -239,7 +239,7 @@ class TestActivateCCC:
     ])
     def test_polynomial_malformed(self, polynomial):
         with pytest.raises(calibration.ActivationError):
-            calibration.is_valid_polynomial(polynomial)
+            calibration.is_valid_polynomial_repr(polynomial)
 
     @pytest.mark.parametrize("polynomial", [
         {"power": 0, "coefficients": [0]},
@@ -247,7 +247,7 @@ class TestActivateCCC:
         {"power": 2, "coefficients": [1, 2, 3]},
     ])
     def test_polynomial_correct(self, polynomial):
-        assert calibration.is_valid_polynomial(polynomial) is True
+        assert calibration.is_valid_polynomial_repr(polynomial) is None
 
     def test_no_has_selected_polynomial(self, edit_ccc):
         # The fixture needs to be included, otherwise test is not correct
@@ -262,7 +262,7 @@ class TestActivateCCC:
             calibration.CellCountCalibration.identifier]
 
         assert (
-            calibration.has_valid_polynomial(identifier) is True
+            calibration.has_valid_polynomial(identifier) is None
         ), "CCC does not have valid polynomial"
 
     def test_activated_status_is_set(self, finalizable_ccc):
