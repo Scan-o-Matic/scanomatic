@@ -140,6 +140,11 @@ def data_store_bad_ccc(edit_bad_slope_ccc):
     return calibration._collect_all_included_data(edit_bad_slope_ccc)
 
 
+@pytest.fixture(scope='function')
+def finalizable_ccc():
+    return _fixture_load_ccc('data/test_finalizable.ccc')
+
+
 class TestEditCCC:
 
     def test_validate_bad_correlation(self, data_store_bad_ccc):
@@ -244,14 +249,36 @@ class TestActivateCCC:
     def test_polynomial_correct(self, polynomial):
         assert calibration.is_valid_polynomial(polynomial) is True
 
-    def test_no_has_selected_polynomial(self):
+    def test_no_has_selected_polynomial(self, edit_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = edit_ccc[calibration.CellCountCalibration.identifier]
+
+        with pytest.raises(calibration.ActivationError):
+            calibration.has_valid_polynomial(identifier)
+
+    def test_has_selected_polynomial(self, finalizable_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = finalizable_ccc[
+            calibration.CellCountCalibration.identifier]
+
+        assert calibration.has_valid_polynomial(identifier) == True
+
+    def test_activated_status_is_set(self, finalizable_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = finalizable_ccc[
+            calibration.CellCountCalibration.identifier]
+
+        # Assert that underConstruction status is set
+        # Activate finished test.
+        # assert that active status is set
         raise NotImplementedError
 
-    def test_has_selected_polynomial(self):
-        raise NotImplementedError
+    def test_activated_ccc_not_editable(self, finalizable_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = finalizable_ccc[
+            calibration.CellCountCalibration.identifier]
 
-    def test_activated_status_is_set(self):
-        raise NotImplementedError
-
-    def test_activated_ccc_not_editable(self):
+        # Assert that underConstruction status is set
+        # Activate finished test.
+        # assert that editing is not allowed.
         raise NotImplementedError
