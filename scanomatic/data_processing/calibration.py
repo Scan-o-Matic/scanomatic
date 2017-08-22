@@ -218,15 +218,15 @@ def _validate_ccc_edit_request(f):
                 else:
 
                     _logger.error(
-                        "Can not modify the CCC " +
-                        "{0} because it is not under construction".format(
-                            identifier))
+                        "Can not modify the CCC {0} because it is not under construction".format(
+                            identifier)
+                    )
 
             else:
 
                 _logger.error(
-                    "You don't have the correct access token for " +
-                    "{0}, request refused".format(identifier))
+                    "You don't have the correct access token for {0}, request refused".format(identifier)
+                )
         else:
 
             _logger.error("Unknown CCC {0}".format(identifier))
@@ -254,13 +254,16 @@ def is_valid_polynomial_repr(polynomial):
                 len(polynomial['coefficients']) == polynomial['power'] + 1)):
             _logger.error(
                 "Validation of polynomial representaiton {} failed".format(
-                    polynomial))
+                    polynomial)
+            )
             raise ActivationError(
-                "Invalid polynomial representation: {}".format(polynomial))
+                "Invalid polynomial representation: {}".format(polynomial)
+            )
     except (KeyError, TypeError) as err:
         _logger.error(
             "Validation of polynomial representation failed with {}".format(
-                err.message))
+                err.message)
+        )
         raise ActivationError(err.message)
 
 
@@ -274,7 +277,8 @@ def has_valid_polynomial(identifier):
     except (KeyError, TypeError) as err:
         _logger.error(
             "Checking that CCC has valid polynomial failed with {}".format(
-                err.message))
+                err.message)
+        )
         raise ActivationError(err.message)
 
 
@@ -337,7 +341,8 @@ def __load_cccs():
 
             _logger.error(
                 "Duplicated identifier {0} is not allowed!".format(
-                    data[CellCountCalibration.identifier]))
+                    data[CellCountCalibration.identifier])
+            )
 
         else:
 
@@ -372,7 +377,8 @@ def add_ccc(ccc):
 
         _logger.error(
             "'{0}' is not a valid new CCC identifier".format(
-                ccc[CellCountCalibration.identifier]))
+                ccc[CellCountCalibration.identifier])
+        )
         return False
 
 
@@ -473,7 +479,8 @@ def _parse_ccc(data):
         if ccc_data_type not in data:
             _logger.error(
                 "Corrupt CCC-data, missing {0} in {1}".format(
-                    ccc_data_type, data))
+                    ccc_data_type, data)
+            )
             return None
 
     return data
@@ -649,14 +656,16 @@ def save_image_slices(
         np.save(
             Paths().ccc_image_gs_slice_pattern.format(
                 identifier, image_identifier),
-            _get_im_slice(im, grayscale_slice))
+            _get_im_slice(im, grayscale_slice)
+        )
 
     if plate_slices:
         for plate_model in plate_slices:
             np.save(
                 Paths().ccc_image_plate_slice_pattern.format(
                     identifier, image_identifier, plate_model.index),
-                _get_im_slice(im, plate_model))
+                _get_im_slice(im, plate_model)
+            )
 
     return True
 
@@ -673,7 +682,8 @@ def get_grayscale_slice(identifier, image_identifier):
 
     try:
         return np.load(Paths().ccc_image_gs_slice_pattern.format(
-            identifier, image_identifier))
+            identifier, image_identifier)
+        )
     except IOError:
         return None
 
@@ -685,22 +695,29 @@ def get_plate_slice(
         try:
             return np.load(
                 Paths().ccc_image_plate_transformed_slice_pattern.format(
-                    identifier, image_identifier, id_plate))
+                    identifier, image_identifier, id_plate)
+            )
         except IOError:
-            _logger.error("Problem loading: {0}".format(
-                Paths().ccc_image_plate_transformed_slice_pattern.format(
-                    identifier, image_identifier, id_plate)))
+            _logger.error(
+                "Problem loading: {0}".format(
+                    Paths().ccc_image_plate_transformed_slice_pattern.format(
+                    identifier, image_identifier, id_plate)
+                )
+            )
             return None
     else:
         try:
             return np.load(
                 Paths().ccc_image_plate_slice_pattern.format(
-                    identifier, image_identifier, id_plate))
+                    identifier, image_identifier, id_plate)
+            )
         except IOError:
             _logger.error(
                 "Problem loading: {0}".format(
                     Paths().ccc_image_plate_slice_pattern.format(
-                        identifier, image_identifier, id_plate)))
+                        identifier, image_identifier, id_plate)
+                )
+            )
             return None
 
 
@@ -710,9 +727,9 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
     im_json = get_image_json_from_ccc(identifier, image_identifier)
     if not im_json:
         _logger.error(
-            "CCC {0} Image {1} has not been setup,".format(
-                identifier, image_identifier) +
-            " you must first add the image before working on it.")
+            "CCC {0} Image {1} has not been setup, you must first add the image before working on it.".format(
+                identifier, image_identifier)
+        )
 
     plate = get_plate_slice(
         identifier, image_identifier, plate_id, gs_transformed=False)
@@ -720,7 +737,8 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
     if plate is None:
         _logger.error(
             "No plate slice has been saved for {0}:{1}: plate {2}".format(
-                identifier, image_identifier, plate_id))
+                identifier, image_identifier, plate_id)
+        )
         return False
 
     grayscale_values = im_json[CCCImage.grayscale_source_values]
@@ -737,12 +755,16 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
         np.save(
             Paths().ccc_image_plate_transformed_slice_pattern.format(
                 identifier, image_identifier, plate_id),
-            transpose_polynomial(plate))
+            transpose_polynomial(plate)
+        )
         return True
     except IOError:
-        _logger.error("Problem saving: {0}".format(
-            Paths().ccc_image_plate_transformed_slice_pattern.format(
-                identifier, image_identifier, plate_id)))
+        _logger.error(
+            "Problem saving: {0}".format(
+                Paths().ccc_image_plate_transformed_slice_pattern.format(
+                    identifier, image_identifier, plate_id)
+            )
+        )
         return False
 
 
@@ -795,8 +817,9 @@ def set_colony_compressed_data(
                     CCCMeasurement.source_value_counts]):
 
             _logger.warning(
-                "Attempting to include CCC Measurement for position " +
-                "{0}, {1} while it has no data".format(x, y))
+                "Attempting to include CCC Measurement for position {0}, {1} while it has no data".format(
+                    x, y)
+            )
 
             return False
 
@@ -923,7 +946,8 @@ def load_data_file(file_path=None, label=''):
                     else:
                         _logger.warning(
                             "Could not parse line {0}: '{1}' in {2}".format(
-                                i, line.strip(), file_path))
+                                i, line.strip(), file_path)
+                        )
 
     except IOError:
         raise IOError("File at {0} not found".format(file_path))
@@ -958,7 +982,8 @@ def _collect_all_included_data(ccc):
                             str(e.message) +
                             ' not in img {0} plate {1}, pos {2}, {3} '.format(
                                 id_image, id_plate, id_row, id_col) +
-                            '\nContents:{0}'.format(item))
+                            '\nContents:{0}'.format(item)
+                        )
 
     target_value = np.array(ccc[CellCountCalibration.independent_data]).ravel()
 
@@ -1059,9 +1084,9 @@ def calculate_polynomial(data_store, degree=5):
     poly_vals[0] = cn
 
     _logger.info(
-        "Data produced polynomial " +
-        "{0} with 1 sigma per term (x^1, x^{2}) {1}".format(
-            poly_as_text(poly_vals), np.sqrt(np.diag(pcov)), degree))
+        "Data produced polynomial {0} with 1 sigma per term (x^1, x^{2}) {1}".format(
+            poly_as_text(poly_vals), np.sqrt(np.diag(pcov)), degree)
+    )
 
     return poly_vals
 
@@ -1087,7 +1112,8 @@ def load_calibrations(file_path=None):
                     except (TypeError, ValueError):
                         _logger.info(
                             "Skipping line {0}: '{0}' (can't parse)".format(
-                                i, l.strip()))
+                                i, l.strip())
+                        )
 
     except IOError:
         _logger.warning("Could not locate file '{0}'".format(file_path))
@@ -1107,8 +1133,10 @@ def load_calibration(label="", poly_degree=None, file_path=None):
         if k.startswith(label):
 
             if poly_degree is None:
-                _logger.info("Using polynomial {0}: {1}".format(
-                    k, poly_as_text(data[k])))
+                _logger.info(
+                    "Using polynomial {0}: {1}".format(
+                        k, poly_as_text(data[k]))
+                )
 
             return data[k]
 
@@ -1177,8 +1205,9 @@ def remove_calibration(label, degree=None, file_path=None):
 
     else:
         _logger.warning(
-            "No polynomial was found matching the criteria" +
-            " (label={0}, degree={1}".format(label, degree))
+            "No polynomial was found matching the criteria (label={0}, degree={1}".format(
+                label, degree)
+        )
         return False
 
 
@@ -1237,19 +1266,19 @@ def add_external_data_to_ccc(identifier, data_file, report):
                     independent_data > 0)
 
                 if independent_data and not measured:
-                    warnings.append((
-                        "Plate {0}, Pos ({1}, {2}) is not included but has " +
-                        "independent data {3}").format(
+                    warnings.append(
+                        "Plate {0}, Pos ({1}, {2}) is not included but has independent data {3}".format(
                             id_plate, id_outer, id_inner,
-                            meta_data[id_plate][id_outer][id_inner]))
+                            meta_data[id_plate][id_outer][id_inner])
+                    )
 
                 elif not independent_data and measured:
 
-                    errors.append((
-                        "Plate {0}, Pos ({1}, {2}) is included but has no " +
-                        "valid independent data {3}").format(
+                    errors.append(
+                        "Plate {0}, Pos ({1}, {2}) is included but has no valid independent data {3}".format(
                             id_plate, id_outer, id_inner,
-                            meta_data[id_plate][id_outer][id_inner]))
+                            meta_data[id_plate][id_outer][id_inner])
+                    )
 
                     data_errors = True
 
