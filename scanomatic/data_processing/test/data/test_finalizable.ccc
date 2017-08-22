@@ -8,7 +8,7 @@
     "CellCountCalibration.reference":
         "Local Minimum",
     "CellCountCalibration.identifier":
-        "testgoodedit",
+        "testfinalizable",
     "CellCountCalibration.images": [
         {
             "CCCImage.identifier": "image1",

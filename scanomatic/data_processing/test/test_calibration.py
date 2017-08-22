@@ -261,24 +261,45 @@ class TestActivateCCC:
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
 
-        assert calibration.has_valid_polynomial(identifier) == True
+        assert (
+            calibration.has_valid_polynomial(identifier) is True
+        ), "CCC does not have valid polynomial"
 
     def test_activated_status_is_set(self, finalizable_ccc):
         # The fixture needs to be included, otherwise test is not correct
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
+        token = 'password'
 
-        # Assert that underConstruction status is set
-        # Activate finished test.
-        # assert that active status is set
-        raise NotImplementedError
+        assert (
+            finalizable_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "CCC not initialized with UnderConstruction entry status"
+
+        calibration.activate_ccc(identifier, access_token=token)
+
+        assert (
+            finalizable_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.Active
+        ), "CCC activation failed"
 
     def test_activated_ccc_not_editable(self, finalizable_ccc):
         # The fixture needs to be included, otherwise test is not correct
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
+        token = 'password'
 
-        # Assert that underConstruction status is set
-        # Activate finished test.
-        # assert that editing is not allowed.
-        raise NotImplementedError
+        assert (
+            finalizable_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "CCC not initialized with UnderConstruction entry status"
+
+        calibration.activate_ccc(identifier, access_token=token)
+
+        poly_name = 'test'
+        power = 5
+
+        response = calibration.constuct_polynomial(
+            identifier, poly_name, power, access_token=token)
+
+        assert response is None
