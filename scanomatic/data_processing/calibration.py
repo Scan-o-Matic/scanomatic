@@ -267,11 +267,11 @@ def is_valid_polynomial_repr(polynomial):
         raise ActivationError(err.message)
 
 
-def has_valid_polynomial(identifier):
+def has_valid_polynomial(ccc):
     try:
         return is_valid_polynomial_repr(
-            __CCC[identifier][CellCountCalibration.polynomial][
-                __CCC[identifier][CellCountCalibration.deployed_polynomial]
+            ccc[CellCountCalibration.polynomial][
+                ccc[CellCountCalibration.deployed_polynomial]
             ]
         )
     except (KeyError, TypeError) as err:
@@ -387,7 +387,7 @@ def activate_ccc(identifier):
 
     ccc = __CCC[identifier]
     try:
-        has_valid_polynomial(identifier)
+        has_valid_polynomial(ccc)
     except ActivationError:
         return False
 

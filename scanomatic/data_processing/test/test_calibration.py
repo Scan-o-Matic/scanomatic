@@ -251,18 +251,13 @@ class TestActivateCCC:
 
     def test_no_has_selected_polynomial(self, edit_ccc):
         # The fixture needs to be included, otherwise test is not correct
-        identifier = edit_ccc[calibration.CellCountCalibration.identifier]
-
         with pytest.raises(calibration.ActivationError):
-            calibration.has_valid_polynomial(identifier)
+            calibration.has_valid_polynomial(edit_ccc)
 
     def test_has_selected_polynomial(self, finalizable_ccc):
         # The fixture needs to be included, otherwise test is not correct
-        identifier = finalizable_ccc[
-            calibration.CellCountCalibration.identifier]
-
         assert (
-            calibration.has_valid_polynomial(identifier) is None
+            calibration.has_valid_polynomial(finalizable_ccc) is None
         ), "CCC does not have valid polynomial"
 
     def test_activated_status_is_set(self, finalizable_ccc):
