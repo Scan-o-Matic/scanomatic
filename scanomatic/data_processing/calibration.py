@@ -269,8 +269,8 @@ def is_valid_polynomial(polynomial):
 def has_valid_polynomial(identifier):
     try:
         return is_valid_polynomial(
-            __CCC[identifier].polynomial[
-                __CCC[identifier].deployed_polynomial
+            __CCC[identifier][CellCountCalibration.polynomial][
+                __CCC[identifier][CellCountCalibration.deployed_polynomial]
             ]
         )
     except (KeyError, TypeError) as err:
