@@ -205,7 +205,7 @@ class TestEditCCC:
             response['validation'] is
             calibration.CalibrationValidation.BadSlope)
 
-    @pytest.mark.disable("Unreliable with current data")
+    @pytest.mark.skip("Unreliable with current data")
     def test_construct_good_polynomial(self, edit_ccc):
         # The fixture needs to be included, otherwise test is not correct
         identifier = edit_ccc[calibration.CellCountCalibration.identifier]
