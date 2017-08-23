@@ -882,7 +882,7 @@ def add_routes(app):
         if calibration.activate_ccc(
                 ccc_identifier,
                 access_token=data_object.get("access_token")):
-            jsonify(
+            return jsonify(
                 success=True,
                 is_endpoint=True
             )
