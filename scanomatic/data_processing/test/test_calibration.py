@@ -113,27 +113,37 @@ class TestAccessToken:
                 calibration.CellCountCalibration.edit_access_token]) is True
 
 
-
 def _fixture_load_ccc(rel_path):
     parent = os.path.dirname(__file__)
     with open(os.path.join(parent, rel_path), 'rb') as fh:
         data = json.load(fh)
-    ccc = calibration._parse_ccc(data)
-    if ccc:
+    _ccc = calibration._parse_ccc(data)
+    if _ccc:
         calibration.__CCC[
-            ccc[calibration.CellCountCalibration.identifier]] = ccc
-        return ccc
+            _ccc[calibration.CellCountCalibration.identifier]] = _ccc
+        return _ccc
     raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
 
 
 @pytest.fixture(scope='function')
 def edit_ccc():
-    return _fixture_load_ccc('data/test_good.ccc')
+    _ccc = _fixture_load_ccc('data/test_good.ccc')
+    yield _ccc
+    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
 @pytest.fixture(scope='function')
 def edit_bad_slope_ccc():
-    return _fixture_load_ccc('data/test_badslope.ccc')
+    _ccc = _fixture_load_ccc('data/test_badslope.ccc')
+    yield _ccc
+    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+
+
+@pytest.fixture(scope='function')
+def finalizable_ccc():
+    _ccc = _fixture_load_ccc('data/test_finalizable.ccc')
+    yield _ccc
+    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
 @pytest.fixture(scope='function')
@@ -147,8 +157,9 @@ class TestEditCCC:
 
         poly = np.poly1d([2, 1])
         assert (
-            calibration.validate_polynomial(data_store_bad_ccc, poly) is \
-            calibration.CalibrationValidation.BadSlope)
+            calibration.validate_polynomial(data_store_bad_ccc, poly) is
+            calibration.CalibrationValidation.BadSlope
+        )
 
     def test_ccc_is_in_edit_mode(self, edit_ccc):
 
@@ -163,8 +174,10 @@ class TestEditCCC:
 
     def test_ccc_collect_all_data_has_equal_length(self, data_store_bad_ccc):
 
-        lens = [len(getattr(data_store_bad_ccc, k)) for k in
-                    ('target_value', 'source_values', 'source_value_counts')]
+        lens = [
+            len(getattr(data_store_bad_ccc, k)) for k in
+            ('target_value', 'source_values', 'source_value_counts')
+        ]
         assert all(v == lens[0] for v in lens)
 
     def test_ccc_collect_all_data_entries_has_equal_length(
@@ -198,8 +211,7 @@ class TestEditCCC:
             response['validation'] is
             calibration.CalibrationValidation.BadSlope)
 
-
-    @pytest.mark.disable("Unreliable with current data")
+    @pytest.mark.skip("Unreliable with current data")
     def test_construct_good_polynomial(self, edit_ccc):
         # The fixture needs to be included, otherwise test is not correct
         identifier = edit_ccc[calibration.CellCountCalibration.identifier]
@@ -221,3 +233,92 @@ class TestEditCCC:
 
         assert len(response['calculated_sizes']) == 16
         assert len(response['measured_sizes']) == 16
+
+
+class TestActivateCCC:
+
+    @pytest.mark.parametrize("polynomial", [
+        {"power": "apa", "coefficients": [0, 1]},
+        {"power": 1.0, "coefficients": [0, 1]},
+        {"power": 2, "coefficients": [0, 1]},
+        {"browser": 2, "coffee": [0, 1]},
+    ])
+    def test_polynomial_malformed(self, polynomial):
+        with pytest.raises(calibration.ActivationError):
+            calibration.validate_polynomial_struct(polynomial)
+
+    @pytest.mark.parametrize("polynomial", [
+        {"power": 0, "coefficients": [0]},
+        {"power": 1, "coefficients": [0, 1]},
+        {"power": 2, "coefficients": [1, 2, 3]},
+    ])
+    def test_polynomial_correct(self, polynomial):
+        assert calibration.validate_polynomial_struct(polynomial) is None
+
+    def test_no_has_selected_polynomial(self, edit_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        with pytest.raises(calibration.ActivationError):
+            calibration.has_valid_polynomial(edit_ccc)
+
+    def test_has_selected_polynomial(self, finalizable_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        assert (
+            calibration.has_valid_polynomial(finalizable_ccc) is None
+        ), "CCC does not have valid polynomial"
+
+    def test_activated_status_is_set(self, finalizable_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = finalizable_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        assert (
+            finalizable_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "CCC not initialized with UnderConstruction entry status"
+
+        calibration.activate_ccc(identifier, access_token=token)
+
+        assert (
+            finalizable_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.Active
+        ), "CCC activation failed"
+
+    def test_activated_ccc_not_editable(self, finalizable_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = finalizable_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        assert (
+            finalizable_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "CCC not initialized with UnderConstruction entry status"
+
+        calibration.activate_ccc(identifier, access_token=token)
+
+        poly_name = 'test'
+        power = 5
+
+        response = calibration.constuct_polynomial(
+            identifier, poly_name, power, access_token=token)
+
+        assert response is None
+
+    def test_activated_status_is_not_set(self, edit_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = edit_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        assert (
+            edit_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "CCC not initialized with UnderConstruction entry status"
+
+        calibration.activate_ccc(identifier, access_token=token)
+
+        assert (
+            edit_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "CCC activation worked but shouldn't have"

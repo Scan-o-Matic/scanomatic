@@ -1,5 +1,12 @@
-scanomatic:
-    build: .
-    ports:
-        - 5000:5000
+version: '2'
 
+services:
+    scanomatic:
+        build: .
+        ports:
+            - 5000:5000
+        volumes:
+            - scan-o-matic-home:/root/.scan-o-matic
+
+volumes:
+    scan-o-matic-home: {}

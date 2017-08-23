@@ -1,6 +1,7 @@
 from string import letters
 from itertools import product
 from types import StringTypes
+import re
 
 from flask import jsonify, request, send_file
 import numpy as np
@@ -110,7 +111,8 @@ def add_routes(app):
             success=True,
             is_endpoint=True,
             identifier=ccc[calibration.CellCountCalibration.identifier],
-            access_token=ccc[calibration.CellCountCalibration.edit_access_token]
+            access_token=ccc[
+                calibration.CellCountCalibration.edit_access_token]
         )
 
     @app.route("/api/calibration/<ccc_identifier>/add_image", methods=['POST'])
@@ -323,7 +325,7 @@ def add_routes(app):
     @app.route(
         "/api/calibration/<ccc_identifier>/image/<image_identifier>" +
         "/grayscale/analyse", methods=['POST'])
-    def get_ccc_image_grayscale_analysis(ccc_identifier, image_identifier):
+    def analyse_ccc_image_grayscale(ccc_identifier, image_identifier):
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
@@ -378,7 +380,7 @@ def add_routes(app):
     @app.route(
         "/api/calibration/<ccc_identifier>/image/<image_identifier>/plate" +
         "/<int:plate>/transform", methods=['POST'])
-    def get_ccc_image_plate_transform(ccc_identifier, image_identifier, plate):
+    def transform_ccc_image_plate(ccc_identifier, image_identifier, plate):
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
@@ -625,7 +627,7 @@ def add_routes(app):
     @app.route(
         "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/" +
         "plate/<int:plate>/compress/colony/<int:x>/<int:y>", methods=["POST"])
-    def calibration_compress(ccc_identifier, image_identifier, plate, x, y):
+    def compress_calibration(ccc_identifier, image_identifier, plate, x, y):
         """Set compressed calibration entry
 
         Request Keys:
@@ -676,7 +678,8 @@ def add_routes(app):
                 "boolean array"
             )
 
-        if not valid_array_dimensions(2, image, blob_filter, background_filter):
+        if not valid_array_dimensions(
+                2, image, blob_filter, background_filter):
             return json_abort(
                 400,
                 reason="Supplied data does not have the correct dimensions." +
@@ -777,22 +780,23 @@ def add_routes(app):
                 400,
                 report=report)
 
-    @app.route('/api/data/calibration/<identifier>/delete', methods=['POST'])
-    def delete_non_deployed_calibration(identifier):
+    @app.route(
+        '/api/data/calibration/<ccc_identifier>/delete', methods=['DELETE'])
+    def delete_non_deployed_calibration(ccc_identifier):
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
             data_object = request.values
 
         if not calibration.is_valid_token(
-                identifier,
+                ccc_identifier,
                 access_token=data_object.get("access_token")):
 
             return json_abort(
                 401,
                 reason="Invalid access token")
 
-        if delete_ccc(identifier):
+        if delete_ccc(ccc_identifier):
 
             return jsonify(
                 success=True,
@@ -807,8 +811,10 @@ def add_routes(app):
             )
 
     @app.route('/api/data/calibration/<ccc_identifier>/construct/<poly_name>',
-               defaults={'power': 5})
-    @app.route('/api/data/calibration/<ccc_identifier>/construct/<poly_name>/<int: power>')
+               defaults={'power': 5}, methods=['POST'])
+    @app.route(
+        '/api/data/calibration/<ccc_identifier>/construct/<poly_name>' +
+        '/<int:power>', methods=['POST'])
     def construct_calibration(ccc_identifier, poly_name, power):
 
         data_object = request.get_json(silent=True, force=True)
@@ -816,7 +822,7 @@ def add_routes(app):
             data_object = request.values
 
         if not calibration.is_valid_token(
-                identifier,
+                ccc_identifier,
                 access_token=data_object.get("access_token")):
 
             return json_abort(
@@ -833,10 +839,11 @@ def add_routes(app):
             )
 
         response = calibration.constuct_polynomial(
-                ccc_identifier,
-                poly_name,
-                power,
-                access_token=data_object.get("access_token")):
+            ccc_identifier,
+            poly_name,
+            power,
+            access_token=data_object.get("access_token")
+        )
 
         if response["validation"] is calibration.CalibrationValidation.OK:
             return jsonify(
@@ -851,36 +858,36 @@ def add_routes(app):
 
         return json_abort(
             400,
-            reason=
-            "Construction refused. Validation of polynomial says: ".format(
+            reason="Construction refused. " +
+            "Validation of polynomial says: {}".format(
                 response["validation"].name
             ))
 
-    """
-    DEPRECATION WARNING BELOW
+    @app.route(
+        '/api/data/calibration/<ccc_identifier>/finalize', methods=['POST'])
+    def finalize_calibration(ccc_identifier):
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
 
-    @app.route("/api/calibration/export")
-    @app.route("/api/calibration/export/<name>")
-    def calibration_export(name=''):
+        if not calibration.is_valid_token(
+                ccc_identifier,
+                access_token=data_object.get("access_token")):
 
-        data_path = get_data_file_path(label=name)
+            return json_abort(
+                401,
+                reason="Invalid access token"
+            )
 
-        memory_file = BytesIO()
-        with zipfile.ZipFile(memory_file, 'w') as zf:
-
-            data = zipfile.ZipInfo(os.path.basename(data_path))
-            data.date_time = time.localtime(time.time())[:6]
-            data.compress_type = zipfile.ZIP_DEFLATED
-            zf.writestr(data, open(data_path, 'r').read())
-
-        memory_file.flush()
-        memory_file.seek(0)
-        if not name:
-            name = 'default'
-
-        return send_file(
-            memory_file,
-            attachment_filename='calibration.{0}.zip'.format(name),
-            as_attachment=True
-        )
-    """
+        if calibration.activate_ccc(
+                ccc_identifier,
+                access_token=data_object.get("access_token")):
+            return jsonify(
+                success=True,
+                is_endpoint=True
+            )
+        else:
+            return json_abort(
+                400,
+                reason="Failed to activate ccc"
+            )
