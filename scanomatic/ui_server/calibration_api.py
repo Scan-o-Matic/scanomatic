@@ -814,7 +814,7 @@ def add_routes(app):
                defaults={'power': 5})
     @app.route(
         '/api/data/calibration/<ccc_identifier>/construct/<poly_name>' +
-        '/<int: power>')
+        '/<int:power>')
     def construct_calibration(ccc_identifier, poly_name, power):
 
         data_object = request.get_json(silent=True, force=True)
