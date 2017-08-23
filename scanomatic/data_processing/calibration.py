@@ -346,7 +346,7 @@ def add_ccc(ccc):
         return False
 
 
-def is_valid_polynomial_repr(polynomial):
+def validate_polynomial_struct(polynomial):
     try:
         if (not (
                 isinstance(polynomial['power'], int) and
@@ -369,7 +369,7 @@ def is_valid_polynomial_repr(polynomial):
 
 def has_valid_polynomial(ccc):
     try:
-        return is_valid_polynomial_repr(
+        validate_polynomial_struct(
             ccc[CellCountCalibration.polynomial][
                 ccc[CellCountCalibration.deployed_polynomial]
             ]
