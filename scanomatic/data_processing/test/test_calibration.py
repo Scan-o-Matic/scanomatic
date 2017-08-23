@@ -117,32 +117,38 @@ def _fixture_load_ccc(rel_path):
     parent = os.path.dirname(__file__)
     with open(os.path.join(parent, rel_path), 'rb') as fh:
         data = json.load(fh)
-    ccc = calibration._parse_ccc(data)
-    if ccc:
+    _ccc = calibration._parse_ccc(data)
+    if _ccc:
         calibration.__CCC[
-            ccc[calibration.CellCountCalibration.identifier]] = ccc
-        return ccc
+            _ccc[calibration.CellCountCalibration.identifier]] = _ccc
+        return _ccc
     raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
 
 
 @pytest.fixture(scope='function')
 def edit_ccc():
-    return _fixture_load_ccc('data/test_good.ccc')
+    _ccc = _fixture_load_ccc('data/test_good.ccc')
+    yield _ccc
+    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
 @pytest.fixture(scope='function')
 def edit_bad_slope_ccc():
-    return _fixture_load_ccc('data/test_badslope.ccc')
+    _ccc = _fixture_load_ccc('data/test_badslope.ccc')
+    yield _ccc
+    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+
+
+@pytest.fixture(scope='function')
+def finalizable_ccc():
+    _ccc = _fixture_load_ccc('data/test_finalizable.ccc')
+    yield _ccc
+    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
 @pytest.fixture(scope='function')
 def data_store_bad_ccc(edit_bad_slope_ccc):
     return calibration._collect_all_included_data(edit_bad_slope_ccc)
-
-
-@pytest.fixture(scope='function')
-def finalizable_ccc():
-    return _fixture_load_ccc('data/test_finalizable.ccc')
 
 
 class TestEditCCC:
