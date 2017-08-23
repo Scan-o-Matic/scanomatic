@@ -246,42 +246,6 @@ def is_valid_token(identifier):
     return True
 
 
-def is_valid_polynomial_repr(polynomial):
-    try:
-        if (not (
-                isinstance(polynomial['power'], int) and
-                isinstance(polynomial['coefficients'], list) and
-                len(polynomial['coefficients']) == polynomial['power'] + 1)):
-            _logger.error(
-                "Validation of polynomial representaiton {} failed".format(
-                    polynomial)
-            )
-            raise ActivationError(
-                "Invalid polynomial representation: {}".format(polynomial)
-            )
-    except (KeyError, TypeError) as err:
-        _logger.error(
-            "Validation of polynomial representation failed with {}".format(
-                err.message)
-        )
-        raise ActivationError(err.message)
-
-
-def has_valid_polynomial(ccc):
-    try:
-        return is_valid_polynomial_repr(
-            ccc[CellCountCalibration.polynomial][
-                ccc[CellCountCalibration.deployed_polynomial]
-            ]
-        )
-    except (KeyError, TypeError) as err:
-        _logger.error(
-            "Checking that CCC has valid polynomial failed with {}".format(
-                err.message)
-        )
-        raise ActivationError(err.message)
-
-
 def get_empty_ccc(species, reference):
     ccc_id = _get_ccc_identifier(species, reference)
     if ccc_id is None:
@@ -380,6 +344,42 @@ def add_ccc(ccc):
                 ccc[CellCountCalibration.identifier])
         )
         return False
+
+
+def is_valid_polynomial_repr(polynomial):
+    try:
+        if (not (
+                isinstance(polynomial['power'], int) and
+                isinstance(polynomial['coefficients'], list) and
+                len(polynomial['coefficients']) == polynomial['power'] + 1)):
+            _logger.error(
+                "Validation of polynomial representaiton {} failed".format(
+                    polynomial)
+            )
+            raise ActivationError(
+                "Invalid polynomial representation: {}".format(polynomial)
+            )
+    except (KeyError, TypeError) as err:
+        _logger.error(
+            "Validation of polynomial representation failed with {}".format(
+                err.message)
+        )
+        raise ActivationError(err.message)
+
+
+def has_valid_polynomial(ccc):
+    try:
+        return is_valid_polynomial_repr(
+            ccc[CellCountCalibration.polynomial][
+                ccc[CellCountCalibration.deployed_polynomial]
+            ]
+        )
+    except (KeyError, TypeError) as err:
+        _logger.error(
+            "Checking that CCC has valid polynomial failed with {}".format(
+                err.message)
+        )
+        raise ActivationError(err.message)
 
 
 @_validate_ccc_edit_request
