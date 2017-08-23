@@ -325,7 +325,7 @@ def add_routes(app):
     @app.route(
         "/api/calibration/<ccc_identifier>/image/<image_identifier>" +
         "/grayscale/analyse", methods=['POST'])
-    def get_ccc_image_grayscale_analysis(ccc_identifier, image_identifier):
+    def analyse_ccc_image_grayscale(ccc_identifier, image_identifier):
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
@@ -380,7 +380,7 @@ def add_routes(app):
     @app.route(
         "/api/calibration/<ccc_identifier>/image/<image_identifier>/plate" +
         "/<int:plate>/transform", methods=['POST'])
-    def get_ccc_image_plate_transform(ccc_identifier, image_identifier, plate):
+    def transform_ccc_image_plate(ccc_identifier, image_identifier, plate):
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
@@ -627,7 +627,7 @@ def add_routes(app):
     @app.route(
         "/api/data/calibration/<ccc_identifier>/image/<image_identifier>/" +
         "plate/<int:plate>/compress/colony/<int:x>/<int:y>", methods=["POST"])
-    def calibration_compress(ccc_identifier, image_identifier, plate, x, y):
+    def compress_calibration(ccc_identifier, image_identifier, plate, x, y):
         """Set compressed calibration entry
 
         Request Keys:
@@ -781,7 +781,7 @@ def add_routes(app):
                 report=report)
 
     @app.route(
-        '/api/data/calibration/<ccc_identifier>/delete', methods=['POST'])
+        '/api/data/calibration/<ccc_identifier>/delete', methods=['DELETE'])
     def delete_non_deployed_calibration(ccc_identifier):
 
         data_object = request.get_json(silent=True, force=True)
@@ -811,10 +811,10 @@ def add_routes(app):
             )
 
     @app.route('/api/data/calibration/<ccc_identifier>/construct/<poly_name>',
-               defaults={'power': 5})
+               defaults={'power': 5}, methods=['POST'])
     @app.route(
         '/api/data/calibration/<ccc_identifier>/construct/<poly_name>' +
-        '/<int:power>')
+        '/<int:power>', methods=['POST'])
     def construct_calibration(ccc_identifier, poly_name, power):
 
         data_object = request.get_json(silent=True, force=True)
@@ -863,7 +863,8 @@ def add_routes(app):
                 response["validation"].name
             ))
 
-    @app.route('/api/data/calibration/<ccc_identifier>/finalize')
+    @app.route(
+        '/api/data/calibration/<ccc_identifier>/finalize', methods=['POST'])
     def finalize_calibration(ccc_identifier):
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
