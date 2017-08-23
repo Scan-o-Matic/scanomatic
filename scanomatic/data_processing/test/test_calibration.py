@@ -304,3 +304,21 @@ class TestActivateCCC:
             identifier, poly_name, power, access_token=token)
 
         assert response is None
+
+    def test_activated_status_is_not_set(self, edit_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = edit_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        assert (
+            edit_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "CCC not initialized with UnderConstruction entry status"
+
+        calibration.activate_ccc(identifier, access_token=token)
+
+        assert (
+            edit_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "CCC activation worked but shouldn't have"
