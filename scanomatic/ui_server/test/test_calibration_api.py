@@ -56,8 +56,15 @@ class TestFinalizeEndpoint:
             data={"access_token": token},
             follow_redirects=True
         )
-        assert json.loads(response.data)['reason'] == "Invalid access token"
-        assert '401' in response.status
+        expected = "Invalid access token or CCC not under construction"
+        assert (
+            json.loads(response.data)['reason'] == expected
+        ), "POST with bad token gave unexpected reason {} (expected '{}')".format(
+            json.loads(response.data)['reason'], expected)
+        assert (
+            '401' in response.status
+        ), "POST with bad token gave unexpected response {} (expected 401)".format(
+            response.status)
 
     def test_finalize_only_supports_post(self, test_app, finalizable_ccc):
         identifier = finalizable_ccc[
@@ -104,7 +111,10 @@ class TestFinalizeEndpoint:
             data={"access_token": token},
             follow_redirects=True
         )
-        assert '200' in response.status
+        assert (
+            '200' in response.status
+        ), "POST gave unexpected response {} (expected 200)".format(
+            response.status)
 
     def test_finalize_fails_when_unfinished(self, test_app, edit_ccc):
         identifier = edit_ccc[
