@@ -53,7 +53,6 @@ def add_routes(app):
         except ValueError:
             return json_abort(
                 400,
-                success=False,
                 is_endpoint=True,
                 reason="There are no registered CCC, Scan-o-Matic won't " +
                 "work before at least one is added"
@@ -758,7 +757,7 @@ def add_routes(app):
 
             return json_abort(
                 401,
-                reason="Invalid access token"
+                reason="Invalid access token or CCC not under construction"
             )
 
         report = {}
@@ -781,7 +780,7 @@ def add_routes(app):
                 report=report)
 
     @app.route(
-        '/api/data/calibration/<ccc_identifier>/delete', methods=['DELETE'])
+        '/api/data/calibration/<ccc_identifier>/delete', methods=['POST'])
     def delete_non_deployed_calibration(ccc_identifier):
 
         data_object = request.get_json(silent=True, force=True)
@@ -794,9 +793,11 @@ def add_routes(app):
 
             return json_abort(
                 401,
-                reason="Invalid access token")
+                reason="Invalid access token or CCC not under construction")
 
-        if delete_ccc(ccc_identifier):
+        if delete_ccc(
+                ccc_identifier,
+                access_token=data_object.get("access_token")):
 
             return jsonify(
                 success=True,
@@ -827,7 +828,8 @@ def add_routes(app):
 
             return json_abort(
                 401,
-                reason="Invalid access token")
+                reason="Invalid access token or CCC not under construction"
+            )
 
         poly_name = re.sub(r'[ .,]]', '_', poly_name)
         checked_name = "".join(c for c in poly_name if c in _VALID_CHARACTERS)
@@ -876,7 +878,7 @@ def add_routes(app):
 
             return json_abort(
                 401,
-                reason="Invalid access token"
+                reason="Invalid access token or CCC not under construction"
             )
 
         if calibration.activate_ccc(
