@@ -35,6 +35,20 @@ def edit_ccc():
     calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
+@pytest.fixture(scope='function')
+def active_ccc():
+    _ccc = _fixture_load_ccc('data/test_active.ccc')
+    yield _ccc
+    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+
+
+@pytest.fixture(scope='function')
+def deleted_ccc():
+    _ccc = _fixture_load_ccc('data/test_deleted.ccc')
+    yield _ccc
+    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+
+
 @pytest.fixture(scope="function")
 def test_app():
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
@@ -126,5 +140,155 @@ class TestFinalizeEndpoint:
             data={"access_token": token},
             follow_redirects=True
         )
-        assert json.loads(response.data)['reason'] == "Failed to activate ccc"
-        assert '400' in response.status
+        assert (
+            json.loads(response.data)['reason'] == "Failed to activate ccc"
+        ), "POST when unfinished gave unexpected reason {} (expected 'Failed to activate ccc')".format(
+            json.loads(response.data)['reason'])
+        assert (
+            '400' in response.status
+        ), "POST when unfinished gave unexpected response {} (expected 400)".format(
+            response.status)
+
+    def test_finalize_fails_when_activated(self, test_app, active_ccc):
+        identifier = active_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        response = test_app.post(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        expected = "Invalid access token or CCC not under construction"
+        assert (
+            json.loads(response.data)['reason'] == expected
+        ), "POST with bad token gave unexpected reason {} (expected '{}')".format(
+            json.loads(response.data)['reason'], expected)
+        assert (
+            '401' in response.status
+        ), "POST with bad token gave unexpected response {} (expected 401)".format(
+            response.status)
+
+    def test_finalize_fails_when_deleted(self, test_app, deleted_ccc):
+        identifier = deleted_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        response = test_app.post(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        expected = "Invalid access token or CCC not under construction"
+        assert (
+            json.loads(response.data)['reason'] == expected
+        ), "POST with bad token gave unexpected reason {} (expected '{}')".format(
+            json.loads(response.data)['reason'], expected)
+        assert (
+            '401' in response.status
+        ), "POST with bad token gave unexpected response {} (expected 401)".format(
+            response.status)
+
+
+class TestDeleteEndpoint:
+    route = "/api/data/calibration/{identifier}/delete"
+
+    def test_token_not_valid(self, test_app, finalizable_ccc):
+        identifier = finalizable_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'wrongPassword'
+
+        response = test_app.post(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        expected = "Invalid access token or CCC not under construction"
+        assert (
+            json.loads(response.data)['reason'] == expected
+        ), "POST with bad token gave unexpected reason {0} (expected '{1}')".format(
+            json.loads(response.data)['reason'], expected)
+        assert (
+            '401' in response.status
+        ), "POST with bad token gave unexpected response {} (expected 401)".format(
+            response.status)
+
+    def test_delete_only_supports_post(self, test_app, finalizable_ccc):
+        identifier = finalizable_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        response = test_app.put(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        assert (
+            '405' in response.status
+        ), "PUT gave unexpected response {} (expected 405)".format(
+            response.status)
+
+        response = test_app.get(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        assert (
+            '405' in response.status
+        ), "GET gave unexpected response {} (expected 405)".format(
+            response.status)
+
+        response = test_app.delete(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        assert (
+            '405' in response.status
+        ), "DELETE gave unexpected response {} (expected 405)".format(
+            response.status)
+
+    def test_delete_editable_ccc(self, test_app, edit_ccc):
+        identifier = edit_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        response = test_app.post(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        assert (
+            '200' in response.status
+        ), "POST gave unexpected response {} (expected 200)".format(
+            response.status)
+
+    def test_delete_deleted_ccc(self, test_app, deleted_ccc):
+        identifier = deleted_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        response = test_app.post(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        assert (
+            '401' in response.status
+        ), "POST gave unexpected response {} (expected 401)".format(
+            response.status)
+
+    def test_delete_active_ccc(self, test_app, active_ccc):
+        identifier = active_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        response = test_app.post(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        assert (
+            '401' in response.status
+        ), "POST gave unexpected response {} (expected 401)".format(
+            response.status)
