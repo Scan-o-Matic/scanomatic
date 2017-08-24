@@ -59,6 +59,32 @@ class TestFinalizeEndpoint:
         assert json.loads(response.data)['reason'] == "Invalid access token"
         assert '401' in response.status
 
+    def test_activate_only_supports_post(self, test_app, finalizable_ccc):
+        identifier = finalizable_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        response = test_app.put(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        assert '405' in response.status
+
+        response = test_app.get(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        assert '405' in response.status
+
+        response = test_app.delete(
+            self.route.format(identifier=identifier),
+            data={"access_token": token},
+            follow_redirects=True
+        )
+        assert '405' in response.status
+
     def test_activate_works_when_finished(self, test_app, finalizable_ccc):
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
