@@ -403,7 +403,8 @@ def delete_ccc(identifier):
     if identifier in __CCC:
 
         ccc = __CCC[identifier]
-        if ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active:
+        if ccc[CellCountCalibration.status] \
+                == CalibrationEntryStatus.UnderConstruction:
 
             ccc[CellCountCalibration.status] = CalibrationEntryStatus.Deleted
             ccc[CellCountCalibration.edit_access_token] = uuid1().hex

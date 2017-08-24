@@ -147,6 +147,20 @@ def finalizable_ccc():
 
 
 @pytest.fixture(scope='function')
+def active_ccc():
+    _ccc = _fixture_load_ccc('data/test_active.ccc')
+    yield _ccc
+    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+
+
+@pytest.fixture(scope='function')
+def deleted_ccc():
+    _ccc = _fixture_load_ccc('data/test_deleted.ccc')
+    yield _ccc
+    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+
+
+@pytest.fixture(scope='function')
 def data_store_bad_ccc(edit_bad_slope_ccc):
     return calibration._collect_all_included_data(edit_bad_slope_ccc)
 
@@ -322,3 +336,73 @@ class TestActivateCCC:
             edit_ccc[calibration.CellCountCalibration.status] ==
             calibration.CalibrationEntryStatus.UnderConstruction
         ), "CCC activation worked but shouldn't have"
+
+
+class TestDeleteCCC:
+
+    def test_delete_active_ccc(self, active_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = active_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        assert (
+            active_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.Active
+        ), "CCC not initialized with Active entry status"
+
+        status = calibration.delete_ccc(identifier, access_token=token)
+
+        assert (
+            status is None
+        ), "CCC deletion returned unexcepted status {}".format(status)
+
+        assert (
+            active_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.Active
+        ), "CCC deletion worked, but shouldn't have"
+
+    def test_delete_deleted_ccc(self, deleted_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = deleted_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        assert (
+            deleted_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.Deleted
+        ), "CCC not initialized with Deleted entry status"
+
+        status = calibration.delete_ccc(identifier, access_token=token)
+
+        assert (
+            status is None
+        ), "CCC deletion returned {} (expected: {})".format(status, None)
+
+        assert (
+            deleted_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.Deleted
+        ), "CCC deletion had unforseen consequences"
+
+    def test_delete_editable_ccc(self, edit_ccc):
+        # The fixture needs to be included, otherwise test is not correct
+        identifier = edit_ccc[
+            calibration.CellCountCalibration.identifier]
+        token = 'password'
+
+        assert (
+            edit_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.UnderConstruction
+        ), "CCC deletion returned {} (expected: {})".format(status, None)
+
+        status = calibration.delete_ccc(identifier, access_token=token)
+
+        assert (
+            status is True
+        ), "CCC deletion returned {} (expected: {})".format(status, True)
+
+        assert (
+            edit_ccc[calibration.CellCountCalibration.status] ==
+            calibration.CalibrationEntryStatus.Deleted
+        ), "CCC deletion didn't work but it should have"
+
