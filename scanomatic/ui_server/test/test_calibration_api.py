@@ -59,7 +59,7 @@ class TestFinalizeEndpoint:
         assert json.loads(response.data)['reason'] == "Invalid access token"
         assert '401' in response.status
 
-    def test_activate_only_supports_post(self, test_app, finalizable_ccc):
+    def test_finalize_only_supports_post(self, test_app, finalizable_ccc):
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
         token = 'password'
@@ -69,23 +69,32 @@ class TestFinalizeEndpoint:
             data={"access_token": token},
             follow_redirects=True
         )
-        assert '405' in response.status
+        assert (
+            '405' in response.status
+        ), "PUT gave unexpected response {} (expected 405)".format(
+            response.status)
 
         response = test_app.get(
             self.route.format(identifier=identifier),
             data={"access_token": token},
             follow_redirects=True
         )
-        assert '405' in response.status
+        assert (
+            '405' in response.status
+        ), "GET gave unexpected response {} (expected 405)".format(
+            response.status)
 
         response = test_app.delete(
             self.route.format(identifier=identifier),
             data={"access_token": token},
             follow_redirects=True
         )
-        assert '405' in response.status
+        assert (
+            '405' in response.status
+        ), "DELETE gave unexpected response {} (expected 405)".format(
+            response.status)
 
-    def test_activate_works_when_finished(self, test_app, finalizable_ccc):
+    def test_finalize_works_when_finished(self, test_app, finalizable_ccc):
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
         token = 'password'
@@ -97,7 +106,7 @@ class TestFinalizeEndpoint:
         )
         assert '200' in response.status
 
-    def test_activate_fails_when_unfinished(self, test_app, edit_ccc):
+    def test_finalize_fails_when_unfinished(self, test_app, edit_ccc):
         identifier = edit_ccc[
             calibration.CellCountCalibration.identifier]
         token = 'password'
