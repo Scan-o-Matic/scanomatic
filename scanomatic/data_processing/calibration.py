@@ -400,37 +400,10 @@ def activate_ccc(identifier):
 @_validate_ccc_edit_request
 def delete_ccc(identifier):
 
-    if identifier in __CCC:
-
-        ccc = __CCC[identifier]
-        if ccc[CellCountCalibration.status] \
-                == CalibrationEntryStatus.UnderConstruction:
-
-            ccc[CellCountCalibration.status] = CalibrationEntryStatus.Deleted
-            ccc[CellCountCalibration.edit_access_token] = uuid1().hex
-            save_ccc_to_disk(identifier)
-
-            return True
-
-        elif ccc[CellCountCalibration.status] == CalibrationEntryStatus.Deleted:
-
-            _logger.info("The CCC {0} was already deleted".format(identifier))
-
-            return True
-
-        elif ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active:
-
-            _logger.info("The CCC {0} is active, deleting is not allowed".format(
-                identifier))
-
-        else:
-
-            _logger.info("Cannot delete CCC {0} due to unkown EntryStatus".format(
-                identifier))
-
-    else:
-
-        _logger.info("The CCC {0} was not known".format(identifier))
+    ccc = __CCC[identifier]
+    ccc[CellCountCalibration.status] = CalibrationEntryStatus.Deleted
+    ccc[CellCountCalibration.edit_access_token] = uuid1().hex
+    return save_ccc_to_disk(identifier)
 
 
 def save_ccc_to_disk(identifier):
