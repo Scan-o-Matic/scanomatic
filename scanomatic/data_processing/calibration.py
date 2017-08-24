@@ -401,8 +401,10 @@ def activate_ccc(identifier):
 def delete_ccc(identifier):
 
     ccc = __CCC[identifier]
+
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Deleted
     ccc[CellCountCalibration.edit_access_token] = uuid1().hex
+
     return save_ccc_to_disk(identifier)
 
 
