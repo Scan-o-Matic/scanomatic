@@ -76,7 +76,7 @@ class TestFinalizeEndpoint:
         ), "POST with bad token gave unexpected reason {} (expected '{}')".format(
             json.loads(response.data)['reason'], expected)
         assert (
-            '401' in response.status
+            response.status_code == 401
         ), "POST with bad token gave unexpected response {} (expected 401)".format(
             response.status)
 
@@ -91,7 +91,7 @@ class TestFinalizeEndpoint:
             follow_redirects=True
         )
         assert (
-            '405' in response.status
+            response.status_code == 405
         ), "PUT gave unexpected response {} (expected 405)".format(
             response.status)
 
@@ -101,7 +101,7 @@ class TestFinalizeEndpoint:
             follow_redirects=True
         )
         assert (
-            '405' in response.status
+            response.status_code == 405
         ), "GET gave unexpected response {} (expected 405)".format(
             response.status)
 
@@ -111,7 +111,7 @@ class TestFinalizeEndpoint:
             follow_redirects=True
         )
         assert (
-            '405' in response.status
+            response.status_code == 405
         ), "DELETE gave unexpected response {} (expected 405)".format(
             response.status)
 
@@ -126,7 +126,7 @@ class TestFinalizeEndpoint:
             follow_redirects=True
         )
         assert (
-            '200' in response.status
+            response.status_code == 200
         ), "POST gave unexpected response {} (expected 200)".format(
             response.status)
 
@@ -145,7 +145,7 @@ class TestFinalizeEndpoint:
         ), "POST when unfinished gave unexpected reason {} (expected 'Failed to activate ccc')".format(
             json.loads(response.data)['reason'])
         assert (
-            '400' in response.status
+            response.status_code == 400
         ), "POST when unfinished gave unexpected response {} (expected 400)".format(
             response.status)
 
@@ -165,7 +165,7 @@ class TestFinalizeEndpoint:
         ), "POST with bad token gave unexpected reason {} (expected '{}')".format(
             json.loads(response.data)['reason'], expected)
         assert (
-            '401' in response.status
+            response.status_code == 401
         ), "POST with bad token gave unexpected response {} (expected 401)".format(
             response.status)
 
@@ -185,7 +185,7 @@ class TestFinalizeEndpoint:
         ), "POST with bad token gave unexpected reason {} (expected '{}')".format(
             json.loads(response.data)['reason'], expected)
         assert (
-            '401' in response.status
+            response.status_code == 401
         ), "POST with bad token gave unexpected response {} (expected 401)".format(
             response.status)
 
@@ -209,7 +209,7 @@ class TestDeleteEndpoint:
         ), "POST with bad token gave unexpected reason {0} (expected '{1}')".format(
             json.loads(response.data)['reason'], expected)
         assert (
-            '401' in response.status
+             response.status_code == 401
         ), "POST with bad token gave unexpected response {} (expected 401)".format(
             response.status)
 
@@ -224,7 +224,7 @@ class TestDeleteEndpoint:
             follow_redirects=True
         )
         assert (
-            '405' in response.status
+            response.status_code == 405
         ), "PUT gave unexpected response {} (expected 405)".format(
             response.status)
 
@@ -234,7 +234,7 @@ class TestDeleteEndpoint:
             follow_redirects=True
         )
         assert (
-            '405' in response.status
+            response.status_code == 405
         ), "GET gave unexpected response {} (expected 405)".format(
             response.status)
 
@@ -244,7 +244,7 @@ class TestDeleteEndpoint:
             follow_redirects=True
         )
         assert (
-            '405' in response.status
+            response.status_code == 405
         ), "DELETE gave unexpected response {} (expected 405)".format(
             response.status)
 
@@ -259,7 +259,7 @@ class TestDeleteEndpoint:
             follow_redirects=True
         )
         assert (
-            '200' in response.status
+            response.status_code == 200
         ), "POST gave unexpected response {} (expected 200)".format(
             response.status)
 
@@ -274,7 +274,7 @@ class TestDeleteEndpoint:
             follow_redirects=True
         )
         assert (
-            '401' in response.status
+            response.status_code == 401
         ), "POST gave unexpected response {} (expected 401)".format(
             response.status)
 
@@ -289,6 +289,6 @@ class TestDeleteEndpoint:
             follow_redirects=True
         )
         assert (
-            '401' in response.status
+            response.status_code == 401
         ), "POST gave unexpected response {} (expected 401)".format(
             response.status)
