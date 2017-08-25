@@ -80,39 +80,22 @@ class TestFinalizeEndpoint:
         ), "POST with bad token gave unexpected response {} (expected 401)".format(
             response.status)
 
-    def test_finalize_only_supports_post(self, test_app, finalizable_ccc):
+    @pytest.mark.parametrize("method", [
+        test_app().get, test_app().put, test_app().delete
+    ])
+    def test_finalize_only_supports_post(self, method, finalizable_ccc):
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
         token = 'password'
 
-        response = test_app.put(
+        response = method(
             self.route.format(identifier=identifier),
             data={"access_token": token},
             follow_redirects=True
         )
         assert (
             response.status_code == 405
-        ), "PUT gave unexpected response {} (expected 405)".format(
-            response.status)
-
-        response = test_app.get(
-            self.route.format(identifier=identifier),
-            data={"access_token": token},
-            follow_redirects=True
-        )
-        assert (
-            response.status_code == 405
-        ), "GET gave unexpected response {} (expected 405)".format(
-            response.status)
-
-        response = test_app.delete(
-            self.route.format(identifier=identifier),
-            data={"access_token": token},
-            follow_redirects=True
-        )
-        assert (
-            response.status_code == 405
-        ), "DELETE gave unexpected response {} (expected 405)".format(
+        ), "API call gave unexpected response {} (expected 405)".format(
             response.status)
 
     def test_finalize_works_when_finished(self, test_app, finalizable_ccc):
@@ -213,39 +196,22 @@ class TestDeleteEndpoint:
         ), "POST with bad token gave unexpected response {} (expected 401)".format(
             response.status)
 
-    def test_delete_only_supports_post(self, test_app, finalizable_ccc):
+    @pytest.mark.parametrize("method", [
+        test_app().get, test_app().put, test_app().delete
+    ])
+    def test_delete_only_supports_post(self, method, finalizable_ccc):
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
         token = 'password'
 
-        response = test_app.put(
+        response = method(
             self.route.format(identifier=identifier),
             data={"access_token": token},
             follow_redirects=True
         )
         assert (
             response.status_code == 405
-        ), "PUT gave unexpected response {} (expected 405)".format(
-            response.status)
-
-        response = test_app.get(
-            self.route.format(identifier=identifier),
-            data={"access_token": token},
-            follow_redirects=True
-        )
-        assert (
-            response.status_code == 405
-        ), "GET gave unexpected response {} (expected 405)".format(
-            response.status)
-
-        response = test_app.delete(
-            self.route.format(identifier=identifier),
-            data={"access_token": token},
-            follow_redirects=True
-        )
-        assert (
-            response.status_code == 405
-        ), "DELETE gave unexpected response {} (expected 405)".format(
+        ), "API call gave unexpected response {} (expected 405)".format(
             response.status)
 
     def test_delete_editable_ccc(self, test_app, edit_ccc):
