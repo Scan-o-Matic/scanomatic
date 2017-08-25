@@ -751,7 +751,7 @@ def add_routes(app):
                 reason="Didn't get any data"
             )
 
-        if not calibration.is_valid_token(
+        if not calibration.is_valid_edit_request(
                 ccc_identifier,
                 access_token=data_object.get("access_token")):
 
@@ -787,7 +787,7 @@ def add_routes(app):
         if not data_object:
             data_object = request.values
 
-        if not calibration.is_valid_token(
+        if not calibration.is_valid_edit_request(
                 ccc_identifier,
                 access_token=data_object.get("access_token")):
 
@@ -822,7 +822,7 @@ def add_routes(app):
         if not data_object:
             data_object = request.values
 
-        if not calibration.is_valid_token(
+        if not calibration.is_valid_edit_request(
                 ccc_identifier,
                 access_token=data_object.get("access_token")):
 
@@ -872,7 +872,7 @@ def add_routes(app):
         if not data_object:
             data_object = request.values
 
-        if not calibration.is_valid_token(
+        if not calibration.is_valid_edit_request(
                 ccc_identifier,
                 access_token=data_object.get("access_token")):
 

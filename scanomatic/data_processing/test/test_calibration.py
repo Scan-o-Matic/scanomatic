@@ -98,19 +98,22 @@ class TestAccessToken:
 
     def test_invalid_token(self, ccc):
 
-        assert not calibration.is_valid_token(
-            ccc[calibration.CellCountCalibration.identifier])
+        assert not calibration.is_valid_edit_request(
+            ccc[calibration.CellCountCalibration.identifier]
+        ), "Edit request worked, despite missing token"
 
-        assert not calibration.is_valid_token(
+        assert not calibration.is_valid_edit_request(
             ccc[calibration.CellCountCalibration.identifier],
-            access_token='bad')
+            access_token='bad'
+        ), "Edit request worked, despite bad token"
 
     def test_valid_token(self, ccc):
 
-        assert calibration.is_valid_token(
+        assert calibration.is_valid_edit_request(
             ccc[calibration.CellCountCalibration.identifier],
             access_token=ccc[
-                calibration.CellCountCalibration.edit_access_token]) is True
+                calibration.CellCountCalibration.edit_access_token]
+        ) is True, "Edit request failed, despite valid token."
 
 
 def _fixture_load_ccc(rel_path):
