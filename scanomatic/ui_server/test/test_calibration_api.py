@@ -88,15 +88,14 @@ class TestFinalizeEndpoint:
         ), "POST with bad token gave unexpected response {} (expected 401)".format(
             response.status)
 
-    @pytest.mark.parametrize("method", [
-        test_app().get, test_app().put, test_app().delete
-    ])
-    def test_finalize_only_supports_post(self, method, finalizable_ccc):
+    @pytest.mark.parametrize("method", ["get", "put", "delete"])
+    def test_finalize_only_supports_post(
+            self, method, test_app, finalizable_ccc):
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
         token = 'password'
 
-        response = method(
+        response = getattr(test_app, method)(
             self.route.format(identifier=identifier),
             data={"access_token": token},
             follow_redirects=True
@@ -204,15 +203,14 @@ class TestDeleteEndpoint:
         ), "POST with bad token gave unexpected response {} (expected 401)".format(
             response.status)
 
-    @pytest.mark.parametrize("method", [
-        test_app().get, test_app().put, test_app().delete
-    ])
-    def test_delete_only_supports_post(self, method, finalizable_ccc):
+    @pytest.mark.parametrize("method", ["get", "put", "delete"])
+    def test_delete_only_supports_post(
+            self, method, test_app, finalizable_ccc):
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
         token = 'password'
 
-        response = method(
+        response = getattr(test_app, method)(
             self.route.format(identifier=identifier),
             data={"access_token": token},
             follow_redirects=True
