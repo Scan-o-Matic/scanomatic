@@ -141,21 +141,29 @@ def edit_bad_slope_ccc():
 
 @pytest.fixture(scope='function')
 def finalizable_ccc():
-    _ccc = _fixture_load_ccc('data/test_finalizable.ccc')
+    _ccc = _fixture_load_ccc('data/test_good.ccc')
+    _ccc[calibration.CellCountCalibration.deployed_polynomial] = "stiff"
     yield _ccc
     calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
 @pytest.fixture(scope='function')
 def active_ccc():
-    _ccc = _fixture_load_ccc('data/test_active.ccc')
+    _ccc = _fixture_load_ccc('data/test_good.ccc')
+    _ccc[calibration.CellCountCalibration.deployed_polynomial] = "stiff"
+    _ccc[
+        calibration.CellCountCalibration.status
+    ] = calibration.CalibrationEntryStatus.Active
     yield _ccc
     calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
 @pytest.fixture(scope='function')
 def deleted_ccc():
-    _ccc = _fixture_load_ccc('data/test_deleted.ccc')
+    _ccc = _fixture_load_ccc('data/test_good.ccc')
+    _ccc[
+        calibration.CellCountCalibration.status
+    ] = calibration.CalibrationEntryStatus.Deleted
     yield _ccc
     calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
