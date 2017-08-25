@@ -95,8 +95,9 @@ class TestFinalizeEndpoint:
             calibration.CellCountCalibration.identifier]
         token = 'password'
 
-        response = getattr(test_app, method)(
+        response = test_app.open(
             self.route.format(identifier=identifier),
+            method=method,
             data={"access_token": token},
             follow_redirects=True
         )
@@ -210,8 +211,9 @@ class TestDeleteEndpoint:
             calibration.CellCountCalibration.identifier]
         token = 'password'
 
-        response = getattr(test_app, method)(
+        response = test_app.open(
             self.route.format(identifier=identifier),
+            method=method,
             data={"access_token": token},
             follow_redirects=True
         )
