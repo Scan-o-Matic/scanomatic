@@ -235,14 +235,7 @@ def _validate_ccc_edit_request(f):
 
 
 @_validate_ccc_edit_request
-def is_valid_token(identifier):
-    """In actual fact this function doesn't do anything but run the
-    checks defined in the wrapping decorator, which makes the function
-    return `None` if one of several conditions is not fulfilled.  If
-    the execution reaches the `return True` below all is therefore OK.
-    This is further to say, that a returned `None` is not really a
-    guarantee that the problem is with the access token, though that is
-    likely.  This is confusing, I know..."""
+def is_valid_edit_request(identifier):
     return True
 
 
@@ -400,23 +393,12 @@ def activate_ccc(identifier):
 @_validate_ccc_edit_request
 def delete_ccc(identifier):
 
-    if identifier in __CCC:
+    ccc = __CCC[identifier]
 
-        ccc = __CCC[identifier]
-        if ccc[CellCountCalibration.status] != CalibrationEntryStatus.Deleted:
+    ccc[CellCountCalibration.status] = CalibrationEntryStatus.Deleted
+    ccc[CellCountCalibration.edit_access_token] = uuid1().hex
 
-            ccc[CellCountCalibration.status] = CalibrationEntryStatus.Deleted
-            ccc[CellCountCalibration.edit_access_token] = uuid1().hex
-            save_ccc_to_disk(identifier)
-            return True
-
-        else:
-
-            _logger.info("The CCC {0} was already deleted".format(identifier))
-
-    else:
-
-        _logger.info("The CCC {0} was not known".format(identifier))
+    return save_ccc_to_disk(identifier)
 
 
 def save_ccc_to_disk(identifier):

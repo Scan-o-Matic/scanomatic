@@ -235,7 +235,7 @@ def test_using_filter_for_phase_phenotypes_correctly():
     assert data[CurvePhasePhenotypes.Duration] == (model.times[right - 1] + model.times[right]) / 2 - data[CurvePhasePhenotypes.Start], "Error in duration"
 
 
-def test_phases_are_chornological_and_not_overlapping():
+def test_phases_are_chronological_and_not_overlapping():
 
     phenotyper_object = build_test_phenotyper()
 
