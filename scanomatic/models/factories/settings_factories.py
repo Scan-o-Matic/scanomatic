@@ -65,7 +65,6 @@ class UIServerFactory(AbstractModelFactory):
     STORE_SECTION_SERIALIZERS = {
         "port": int,
         "host": str,
-        "local": bool,
         "master_key": str,
     }
 
@@ -93,7 +92,7 @@ class HardwareResourceLimitsFactory(AbstractModelFactory):
     @classmethod
     def create(cls, **settings):
         """
-                :rtype : scanomatic.models.settings_models.HardwareResourceLimitsModel
+        :rtype : scanomatic.models.settings_models.HardwareResourceLimitsModel
         """
         return super(HardwareResourceLimitsFactory, cls).create(**settings)
 
@@ -141,7 +140,8 @@ class ApplicationSettingsFactory(AbstractModelFactory):
 
     _SUB_FACTORIES = {
         settings_models.PathsModel: PathsFactory,
-        settings_models.HardwareResourceLimitsModel: HardwareResourceLimitsFactory,
+        settings_models.HardwareResourceLimitsModel:
+            HardwareResourceLimitsFactory,
         settings_models.PowerManagerModel: PowerManagerFactory,
         settings_models.RPCServerModel: RPCServerFactory,
         settings_models.UIServerModel: UIServerFactory,
@@ -152,7 +152,8 @@ class ApplicationSettingsFactory(AbstractModelFactory):
         "power_manager": settings_models.PowerManagerModel,
         "rpc_server": settings_models.RPCServerModel,
         "ui_server": settings_models.UIServerModel,
-        "hardware_resource_limits": settings_models.HardwareResourceLimitsModel,
+        "hardware_resource_limits":
+            settings_models.HardwareResourceLimitsModel,
         "mail": settings_models.MailModel,
         "paths": settings_models.PathsModel,
         "number_of_scanners": int,
@@ -162,8 +163,10 @@ class ApplicationSettingsFactory(AbstractModelFactory):
         "computer_human_name": str,
         "scanner_models":
             lambda enforce=None, serialize=None:
-            ([serialize[name] for name in sorted(serialize.keys())] if isinstance(serialize, dict) else None)
-            if serialize is not None else (enforce if not isinstance(enforce, tuple) else list(enforce)),
+            ([serialize[name] for name in sorted(serialize.keys())]
+             if isinstance(serialize, dict) else None)
+            if serialize is not None else
+            (enforce if not isinstance(enforce, tuple) else list(enforce)),
     }
 
     @classmethod
