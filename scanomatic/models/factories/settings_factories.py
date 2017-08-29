@@ -133,6 +133,19 @@ class PathsFactory(AbstractModelFactory):
         return super(PathsFactory, cls).create(**settings)
 
 
+def _scanner_model_serializer(enforce=None, serialize=None):
+    return (
+        (
+            [serialize[name] for name in sorted(serialize.keys())]
+            if isinstance(serialize, dict) else None
+        )
+        if serialize is not None else
+        (
+            enforce if not isinstance(enforce, tuple) else list(enforce)
+        )
+    )
+
+
 class ApplicationSettingsFactory(AbstractModelFactory):
 
     MODEL = settings_models.ApplicationSettingsModel
@@ -161,12 +174,7 @@ class ApplicationSettingsFactory(AbstractModelFactory):
         "scan_program": str,
         "scan_program_version_flag": str,
         "computer_human_name": str,
-        "scanner_models":
-            lambda enforce=None, serialize=None:
-            ([serialize[name] for name in sorted(serialize.keys())]
-             if isinstance(serialize, dict) else None)
-            if serialize is not None else
-            (enforce if not isinstance(enforce, tuple) else list(enforce)),
+        "scanner_models": _scanner_model_serializer
     }
 
     @classmethod
