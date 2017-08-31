@@ -313,6 +313,13 @@ def get_active_cccs():
         if ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active}
 
 
+def get_polynomial_from_ccc(identifier):
+
+    ccc = __CCC[identifier]
+    return ccc[CellCountCalibration.polynomial][
+        ccc[CellCountCalibration.deployed_polynomial]]
+
+
 def get_under_construction_cccs():
 
     return {

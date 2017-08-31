@@ -5,6 +5,9 @@ from scipy import ndimage
 
 from scanomatic.image_analysis import grid_array as grid_array_module
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.data_processing.calibration import (
+    load_calibration, get_polynomial_from_ccc, __CCC as CCC, get_empty_ccc,
+    CellCountCalibration)
 
 
 @pytest.fixture(scope="class")
@@ -23,7 +26,38 @@ def grid_array():
     return grid_array_instance
 
 
+@pytest.fixture(scope="class")
+def grid_array_using_ccc():
+    image_identifier = [42, 1337]
+    pinning = (8, 12)
+    analysis_model = AnalysisModelFactory.create()
+    analysis_model.output_directory = ""
+    analysis_model.cell_count_calibration = "TESTCC"
+    image = ndimage.io.imread(
+        './scanomatic/image_analysis/test/testdata/test_fixture_easy.tiff')
+    grid_array_instance = grid_array_module.GridArray(
+        image_identifier, pinning, analysis_model)
+    correction = (0, 0)
+    grid_array_instance.detect_grid(image, grid_correction=correction)
+    return grid_array_instance
+
+
 class TestGridDetection():
+
+    def setup_method(self):
+        global CCC
+        CCC.clear()
+        ccc = get_empty_ccc('Test', 'CCC')
+        ccc[CellCountCalibration.polynomial] = {
+            'test': {'power': 5, 'coefficients': [10, 0, 0, 0, 150, 0]}
+        }
+
+        ccc[CellCountCalibration.deployed_polynomial] = 'test'
+        CCC[ccc[CellCountCalibration.identifier]] = ccc
+
+    def teardown_method(self):
+        global CCC
+        del CCC['TEST']
 
     def test_grid_shape_is_correct(self, grid_array):
         pinning = (8, 12)
@@ -64,3 +98,14 @@ class TestGridDetection():
         for row, col in product(range(rows), range(cols)):
             grid_cell = grid_array[(row, col)]
             assert grid_cell._identifier[0] == image_identifier, fail_text()
+
+    def test_grid_cells_uses_default_polynomial(self, grid_array):
+
+        assert grid_array[(0, 0)]._polynomial_coeffs == load_calibration()
+
+
+    def test_grid_cells_uses_specified_ccc(self, grid_array_using_ccc):
+
+        assert (
+            grid_array_using_ccc[(0, 0)]._polynomial_coeffs ==
+            get_polynomial_from_ccc('TEST')['coefficients'])

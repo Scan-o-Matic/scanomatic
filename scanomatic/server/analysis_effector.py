@@ -179,8 +179,11 @@ Scan-o-Matic""", self._analysis_job)
             self._reference_compilation_image_model = image_model
 
         # TODO: Verify that this isn't the thing causing the capping!
-        if image_model.fixture.grayscale is None or image_model.fixture.grayscale.values is None:
-            self._logger.error("No grayscale analysis results for '{0}' means image not included in analysis".format(
+        if (image_model.fixture.grayscale is None or
+                image_model.fixture.grayscale.values is None):
+
+            self._logger.error(
+                "No grayscale analysis results for '{0}' means image not included in analysis".format(
                 image_model.image.path))
             return True
 
@@ -240,32 +243,42 @@ Scan-o-Matic""", self._analysis_job)
         self._start_time = time.time()
 
         self._first_pass_results = first_pass_results.CompilationResults(
-            self._analysis_job.compilation, self._analysis_job.compile_instructions)
+            self._analysis_job.compilation,
+            self._analysis_job.compile_instructions)
 
         try:
             os.makedirs(self._analysis_job.output_directory)
         except OSError, e:
             if e.errno == os.errno.EEXIST:
-                self._logger.warning("Output directory exists, previous data will be wiped")
+                self._logger.warning(
+                    "Output directory exists, previous data will be wiped")
             else:
                 self._running = False
-                self._logger.critical("Can't create output directory '{0}'".format(self._analysis_job.output_directory))
+                self._logger.critical(
+                    "Can't create output directory '{0}'".format(
+                        self._analysis_job.output_directory))
                 raise StopIteration
 
         if self._redirect_logging:
-            self._logger.info("{0} is setting up, output will be directed to {1}".format(
-                self._analysis_job, Paths().analysis_run_log))
+            self._logger.info(
+                "{0} is setting up, output will be directed to {1}".format(
+                    self._analysis_job, Paths().analysis_run_log))
 
-            log_path = os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log)
-            self._logger.set_output_target(log_path, catch_stdout=True, catch_stderr=True, buffering=0)
+            log_path = os.path.join(
+                self._analysis_job.output_directory, Paths().analysis_run_log)
+            self._logger.set_output_target(
+                log_path, catch_stdout=True, catch_stderr=True, buffering=0)
             self._logger.surpress_prints = False
             self._log_file_path = log_path
 
-        if len(self._first_pass_results.plates) != len(self._analysis_job.pinning_matrices):
+        if (len(self._first_pass_results.plates) !=
+                len(self._analysis_job.pinning_matrices)):
             self._filter_pinning_on_included_plates()
 
         AnalysisModelFactory.serializer.dump(
-            self._original_model, os.path.join(self._analysis_job.output_directory, Paths().analysis_model_file))
+            self._original_model, os.path.join(
+                self._analysis_job.output_directory,
+                Paths().analysis_model_file))
 
         self._logger.info("Will remove previous files")
 
@@ -282,9 +295,11 @@ Scan-o-Matic""", self._analysis_job)
 
             raise StopIteration
 
-        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results)
+        self._image = analysis_image.ProjectImage(
+            self._analysis_job, self._first_pass_results)
 
-        self._xmlWriter.write_header(self._scanning_instructions, self._first_pass_results.plates)
+        self._xmlWriter.write_header(
+            self._scanning_instructions, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()
 
         # TODO: Need rework to handle gridding of diff times for diff plates
@@ -294,11 +309,15 @@ Scan-o-Matic""", self._analysis_job)
 
         self._analysis_needs_init = False
 
-        self._logger.info('Primary data format will save {0}:{1}'.format(self._analysis_job.image_data_output_item,
-                                                                         self._analysis_job.image_data_output_measure))
+        self._logger.info(
+            'Primary data format will save {0}:{1}'.format(
+                self._analysis_job.image_data_output_item,
+                self._analysis_job.image_data_output_measure))
 
-        self._logger.info('Analysis saved in XML-slimmed will be {0}:{1}'.format(
-            self._analysis_job.xml_model.slim_compartment, self._analysis_job.xml_model.slim_measure))
+        self._logger.info(
+            'Analysis saved in XML-slimmed will be {0}:{1}'.format(
+                self._analysis_job.xml_model.slim_compartment,
+                self._analysis_job.xml_model.slim_measure))
 
         self._logger.info('Compartments excluded from big XML are {0}'.format(
             self._analysis_job.xml_model.exclude_compartments))
