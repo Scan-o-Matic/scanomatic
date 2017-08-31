@@ -152,6 +152,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         'image_data_output_item': analysis_model.COMPARTMENTS,
         'chain': bool,
         'plate_image_inclusion': (tuple, str),
+        'cell_count_calibration': str,
     }
 
     @classmethod

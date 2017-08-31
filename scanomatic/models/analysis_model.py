@@ -55,11 +55,13 @@ class AnalysisModel(model.Model):
                  pinning_matrices=((32, 48), (32, 48), (32, 48), (32, 48)),
                  use_local_fixture=False, email="",
                  stop_at_image=-1, output_directory="analysis",
-                 focus_position=None, suppress_non_focal=False, animate_focal=False,
+                 focus_position=None, suppress_non_focal=False,
+                 animate_focal=False,
                  one_time_positioning=True, one_time_grayscale=False,
                  grid_images=None, grid_model=None, xml_model=None,
-                 image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum, chain=True,
-                 plate_image_inclusion=None):
+                 image_data_output_item=COMPARTMENTS.Blob,
+                 image_data_output_measure=MEASURES.Sum, chain=True,
+                 plate_image_inclusion=None, cell_count_calibration=None):
 
         if grid_model is None:
             grid_model = GridModel()
@@ -67,6 +69,7 @@ class AnalysisModel(model.Model):
         if xml_model is None:
             xml_model = XMLModel()
 
+        self.cell_count_calibration = cell_count_calibration
         self.compilation = compilation
         self.compile_instructions = compile_instructions
         self.pinning_matrices = pinning_matrices
