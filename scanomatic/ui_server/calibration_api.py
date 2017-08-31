@@ -840,7 +840,7 @@ def add_routes(app):
                 reason="Name is containing invalid characters"
             )
 
-        response = calibration.constuct_polynomial(
+        response = calibration.construct_polynomial(
             ccc_identifier,
             poly_name,
             power,
