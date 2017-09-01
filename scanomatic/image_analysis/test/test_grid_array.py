@@ -32,7 +32,7 @@ def grid_array_using_ccc():
     pinning = (8, 12)
     analysis_model = AnalysisModelFactory.create()
     analysis_model.output_directory = ""
-    analysis_model.cell_count_calibration = "TESTCC"
+    analysis_model.cell_count_calibration = "TEST"
     image = ndimage.io.imread(
         './scanomatic/image_analysis/test/testdata/test_fixture_easy.tiff')
     grid_array_instance = grid_array_module.GridArray(
@@ -48,6 +48,7 @@ class TestGridDetection():
         global CCC
         CCC.clear()
         ccc = get_empty_ccc('Test', 'CCC')
+        self._ccc_id =  ccc[CellCountCalibration.identifier]
         ccc[CellCountCalibration.polynomial] = {
             'test': {'power': 5, 'coefficients': [10, 0, 0, 0, 150, 0]}
         }
@@ -57,7 +58,7 @@ class TestGridDetection():
 
     def teardown_method(self):
         global CCC
-        del CCC['TEST']
+        del CCC[self._ccc_id]
 
     def test_grid_shape_is_correct(self, grid_array):
         pinning = (8, 12)
@@ -108,4 +109,4 @@ class TestGridDetection():
 
         assert (
             grid_array_using_ccc[(0, 0)]._polynomial_coeffs ==
-            get_polynomial_from_ccc('TEST')['coefficients'])
+            get_polynomial_from_ccc(self._ccc_id)['coefficients'])

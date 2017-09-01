@@ -20,7 +20,9 @@ from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.models.factories.analysis_factories import \
     AnalysisFeaturesFactory
-from scanomatic.data_processing.calibration import load_calibration
+from scanomatic.data_processing.calibration import (
+    load_calibration, get_polynomial_from_ccc)
+
 #
 # EXCEPTIONS
 
@@ -481,7 +483,12 @@ class GridArray(object):
         self._grid_cells.clear()
         self._features.data.clear()
 
-        polynomial_coeffs = get_calibration_polynomial_coeffs()
+        if self._analysis_model.cell_count_calibration is None:
+            polynomial_coeffs = get_calibration_polynomial_coeffs()
+        else:
+            polynomial_coeffs = get_polynomial_from_ccc(
+                self._analysis_model.cell_count_calibration)['coefficients']
+
         focus_position = (
             self._analysis_model.focus_position[0],
             self._analysis_model.focus_position[2],
