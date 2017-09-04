@@ -315,9 +315,9 @@ function get_fixtures() {
     $.get("/api/data/fixture/names", function(data, status) {
         $.each(data.fixtures, function() {
             options.append($("<option />").val(this).text(get_fixture_as_name(this)));
-        })
+        });
         unselect(options);
-    })
+    });
     $(new_fixture_data_id).hide();
     $(selected_fixture_div_id).hide();
 }

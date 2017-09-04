@@ -7,6 +7,7 @@ import re
 
 import logger
 from scanomatic.generics.singleton import SingeltonOneInit
+import scanomatic
 
 #
 # CLASSES
@@ -33,7 +34,8 @@ class Paths(SingeltonOneInit):
         Paths._make_directory(self.config)
         self.fixtures = os.path.join(self.config, "fixtures")
         Paths._make_directory(self.fixtures)
-        self.images = os.path.join(self.root, "images")
+        self.images = os.path.join(
+            scanomatic.get_location(), "images")
 
         self.source_location_file = os.path.join(self.root, "source_location.txt")
 
@@ -60,7 +62,8 @@ class Paths(SingeltonOneInit):
         self.rpc_jobs = os.path.join(self.root, 'jobs.cfg')
         self.rpc_scanner_status = os.path.join(self.root, 'scanner_status.cfg')
 
-        self.ui_root = os.path.join(self.root, "ui_server")
+        self.ui_root = os.path.join(
+            scanomatic.get_location(), "ui_server_data")
         self.ui_css = os.path.join(self.ui_root, "style")
         self.ui_js = os.path.join(self.ui_root, "js")
         self.ui_font = os.path.join(self.ui_root, "fonts")

@@ -12,6 +12,8 @@ __status__ = "Development"
 
 __branch = "dev"
 
+import os
+
 
 def get_version():
     return __version__
@@ -19,3 +21,7 @@ def get_version():
 
 def get_branch():
     return __branch
+
+
+def get_location():
+    return os.path.dirname(__file__)
