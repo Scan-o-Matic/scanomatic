@@ -61,13 +61,28 @@ class AnalysisModel(model.Model):
                  grid_images=None, grid_model=None, xml_model=None,
                  image_data_output_item=COMPARTMENTS.Blob,
                  image_data_output_measure=MEASURES.Sum, chain=True,
-                 plate_image_inclusion=None, cell_count_calibration=None):
+                 plate_image_inclusion=None,
+                 cell_count_calibration=(
+                     3.379796310880545e-05,
+                     0.,
+                     0.,
+                     0.,
+                     48.99061427688507,
+                     0.)):
 
         if grid_model is None:
             grid_model = GridModel()
 
         if xml_model is None:
             xml_model = XMLModel()
+
+        if cell_count_calibration is None:
+            raise ValueError("CCC Polynomial coefficients are needed")
+
+        try:
+            map(float, cell_count_calibration)
+        except (TypeErrorx):
+            raise ValueError("CCC Polynomial coefficients not understood")
 
         self.cell_count_calibration = cell_count_calibration
         self.compilation = compilation

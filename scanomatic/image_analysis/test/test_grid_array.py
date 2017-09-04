@@ -6,7 +6,8 @@ from scipy import ndimage
 from scanomatic.image_analysis import grid_array as grid_array_module
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.data_processing.calibration import (
-    load_calibration, get_polynomial_from_ccc, __CCC as CCC, get_empty_ccc,
+    get_original_calibration, get_polynomial_coefficients_from_ccc,
+    __CCC as CCC, get_empty_ccc,
     CellCountCalibration)
 
 
@@ -30,9 +31,9 @@ def grid_array():
 def grid_array_using_ccc():
     image_identifier = [42, 1337]
     pinning = (8, 12)
-    analysis_model = AnalysisModelFactory.create()
+    analysis_model = AnalysisModelFactory.create(
+        cell_count_calibration="TEST")
     analysis_model.output_directory = ""
-    analysis_model.cell_count_calibration = "TEST"
     image = ndimage.io.imread(
         './scanomatic/image_analysis/test/testdata/test_fixture_easy.tiff')
     grid_array_instance = grid_array_module.GridArray(
@@ -102,11 +103,14 @@ class TestGridDetection():
 
     def test_grid_cells_uses_default_polynomial(self, grid_array):
 
-        assert grid_array[(0, 0)]._polynomial_coeffs == load_calibration()
+        assert (
+            grid_array[(0, 0)]._polynomial_coeffs ==
+            get_original_calibration())
 
 
     def test_grid_cells_uses_specified_ccc(self, grid_array_using_ccc):
 
-        assert (
-            grid_array_using_ccc[(0, 0)]._polynomial_coeffs ==
-            get_polynomial_from_ccc(self._ccc_id)['coefficients'])
+        assert all(
+            a == b for a, b in zip(
+                grid_array_using_ccc[(0, 0)]._polynomial_coeffs,
+                get_polynomial_coefficients_from_ccc(self._ccc_id)))

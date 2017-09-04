@@ -2,6 +2,8 @@ import os
 from types import StringTypes, ListType, DictType
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting, email_serializer
 import scanomatic.models.analysis_model as analysis_model
+from scanomatic.data_processing.calibration import (
+    get_original_calibration, get_polynomial_coefficients_from_ccc)
 
 
 class GridModelFactory(AbstractModelFactory):
@@ -152,16 +154,26 @@ class AnalysisModelFactory(AbstractModelFactory):
         'image_data_output_item': analysis_model.COMPARTMENTS,
         'chain': bool,
         'plate_image_inclusion': (tuple, str),
-        'cell_count_calibration': str,
+        'cell_count_calibration': (tuple, float),
     }
 
     @classmethod
     def create(cls, **settings):
         """
-
-
         :rtype : scanomatic.models.analysis_model.AnalysisModel
         """
+
+        if ('cell_count_calibration' not in settings or not
+                settings['cell_count_calibration']):
+            settings['cell_count_calibration'] = get_original_calibration()
+        else:
+            try:
+                map(float, settings['cell_count_calibration'])
+            except:
+                settings['cell_count_calibration'] = \
+                    get_polynomial_coefficients_from_ccc(
+                        settings['cell_count_calibration'])
+
         return super(cls, AnalysisModelFactory).create(**settings)
 
 

@@ -313,11 +313,11 @@ def get_active_cccs():
         if ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active}
 
 
-def get_polynomial_from_ccc(identifier):
+def get_polynomial_coefficients_from_ccc(identifier):
 
     ccc = __CCC[identifier]
     return ccc[CellCountCalibration.polynomial][
-        ccc[CellCountCalibration.deployed_polynomial]]
+        ccc[CellCountCalibration.deployed_polynomial]]['coefficients']
 
 
 def get_under_construction_cccs():
@@ -1128,6 +1128,10 @@ def load_calibration(label="", poly_degree=None, file_path=None):
                 )
 
             return data[k]
+
+
+def get_original_calibration():
+    return (3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.)
 
 
 def _safe_copy_file_if_needed(file_path):

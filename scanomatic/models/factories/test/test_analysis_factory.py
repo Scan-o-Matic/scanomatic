@@ -1,7 +1,10 @@
 import pytest
+import numpy as np
 
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import AnalysisModel
+from scanomatic.data_processing.calibration import get_original_calibration
+
 
 @pytest.fixture(scope='function')
 def analysis_model():
@@ -41,16 +44,11 @@ class TestAnalysisModels:
         result = AnalysisModelFactory.serializer.load_serialized_object(
             analysis_serialized_object)
 
-        assert result[0].cell_count_calibration is None
+        np.testing.assert_allclose(
+            result[0].cell_count_calibration,
+            get_original_calibration())
 
-    def test_can_load_specified_ccc(self, analysis_model):
+    def test_load_unknown_ccc_throws_error(self):
 
-        analysis_model.cell_count_calibration = 'TestCCC'
-
-        serial = AnalysisModelFactory.serializer.serialize(analysis_model)
-
-        result = AnalysisModelFactory.serializer.load_serialized_object(
-            serial)
-
-        assert result[0].cell_count_calibration == 'TestCCC'
-
+        with pytest.raises(KeyError):
+            AnalysisModelFactory.create(cell_count_calibration='BadCCC')
