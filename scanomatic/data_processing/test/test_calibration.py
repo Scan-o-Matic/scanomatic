@@ -229,7 +229,7 @@ class TestEditCCC:
         power = 5
         token = 'password'
 
-        response = calibration.constuct_polynomial(
+        response = calibration.construct_polynomial(
             identifier, poly_name, power, access_token=token)
 
         assert (
@@ -245,7 +245,7 @@ class TestEditCCC:
         token = 'password'
         print(identifier)
 
-        response = calibration.constuct_polynomial(
+        response = calibration.construct_polynomial(
             identifier, poly_name, power, access_token=token)
 
         assert (
@@ -323,7 +323,7 @@ class TestActivateCCC:
         poly_name = 'test'
         power = 5
 
-        response = calibration.constuct_polynomial(
+        response = calibration.construct_polynomial(
             identifier, poly_name, power, access_token=token)
 
         assert response is None, "Could edit active CCC but shouldn't have"
