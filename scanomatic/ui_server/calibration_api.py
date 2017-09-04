@@ -37,26 +37,27 @@ def add_routes(app):
     @app.route("/api/calibration/active", methods=['GET'])
     def get_active_calibrations():
 
-        try:
-            identifiers, cccs = zip(*calibration.get_active_cccs().iteritems())
-            return jsonify(
-                success=True,
-                is_endpoint=True,
-                identifiers=identifiers,
-                species=[
-                    ccc[calibration.CellCountCalibration.species]
-                    for ccc in cccs],
-                references=[
-                    ccc[calibration.CellCountCalibration.reference]
-                    for ccc in cccs]
-            )
-        except ValueError:
-            return json_abort(
-                400,
-                is_endpoint=True,
-                reason="There are no registered CCC, Scan-o-Matic won't " +
-                "work before at least one is added"
-            )
+        cccs = [{
+            'id': None,
+            'species': 'S. cerevisiae',
+            'reference': 'Zackrisson et. al. 2016'
+        }]
+
+        cccs += [
+            {
+                'id': ccc[calibration.CellCountCalibration.identifier],
+                'species': ccc[calibration.CellCountCalibration.species],
+                'reference':
+                    ccc[calibration.CellCountCalibration.reference],
+            }
+            for ccc in calibration.get_active_cccs().values()
+        ]
+
+        return jsonify(
+            cccs=cccs,
+            success=True,
+            is_endpoint=True,
+        )
 
     @app.route("/api/calibration/under_construction", methods=['GET'])
     def get_under_construction_calibrations():

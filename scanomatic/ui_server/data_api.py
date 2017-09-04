@@ -16,7 +16,7 @@ from scanomatic.image_analysis.support import save_image_as_png
 from scanomatic.image_analysis.image_grayscale import get_grayscale
 from scanomatic.image_analysis.image_basics import Image_Transpose
 from scanomatic.image_analysis.grid_cell import GridCell
-from scanomatic.image_analysis.grid_array import get_calibration_polynomial_coeffs
+from scanomatic.data_processing.calibration import get_original_calibration
 from scanomatic.image_analysis.grayscale import getGrayscales, getGrayscale
 from scanomatic.image_analysis.first_pass_image import FixtureImage
 
@@ -702,7 +702,7 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
-        gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
+        gc = GridCell(identifier, get_original_calibration(), save_extra_data=False)
         gc.source = image.astype(np.float64)
         gc.attach_analysis(
             blob=True, background=True, cell=True,

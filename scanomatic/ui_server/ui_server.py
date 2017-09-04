@@ -354,6 +354,7 @@ def launch_server(host, port, debug):
                     compilation=path_compilation,
                     compile_instructions=path_compile_instructions,
                     output_directory=data_object.get("output_directory"),
+                    cell_count_calibration=data_object.get("cell_count_calibration"),
                     one_time_positioning=bool(data_object.get('one_time_positioning', default=1, type=int)),
                     chain=bool(data_object.get('chain', default=1, type=int)))
 

@@ -9,7 +9,7 @@ function createSelector(elem) {
         .done(function(data) {
             $.each(data.cccs, function(i, item) {
                 $(elem).append($('<option>', {
-                    value: item.id,
+                    value: item.id ? item.id : '',
                     text: item.species + ', ' + item.reference
                 }));
             });
