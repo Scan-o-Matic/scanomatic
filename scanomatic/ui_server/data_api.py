@@ -16,13 +16,13 @@ from scanomatic.image_analysis.support import save_image_as_png
 from scanomatic.image_analysis.image_grayscale import get_grayscale
 from scanomatic.image_analysis.image_basics import Image_Transpose
 from scanomatic.image_analysis.grid_cell import GridCell
-from scanomatic.data_processing.calibration import get_original_calibration
 from scanomatic.image_analysis.grayscale import getGrayscales, getGrayscale
 from scanomatic.image_analysis.first_pass_image import FixtureImage
 
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.fixture_models import GrayScaleAreaModel
-from scanomatic.models.analysis_model import COMPARTMENTS, VALUES
+from scanomatic.models.analysis_model import (
+    COMPARTMENTS, VALUES, get_original_calibration)
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \

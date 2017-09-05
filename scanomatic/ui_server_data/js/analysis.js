@@ -233,12 +233,17 @@ function Analyse(button) {
         success: function(data) {
             if (data.success) {
                 Dialogue("Analysis", "Analysis Enqueued", "", "/status");
-            } else {
-                Dialogue("Analysis", "Analysis Refused", data.reason ? data.reason : "Unknown reason", false, button);
+            }
+            else {
+                Dialogue("Analysis", "Unexpected non-success", "", false, button);
             }
         },
         error: function(data) {
-            Dialogue("Analysis", "Error", "An error occurred processing request", false, button);
+            if (data.reason) {
+                Dialogue("Analysis", "Analysis Refused", data.reason, false, button);
+            } else {
+                Dialogue("Analysis", "Error", "An error occurred processing request", false, button);
+            }
         }
 
     });
@@ -254,7 +259,7 @@ function Extract(button) {
             analysis_directory: $("#extract").val()
                },
         method: 'POST',
-        success: function(data) {
+        success: function(data, textStatus) {
             if (data.success) {
                 Dialogue("Feature Extraction", "Extraction Enqueued", "", "/status");
             } else {
@@ -262,7 +267,7 @@ function Extract(button) {
             }
         },
         error: function(data) {
-            Dialogue("Feature Extraction", "Error", "An error occurred processing request", false, button);
+            Dialogue("Feature Extraction", textStatus, "An error occurred processing request", false, button);
         }
 
     });

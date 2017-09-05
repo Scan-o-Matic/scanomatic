@@ -1130,10 +1130,6 @@ def load_calibration(label="", poly_degree=None, file_path=None):
             return data[k]
 
 
-def get_original_calibration():
-    return (3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.)
-
-
 def _safe_copy_file_if_needed(file_path):
 
     # Make copy of previous state

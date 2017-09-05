@@ -418,14 +418,18 @@ Scan-o-Matic""", self._analysis_job)
     def ensure_default_values_if_missing(self):
 
         if not self._analysis_job.xml_model.slim_measure:
-            XMLModelFactory.set_default(self._analysis_job.xml_model,
-                                        [self._analysis_job.xml_model.FIELD_TYPES.slim_measure])
+            XMLModelFactory.set_default(
+                self._analysis_job.xml_model,
+                [self._analysis_job.xml_model.FIELD_TYPES.slim_measure])
         if not self._analysis_job.xml_model.slim_compartment:
-            XMLModelFactory.set_default(self._analysis_job.xml_model,
-                                        [self._analysis_job.xml_model.FIELD_TYPES.slim_compartment])
+            XMLModelFactory.set_default(
+                self._analysis_job.xml_model,
+                [self._analysis_job.xml_model.FIELD_TYPES.slim_compartment])
         if not self._analysis_job.image_data_output_measure:
-            AnalysisModelFactory.set_default(self._analysis_job,
-                                             [self._analysis_job.FIELD_TYPES.image_data_output_measure])
+            AnalysisModelFactory.set_default(
+                self._analysis_job,
+                [self._analysis_job.FIELD_TYPES.image_data_output_measure])
         if not self._analysis_job.image_data_output_item:
-            AnalysisModelFactory.set_default(self._analysis_job,
-                                             [self._analysis_job.FIELD_TYPES.image_data_output_item])
+            AnalysisModelFactory.set_default(
+                self._analysis_job,
+                [self._analysis_job.FIELD_TYPES.image_data_output_item])

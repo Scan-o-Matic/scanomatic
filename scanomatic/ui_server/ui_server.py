@@ -35,7 +35,7 @@ from . import tools_api
 from . import data_api
 from .general import (
     get_2d_list, serve_log_as_html, convert_url_to_path, get_search_results,
-    convert_path_to_url
+    convert_path_to_url, json_abort
 )
 
 _url = None
@@ -409,16 +409,16 @@ def launch_server(host, port, debug):
                 if success:
                     return jsonify(success=True)
                 else:
-                    return jsonify(
-                        success=False,
+                    return json_abort(
+                        400,
                         reason="The following has bad data: {0}".format(
                             ", ".join(
                                 AnalysisModelFactory.get_invalid_names(model))
                         ))
 
             else:
-                return jsonify(
-                    success=False,
+                return json_abort(
+                    400,
                     reason='Action "{0}" not recognized'.format(action))
 
         return send_from_directory(Paths().ui_root, Paths().ui_analysis_file)

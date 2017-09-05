@@ -4,6 +4,10 @@ import scanomatic
 import re
 
 
+def get_original_calibration():
+    return (3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.)
+
+
 class DefaultPinningFormats(Enum):
 
     Format_96__8x12 = (8, 12)
@@ -51,24 +55,27 @@ class VALUES(Enum):
 
 class AnalysisModel(model.Model):
 
-    def __init__(self, compilation="", compile_instructions="",
-                 pinning_matrices=((32, 48), (32, 48), (32, 48), (32, 48)),
-                 use_local_fixture=False, email="",
-                 stop_at_image=-1, output_directory="analysis",
-                 focus_position=None, suppress_non_focal=False,
-                 animate_focal=False,
-                 one_time_positioning=True, one_time_grayscale=False,
-                 grid_images=None, grid_model=None, xml_model=None,
-                 image_data_output_item=COMPARTMENTS.Blob,
-                 image_data_output_measure=MEASURES.Sum, chain=True,
-                 plate_image_inclusion=None,
-                 cell_count_calibration=(
-                     3.379796310880545e-05,
-                     0.,
-                     0.,
-                     0.,
-                     48.99061427688507,
-                     0.)):
+    def __init__(
+            self, compilation="",
+            compile_instructions="",
+            pinning_matrices=((32, 48), (32, 48), (32, 48), (32, 48)),
+            use_local_fixture=False,
+            email="",
+            stop_at_image=-1,
+            output_directory="analysis",
+            focus_position=None,
+            suppress_non_focal=False,
+            animate_focal=False,
+            one_time_positioning=True,
+            one_time_grayscale=False,
+            grid_images=None,
+            grid_model=None,
+            xml_model=None,
+            image_data_output_item=COMPARTMENTS.Blob,
+            image_data_output_measure=MEASURES.Sum,
+            chain=True,
+            plate_image_inclusion=None,
+            cell_count_calibration=get_original_calibration()):
 
         if grid_model is None:
             grid_model = GridModel()
@@ -81,7 +88,7 @@ class AnalysisModel(model.Model):
 
         try:
             map(float, cell_count_calibration)
-        except (TypeErrorx):
+        except (TypeError):
             raise ValueError("CCC Polynomial coefficients not understood")
 
         self.cell_count_calibration = cell_count_calibration

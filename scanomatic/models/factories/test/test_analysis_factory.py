@@ -2,8 +2,8 @@ import pytest
 import numpy as np
 
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.analysis_model import AnalysisModel
-from scanomatic.data_processing.calibration import get_original_calibration
+from scanomatic.models.analysis_model import (
+    AnalysisModel, get_original_calibration)
 
 
 @pytest.fixture(scope='function')
@@ -26,7 +26,6 @@ class TestAnalysisModels:
 
     def test_model_can_serialize(self, analysis_model):
 
-
         serial = AnalysisModelFactory.serializer.serialize(analysis_model)
         assert len(serial) == 3
 
@@ -39,7 +38,6 @@ class TestAnalysisModels:
         assert isinstance(result[0], AnalysisModel)
 
     def test_can_load_default_ccc(self, analysis_serialized_object):
-
 
         result = AnalysisModelFactory.serializer.load_serialized_object(
             analysis_serialized_object)

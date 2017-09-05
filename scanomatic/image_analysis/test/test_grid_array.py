@@ -6,10 +6,12 @@ from scipy import ndimage
 from scanomatic.image_analysis import grid_array as grid_array_module
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.data_processing.calibration import (
-    get_original_calibration, get_polynomial_coefficients_from_ccc,
-    __CCC as CCC, get_empty_ccc,
-    CellCountCalibration)
-
+    get_polynomial_coefficients_from_ccc,
+    __CCC as CCC,
+    get_empty_ccc,
+    CellCountCalibration
+)
+from scanomatic.models.analysis_model import get_original_calibration
 
 @pytest.fixture(scope="class")
 def grid_array():
