@@ -1,12 +1,14 @@
 version: '2'
 
 services:
-    scanomatic:
-        build: .
-        ports:
-            - 5000:5000
-        volumes:
-            - scan-o-matic-home:/root/.scan-o-matic
-
+  scanomatic:
+    privileged: true
+    build: .
+    ports:
+      - 5000:5000
+    volumes:
+      - scan-o-matic-home:/root/.scan-o-matic
+      - /dev/bus/usb:/dev/bus/usb
+      
 volumes:
-    scan-o-matic-home: {}
+  scan-o-matic-home: {}
