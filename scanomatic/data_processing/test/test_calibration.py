@@ -7,8 +7,6 @@ import pytest
 
 from scanomatic.data_processing import calibration
 
-data = calibration.load_data_file()
-
 
 @pytest.fixture(scope='module')
 def ccc():
@@ -17,44 +15,6 @@ def ccc():
     calibration.__CCC[_ccc[calibration.CellCountCalibration.identifier]] = _ccc
     yield _ccc
     del calibration.__CCC[_ccc[calibration.CellCountCalibration.identifier]]
-
-
-def test_load_data():
-
-    assert calibration.load_data_file() is not None
-
-
-def test_load_calibration():
-
-    assert calibration.load_calibration() is not None
-
-
-def test_expand_data_lenghts():
-
-    counts = data.source_value_counts
-    exp_vals, _, _, _ = calibration._get_expanded_data(data)
-    assert all(np.sum(c) == len(v) for c, v in zip(counts, exp_vals))
-
-
-def test_expand_data_sums():
-
-    counts = data.source_value_counts
-    values = data.source_values
-    data_sums = np.array(
-        tuple(np.sum(np.array(c) * np.array(v))
-              for c, v in zip(counts, values)))
-
-    exp_vals, _, _, _ = calibration._get_expanded_data(data)
-    expanded_sums = np.array(tuple(v.sum() for v in exp_vals), dtype=np.float)
-    np.testing.assert_allclose(expanded_sums, data_sums)
-
-
-def test_expand_data_targets():
-
-    _, targets, _, _ = calibration._get_expanded_data(data)
-    np.testing.assert_allclose(
-        targets.astype(np.float),
-        data.target_value)
 
 
 def test_expand_vector_length():
@@ -458,4 +418,3 @@ class TestDeleteCCC:
             edit_ccc[calibration.CellCountCalibration.status] ==
             calibration.CalibrationEntryStatus.Deleted
         ), "CCC deletion didn't work but it should have"
-
