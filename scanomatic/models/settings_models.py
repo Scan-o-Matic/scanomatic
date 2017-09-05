@@ -71,7 +71,7 @@ class HardwareResourceLimitsModel(model.Model):
 
 class PathsModel(model.Model):
 
-    def __init__(self, projects_root=os.path.join(os.path.expanduser("~"), "Documents")):
+    def __init__(self, projects_root="/somprojects"):
 
         self.projects_root = projects_root
 
