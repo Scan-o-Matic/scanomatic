@@ -8,7 +8,6 @@ from scanomatic.data_processing.calibration import (
     get_polynomial_coefficients_from_ccc)
 
 
-
 @pytest.fixture(scope='function')
 def analysis_model():
 

@@ -5,7 +5,6 @@ from scanomatic.generics.abstract_model_factory import (
 import scanomatic.models.analysis_model as analysis_model
 from scanomatic.data_processing.calibration import (
     get_polynomial_coefficients_from_ccc)
-from types import StringTypes
 
 
 class GridModelFactory(AbstractModelFactory):
@@ -46,14 +45,20 @@ class GridModelFactory(AbstractModelFactory):
 
         def _valid_correction(value):
 
-            return value is None or value is False or (len(value) == 2 and all(isinstance(offset, int) for offset in value))
+            return (
+                value is None or
+                value is False or (
+                    len(value) == 2 and
+                    all(isinstance(offset, int) for offset in value)))
 
         if model.gridding_offsets is None:
 
             return True
 
         try:
-            if all(_valid_correction(plate) for plate in model.gridding_offsets):
+            if all(
+                    _valid_correction(plate) for plate in
+                    model.gridding_offsets):
                 return True
         except (TypeError, IndexError):
             pass
@@ -80,7 +85,8 @@ class XMLModelFactory(AbstractModelFactory):
         """
 
         if (cls._is_tuple_or_list(model.exclude_compartments) and
-                all(compartment in analysis_model.COMPARTMENTS for compartment in model.exclude_compartments)):
+                all(compartment in analysis_model.COMPARTMENTS for compartment
+                    in model.exclude_compartments)):
             return True
         return model.FIELD_TYPES.exclude_compartments
 
@@ -92,7 +98,8 @@ class XMLModelFactory(AbstractModelFactory):
         """
 
         if (cls._is_tuple_or_list(model.exclude_measures) and
-                all(measure in analysis_model.MEASURES for measure in model.exclude_measures)):
+                all(measure in analysis_model.MEASURES for measure
+                    in model.exclude_measures)):
             return True
         return model.FIELD_TYPES.exclude_measures
 
@@ -178,7 +185,6 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         return super(cls, AnalysisModelFactory).create(**settings)
 
-
     @classmethod
     def set_absolute_paths(cls, model):
         """
@@ -187,8 +193,10 @@ class AnalysisModelFactory(AbstractModelFactory):
         """
 
         base_path = os.path.dirname(model.compilation)
-        model.compile_instructions = cls._get_absolute_path(model.compile_instructions, base_path)
-        model.output_directory = cls._get_absolute_path(model.output_directory, base_path)
+        model.compile_instructions = cls._get_absolute_path(
+            model.compile_instructions, base_path)
+        model.output_directory = cls._get_absolute_path(
+            model.output_directory, base_path)
 
     @classmethod
     def _get_absolute_path(cls, path, base_path):
@@ -203,7 +211,8 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.analysis_model.AnalysisModel
         """
-        if cls._is_file(model.compilation) and os.path.abspath(model.compilation) == model.compilation:
+        if (cls._is_file(model.compilation) and
+                os.path.abspath(model.compilation) == model.compilation):
             return True
         return model.FIELD_TYPES.compilation
 
@@ -213,7 +222,8 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.analysis_model.AnalysisModel
         """
-        if model.compile_instructions in (None, "") or AbstractModelFactory._is_file(model.compile_instructions):
+        if (model.compile_instructions in (None, "") or
+                AbstractModelFactory._is_file(model.compile_instructions)):
             return True
         return model.FIELD_TYPES.compile_instructions
 
@@ -253,7 +263,8 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.analysis_model.AnalysisModel
         """
-        if (model.output_directory is None or isinstance(model.output_directory, StringTypes) and
+        if (model.output_directory is None or
+                isinstance(model.output_directory, StringTypes) and
                 os.sep not in model.output_directory):
             return True
         return model.FIELD_TYPES.output_directory
@@ -267,17 +278,23 @@ class AnalysisModelFactory(AbstractModelFactory):
         if model.focus_position is None:
             return True
 
-        is_coordinate = (cls._is_tuple_or_list(model.focus_position) and
-                         all(isinstance(value, int) for value in model.focus_position) and
-                         len(model.focus_position) == 3)
+        is_coordinate = (
+            cls._is_tuple_or_list(model.focus_position) and
+            all(isinstance(value, int) for value in model.focus_position) and
+            len(model.focus_position) == 3)
 
         if is_coordinate and cls._validate_pinning_matrices(model):
 
-            plate_exists = (0 <= model.focus_position[0] < len(model.pinning_matrices) and
-                            model.pinning_matrices[model.focus_position[0]] is not None)
+            plate_exists = (
+                0 <= model.focus_position[0] < len(model.pinning_matrices) and
+                model.pinning_matrices[model.focus_position[0]] is not None)
 
-            if plate_exists and (0 <= val < dim_max for val, dim_max in
-                                 zip(model.focus_position[1:], model.pinning_matrices[model.focus_position[0]])):
+            if plate_exists and (
+                    0 <= val < dim_max for val, dim_max in
+                    zip(
+                        model.focus_position[1:],
+                        model.pinning_matrices[model.focus_position[0]])):
+
                 return True
         return model.FIELD_TYPES.focus_position
 
@@ -309,7 +326,8 @@ class AnalysisModelFactory(AbstractModelFactory):
         """
         if model.grid_images is None or (
                 cls._is_tuple_or_list(model.grid_images) and
-                all(isinstance(val, int) and 0 <= val for val in model.grid_images)):
+                all(isinstance(val, int) and 0 <= val for val in
+                    model.grid_images)):
             return True
         return model.FIELD_TYPES.grid_images
 
@@ -356,9 +374,16 @@ class MetaDataFactory(AbstractModelFactory):
 
         for (old_name, new_name) in [
                 ("Start Time", "start_time"),
-                ("Prefix", "name"), ("Interval", "interval"), ("Description", "description"),
-                ("Version", "version"), ("UUID", "uuid"), ("Measures", "images"), ("Fixture", "fixture"),
-                ("Scanner", "scanner"), ("Pinning Matrices", "pinnings"), ("Project ID", "project_id"),
+                ("Prefix", "name"),
+                ("Interval", "interval"),
+                ("Description", "description"),
+                ("Version", "version"),
+                ("UUID", "uuid"),
+                ("Measures", "images"),
+                ("Fixture", "fixture"),
+                ("Scanner", "scanner"),
+                ("Pinning Matrices", "pinnings"),
+                ("Project ID", "project_id"),
                 ("Scanner Layout ID", "scanner_layout_id")]:
 
             rename_setting(settings, old_name, new_name)
@@ -397,9 +422,12 @@ class AnalysisFeaturesFactory(AbstractModelFactory):
     def deep_to_dict(cls, model_or_data):
 
         if isinstance(model_or_data, cls.MODEL):
-            return {k: cls.deep_to_dict(model_or_data[k]) for k in cls.to_dict(model_or_data)}
+            return {
+                k: cls.deep_to_dict(model_or_data[k]) for k in
+                cls.to_dict(model_or_data)}
         elif isinstance(model_or_data, DictType):
-            return {k: cls.deep_to_dict(model_or_data[k]) for k in model_or_data}
+            return {
+                k: cls.deep_to_dict(model_or_data[k]) for k in model_or_data}
         elif isinstance(model_or_data, ListType):
             return [cls.deep_to_dict(v) for v in model_or_data]
         else:

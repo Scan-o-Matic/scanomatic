@@ -414,7 +414,7 @@ class TestDeleteCCC:
         assert (
             edit_ccc[calibration.CellCountCalibration.status] ==
             calibration.CalibrationEntryStatus.UnderConstruction
-        ), "CCC deletion returned {} (expected: {})".format(status, None)
+        ), "CCC has wrong status"
 
         status = calibration.delete_ccc(identifier, access_token=token)
 
@@ -443,7 +443,8 @@ class TestGettingActiveCCCs:
             'test': {'power': 5, 'coefficients': [10, 0, 0, 0, 150, 0]}
         }
         ccc1[calibration.CellCountCalibration.deployed_polynomial] = 'test'
-        ccc1[calibration.CellCountCalibration.status] = calibration.CalibrationEntryStatus.Active
+        ccc1[calibration.CellCountCalibration.status] = \
+            calibration.CalibrationEntryStatus.Active
         calibration.add_ccc(ccc1)
 
         ccc2 = calibration.get_empty_ccc('Deep Ones', 'Stross')

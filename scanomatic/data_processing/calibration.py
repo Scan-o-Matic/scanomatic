@@ -344,7 +344,7 @@ def get_polynomial_coefficients_from_ccc(identifier):
     ccc = __CCC[identifier]
     if ccc[CellCountCalibration.status] != CalibrationEntryStatus.Active:
         raise KeyError
-        
+
     return ccc[CellCountCalibration.polynomial][
         ccc[CellCountCalibration.deployed_polynomial]]['coefficients']
 
@@ -720,9 +720,7 @@ def get_plate_slice(
             _logger.error(
                 "Problem loading: {0}".format(
                     Paths().ccc_image_plate_transformed_slice_pattern.format(
-                    identifier, image_identifier, id_plate)
-                )
-            )
+                        identifier, image_identifier, id_plate)))
             return None
     else:
         try:

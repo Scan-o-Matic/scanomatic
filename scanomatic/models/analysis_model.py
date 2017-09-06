@@ -106,8 +106,14 @@ class AnalysisModel(model.Model):
 
 class GridModel(model.Model):
 
-    def __init__(self, use_utso=True, median_coefficient=0.99, manual_threshold=0.05, grid=None,
-                 gridding_offsets=None, reference_grid_folder=None):
+    def __init__(
+            self,
+            use_utso=True,
+            median_coefficient=0.99,
+            manual_threshold=0.05,
+            grid=None,
+            gridding_offsets=None,
+            reference_grid_folder=None):
 
         self.use_utso = use_utso
         self.median_coefficient = median_coefficient
@@ -121,8 +127,13 @@ class GridModel(model.Model):
 
 class XMLModel(model.Model):
 
-    def __init__(self, exclude_compartments=tuple(), exclude_measures=tuple(), make_short_tag_version=True,
-                 slim_measure=MEASURES.Sum, slim_compartment=COMPARTMENTS.Blob):
+    def __init__(
+            self,
+            exclude_compartments=tuple(),
+            exclude_measures=tuple(),
+            make_short_tag_version=True,
+            slim_measure=MEASURES.Sum,
+            slim_compartment=COMPARTMENTS.Blob):
 
         self.exclude_compartments = exclude_compartments
         self.exclude_measures = exclude_measures
@@ -135,9 +146,20 @@ class XMLModel(model.Model):
 
 class AnalysisMetaData(model.Model):
 
-    def __init__(self, start_time=0, name="", description="", interval=20.0, images=0,
-                 uuid="", fixture="", scanner="", project_id="", scanner_layout_id="", version=scanomatic.__version__,
-                 pinnings=()):
+    def __init__(
+            self,
+            start_time=0,
+            name="",
+            description="",
+            interval=20.0,
+            images=0,
+            uuid="",
+            fixture="",
+            scanner="",
+            project_id="",
+            scanner_layout_id="",
+            version=scanomatic.__version__,
+            pinnings=()):
 
         self.start_time = start_time
         self.name = name
