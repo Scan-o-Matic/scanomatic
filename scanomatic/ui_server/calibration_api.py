@@ -37,13 +37,7 @@ def add_routes(app):
     @app.route("/api/calibration/active", methods=['GET'])
     def get_active_calibrations():
 
-        cccs = [{
-            'id': None,
-            'species': 'S. cerevisiae',
-            'reference': 'Zackrisson et. al. 2016'
-        }]
-
-        cccs += [
+        cccs = [
             {
                 'id': ccc[calibration.CellCountCalibration.identifier],
                 'species': ccc[calibration.CellCountCalibration.species],

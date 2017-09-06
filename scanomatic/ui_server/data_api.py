@@ -22,7 +22,7 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.fixture_models import GrayScaleAreaModel
 from scanomatic.models.analysis_model import (
-    COMPARTMENTS, VALUES, get_original_calibration)
+    COMPARTMENTS, VALUES, get_polynomial_coefficients_from_ccc)
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
@@ -702,7 +702,11 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
-        gc = GridCell(identifier, get_original_calibration(), save_extra_data=False)
+        gc = GridCell(
+            identifier,
+            get_polynomial_coefficients_from_ccc('default'),
+            save_extra_data=False)
+            
         gc.source = image.astype(np.float64)
         gc.attach_analysis(
             blob=True, background=True, cell=True,

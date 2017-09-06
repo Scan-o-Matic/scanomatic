@@ -1,11 +1,20 @@
 import os
 import json
 from collections import namedtuple
+import mock
+import tempfile
 
 import numpy as np
 import pytest
 
 from scanomatic.data_processing import calibration
+from scanomatic.io.paths import Paths
+
+# Needs adding for all ccc_* paths if tests extended
+# Don't worry Paths is a singleton
+Paths().ccc_folder = os.path.join(tempfile.gettempdir(), 'tempCCC')
+Paths().ccc_file_pattern = os.path.join(
+    Paths().ccc_folder, '{0}.ccc')
 
 
 @pytest.fixture(scope='module')
@@ -14,7 +23,7 @@ def ccc():
     _ccc = calibration.get_empty_ccc('test-ccc', 'pytest')
     calibration.__CCC[_ccc[calibration.CellCountCalibration.identifier]] = _ccc
     yield _ccc
-    del calibration.__CCC[_ccc[calibration.CellCountCalibration.identifier]]
+    calibration.reload_cccs()
 
 
 def test_expand_vector_length():
@@ -92,14 +101,14 @@ def _fixture_load_ccc(rel_path):
 def edit_ccc():
     _ccc = _fixture_load_ccc('data/test_good.ccc')
     yield _ccc
-    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+    calibration.reload_cccs()
 
 
 @pytest.fixture(scope='function')
 def edit_bad_slope_ccc():
     _ccc = _fixture_load_ccc('data/test_badslope.ccc')
     yield _ccc
-    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+    calibration.reload_cccs()
 
 
 @pytest.fixture(scope='function')
@@ -107,7 +116,7 @@ def finalizable_ccc():
     _ccc = _fixture_load_ccc('data/test_good.ccc')
     _ccc[calibration.CellCountCalibration.deployed_polynomial] = "stiff"
     yield _ccc
-    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+    calibration.reload_cccs()
 
 
 @pytest.fixture(scope='function')
@@ -118,7 +127,7 @@ def active_ccc():
         calibration.CellCountCalibration.status
     ] = calibration.CalibrationEntryStatus.Active
     yield _ccc
-    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+    calibration.reload_cccs()
 
 
 @pytest.fixture(scope='function')
@@ -128,7 +137,7 @@ def deleted_ccc():
         calibration.CellCountCalibration.status
     ] = calibration.CalibrationEntryStatus.Deleted
     yield _ccc
-    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
+    calibration.reload_cccs()
 
 
 @pytest.fixture(scope='function')
@@ -256,7 +265,6 @@ class TestActivateCCC:
         identifier = finalizable_ccc[
             calibration.CellCountCalibration.identifier]
         token = 'password'
-
         assert (
             finalizable_ccc[calibration.CellCountCalibration.status] ==
             calibration.CalibrationEntryStatus.UnderConstruction
@@ -418,3 +426,58 @@ class TestDeleteCCC:
             edit_ccc[calibration.CellCountCalibration.status] ==
             calibration.CalibrationEntryStatus.Deleted
         ), "CCC deletion didn't work but it should have"
+
+
+class TestGettingActiveCCCs:
+
+    @mock.patch(
+        'scanomatic.data_processing.calibration.save_ccc_to_disk',
+        return_value=True)
+    def setup_method(self, func, my_mock):
+
+        calibration.reload_cccs()
+
+        ccc1 = calibration.get_empty_ccc('Cylon', 'Boomer')
+        self._ccc_id1 = ccc1[calibration.CellCountCalibration.identifier]
+        ccc1[calibration.CellCountCalibration.polynomial] = {
+            'test': {'power': 5, 'coefficients': [10, 0, 0, 0, 150, 0]}
+        }
+        ccc1[calibration.CellCountCalibration.deployed_polynomial] = 'test'
+        ccc1[calibration.CellCountCalibration.status] = calibration.CalibrationEntryStatus.Active
+        calibration.add_ccc(ccc1)
+
+        ccc2 = calibration.get_empty_ccc('Deep Ones', 'Stross')
+        self._ccc_id2 = ccc2[calibration.CellCountCalibration.identifier]
+        ccc2[calibration.CellCountCalibration.polynomial] = {
+            'test': {'power': 5, 'coefficients': [10, 0, 0, 0, 150, 0]}
+        }
+        ccc2[calibration.CellCountCalibration.deployed_polynomial] = 'test'
+        calibration.add_ccc(ccc2)
+
+    def teardown_method(self):
+        calibration.reload_cccs()
+
+    def test_exists_default_ccc_polynomial(self):
+
+        assert calibration.get_polynomial_coefficients_from_ccc('default')
+
+    @pytest.mark.parametrize('ccc_identifier', [None, 'TheDoctor', 'DEEPON'])
+    def test_invalid_ccc_raises_exception_for_poly(self, ccc_identifier):
+
+        with pytest.raises(KeyError):
+
+            calibration.get_polynomial_coefficients_from_ccc(ccc_identifier)
+
+    def test_can_retrive_added_ccc_poly(self):
+
+        assert calibration.get_polynomial_coefficients_from_ccc(self._ccc_id1)
+
+    def test_gets_all_active_cccs(self):
+
+        assert len(calibration.get_active_cccs()) == 2
+
+    def test_get_polynomial_for_under_construction_raises(self):
+
+        with pytest.raises(KeyError):
+
+            calibration.get_polynomial_coefficients_from_ccc(self._ccc_id2)

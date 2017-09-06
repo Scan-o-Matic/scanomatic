@@ -250,7 +250,7 @@ def get_empty_ccc(species, reference):
         CellCountCalibration.reference: reference,
         CellCountCalibration.images: [],
         CellCountCalibration.edit_access_token: uuid1().hex,
-        CellCountCalibration.polynomial: None,
+        CellCountCalibration.polynomial: {},
         CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
         CellCountCalibration.independent_data: [],
         CellCountCalibration.independent_data_source: None,
@@ -266,7 +266,6 @@ def _get_ccc_identifier(species, reference):
     if any(True for ccc in __CCC.itervalues() if
            ccc[CellCountCalibration.species] == species and
            ccc[CellCountCalibration.reference] == reference):
-
         return None
 
     candidate = re.sub(r'[^A-Z]', r'', species.upper())[:6]
@@ -279,7 +278,28 @@ def _get_ccc_identifier(species, reference):
     return candidate
 
 
+def _insert_default_ccc():
+
+    ccc = get_empty_ccc(
+        species='S. cerevisiae',
+        reference='Zackrisson et. al. 2016',
+    )
+    ccc[CellCountCalibration.identifier] = 'default'
+    ccc[CellCountCalibration.polynomial]['default'] = {
+        'coefficients':
+            (3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.),
+        'power': 5,
+    }
+    ccc[CellCountCalibration.edit_access_token] = None
+    ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
+    ccc[CellCountCalibration.deployed_polynomial] = 'default'
+
+    __CCC[ccc[CellCountCalibration.identifier]] = ccc
+
+
 def __load_cccs():
+
+    _insert_default_ccc()
 
     for ccc_path in iglob(Paths().ccc_file_pattern.format("*")):
 
@@ -306,6 +326,12 @@ def __load_cccs():
             __CCC[data[CellCountCalibration.identifier]] = data
 
 
+def reload_cccs():
+
+    __CCC.clear()
+    __load_cccs()
+
+
 def get_active_cccs():
 
     return {
@@ -316,6 +342,9 @@ def get_active_cccs():
 def get_polynomial_coefficients_from_ccc(identifier):
 
     ccc = __CCC[identifier]
+    if ccc[CellCountCalibration.status] != CalibrationEntryStatus.Active:
+        raise KeyError
+        
     return ccc[CellCountCalibration.polynomial][
         ccc[CellCountCalibration.deployed_polynomial]]['coefficients']
 
@@ -334,6 +363,7 @@ def add_ccc(ccc):
             ccc[CellCountCalibration.identifier] not in __CCC):
 
         __CCC[ccc[CellCountCalibration.identifier]] = ccc
+
         save_ccc_to_disk(ccc[CellCountCalibration.identifier])
         return True
 

@@ -5,6 +5,7 @@ from scanomatic.generics.abstract_model_factory import (
 import scanomatic.models.analysis_model as analysis_model
 from scanomatic.data_processing.calibration import (
     get_polynomial_coefficients_from_ccc)
+from types import StringTypes
 
 
 class GridModelFactory(AbstractModelFactory):
@@ -156,6 +157,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         'chain': bool,
         'plate_image_inclusion': (tuple, str),
         'cell_count_calibration': (tuple, float),
+        'cell_count_calibration_id': str,
     }
 
     @classmethod
@@ -163,18 +165,16 @@ class AnalysisModelFactory(AbstractModelFactory):
         """
         :rtype : scanomatic.models.analysis_model.AnalysisModel
         """
+        if (not settings.get('cell_count_calibration_id', None) and
+                not settings.get('cell_count_calibration', None)):
 
-        if ('cell_count_calibration' not in settings or not
-                settings['cell_count_calibration']):
+            settings['cell_count_calibration_id'] = 'default'
+
+        if (not settings.get('cell_count_calibration', None)):
+
             settings['cell_count_calibration'] = \
-                analysis_model.get_original_calibration()
-        else:
-            try:
-                map(float, settings['cell_count_calibration'])
-            except:
-                settings['cell_count_calibration'] = \
-                    get_polynomial_coefficients_from_ccc(
-                        settings['cell_count_calibration'])
+                get_polynomial_coefficients_from_ccc(
+                    settings['cell_count_calibration_id'])
 
         return super(cls, AnalysisModelFactory).create(**settings)
 

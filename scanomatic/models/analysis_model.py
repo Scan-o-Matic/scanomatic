@@ -4,10 +4,6 @@ import scanomatic
 import re
 
 
-def get_original_calibration():
-    return (3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.)
-
-
 class DefaultPinningFormats(Enum):
 
     Format_96__8x12 = (8, 12)
@@ -75,7 +71,8 @@ class AnalysisModel(model.Model):
             image_data_output_measure=MEASURES.Sum,
             chain=True,
             plate_image_inclusion=None,
-            cell_count_calibration=get_original_calibration()):
+            cell_count_calibration=None,
+            cell_count_calibration_id=None):
 
         if grid_model is None:
             grid_model = GridModel()
@@ -83,15 +80,8 @@ class AnalysisModel(model.Model):
         if xml_model is None:
             xml_model = XMLModel()
 
-        if cell_count_calibration is None:
-            raise ValueError("CCC Polynomial coefficients are needed")
-
-        try:
-            map(float, cell_count_calibration)
-        except (TypeError):
-            raise ValueError("CCC Polynomial coefficients not understood")
-
         self.cell_count_calibration = cell_count_calibration
+        self.cell_count_calibration_id = cell_count_calibration_id
         self.compilation = compilation
         self.compile_instructions = compile_instructions
         self.pinning_matrices = pinning_matrices

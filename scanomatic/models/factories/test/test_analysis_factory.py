@@ -1,9 +1,12 @@
 import pytest
+import mock
 import numpy as np
 
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.analysis_model import (
-    AnalysisModel, get_original_calibration)
+from scanomatic.models.analysis_model import AnalysisModel
+from scanomatic.data_processing.calibration import (
+    get_polynomial_coefficients_from_ccc)
+
 
 
 @pytest.fixture(scope='function')
@@ -37,16 +40,32 @@ class TestAnalysisModels:
         assert len(result) == 1
         assert isinstance(result[0], AnalysisModel)
 
-    def test_can_load_default_ccc(self, analysis_serialized_object):
+    def test_can_create_using_default_ccc(self, analysis_model):
 
-        result = AnalysisModelFactory.serializer.load_serialized_object(
-            analysis_serialized_object)
+        default = get_polynomial_coefficients_from_ccc('default')
 
         np.testing.assert_allclose(
-            result[0].cell_count_calibration,
-            get_original_calibration())
+            analysis_model.cell_count_calibration, default)
 
-    def test_load_unknown_ccc_throws_error(self):
+        assert analysis_model.cell_count_calibration_id == 'default'
+
+    def test_doesnt_overwrite_poly_coeffs_if_no_ccc_specified(self):
+
+        coeffs = [1, 1, 2, 3, 5, 8]
+        model = AnalysisModelFactory.create(cell_count_calibration=coeffs)
+        np.testing.assert_allclose(model.cell_count_calibration, coeffs)
+        assert model.cell_count_calibration_id is None
+
+    @mock.patch(
+        'scanomatic.models.factories.analysis_factories.get_polynomial_coefficients_from_ccc',
+        return_value=[1, 3, 9, 27])
+    def test_can_create_using_ccc_id(self, my_mock):
+        model = AnalysisModelFactory.create(
+            cell_count_calibration_id='mock')
+        assert model.cell_count_calibration_id == 'mock'
+        np.testing.assert_allclose(model.cell_count_calibration, [1, 3, 9, 27])
+
+    def test_create_with_unknown_ccc_raises_error(self):
 
         with pytest.raises(KeyError):
-            AnalysisModelFactory.create(cell_count_calibration='BadCCC')
+            AnalysisModelFactory.create(cell_count_calibration_id='BadCCC')
