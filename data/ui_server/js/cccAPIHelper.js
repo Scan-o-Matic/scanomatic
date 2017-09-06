@@ -1,5 +1,5 @@
-﻿var baseUrl = "http://localhost:5000";
-//var baseUrl = "";
+﻿//var baseUrl = "http://localhost:5000";
+var baseUrl = "";
 var GetSliceImagePath = baseUrl + "/api/calibration/#0#/image/#1#/slice/get/#2#";
 var InitiateCCCPath = baseUrl + "/api/calibration/initiate_new";
 var GetFixtruesPath = baseUrl + "/api/data/fixture/names";
@@ -73,6 +73,17 @@ function GetPinningFormats(callback) {
     });
 };
 
+function GetPinningFormatsv2(successCallback, errorCallback) {
+    var path = GetPinningFormatsPath;
+
+    $.ajax({
+        url: path,
+        type: "GET",
+        success: successCallback,
+        error: errorCallback
+    });
+};
+
 function InitiateCCC(species, reference, successCallback, errorCallback) {
     var path = InitiateCCCPath;
     var formData = new FormData();
@@ -90,7 +101,7 @@ function InitiateCCC(species, reference, successCallback, errorCallback) {
     });
 }
 
-function SetCccImageData(cccId, imageId, accessToken, dataArray, fixture, successCallback, errorCallback) {
+function SetCccImageData(scope, cccId, imageId, accessToken, dataArray, fixture, successCallback, errorCallback) {
     var path = SetCccImageDataPath.replace("#0#", cccId).replace("#1#", imageId);
     var formData = new FormData();
     formData.append("ccc_identifier", cccId);
@@ -108,12 +119,14 @@ function SetCccImageData(cccId, imageId, accessToken, dataArray, fixture, succes
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
-        success: successCallback,
+        success: function(data) {
+            successCallback(data, scope);
+        },
         error: errorCallback
     });
 }
 
-function SetCccImageSlice(cccId, imageId, accessToken, successCallback, errorCallback) {
+function SetCccImageSlice(scope, cccId, imageId, accessToken, successCallback, errorCallback) {
     var path = SetCccImageSlicePath.replace("#0#", cccId).replace("#1#", imageId);
     var formData = new FormData();
     formData.append("access_token", accessToken);
@@ -124,12 +137,14 @@ function SetCccImageSlice(cccId, imageId, accessToken, successCallback, errorCal
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
-        success: successCallback,
+        success: function (data) {
+            successCallback(data, scope);
+        },
         error: errorCallback
     });
 }
 
-function SetGrayScaleImageAnalysis(cccId, imageId, accessToken, successCallback, errorCallback) {
+function SetGrayScaleImageAnalysis(scope, cccId, imageId, accessToken, successCallback, errorCallback) {
     var path = SetGrayScaleImageAnalysisPath.replace("#0#", cccId).replace("#1#", imageId);
     var formData = new FormData();
     formData.append("access_token", accessToken);
@@ -140,7 +155,9 @@ function SetGrayScaleImageAnalysis(cccId, imageId, accessToken, successCallback,
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
-        success: successCallback,
+        success: function (data) {
+            successCallback(data, scope);
+        },
         error: errorCallback
     });
 }
@@ -179,11 +196,12 @@ function SetGrayScaleTransform(scope, cccId, imageId, plate, accessToken, succes
     });
 }
 
-function SetGridding(scope, cccId, imageId, plate, pinningFormat, accessToken, successCallback, errorCallback) {
+function SetGridding(scope, cccId, imageId, plate, pinningFormat, offSet, accessToken, successCallback, errorCallback) {
     var path = SetGriddingPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate);
 
     var formData = new FormData();
     formData.append("pinning_format", pinningFormat);
+    formData.append("gridding_correction", offSet);
     formData.append("access_token", accessToken);
     $.ajax({
         url: path,
@@ -200,7 +218,7 @@ function SetGridding(scope, cccId, imageId, plate, pinningFormat, accessToken, s
 }
 
 function SetColonyDetection(scope, cccId, imageId, plate, accessToken, row, col, successCallback, errorCallback) {
-    var path = SetColonyDetectionPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate).replace("#3#", row).replace("#4#", col);
+    var path = SetColonyDetectionPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate).replace("#3#", col).replace("#4#", row);
 
     var formData = new FormData();
     formData.append("access_token", accessToken);
@@ -223,9 +241,9 @@ function SetColonyCompression(scope, cccId, imageId, plate, accessToken, colony,
 
     var formData = new FormData();
     formData.append("access_token", accessToken);
-    formData.append("image", colony.image);
-    formData.append("blob", colony.blob);
-    formData.append("background", colony.background);
+    formData.append("image", JSON.stringify(colony.image));
+    formData.append("blob", JSON.stringify(colony.blob));
+    formData.append("background", JSON.stringify(colony.background));
     $.ajax({
         url: path,
         type: "POST",
@@ -234,8 +252,6 @@ function SetColonyCompression(scope, cccId, imageId, plate, accessToken, colony,
         data: formData,
         processData: false,
         success: function (data) {
-            scope.ColonyRow = row;
-            scope.ColonyCol = col;
             successCallback(data, scope);
         },
         error: errorCallback
@@ -266,7 +282,7 @@ function SetColonyCompressionV2(scope, cccId, imageId, plate, accessToken, colon
     });
 }
 
-function GetImageId(cccId, file, accessToken, successCallback, errorCallback) {
+function GetImageId(scope, cccId, file, accessToken, successCallback, errorCallback) {
     var path = GetImageId_Path.replace("#0#", cccId);
     var formData = new FormData();
     formData.append("image", file);
@@ -278,12 +294,14 @@ function GetImageId(cccId, file, accessToken, successCallback, errorCallback) {
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
-        success: successCallback,
+        success: function (data) {
+            successCallback(data, scope);
+        },
         error: errorCallback
     });
 }
 
-function GetMarkers(fixtureName, file, successCallback, errorCallback) {
+function GetMarkers(scope, fixtureName, file, successCallback, errorCallback) {
     var path = GetMarkersPath + fixtureName;
     var formData = new FormData();
     formData.append("image", file);
@@ -295,7 +313,9 @@ function GetMarkers(fixtureName, file, successCallback, errorCallback) {
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
-        success: successCallback,
+        success: function (data) {
+            successCallback(data, scope);
+        },
         error: errorCallback
     });
 }

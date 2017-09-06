@@ -8,6 +8,14 @@ table {
 	font-size: 1em;
 }
 
+.paddedTable td{
+    padding-left: 5px;
+}
+.paddedTable table {
+    border-collapse: separate;
+}
+
+
 .ui-draggable, .ui-droppable {
 	background-position: top;
 }
@@ -16,11 +24,11 @@ label, input {
     display: block;
 }
 
-    input.text {
-        margin-bottom: 12px;
-        width: 95%;
-        padding: .4em;
-    }
+input.text {
+    margin-bottom: 12px;
+    width: 95%;
+    padding: .4em;
+}
 
 fieldset {
     padding: 0;
@@ -38,17 +46,17 @@ div#users-contain {
     margin: 20px 0;
 }
 
-    div#users-contain table {
-        margin: 1em 0;
-        border-collapse: collapse;
-        width: 100%;
-    }
+div#users-contain table {
+    margin: 1em 0;
+    border-collapse: collapse;
+    width: 100%;
+}
 
-        div#users-contain table td, div#users-contain table th {
-            border: 1px solid #eee;
-            padding: .6em 10px;
-            text-align: left;
-        }
+div#users-contain table td, div#users-contain table th {
+    border: 1px solid #eee;
+    padding: .6em 10px;
+    text-align: left;
+}
 
 .ui-dialog .ui-state-error {
     padding: .3em;
@@ -59,6 +67,22 @@ div#users-contain {
     padding: 0.3em;
 }
 
+/*spinner*/
+
+.glyphicon.spinning {
+    animation: spin 1s infinite linear;
+    -webkit-animation: spin2 1s infinite linear;
+}
+
+@keyframes spin {
+    from { transform: scale(1) rotate(0deg); }
+    to { transform: scale(1) rotate(360deg); }
+}
+
+@-webkit-keyframes spin2 {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(360deg); }
+}
 
 /*general*/
 .vcenter {
@@ -66,3 +90,130 @@ div#users-contain {
     vertical-align: middle;
     float: none;
 }
+
+.oneLine {
+    display: inline;
+}
+
+.row {
+    margin-bottom:15px;
+}
+
+.rightPadding {
+    margin-right: 5px
+}
+
+/*Plate HeatMap*/
+.colonyHeatmap {
+    border: 0px solid black;
+    background: #e7d2b7;
+    margin: 0px;
+}
+
+.HeatMapLegendAxis path   {
+    display: none;
+}
+
+.HeatMapLegendAxis   {
+    font-size:10px;
+}
+
+div.tooltip {	
+    position: absolute;			
+    text-align: center;
+    padding: 2px;				
+    font: 12px sans-serif;
+    color: white;
+    background: black;	
+    border: 0px;		
+    border-radius: 3px;			
+    pointer-events: none;			
+}
+
+rect.selection {
+    stroke          : black;
+    stroke-dasharray: 10px;
+    fill            : transparent;
+    stroke-width    : 3;
+    stroke-opacity  : 1;
+}
+
+g.expNode.selected circle {
+    stroke:black;
+    stroke-width: 1;
+}
+
+g.expNode.selected rect {
+    stroke:black;
+    stroke-width: 1;
+}
+
+  /* disable text selection */
+svg *::selection {
+    background : transparent;
+}
+
+svg *::-moz-selection {
+    background:transparent;
+}
+
+svg *::-webkit-selection {
+    background:transparent;
+}
+
+/*colony label*/
+
+.colonyPlot ul {
+    margin: 0px;
+}
+
+.colonyPlot li {
+    margin: 0px;
+}
+
+.colonyPlot .input-color {
+    position: relative;
+}
+
+    .colonyPlot .input-color input {
+        padding-left: 20px;
+    }
+
+    .colonyPlot .input-color .color-box {
+        width: 10px;
+        height: 10px;
+        display: inline-block;
+        background-color: #ccc;
+        position: absolute;
+        left: 5px;
+        top: 5px;
+    }
+
+/*input file*/
+.cccInputFile {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+
+    .cccInputFile + label {
+        font-size: 1.25em;
+        font-weight: 700;
+        color: white;
+        background-color: rgb(84, 31, 15);
+        display: inline-block;
+        text-transform: none;
+        padding: 3px;
+    }
+
+        .cccInputFile:focus + label,
+        .cccInputFile + label:hover {
+            background-color: red;
+        }
+
+    .cccInputFile + label {
+        cursor: pointer; /* "hand" cursor */
+    }
