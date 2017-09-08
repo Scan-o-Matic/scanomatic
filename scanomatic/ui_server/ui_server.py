@@ -347,8 +347,8 @@ def launch_server(host, port, debug):
                         path_compile_instructions == "root/"):
                     path_compile_instructions = None
                 elif path_compile_instructions:
-                    path_compile_instructions = \
-                        os.path.abspath(path_compile_instructions.replace(
+                    path_compile_instructions = os.path.abspath(
+                        path_compile_instructions.replace(
                             'root', Config().paths.projects_root))
 
                 _logger.info(
@@ -359,10 +359,9 @@ def launch_server(host, port, debug):
                     compilation=path_compilation,
                     compile_instructions=path_compile_instructions,
                     output_directory=data_object.get("output_directory"),
-                    cell_count_calibration=
-                    data_object.get("cell_count_calibration"),
-                    one_time_positioning=
-                    bool(data_object.get(
+                    cell_count_calibration=data_object.get(
+                        "cell_count_calibration"),
+                    one_time_positioning=bool(data_object.get(
                         'one_time_positioning', default=1, type=int)),
                     chain=bool(data_object.get('chain', default=1, type=int)))
 
@@ -414,7 +413,7 @@ def launch_server(host, port, debug):
                         reason="The following has bad data: {0}".format(
                             ", ".join(
                                 AnalysisModelFactory.get_invalid_names(model))
-                        ))
+                    ))
 
             else:
                 return json_abort(

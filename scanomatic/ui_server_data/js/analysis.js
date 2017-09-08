@@ -266,7 +266,7 @@ function Extract(button) {
                 Dialogue("Feature Extraction", "Extraction refused", data.reason ? data.reason : "Unknown reason", false, button);
             }
         },
-        error: function(data) {
+        error: function(data, textStatus, errorThrown) {
             Dialogue("Feature Extraction", textStatus, "An error occurred processing request", false, button);
         }
 
