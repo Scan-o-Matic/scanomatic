@@ -29,4 +29,3 @@ scripts/scan-o-matic_job
 nohup.out
 data/config/rpc.admin
 /htmlcov
-/data/config/ccc
