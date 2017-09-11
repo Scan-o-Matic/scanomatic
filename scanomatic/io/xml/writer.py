@@ -1,13 +1,4 @@
 """XML write that writes chronoligical xml from analysis"""
-__author__ = "Martin Zackrisson"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
 #
 # DEPENDENCIES
 #
@@ -25,14 +16,11 @@ import re
 import scanomatic.io.logger as logger
 from scanomatic.io.paths import Paths
 from scanomatic.models.analysis_model import COMPARTMENTS, MEASURES
-#
-# CLASSES
-#
+from scanomatic import get_version
 
 
 class XML_Writer(object):
 
-    #XML STATIC TEMPLATES
     XML_OPEN = "<{0}>"
     XML_OPEN_W_ONE_PARAM = '<{0} {1}="{2}">'
     XML_OPEN_CONT_CLOSE = "<{0}>{1}</{0}>"
@@ -44,7 +32,6 @@ class XML_Writer(object):
     XML_CONT_CLOSE = "{0}</{1}>"
 
     XML_SINGLE_W_THREE_PARAM = '<{0} {1}="{2}" {3}="{4}" {5}="{6}" />'
-    #END XML STATIC TEMPLATES
 
     DATA_TYPES = {
         ('pixelsum', 'ps'): ('cells', 'standard'),
@@ -97,7 +84,7 @@ class XML_Writer(object):
             self._logger.critical(
                 "XML WRITER: can't open target file:" +
                 "'{0}' and/or '{0}'".format(
-                self._outdata_full, self._outdata_slim))
+                    self._outdata_full, self._outdata_slim))
 
             self._file_handles = {'full': None, 'slim': None}
             return False
@@ -129,7 +116,8 @@ class XML_Writer(object):
                 s = ""
 
             try:
-                mac = re.search(r"(([a-f\d]{1,2}\:){3,8}[a-f\d]{1,2})", s).groups()[0]
+                mac = re.search(
+                    r"(([a-f\d]{1,2}\:){3,8}[a-f\d]{1,2})", s).groups()[0]
             except AttributeError:
                 # Ensures reuse of random mac further down
                 mac = None
@@ -156,8 +144,12 @@ class XML_Writer(object):
 
         try:
             with open(self._paths.config_mac, 'r') as fh:
+
                 lines = fh.read()
-                mac = re.search(r"(([a-f\d]{1,2}\:){3,8}[a-f\d]{1,2})", lines).groups()[0]
+                mac = re.search(
+                    r"(([a-f\d]{1,2}\:){3,8}[a-f\d]{1,2})",
+                    lines).groups()[0]
+
         except (IOError, TypeError):
             mac = self._set_saved_mac()
 
@@ -175,7 +167,7 @@ class XML_Writer(object):
             mac = self._get_mac_str_from_long(uuid.getnode())
 
         try:
-            with  open(self._paths.config_mac, 'w') as fh:
+            with open(self._paths.config_mac, 'w') as fh:
                 fh.write("{0}\n".format(mac))
         except IOError:
             mac = None
@@ -200,7 +192,7 @@ class XML_Writer(object):
                 f.write('<project>')
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['version', 'ver'][use_short_tags], __version__))
+                    ['version', 'ver'][use_short_tags], get_version()))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['computer-mac', 'mac'][use_short_tags],
@@ -211,7 +203,8 @@ class XML_Writer(object):
                     meta_data.start_time))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['prefix', 'pref'][use_short_tags], meta_data.project_name))
+                    ['prefix', 'pref'][use_short_tags],
+                    meta_data.project_name))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['project_tag', 'ptag'][use_short_tags], ''))
@@ -361,7 +354,8 @@ class XML_Writer(object):
                 for compartment in self.COMPARTMENTS:
 
                     if (f is not self._file_handles['slim'] or
-                            compartment not in formatting.exclude_compartments):
+                            compartment not in
+                            formatting.exclude_compartments):
 
                         f.write(self.XML_OPEN_CONT_CLOSE.format(
                             'compartment', compartment))
@@ -469,22 +463,31 @@ class XML_Writer(object):
                                     'x', cell_features.index[0],
                                     'y', cell_features.index[1]))
 
-                            for compartment_features in cell_features.data.itervalues():
+                            for compartment_features in \
+                                    cell_features.data.itervalues():
 
-                                if compartment_features.index in omit_compartments:
+                                if (compartment_features.index in
+                                        omit_compartments):
+
                                     continue
 
-                                compartment_name = tag_compartments[compartment_features.index]
+                                compartment_name = tag_compartments[
+                                    compartment_features.index]
 
-                                compartment_in_slimmed = compartment_features.index is slimmed_compartment
+                                compartment_in_slimmed = (
+                                    compartment_features.index is
+                                    slimmed_compartment)
 
                                 if compartment_in_slimmed:
 
-                                    fhs.write(self.XML_OPEN.format(compartment_name))
+                                    fhs.write(self.XML_OPEN.format(
+                                        compartment_name))
 
-                                fh.write(self.XML_OPEN.format(compartment_name))
+                                fh.write(self.XML_OPEN.format(
+                                    compartment_name))
 
-                                for measure, value in compartment_features.data.iteritems():
+                                for measure, value in \
+                                        compartment_features.data.iteritems():
 
                                     if measure in omit_measures:
                                         continue
@@ -493,7 +496,8 @@ class XML_Writer(object):
                                         tag_measures[measure],
                                         value)
 
-                                    if compartment_in_slimmed and measure is slimmed_measure:
+                                    if (compartment_in_slimmed and measure is
+                                            slimmed_measure):
 
                                         fhs.write(m_string)
 
@@ -501,9 +505,11 @@ class XML_Writer(object):
 
                                 if compartment_in_slimmed:
 
-                                    fhs.write(self.XML_CLOSE.format(compartment_name))
+                                    fhs.write(self.XML_CLOSE.format(
+                                        compartment_name))
 
-                                fh.write(self.XML_CLOSE.format(compartment_name))
+                                fh.write(self.XML_CLOSE.format(
+                                    compartment_name))
 
                             for f in (fh, fhs):
 
@@ -511,8 +517,10 @@ class XML_Writer(object):
 
                 for f in self._file_handles.values():
 
-                    f.write(self.XML_CLOSE.format(['grid-cells', 'gcs'][tag_format]))
-                    f.write(self.XML_CLOSE.format(['plate', 'p'][tag_format]))
+                    f.write(self.XML_CLOSE.format(
+                        ['grid-cells', 'gcs'][tag_format]))
+                    f.write(self.XML_CLOSE.format(
+                        ['plate', 'p'][tag_format]))
 
             for f in self._file_handles.values():
 

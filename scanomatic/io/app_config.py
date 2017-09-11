@@ -30,7 +30,7 @@ class Config(SingeltonOneInit):
 
         self._logger = logger.Logger("Application Config")
 
-        #TODO: Extend functionality to toggle to remote connect
+        # TODO: Extend functionality to toggle to remote connect
         self._use_local_rpc_settings = True
 
         self._minMaxModels = {
@@ -161,10 +161,12 @@ class Config(SingeltonOneInit):
 
         if isinstance(value, int) and value >= 0:
             self._settings.number_of_scanners = value
-            #TODO: Should update dependent values such as length of scanner names
+            # TODO: Should update dependent values such as
+            # length of scanner names
         else:
-            self._logger.warning("Refused to set number of scanners '{0}', only 0 or positive ints allowed".format(
-                value))
+            self._logger.warning(
+                "Refused to set number of scanners '{0}', only 0 or positive ints allowed".format(
+                    value))
 
     @property
     def scanner_name_pattern(self):
@@ -276,7 +278,8 @@ class Config(SingeltonOneInit):
             rpc_conf, "Communication", "port", 12451, int)
 
         try:
-            self._settings.rpc_server.admin = open(self._paths.config_rpc_admin, 'r').read().strip()
+            self._settings.rpc_server.admin = open(
+                self._paths.config_rpc_admin, 'r').read().strip()
         except IOError:
             self._settings.rpc_server.admin = self._generate_admin_uuid()
         else:
@@ -291,10 +294,13 @@ class Config(SingeltonOneInit):
                 fh.write(val)
                 self._logger.info("New admin user identifier generated")
         except IOError:
-            self._logger.critical("Could not write to file '{0}'".format(self._paths.config_rpc_admin) +
-                                  ", you won't be able to perform any actions on Scan-o-Matic until fixed." +
-                                  " If you are really lucky, it works if rebooted, " +
-                                  "but it seems your installation is corrupt.")
+            self._logger.critical(
+                "Could not write to file '{0}'".format(
+                    self._paths.config_rpc_admin) +
+                ", you won't be able to perform any actions on Scan-o-Matic" +
+                " until fixed." +
+                " If you are really lucky, it works if rebooted, " +
+                "but it seems your installation is corrupt.")
             return None
 
         return val
@@ -318,11 +324,15 @@ class Config(SingeltonOneInit):
                 pass
 
         if not ApplicationSettingsFactory.validate(self._settings):
-            self._logger.error("There are invalid values in the current application settings,"
-                               "will not save and will reload last saved settings")
+            self._logger.error(
+                "There are invalid values in the current application settings,"
+                "will not save and will reload last saved settings")
 
             if bad_keys_out is not None:
-                for label in ApplicationSettingsFactory.get_invalid_names(self._settings):
+
+                for label in ApplicationSettingsFactory.get_invalid_names(
+                        self._settings):
+
                     bad_keys_out.append(label)
 
             self.reload_settings()
@@ -332,7 +342,8 @@ class Config(SingeltonOneInit):
     def save_current_settings(self):
 
         if self.validate():
-            ApplicationSettingsFactory.serializer.purge_all(self._paths.config_main_app)
+            ApplicationSettingsFactory.serializer.purge_all(
+                self._paths.config_main_app)
 
             ApplicationSettingsFactory.serializer.dump(
                 self._settings, self._paths.config_main_app)

@@ -2,6 +2,7 @@ import pytest
 
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
+
 class TestCreatingScanningModel:
 
     def test_creating_valid_minimal_model(self):

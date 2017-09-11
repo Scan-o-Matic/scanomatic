@@ -1,6 +1,8 @@
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory, email_serializer
-from scanomatic.models.scanning_model import ScanningModel, ScannerModel, ScanningAuxInfoModel, PlateDescription, \
-    CULTURE_SOURCE, PLATE_STORAGE, ScannerOwnerModel
+from scanomatic.generics.abstract_model_factory import (
+    AbstractModelFactory, email_serializer)
+from scanomatic.models.scanning_model import (
+    ScanningModel, ScannerModel, ScanningAuxInfoModel, PlateDescription,
+    CULTURE_SOURCE, PLATE_STORAGE, ScannerOwnerModel)
 import scanomatic.io.fixtures as fixtures
 import scanomatic.io.app_config as app_config
 from scanomatic.models.rpc_job_models import RPCjobModel
@@ -9,8 +11,6 @@ import os
 import re
 import string
 from types import StringTypes
-
-
 
 
 class PlateDescriptionFactory(AbstractModelFactory):
@@ -107,7 +107,11 @@ class ScanningAuxInfoFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningAuxInfoModel
         """
-        if cls._is_enum_value(model.plate_storage, cls.STORE_SECTION_SERIALIZERS[model.FIELD_TYPES.plate_storage.name]):
+        if cls._is_enum_value(
+                model.plate_storage,
+                cls.STORE_SECTION_SERIALIZERS[
+                    model.FIELD_TYPES.plate_storage.name]):
+
             return True
         return model.FIELD_TYPES.plate_storage
 
@@ -117,7 +121,8 @@ class ScanningAuxInfoFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningAuxInfoModel
         """
-        if not isinstance(model.plate_age, int) and not isinstance(model.plate_age, float):
+        if (not isinstance(model.plate_age, int) and
+                not isinstance(model.plate_age, float)):
             return model.FIELD_TYPES.plate_age
         elif model.plate_age == -1 or model.plate_age > 0:
             return True
@@ -134,7 +139,8 @@ class ScanningAuxInfoFactory(AbstractModelFactory):
                 not isinstance(model.pinning_project_start_delay, float)):
 
             return model.FIELD_TYPES.pinning_project_start_delay
-        elif model.pinning_project_start_delay == -1 or model.pinning_project_start_delay > 0:
+        elif (model.pinning_project_start_delay == -1 or
+                model.pinning_project_start_delay > 0):
             return True
         else:
             return model.FIELD_TYPES.pinning_project_start_delay
@@ -258,7 +264,8 @@ class ScanningModelFactory(AbstractModelFactory):
         except:
             return model.FIELD_TYPES.time_between_scans
 
-        return cls._correct_type_and_in_bounds(model, "time_between_scans", float)
+        return cls._correct_type_and_in_bounds(
+            model, "time_between_scans", float)
 
     @classmethod
     def _validate_project_name(cls, model):
@@ -267,7 +274,10 @@ class ScanningModelFactory(AbstractModelFactory):
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
         if not model.project_name or len(model.project_name) != len(
-                tuple(c for c in model.project_name if c in string.letters + string.digits + "_")):
+                tuple(
+                    c for c in model.project_name if c in
+                    string.letters + string.digits + "_")):
+
             return model.FIELD_TYPES.project_name
 
         try:
@@ -286,7 +296,8 @@ class ScanningModelFactory(AbstractModelFactory):
         """
         try:
 
-            if os.path.isdir(os.path.abspath(model.directory_containing_project)):
+            if os.path.isdir(
+                    os.path.abspath(model.directory_containing_project)):
                 return True
 
         except:
@@ -324,8 +335,12 @@ class ScanningModelFactory(AbstractModelFactory):
 
         try:
             for address in email:
-                if not (isinstance(address, StringTypes) and
-                            (address == '' or re.match(r'[^@]+@[^@]+\.[^@]+', address))):
+
+                if (not (
+                        isinstance(address, StringTypes) and
+                        (address == '' or re.match(
+                            r'[^@]+@[^@]+\.[^@]+', address)))):
+
                     raise TypeError
             return True
         except TypeError:
@@ -370,18 +385,26 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
-        if not not isinstance(model.plate_descriptions,
-                              cls.STORE_SECTION_SERIALIZERS[model.FIELD_TYPES.plate_descriptions.name][1]):
+        if not not isinstance(
+                model.plate_descriptions,
+                cls.STORE_SECTION_SERIALIZERS[
+                    model.FIELD_TYPES.plate_descriptions.name][1]):
+
             return model.FIELD_TYPES.plate_descriptions
+
         else:
             for plate_description in model.plate_descriptions:
-                if not isinstance(plate_description,
-                                  cls.STORE_SECTION_SERIALIZERS[model.FIELD_TYPES.plate_descriptions.name][1]):
+
+                if (not isinstance(
+                        plate_description,
+                        cls.STORE_SECTION_SERIALIZERS[
+                            model.FIELD_TYPES.plate_descriptions.name][1])):
+
                     return model.FIELD_TYPES.plate_descriptions
 
-
-            if (len(set(plate_description.name for plate_description in model.plate_descriptions)) !=
-                    len(model.plate_descriptions)):
+            if (len(set(plate_description.name for plate_description in
+                    model.plate_descriptions)) != len(
+                        model.plate_descriptions)):
 
                 return model.FIELD_TYPES.plate_descriptions
 
