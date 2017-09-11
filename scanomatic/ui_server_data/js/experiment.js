@@ -260,10 +260,6 @@ function get_duration_as_minutes() {
     return (duration[0] * 24 + duration[1]) * 60 + duration[2];
 }
 
-function format_tag(input) {
-    //TODO: Do some checking of tags
-}
-
 function get_plate_selector(plate) {
     return "<div class='pinning'><input type='hidden' value='" + plate.index + "'>" +
                     "<label for='pinning-plate-" + plate.index + "'>Plate " + plate.index + "</label>" +
@@ -314,8 +310,6 @@ function StartExperiment(button) {
             number_of_scans: number_of_scans,
             time_between_scans: interval,
             project_path: project_path,
-            project_tag: $("#project-tag").val(),
-            scanner_tag:$("#layout-tag").val(),
             description: $("#project-description").val(),
             email: $("#project-email").val(),
             pinning_formats: get_pinnings(),
