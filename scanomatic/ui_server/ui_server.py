@@ -443,8 +443,6 @@ def launch_server(host, port, debug):
                  time_between_scans=data_object.get("time_between_scans"),
                  project_name=project_name,
                  directory_containing_project=project_root,
-                 project_tag=data_object.get("project_tag"),
-                 scanner_tag=data_object.get("scanner_tag"),
                  description=data_object.get("description"),
                  email=data_object.get("email"),
                  pinning_formats=data_object.get("pinning_formats"),

@@ -67,8 +67,6 @@ def add_routes(app):
                         'project_name': model.project_name,
                         'scanner': model.scanner,
                         'scanner_hardware': model.scanner_hardware,
-                        'project_tag': model.project_tag,
-                        'scanner_tag': model.scanner_tag,
                         'auxillary_info': {
                             'culture_freshness': model.auxillary_info.culture_freshness if
                             model.auxillary_info.culture_freshness else None,

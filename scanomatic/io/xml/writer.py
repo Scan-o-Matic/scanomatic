@@ -214,11 +214,10 @@ class XML_Writer(object):
                     ['prefix', 'pref'][use_short_tags], meta_data.project_name))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['project_tag', 'ptag'][use_short_tags], meta_data.project_tag))
+                    ['project_tag', 'ptag'][use_short_tags], ''))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['scanner_layout_tag', 'sltag'][use_short_tags],
-                    meta_data.scanner_tag))
+                    ['scanner_layout_tag', 'sltag'][use_short_tags], ''))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['description', 'desc'][use_short_tags],
