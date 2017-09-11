@@ -250,7 +250,7 @@ def get_empty_ccc(species, reference):
         CellCountCalibration.reference: reference,
         CellCountCalibration.images: [],
         CellCountCalibration.edit_access_token: uuid1().hex,
-        CellCountCalibration.polynomial: None,
+        CellCountCalibration.polynomial: {},
         CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
         CellCountCalibration.independent_data: [],
         CellCountCalibration.independent_data_source: None,
@@ -266,7 +266,6 @@ def _get_ccc_identifier(species, reference):
     if any(True for ccc in __CCC.itervalues() if
            ccc[CellCountCalibration.species] == species and
            ccc[CellCountCalibration.reference] == reference):
-
         return None
 
     candidate = re.sub(r'[^A-Z]', r'', species.upper())[:6]
@@ -279,7 +278,28 @@ def _get_ccc_identifier(species, reference):
     return candidate
 
 
+def _insert_default_ccc():
+
+    ccc = get_empty_ccc(
+        species='S. cerevisiae',
+        reference='Zackrisson et. al. 2016',
+    )
+    ccc[CellCountCalibration.identifier] = 'default'
+    ccc[CellCountCalibration.polynomial]['default'] = {
+        'coefficients':
+            (3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.),
+        'power': 5,
+    }
+    ccc[CellCountCalibration.edit_access_token] = None
+    ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
+    ccc[CellCountCalibration.deployed_polynomial] = 'default'
+
+    __CCC[ccc[CellCountCalibration.identifier]] = ccc
+
+
 def __load_cccs():
+
+    _insert_default_ccc()
 
     for ccc_path in iglob(Paths().ccc_file_pattern.format("*")):
 
@@ -306,11 +326,27 @@ def __load_cccs():
             __CCC[data[CellCountCalibration.identifier]] = data
 
 
+def reload_cccs():
+
+    __CCC.clear()
+    __load_cccs()
+
+
 def get_active_cccs():
 
     return {
         identifier: ccc for identifier, ccc in __CCC.iteritems()
         if ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active}
+
+
+def get_polynomial_coefficients_from_ccc(identifier):
+
+    ccc = __CCC[identifier]
+    if ccc[CellCountCalibration.status] != CalibrationEntryStatus.Active:
+        raise KeyError
+
+    return ccc[CellCountCalibration.polynomial][
+        ccc[CellCountCalibration.deployed_polynomial]]['coefficients']
 
 
 def get_under_construction_cccs():
@@ -327,6 +363,7 @@ def add_ccc(ccc):
             ccc[CellCountCalibration.identifier] not in __CCC):
 
         __CCC[ccc[CellCountCalibration.identifier]] = ccc
+
         save_ccc_to_disk(ccc[CellCountCalibration.identifier])
         return True
 
@@ -683,9 +720,7 @@ def get_plate_slice(
             _logger.error(
                 "Problem loading: {0}".format(
                     Paths().ccc_image_plate_transformed_slice_pattern.format(
-                    identifier, image_identifier, id_plate)
-                )
-            )
+                        identifier, image_identifier, id_plate)))
             return None
     else:
         try:
@@ -818,13 +853,6 @@ def set_colony_compressed_data(
 
     return save_ccc_to_disk(ccc)
 
-if not __CCC:
-    __load_cccs()
-
-########################################
-########################################
-########################################
-
 
 def validate_polynomial(data, poly):
 
@@ -842,31 +870,6 @@ def validate_polynomial(data, poly):
     return CalibrationValidation.OK
 
 
-def _eval_deprecated_format(entry, key):
-
-    if isinstance(key, CalibrationEntry):
-        key = key.value
-
-    if isinstance(key, int):
-        return entry[key]
-    elif key:
-        return _eval_deprecated_format(entry[key[0]], key[1:])
-    else:
-        return entry
-
-
-def _parse_data(entry):
-
-    try:
-        entry = json.loads(entry)
-    except ValueError:
-        # Try parsing old format
-        entry = {k.name: _eval_deprecated_format(eval(entry), k)
-                 for k in CalibrationEntry}
-
-    return CalibrationEntry(**entry)
-
-
 def _jsonify_entry(entry):
 
     return {k.name: v for k, v in entry.iteritems()}
@@ -875,66 +878,6 @@ def _jsonify_entry(entry):
 def _jsonify(data):
 
     return json.dumps([_jsonify_entry(e) for e in data])
-
-
-def get_data_file_path(file_path=None, label=''):
-    if file_path is None:
-        if label:
-            file_path = Paths().analysis_calibration_data.format(label + ".")
-        else:
-            file_path = Paths().analysis_calibration_data.format(label)
-
-    return file_path
-
-
-def save_data_to_file(data, file_path=None, label=''):
-
-    file_path = get_data_file_path(file_path, label)
-    with open(file_path, 'w') as fh:
-        json.dump(data, fh)
-
-
-def load_data_file(file_path=None, label=''):
-
-    file_path = get_data_file_path(file_path, label)
-    try:
-        with open(file_path, 'r') as fs:
-
-            try:
-                data_store = json.load(fs)
-
-            except ValueError:
-
-                data_store = CalibrationEntry(
-                    target_value=[],
-                    source_values=[],
-                    source_value_counts=[],
-                    image=None,
-                    colony_name=None)
-
-                for i, line in enumerate(fs):
-
-                    try:
-                        entry = _parse_data(line)
-                    except (ValueError, TypeError):
-                        entry = None
-
-                    if entry:
-                        data_store.source_value_counts.append(
-                            entry.source_value_counts)
-                        data_store.source_values.append(entry.source_values)
-                        data_store.target_value.append(entry.target_value)
-
-                    else:
-                        _logger.warning(
-                            "Could not parse line {0}: '{1}' in {2}".format(
-                                i, line.strip(), file_path)
-                        )
-
-    except IOError:
-        raise IOError("File at {0} not found".format(file_path))
-
-    return data_store
 
 
 def _collect_all_included_data(ccc):
@@ -1073,126 +1016,6 @@ def calculate_polynomial(data_store, degree=5):
     return poly_vals
 
 
-def load_calibrations(file_path=None):
-
-    if file_path is None:
-        file_path = Paths().analysis_polynomial
-
-    try:
-
-        with open(file_path, 'r') as fh:
-
-            try:
-                data = json.load(fh)
-            except ValueError:
-                data = {}
-                fh.seek(0)
-                for i, l in enumerate(fh):
-                    try:
-                        key, value = eval(l)
-                        data[key] = value
-                    except (TypeError, ValueError):
-                        _logger.info(
-                            "Skipping line {0}: '{0}' (can't parse)".format(
-                                i, l.strip())
-                        )
-
-    except IOError:
-        _logger.warning("Could not locate file '{0}'".format(file_path))
-        data = {}
-
-    return data
-
-
-def load_calibration(label="", poly_degree=None, file_path=None):
-
-    data = load_calibrations(file_path)
-    if poly_degree is not None:
-        label = "{0}_{1}".format(label, poly_degree)
-
-    for k in data:
-
-        if k.startswith(label):
-
-            if poly_degree is None:
-                _logger.info(
-                    "Using polynomial {0}: {1}".format(
-                        k, poly_as_text(data[k]))
-                )
-
-            return data[k]
-
-
-def _safe_copy_file_if_needed(file_path):
-
-    # Make copy of previous state
-    if os.path.isfile(file_path):
-
-        local_zone = tz.gettz()
-        stamp = datetime.fromtimestamp(time.time(), local_zone).isoformat()
-
-        target = "{0}.{1}.polynomials".format(
-            file_path.rstrip("polynomials"), stamp)
-        shutil.copy(file_path, target)
-
-
-def add_calibration(label, poly, file_path=None):
-
-    if file_path is None:
-        file_path = Paths().analysis_polynomial
-
-    _safe_copy_file_if_needed(file_path)
-
-    data = load_calibrations(file_path)
-
-    key = "{0}_{1}".format(label, len(poly) - 1)
-    if key in data:
-        _logger.warning(
-            "Replacing previous calibration {0}: {1}".format(key, data[key]))
-
-    data[key] = poly.tolist() if hasattr(poly, 'tolist') else poly
-
-    with open(file_path, 'w') as fh:
-
-        json.dump(data, fh)
-
-
-def remove_calibration(label, degree=None, file_path=None):
-
-    if file_path is None:
-        file_path = Paths().analysis_polynomial
-
-    data = load_calibrations(file_path)
-    keys = tuple(data.keys())
-    has_changed = False
-
-    for key in keys:
-
-        if degree:
-
-            if key == "{0}_{1}".format(label, degree):
-                del data[key]
-                has_changed = True
-                break
-        elif key.startswith("{0}_".format(label)):
-            del data[key]
-            has_changed = True
-
-    if has_changed:
-        _safe_copy_file_if_needed(file_path)
-        with open(file_path, 'w') as fh:
-            json.dump(data, fh)
-
-        return True
-
-    else:
-        _logger.warning(
-            "No polynomial was found matching the criteria (label={0}, degree={1}".format(
-                label, degree)
-        )
-        return False
-
-
 def _get_all_grid_shapes(ccc):
 
     plates = []
@@ -1315,3 +1138,6 @@ def construct_polynomial(identifier, poly_name, power):
 def _add_poly(ccc, poly_name, power, poly_coeffs):
 
     ccc[poly_name] = {"power": power, "coefficients": poly_coeffs}
+
+if not __CCC:
+    __load_cccs()

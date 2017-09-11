@@ -7,6 +7,8 @@ from enum import Enum
 from ConfigParser import Error as ConfigError
 
 from scanomatic.data_processing import phenotyper
+from scanomatic.data_processing.calibration import (
+    get_polynomial_coefficients_from_ccc)
 
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
@@ -16,19 +18,30 @@ from scanomatic.image_analysis.support import save_image_as_png
 from scanomatic.image_analysis.image_grayscale import get_grayscale
 from scanomatic.image_analysis.image_basics import Image_Transpose
 from scanomatic.image_analysis.grid_cell import GridCell
-from scanomatic.image_analysis.grid_array import get_calibration_polynomial_coeffs
 from scanomatic.image_analysis.grayscale import getGrayscales, getGrayscale
 from scanomatic.image_analysis.first_pass_image import FixtureImage
 
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.fixture_models import GrayScaleAreaModel
-from scanomatic.models.analysis_model import COMPARTMENTS, VALUES
-from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
+from scanomatic.models.analysis_model import (
+    COMPARTMENTS, VALUES, get_polynomial_coefficients_from_ccc)
+from scanomatic.models.factories.analysis_factories import (
+    AnalysisFeaturesFactory)
 
-from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
-    get_area_too_large_for_grayscale, get_grayscale_is_valid, usable_plates, image_is_allowed, \
-    get_fixture_image, convert_url_to_path, get_fixture_image_from_data, \
-    get_2d_list, string_parse_2d_list, get_image_data_as_array
+from .general import (
+    get_fixture_image_by_name,
+    usable_markers,
+    split_areas_into_grayscale_and_plates,
+    get_area_too_large_for_grayscale,
+    get_grayscale_is_valid,
+    usable_plates,
+    image_is_allowed,
+    get_fixture_image,
+    convert_url_to_path,
+    get_fixture_image_from_data,
+    get_2d_list,
+    string_parse_2d_list,
+    get_image_data_as_array)
 
 
 _logger = Logger("Data API")
@@ -75,7 +88,8 @@ def add_routes(app, rpc_client, is_debug_mode):
 
     Args:
         app (Flask): The flask app to decorate
-        rpc_client (scanomatic.io.rpc_client._ClientProxy): A dynamic rpc-client bridge
+        rpc_client (scanomatic.io.rpc_client._ClientProxy):
+            A dynamic rpc-client bridge
         is_debug_mode (bool): If running in debug-mode
     """
 
@@ -132,7 +146,8 @@ def add_routes(app, rpc_client, is_debug_mode):
             data_object = request.values
 
         if len(data_object) == 0:
-            return jsonify(success=False, reason="No valid json or post is empty")
+            return jsonify(
+                success=False, reason="No valid json or post is empty")
         else:
             raw_growth_data = data_object.get("raw_growth_data", [])
             times_data = data_object.get("times_data", [])
@@ -140,42 +155,54 @@ def add_routes(app, rpc_client, is_debug_mode):
             smooth_growth_data = data_object.get("smooth_growth_data", [])
             inclusion_level = data_object.get("inclusion_level", "Trusted")
             normalize = data_object.get("normalize", False)
-            reference_offset = data_object.get("reference_offset", "LowerRight")
+            reference_offset = data_object.get(
+                "reference_offset", "LowerRight")
 
         raw_growth_data = _validate_depth(raw_growth_data)
 
         state = phenotyper.Phenotyper(
-            np.array(raw_growth_data), np.array(times_data), run_extraction=False, **settings)
+            np.array(raw_growth_data),
+            np.array(times_data),
+            run_extraction=False,
+            **settings)
 
         if smooth_growth_data:
             smooth_growth_data = _validate_depth(smooth_growth_data)
             state.set("smooth_growth_data", np.array(smooth_growth_data))
 
-        state.set_phenotype_inclusion_level(phenotyper.PhenotypeDataType[inclusion_level])
+        state.set_phenotype_inclusion_level(
+            phenotyper.PhenotypeDataType[inclusion_level])
         state.extract_phenotypes(resmoothen=len(smooth_growth_data) == 0)
 
         curve_segments = state.curve_segments
 
         if normalize:
-            state.set_control_surface_offsets(phenotyper.Offsets[reference_offset])
+            state.set_control_surface_offsets(
+                phenotyper.Offsets[reference_offset])
 
             return jsonify(
                 success=True,
                 smooth_growth_data=json_data(state.smooth_growth_data),
                 phenotypes={
-                    pheno.name: [None if p is None else p.tojson() for p in state.get_phenotype(pheno)]
+                    pheno.name: [
+                        None if p is None else p.tojson() for p in
+                        state.get_phenotype(pheno)]
                     for pheno in state.phenotypes},
                 phenotypes_normed={
-                    pheno.name: [p.tojson() for p in state.get_phenotype(
-                        pheno, norm_state=phenotyper.NormState.NormalizedRelative)]
-                    for pheno in state.phenotypes_that_normalize},
+                    pheno.name: [
+                        p.tojson() for p in state.get_phenotype(
+                            pheno,
+                            norm_state=phenotyper.NormState.NormalizedRelative)
+                    ] for pheno in state.phenotypes_that_normalize},
                 curve_phases=json_data(curve_segments))
 
-        return jsonify(smooth_growth_data=json_data(state.smooth_growth_data),
-                       phenotypes={
-                           pheno.name: [None if p is None else p.tojson() for p in state.get_phenotype(pheno)]
-                           for pheno in state.phenotypes},
-                       curve_phases=json_data(curve_segments))
+        return jsonify(
+            smooth_growth_data=json_data(state.smooth_growth_data),
+            phenotypes={
+                pheno.name: [
+                    None if p is None else p.tojson() for p in
+                    state.get_phenotype(pheno)] for pheno in state.phenotypes},
+            curve_phases=json_data(curve_segments))
 
     @app.route("/api/data/grayscales", methods=['post', 'get'])
     def _grayscales():
@@ -193,7 +220,6 @@ def add_routes(app, rpc_client, is_debug_mode):
             default = None
 
         return jsonify(success=True, grayscales=grayscales, default=default)
-
 
     @app.route("/api/data/grayscale/image/<grayscale_name>", methods=['POST'])
     def _gs_get_from_image(grayscale_name):
@@ -223,13 +249,15 @@ def add_routes(app, rpc_client, is_debug_mode):
             _grayscales @ route /api/data/grayscales:
                 Getting the names of the known grayscales
         """
+        raise NotImplemented("This endpoint is not complete")
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]),
-                                        reshape=data_object.get("shape", default=None))
+        image = get_image_data_as_array(
+            data_object.get("image", default=[[]]),
+            reshape=data_object.get("shape", default=None))
 
         grayscale_area_model = GrayScaleAreaModel(
             name=grayscale_name,
@@ -238,24 +266,35 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         if get_area_too_large_for_grayscale(grayscale_area_model):
 
-            return jsonify(success=False, source_values=None, target_values=None, grayscale=None,
-                           reason="Area too large")
+            return jsonify(
+                success=False, source_values=None, target_values=None,
+                grayscale=None, reason="Area too large")
 
         try:
-            _, values = get_grayscale(fixture, grayscale_area_model, debug=is_debug_mode)
+            _, values = get_grayscale(
+                fixture, grayscale_area_model, debug=is_debug_mode)
         except TypeError:
-            return jsonify(success=False, is_endpoint=True, reason="Grayscale detection failed")
+            return jsonify(
+                success=False, is_endpoint=True,
+                reason="Grayscale detection failed")
 
         grayscale_object = getGrayscale(grayscale_area_model.name)
         valid = get_grayscale_is_valid(values, grayscale_object)
 
         return jsonify(
-            success=valid, source_values=values, target_values=grayscale_object['targets'],
+            success=valid,
+            source_values=values,
+            target_values=grayscale_object['targets'],
             grayscale=grayscale_area_model.name,
-            reason=None if valid else "No valid grayscale detected for {0}".format(dict(**grayscale_area_model)),
-            exits=["transform_grayscale"], transform_grayscale=["/api/data/image/transform/grayscale"])
+            reason=(
+                None if valid else
+                "No valid grayscale detected for {0}".format(
+                    dict(**grayscale_area_model))),
+            exits=["transform_grayscale"],
+            transform_grayscale=["/api/data/image/transform/grayscale"])
 
-    @app.route("/api/data/grayscale/fixture/<fixture_name>", methods=['POST', 'GET'])
+    @app.route(
+        "/api/data/grayscale/fixture/<fixture_name>", methods=['POST', 'GET'])
     def _gs_get_from_fixture(fixture_name):
         """Get grayscale analysis based on fixture image
 
@@ -280,23 +319,32 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         if get_area_too_large_for_grayscale(grayscale_area_model):
 
-            return jsonify(success=True, source_values=None, target_values=None, grayscale=False,
-                           reason="Area too large")
+            return jsonify(
+                success=True, source_values=None, target_values=None,
+                grayscale=False, reason="Area too large")
 
-        _logger.info("Grayscale area to be tested {0}".format(dict(**grayscale_area_model)))
+        _logger.info("Grayscale area to be tested {0}".format(
+            dict(**grayscale_area_model)))
 
         fixture = get_fixture_image_by_name(fixture_name)
 
         try:
-            _, values = get_grayscale(fixture, grayscale_area_model, debug=is_debug_mode)
+            _, values = get_grayscale(
+                fixture, grayscale_area_model, debug=is_debug_mode)
         except TypeError:
-            return jsonify(success=False, is_endpoint=True, reason="Grayscale detection failed")
+            return jsonify(
+                success=False, is_endpoint=True,
+                reason="Grayscale detection failed")
 
         grayscale_object = getGrayscale(grayscale_area_model.name)
         valid = get_grayscale_is_valid(values, grayscale_object)
 
-        return jsonify(success=True, source_values=values, target_values=grayscale_object['targets'],
-                       grayscale=valid, reason=None if valid else "No Grayscale")
+        return jsonify(
+            success=True,
+            source_values=values,
+            target_values=grayscale_object['targets'],
+            grayscale=valid,
+            reason=None if valid else "No Grayscale")
 
     @app.route("/api/data/fixture/names")
     def _fixure_names():
@@ -311,13 +359,18 @@ def add_routes(app, rpc_client, is_debug_mode):
         if rpc_client.online:
             return jsonify(fixtures=rpc_client.get_fixtures(), success=True)
         else:
-            return jsonify(fixtures=[], success=False, reason="Scan-o-Matic server offline")
+            return jsonify(
+                fixtures=[],
+                success=False,
+                reason="Scan-o-Matic server offline")
 
     @app.route("/api/data/fixture/local/<path:project>")
     @app.route("/api/data/fixture/local")
     def _fixture_local_data(project=""):
 
-        path = os.path.join(convert_url_to_path(project), Paths().experiment_local_fixturename)
+        path = os.path.join(
+            convert_url_to_path(project),
+            Paths().experiment_local_fixturename)
 
         try:
             fixture = FixtureFactory.serializer.load_first(path)
@@ -328,7 +381,9 @@ def add_routes(app, rpc_client, is_debug_mode):
             return jsonify(
                 success=True, grayscale=dict(**fixture.grayscale),
                 plates=[dict(**plate) for plate in fixture.plates],
-                markers=zip(fixture.orientation_marks_x, fixture.orientation_marks_y))
+                markers=zip(
+                    fixture.orientation_marks_x,
+                    fixture.orientation_marks_y))
         except IndexError:
             return jsonify(success=False, reason="Fixture without data")
         except ConfigError:
@@ -364,7 +419,9 @@ def add_routes(app, rpc_client, is_debug_mode):
                 return jsonify(
                     success=True, grayscale=dict(**fixture.grayscale),
                     plates=[dict(**plate) for plate in fixture.plates],
-                    markers=zip(fixture.orientation_marks_x, fixture.orientation_marks_y))
+                    markers=zip(
+                        fixture.orientation_marks_x,
+                        fixture.orientation_marks_y))
             except IndexError:
                 return jsonify(success=False, reason="Fixture without data")
             except ConfigError:
@@ -385,7 +442,8 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         """
         name = Paths().get_fixture_name(name)
-        known_fixtures = tuple(Paths().get_fixture_name(f) for f in rpc_client.get_fixtures())
+        known_fixtures = tuple(
+            Paths().get_fixture_name(f) for f in rpc_client.get_fixtures())
         if name not in known_fixtures:
             return jsonify(success=False, reason="Unknown fixture")
         source = Paths().get_fixture_path(name)
@@ -425,7 +483,8 @@ def add_routes(app, rpc_client, is_debug_mode):
             data_object = request.values
 
         if len(data_object) == 0:
-            return jsonify(success=False, reason="No valid json or post is empty")
+            return jsonify(
+                success=False, reason="No valid json or post is empty")
 
         areas = data_object.get("areas")
         markers = data_object.get("markers")
@@ -435,7 +494,9 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not name:
             return jsonify(success=False, reason="Fixtures need a name")
 
-        _logger.info("Attempting to save {0} with areas {1} and markers {2}".format(name, areas, markers))
+        _logger.info(
+            "Attempting to save {0} with areas {1} and markers {2}".format(
+                name, areas, markers))
 
         try:
             fixture = get_fixture_image_by_name(name)
@@ -445,7 +506,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not usable_markers(markers, fixture.im):
             return jsonify(success=False, reason="Bad markers")
 
-        grayscale_area_model, plates = split_areas_into_grayscale_and_plates(areas)
+        grayscale_area_model, plates = split_areas_into_grayscale_and_plates(
+            areas)
         _logger.info("Grayscale {0}".format(grayscale_area_model))
         _logger.info("Plates".format(plates))
 
@@ -454,7 +516,8 @@ def add_routes(app, rpc_client, is_debug_mode):
             if grayscale_name not in getGrayscales():
                 return jsonify(success=False, reason="Unknown grayscale type")
             if get_area_too_large_for_grayscale(grayscale_area_model):
-                return jsonify(success=False, reason="Area too large for grayscale")
+                return jsonify(
+                    success=False, reason="Area too large for grayscale")
 
             grayscale_area_model.name = grayscale_name
 
@@ -462,13 +525,15 @@ def add_routes(app, rpc_client, is_debug_mode):
                 _, values = get_grayscale(fixture, grayscale_area_model)
             except TypeError:
 
-                return jsonify(success=False, reason="Could not detect grayscale")
+                return jsonify(
+                    success=False, reason="Could not detect grayscale")
 
             grayscale_object = getGrayscale(grayscale_area_model.name)
             valid = get_grayscale_is_valid(values, grayscale_object)
 
             if not valid:
-                return jsonify(success=False, reason="Could not detect valid grayscale")
+                return jsonify(
+                    success=False, reason="Could not detect valid grayscale")
 
             grayscale_area_model.values = values
 
@@ -487,7 +552,8 @@ def add_routes(app, rpc_client, is_debug_mode):
             scale=1.0)
 
         if not FixtureFactory.validate(fixture_model):
-            return jsonify(success=False, reason="Final compilation doesn't validate")
+            return jsonify(
+                success=False, reason="Final compilation doesn't validate")
 
         FixtureFactory.serializer.dump(fixture_model, fixture_model.path)
         return jsonify(success=True)
@@ -495,27 +561,37 @@ def add_routes(app, rpc_client, is_debug_mode):
     @app.route("/api/data/fixture/calculate/<fixture_name>", methods=['POST'])
     def _get_transposed_fixture_coordinates(fixture_name):
 
-        image = get_image_data_as_array(request.files.get('image', default=np.array([])))
+        image = get_image_data_as_array(
+            request.files.get('image', default=np.array([])))
 
         markers = get_2d_list(request.values, 'markers')
-        if not markers and isinstance(request.values.get('markers', default=None), StringTypes):
-            _logger.warning("Attempting fallback string parsing of markers as text")
+
+        if not markers and isinstance(
+                request.values.get('markers', default=None), StringTypes):
+
+            _logger.warning(
+                "Attempting fallback string parsing of markers as text")
             markers = string_parse_2d_list(request.values.get('markers', ""))
+
         if not markers:
             _logger.warning("Assuming markers have been sent as flat list")
             markers = request.values.get('markers', [])
             if len(markers) == 6:
                 markers = [[float(m) for m in markers[:3]],
                            [float(m) for m in markers[3:]]]
-                _logger.info("Markers successfully reshaped {0}".format(markers))
+                _logger.info("Markers successfully reshaped {0}".format(
+                    markers))
             else:
-                _logger.error("Unexpected number of markers {0} ({1})".format(len(markers), markers))
+                _logger.error("Unexpected number of markers {0} ({1})".format(
+                    len(markers), markers))
 
         markers = np.array(markers)
 
         _logger.info("Using markers {0}".format(markers))
 
-        if markers.ndim != 2 and markers.shape[0] != 2 and markers.shape[1] < 3:
+        if (markers.ndim != 2 and
+                markers.shape[0] != 2 and
+                markers.shape[1] < 3):
             return jsonify(
                 success=False,
                 reason="Markers should be a 2D array with shape (2, 3) or greater for last dimension",
@@ -548,7 +624,11 @@ def add_routes(app, rpc_client, is_debug_mode):
                     x2=plate.x2,
                     y1=plate.y1,
                     y2=plate.y2,
-                    data=None if image.size == 0 else image[plate.y1: plate.y2, plate.x1: plate.y2].tolist(),
+                    data=(
+                        None if image.size == 0 else
+                        image[
+                            plate.y1: plate.y2,
+                            plate.x1: plate.y2].tolist()),
                     shape=[plate.y2 - plate.y1, plate.x2 - plate.x1]
                 )
                 for plate in current_settings.model.plates
@@ -564,8 +644,11 @@ def add_routes(app, rpc_client, is_debug_mode):
                     current_settings.model.grayscale.x1:
                     current_settings.model.grayscale.y2].tolist(),
 
-                shape=[current_settings.model.grayscale.y2 - current_settings.model.grayscale.y1,
-                       current_settings.model.grayscale.x2 - current_settings.model.grayscale.x1]
+                shape=[
+                    current_settings.model.grayscale.y2 -
+                    current_settings.model.grayscale.y1,
+                    current_settings.model.grayscale.x2 -
+                    current_settings.model.grayscale.x1]
             ),
             grayscale_name=current_settings.model.grayscale.name,
             report=issues,
@@ -585,14 +668,16 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         name = os.path.basename(fixture_name)
         image_name, ext = os.path.splitext(image.filename)
-        _logger.info("Working on detecting marker for fixture {0} using image {1} ({2})".format(
-            name, image.filename, image_is_allowed(ext)))
+        _logger.info(
+            "Working on detecting marker for fixture {0} using image {1} ({2})".format(
+                name, image.filename, image_is_allowed(ext)))
 
         if name and image_is_allowed(ext):
 
             fixture_file = Paths().get_fixture_path(name)
 
-            path = os.path.extsep.join((fixture_file, ext.lstrip(os.path.extsep)))
+            path = os.path.extsep.join(
+                (fixture_file, ext.lstrip(os.path.extsep)))
 
             if save_fixture:
                 image.save(path)
@@ -605,7 +690,8 @@ def add_routes(app, rpc_client, is_debug_mode):
                 return jsonify(
                     success=True,
                     is_endpoint=True,
-                    markers=json_data(fixture['current'].get_marker_positions()),
+                    markers=json_data(
+                        fixture['current'].get_marker_positions()),
                     image=os.path.basename(fixture_file))
 
             else:
@@ -616,16 +702,19 @@ def add_routes(app, rpc_client, is_debug_mode):
                 return jsonify(
                     success=True,
                     is_endpoint=True,
-                    markers=json_data(fixture['current'].get_marker_positions())
+                    markers=json_data(
+                        fixture['current'].get_marker_positions())
                 )
 
-        _logger.warning("Refused detection (keys files: {0} values: {1})".format(
-            request.files.keys(), request.values.keys()))
+        _logger.warning(
+            "Refused detection (keys files: {0} values: {1})".format(
+                request.files.keys(), request.values.keys()))
 
         return jsonify(
             success=False,
             is_endpoint=True,
-            reason="No fixture image name" if image_is_allowed(ext) else "Image type not allowed")
+            reason="No fixture image name" if image_is_allowed(ext) else
+            "Image type not allowed")
 
     @app.route("/api/data/image/transform/grayscale", methods=['POST'])
     def image_transform_grayscale():
@@ -655,21 +744,26 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]),
-                                        reshape=data_object.get("shape", default=None))
+        image = get_image_data_as_array(
+            data_object.get("image", default=[[]]),
+            reshape=data_object.get("shape", default=None))
 
         grayscale_values = np.array(data_object.get("grayscale_values", []))
         grayscale_targets = np.array(data_object.get("grayscale_targets", []))
 
         if not grayscale_targets:
-            grayscale_targets = getGrayscale(data_object.get("grayscale_name", ""))['targets']
+            grayscale_targets = getGrayscale(
+                data_object.get("grayscale_name", ""))['targets']
 
         transpose_polynomial = Image_Transpose(
             sourceValues=grayscale_values,
             targetValues=grayscale_targets)
 
-        return jsonify(success=True, image=transpose_polynomial(image).tolist(),
-                       exits=["detect_colony"], detect_colony=["/api/data/image/detect/colony"])
+        return jsonify(
+            success=True,
+            image=transpose_polynomial(image).tolist(),
+            exits=["detect_colony"],
+            detect_colony=["/api/data/image/detect/colony"])
 
     @app.route("/api/data/image/detect/colony", methods=['POST'])
     def image_detect_colony():
@@ -697,12 +791,18 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]),
-                                        reshape=data_object.get("shape", default=None))
+        image = get_image_data_as_array(
+            data_object.get("image", default=[[]]),
+            reshape=data_object.get("shape", default=None))
 
-        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+        # first plate, upper left colony (just need something
+        identifier = ["unknown_image", 0, [0, 0]]
 
-        gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
+        gc = GridCell(
+            identifier,
+            get_polynomial_coefficients_from_ccc('default'),
+            save_extra_data=False)
+
         gc.source = image.astype(np.float64)
         gc.attach_analysis(
             blob=True, background=True, cell=True,
@@ -713,10 +813,13 @@ def add_routes(app, rpc_client, is_debug_mode):
         return jsonify(
             success=True,
             blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
-            background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist(),
+            background=gc.get_item(
+                COMPARTMENTS.Background).filter_array.tolist(),
             exits=['transform_cells', 'analyse_compartment'],
             transform_cells=['/api/data/image/transform/cells'],
-            analyse_compartment=['/api/data/image/analyse/compartment/{0}'.format(c) for c in COMPARTMENTS]
+            analyse_compartment=[
+                '/api/data/image/analyse/compartment/{0}'.format(c) for c in
+                COMPARTMENTS]
         )
 
     @app.route("/api/data/image/analyse/colony", methods=['POST'])
@@ -743,12 +846,18 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]),
-                                        reshape=data_object.get("shape", default=None))
+        image = get_image_data_as_array(
+            data_object.get("image", default=[[]]),
+            reshape=data_object.get("shape", default=None))
 
-        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+        # first plate, upper left colony (just need something
+        identifier = ["unknown_image", 0, [0, 0]]
 
-        gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
+        gc = GridCell(
+            identifier,
+            get_polynomial_coefficients_from_ccc('default'),
+            save_extra_data=False)
+
         gc.source = image.astype(np.float64)
         gc.attach_analysis(
             blob=True, background=True, cell=True,
@@ -759,8 +868,10 @@ def add_routes(app, rpc_client, is_debug_mode):
         return jsonify(
             success=True,
             blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
-            background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist(),
-            features=json_data(AnalysisFeaturesFactory.deep_to_dict(gc.features))
+            background=gc.get_item(
+                COMPARTMENTS.Background).filter_array.tolist(),
+            features=json_data(
+                AnalysisFeaturesFactory.deep_to_dict(gc.features))
         )
 
     @app.route("/api/data/image/transform/cells", methods=['POST'])
@@ -790,12 +901,14 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]),
-                                        reshape=data_object.get("shape", default=None))
+        image = get_image_data_as_array(
+            data_object.get("image", default=[[]]),
+            reshape=data_object.get("shape", default=None))
 
         background_filter = np.array(data_object.get("background_filter"))
 
-        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+        # first plate, upper left colony (just need something
+        identifier = ["unknown_image", 0, [0, 0]]
 
         gc = GridCell(identifier, None, save_extra_data=False)
         gc.source = image.astype(np.float64)
@@ -803,13 +916,16 @@ def add_routes(app, rpc_client, is_debug_mode):
             blob=True, background=True, cell=True,
             run_detect=False)
 
-        gc.set_new_data_source_space(space=VALUES.Cell_Estimates, bg_sub_source=background_filter,
-                                     polynomial_coeffs=get_calibration_polynomial_coeffs())
+        gc.set_new_data_source_space(
+            space=VALUES.Cell_Estimates, bg_sub_source=background_filter,
+            polynomial_coeffs=get_polynomial_coefficients_from_ccc('default'))
 
         return jsonify(
             success=True, image=gc.source.tolist(),
             exits=['analyse_compartment'],
-            analyse_compartment=['/api/data/image/analyse/compartment/{0}'.format(c) for c in COMPARTMENTS])
+            analyse_compartment=[
+                '/api/data/image/analyse/compartment/{0}'.format(c) for c in
+                COMPARTMENTS])
 
     @app.route("/api/data/image/analyse/compartment/<compartment>")
     def image_analyse_compartment(compartment):
@@ -818,12 +934,16 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not data_object:
             data_object = request.values
 
-        image = get_image_data_as_array(data_object.get("image", default=[[]]),
-                                        reshape=data_object.get("shape", default=None))
-        filt = get_image_data_as_array(data_object.get("filter", default=[[]]),
-                                       reshape=data_object.get("shape", default=None))
+        image = get_image_data_as_array(
+            data_object.get("image", default=[[]]),
+            reshape=data_object.get("shape", default=None))
 
-        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+        filt = get_image_data_as_array(
+            data_object.get("filter", default=[[]]),
+            reshape=data_object.get("shape", default=None))
+
+        # first plate, upper left colony (just need something
+        identifier = ["unknown_image", 0, [0, 0]]
 
         gc = GridCell(identifier, None, save_extra_data=False)
         gc.attach_analysis(
@@ -837,7 +957,9 @@ def add_routes(app, rpc_client, is_debug_mode):
         elif compartment == 'total':
             gc_compartment = gc.get_item(COMPARTMENTS.Total)
         else:
-            return jsonify(success=False, reason="Unknown compartment {0}".format(compartment))
+            return jsonify(
+                success=False,
+                reason="Unknown compartment {0}".format(compartment))
 
         gc_compartment.grid_array = image.astype(np.float64)
         gc_compartment.filter_array = filt.astype(np.int)
@@ -846,6 +968,7 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         return jsonify(
             success=True,
-            features=json_data(AnalysisFeaturesFactory.deep_to_dict(gc_compartment.features)))
+            features=json_data(
+                AnalysisFeaturesFactory.deep_to_dict(gc_compartment.features)))
 
     # End of adding routes

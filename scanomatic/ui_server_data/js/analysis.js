@@ -214,6 +214,7 @@ function Analyse(button) {
             compilation: $("#compilation").val(),
             compile_instructions: $("#compile-instructions").val(),
             output_directory: $("#analysis-directory").val(),
+            ccc: $('#ccc-selection').val(),
             chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
             one_time_positioning: $("#one_time_positioning").is(':checked') ? 0 : 1,
     };
@@ -232,12 +233,17 @@ function Analyse(button) {
         success: function(data) {
             if (data.success) {
                 Dialogue("Analysis", "Analysis Enqueued", "", "/status");
-            } else {
-                Dialogue("Analysis", "Analysis Refused", data.reason ? data.reason : "Unknown reason", false, button);
+            }
+            else {
+                Dialogue("Analysis", "Unexpected non-success", "", false, button);
             }
         },
         error: function(data) {
-            Dialogue("Analysis", "Error", "An error occurred processing request", false, button);
+            if (data.reason) {
+                Dialogue("Analysis", "Analysis Refused", data.reason, false, button);
+            } else {
+                Dialogue("Analysis", "Error", "An error occurred processing request", false, button);
+            }
         }
 
     });
@@ -253,15 +259,15 @@ function Extract(button) {
             analysis_directory: $("#extract").val()
                },
         method: 'POST',
-        success: function(data) {
+        success: function(data, textStatus) {
             if (data.success) {
                 Dialogue("Feature Extraction", "Extraction Enqueued", "", "/status");
             } else {
                 Dialogue("Feature Extraction", "Extraction refused", data.reason ? data.reason : "Unknown reason", false, button);
             }
         },
-        error: function(data) {
-            Dialogue("Feature Extraction", "Error", "An error occurred processing request", false, button);
+        error: function(data, textStatus, errorThrown) {
+            Dialogue("Feature Extraction", textStatus, "An error occurred processing request", false, button);
         }
 
     });

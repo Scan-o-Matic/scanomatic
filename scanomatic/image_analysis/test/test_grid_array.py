@@ -64,3 +64,17 @@ class TestGridDetection():
         for row, col in product(range(rows), range(cols)):
             grid_cell = grid_array[(row, col)]
             assert grid_cell._identifier[0] == image_identifier, fail_text()
+
+    def test_grid_cells_inherits_poly_coeffs(self):
+        coeffs = [1, 1, 2, 3, 5]
+        analysis_model = AnalysisModelFactory.create(
+            cell_count_calibration=coeffs)
+
+        grid_array_instance = grid_array_module.GridArray(
+            [None, 0], (8, 12), analysis_model)
+        grid_array_instance._init_grid_cells()
+
+        assert all(
+            a == b for a, b in zip(
+                grid_array_instance[(0, 0)]._polynomial_coeffs,
+                coeffs))

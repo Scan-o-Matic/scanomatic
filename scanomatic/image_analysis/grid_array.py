@@ -20,7 +20,7 @@ from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.models.factories.analysis_factories import \
     AnalysisFeaturesFactory
-from scanomatic.data_processing.calibration import load_calibration
+
 #
 # EXCEPTIONS
 
@@ -117,11 +117,6 @@ def _create_grid_array_identifier(identifier):
         identifier = [identifier[0], identifier[1]]
 
     return identifier
-
-
-def get_calibration_polynomial_coeffs():
-
-    return load_calibration()
 
 
 def _get_grid_to_im_axis_mapping(pm, im):
@@ -481,7 +476,6 @@ class GridArray(object):
         self._grid_cells.clear()
         self._features.data.clear()
 
-        polynomial_coeffs = get_calibration_polynomial_coeffs()
         focus_position = (
             self._analysis_model.focus_position[0],
             self._analysis_model.focus_position[2],
@@ -499,7 +493,7 @@ class GridArray(object):
                         if focus_position else False
                     grid_cell = GridCell(
                         [self._identifier, (row, column)],
-                        polynomial_coeffs,
+                        self._analysis_model.cell_count_calibration,
                         save_extra_data=is_focus
                     )
                     self._features.data.add(grid_cell.features)

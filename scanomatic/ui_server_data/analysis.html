@@ -9,6 +9,7 @@
     <script src="/js/helpers.js?ver=_-_VERSIONTAG_-_"></script>
     <script src="/js/fixtures.js?ver=_-_VERSIONTAG_-_"></script>
     <script src="/js/analysis.js?ver=_-_VERSIONTAG_-_"></script>
+    <script src="/js/calibration.js?ver=_-_VERSIONTAG_-_"></script>
     <script>
         current_fixture_id = "#current-fixture";
     </script>
@@ -36,6 +37,13 @@
                        onkeyup="set_file_path(this, 'project.compilation.instructions', null, false);">
                     <div class="indented"><em>This is optional, but if included should point to a <code>.project.compilation.instructions</code>,
                         else it is inferred from the compilation file path and name above.</em></div>
+                </div>
+
+                <h3>Calibration</h3>
+                <div class='section'>
+                    <label for="ccc-selection">Calibration to use<em>(optional)</em></label>
+                    <select name="ccc-selection" id="ccc-selection"></select>
+                    <div class="indented"><em>Will use default as published in Zackrisson et. al. 2016 if not set.</em></div>
                 </div>
 
                 <h3>Output</h3>
@@ -121,6 +129,7 @@
     <script>
         get_fixtures();
         toggleManualRegridding($("#manual-regridding"));
+        createSelector($('#ccc-selection'));
     </script>
 </body>
 </html>

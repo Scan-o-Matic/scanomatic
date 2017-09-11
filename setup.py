@@ -20,8 +20,6 @@ package_dependencies = [
     'numpy', 'sh', 'nmap', 'configparse', 'skimage',
     'uuid', 'PIL', 'scipy', 'setproctitle', 'psutil', 'flask', 'requests', 'pandas']
 
-data_files = []
-
 scripts = [
     os.path.join("scripts", p) for p in [
         "scan-o-matic",
@@ -211,7 +209,16 @@ if len(sys.argv) > 1:
         url="www.gitorious.org/scannomatic",
         packages=packages,
 
-        package_data={"scanomatic": data_files},
+        package_data={
+            "scanomatic": [
+                'ui_server_data/*.html',
+                'ui_server_data/js/*.js',
+                'ui_server_data/style/*.css',
+                'ui_server_data/templates/*',
+                'images/*',
+            ]
+        },
+
         scripts=scripts,
         classifiers=[
             'Development Status :: 4 - Beta',
@@ -266,10 +273,9 @@ if len(sys.argv) > 1:
     # POST-INSTALL
     #
 
-    from setup_tools import install_data_files, install_launcher
+    from setup_tools import install_launcher
 
     _logger.info("Copying data and configuration files")
-    install_data_files(silent=silent_install)
     install_launcher()
     patch_bashrc_if_not_reachable(silent=silent_install)
     _logger.info("Post Setup Complete")
