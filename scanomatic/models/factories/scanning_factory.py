@@ -193,8 +193,6 @@ class ScanningModelFactory(AbstractModelFactory):
         'time_between_scans': float,
         'project_name': str,
         'directory_containing_project': str,
-        'project_tag': str,
-        'scanner_tag': str,
         'description': str,
         'plate_descriptions': (tuple, PlateDescription),
         'email': email_serializer,
@@ -219,6 +217,7 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :rtype : scanomatic.models.scanning_model.ScanningModel
         """
+
         return super(cls, ScanningModelFactory).create(**settings)
 
     @classmethod

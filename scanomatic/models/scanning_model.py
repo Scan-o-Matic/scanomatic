@@ -77,24 +77,33 @@ class ScanningAuxInfoModel(model.Model):
 
 class ScanningModel(model.Model):
 
-    def __init__(self, number_of_scans=217, time_between_scans=20,
-                 project_name="", directory_containing_project="",
-                 project_tag="", scanner_tag="", id="", start_time=0.0,
-                 description="", email="", pinning_formats=tuple(),
-                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU", computer="",
-                 auxillary_info=ScanningAuxInfoModel(),
-                 plate_descriptions=tuple(),
-                 version=scanomatic.__version__,
-                 scanning_program="",
-                 scanning_program_version="",
-                 scanning_program_params=tuple()):
+    def __init__(
+            self,
+            number_of_scans=217,
+            time_between_scans=20,
+            project_name="",
+            directory_containing_project="",
+            id="",
+            start_time=0.0,
+            description="",
+            email="",
+            pinning_formats=tuple(),
+            fixture="",
+            scanner=1,
+            scanner_hardware="EPSON V700",
+            mode="TPU",
+            computer="",
+            auxillary_info=ScanningAuxInfoModel(),
+            plate_descriptions=tuple(),
+            version=scanomatic.__version__,
+            scanning_program="",
+            scanning_program_version="",
+            scanning_program_params=tuple()):
 
         self.number_of_scans = number_of_scans
         self.time_between_scans = time_between_scans
         self.project_name = project_name
         self.directory_containing_project = directory_containing_project
-        self.project_tag = project_tag
-        self.scanner_tag = scanner_tag
         self.id = id
         self.description = description
         self.plate_descriptions = plate_descriptions
