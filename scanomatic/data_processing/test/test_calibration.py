@@ -26,6 +26,36 @@ def ccc():
     calibration.reload_cccs()
 
 
+def test_expand_data_lenghts(ccc):
+    data = calibration._collect_all_included_data(ccc)
+    counts = data.source_value_counts
+    exp_vals, _, _, _ = calibration._get_expanded_data(data)
+    assert all(np.sum(c) == len(v) for c, v in zip(counts, exp_vals))
+
+
+def test_expand_data_sums(ccc):
+
+    data = calibration._collect_all_included_data(ccc)
+    counts = data.source_value_counts
+    values = data.source_values
+    data_sums = np.array(
+        tuple(np.sum(np.array(c) * np.array(v))
+              for c, v in zip(counts, values)))
+
+    exp_vals, _, _, _ = calibration._get_expanded_data(data)
+    expanded_sums = np.array(tuple(v.sum() for v in exp_vals), dtype=np.float)
+    np.testing.assert_allclose(expanded_sums, data_sums)
+
+
+def test_expand_data_targets(ccc):
+
+    data = calibration._collect_all_included_data(ccc)
+    _, targets, _, _ = calibration._get_expanded_data(data)
+    np.testing.assert_allclose(
+        targets.astype(np.float),
+        data.target_value)
+
+
 def test_expand_vector_length():
 
     counts = [20, 3, 5, 77, 2, 35]
