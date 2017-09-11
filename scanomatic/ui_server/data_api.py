@@ -23,8 +23,7 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
 
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.fixture_models import GrayScaleAreaModel
-from scanomatic.models.analysis_model import (
-    COMPARTMENTS, VALUES, get_polynomial_coefficients_from_ccc)
+from scanomatic.models.analysis_model import COMPARTMENTS, VALUES
 from scanomatic.models.factories.analysis_factories import (
     AnalysisFeaturesFactory)
 
