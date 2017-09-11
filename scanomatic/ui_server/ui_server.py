@@ -227,7 +227,6 @@ def launch_server(host, port, debug):
             app_conf.power_manager.password = data_object["power_manager"]["password"]
             app_conf.power_manager.host = data_object["power_manager"]["host"]
             app_conf.power_manager.type = POWER_MANAGER_TYPE[data_object["power_manager"]["type"]]
-            app_conf.paths.projects_root = data_object["paths"]["projects_root"]
             app_conf.computer_human_name = data_object["computer_human_name"]
             app_conf.mail.warn_scanning_done_minutes_before = data_object["mail"]["warn_scanning_done_minutes_before"]
 

@@ -1097,7 +1097,7 @@ def add_external_data_to_ccc(identifier, data_file, report):
 
 
 @_validate_ccc_edit_request
-def constuct_polynomial(identifier, poly_name, power):
+def construct_polynomial(identifier, poly_name, power):
 
     ccc = __CCC[identifier]
     data_store = _collect_all_included_data(ccc)
