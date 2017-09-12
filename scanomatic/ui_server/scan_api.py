@@ -140,8 +140,10 @@ def add_routes(app):
                         sane.SCAN_MODES.TPU16: "16 bit Transparency",
                         sane.SCAN_MODES.COLOR: "Reflective Color"}
 
-        jsonify(success=True, is_endpoint=True,
-                mode_values=[m.name for m in modes],
-                mode_text=[
-                    (mode_to_text[m] if m in mode_to_text else m.name)
-                    for m in modes])
+        jsonify(
+            success=True,
+            is_endpoint=True,
+            mode_values=[m.name for m in modes],
+            mode_text=[
+                (mode_to_text[m] if m in mode_to_text else m.name)
+                for m in modes])
