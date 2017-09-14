@@ -33,26 +33,42 @@ def add_routes(app):
         if model is None:
             compile_instructions = [
                 convert_path_to_url("/api/compile/instructions", p) for p in
-                glob(os.path.join(path, Paths().project_compilation_instructions_pattern.format("*")))]
+                glob(os.path.join(
+                    path,
+                    Paths().project_compilation_instructions_pattern.format(
+                        "*")))
+            ]
 
         else:
             compile_instructions = [
                 convert_path_to_url("/api/compile/instructions", p) for p in
-                glob(os.path.join(os.path.dirname(path),
-                                  Paths().project_compilation_instructions_pattern.format("*")))]
+                glob(os.path.join(
+                    os.path.dirname(path),
+                    Paths().project_compilation_instructions_pattern.format(
+                        "*")))
+            ]
 
-        scan_instructions = [convert_path_to_url(base_url, c) for c in
-                             glob(os.path.join(path, Paths().scan_project_file_pattern.format("*")))]
+        scan_instructions = [
+            convert_path_to_url(base_url, c) for c in
+            glob(os.path.join(
+                path, Paths().scan_project_file_pattern.format("*")))]
 
         scan_logs = tuple(chain(((
             convert_path_to_url("/api/tools/logs/0/0", c),
-            convert_path_to_url("/api/tools/logs/WARNING_ERROR_CRITICAL/0/0", c)) for c in
-            glob(os.path.join(path, Paths().scan_log_file_pattern.format("*"))))))
+            convert_path_to_url(
+                "/api/tools/logs/WARNING_ERROR_CRITICAL/0/0", c)) for c in
+                glob(os.path.join(
+                    path, Paths().scan_log_file_pattern.format("*"))))))
 
         if model is not None:
 
             return jsonify(**json_response(
-                ["urls", "scan_instructions", "compile_instructions", "scan_logs"],
+                [
+                    "urls",
+                    "scan_instructions",
+                    "compile_instructions",
+                    "scan_logs"
+                ],
                 dict(
                     instructions={
                         'fixture': model.fixture,
@@ -67,17 +83,19 @@ def add_routes(app):
                         'project_name': model.project_name,
                         'scanner': model.scanner,
                         'scanner_hardware': model.scanner_hardware,
-                        'project_tag': model.project_tag,
-                        'scanner_tag': model.scanner_tag,
                         'auxillary_info': {
-                            'culture_freshness': model.auxillary_info.culture_freshness if
+                            'culture_freshness':
+                            model.auxillary_info.culture_freshness if
                             model.auxillary_info.culture_freshness else None,
-                            'culture_source': model.auxillary_info.culture_source.name if
+                            'culture_source':
+                            model.auxillary_info.culture_source.name if
                             model.auxillary_info.culture_source else None,
-                            'pinning_project_start_delay': model.auxillary_info.pinning_project_start_delay,
+                            'pinning_project_start_delay':
+                            model.auxillary_info.pinning_project_start_delay,
                             'plate_age': model.auxillary_info.plate_age,
                             'precultures': model.auxillary_info.precultures,
-                            'plate_storage': model.auxillary_info.plate_storage.name if
+                            'plate_storage':
+                            model.auxillary_info.plate_storage.name if
                             model.auxillary_info.plate_storage else None,
                             'stress_level': model.auxillary_info.stress_level,
                         },
@@ -89,30 +107,43 @@ def add_routes(app):
                     **get_search_results(path, base_url))))
         else:
             return jsonify(**json_response(
-                ["urls", "scan_instructions", "compile_instructions", "scan_logs"],
+                [
+                    "urls",
+                    "scan_instructions",
+                    "compile_instructions",
+                    "scan_logs"
+                ],
                 dict(
                     compile_instructions=compile_instructions,
                     scan_instructions=scan_instructions,
                     scan_logs=scan_logs,
                     **get_search_results(path, base_url))))
 
-
     @app.route("/api/scan/sane/models")
     def get_scanner_types():
 
-        jsonify(success=True, is_endpoint=True, models=sane.get_scanner_models())
-
+        jsonify(
+            success=True,
+            is_endpoint=True,
+            models=sane.get_scanner_models())
 
     @app.route("/api/scan/sane/modes/<model>")
     def get_scanner_modes(model):
         modes = sane.get_scanning_modes(model)
         if not modes:
-            jsonify(success=False, is_endpoint=True, reason="Scanner model '{0}' unknown".format(model))
+            jsonify(
+                success=False,
+                is_endpoint=True,
+                reason="Scanner model '{0}' unknown".format(model))
 
         mode_to_text = {sane.SCAN_MODES.TPU: "Transparency",
                         sane.SCAN_MODES.TPU16: "16 bit Transparency",
                         sane.SCAN_MODES.COLOR: "Reflective Color"}
 
-        jsonify(success=True, is_endpoint=True,
-                mode_values=[m.name for m in modes],
-                mode_text=[(mode_to_text[m] if m in mode_to_text else m.name) for m in modes])
+        jsonify(
+            success=True,
+            is_endpoint=True,
+            mode_values=[m.name for m in modes],
+            mode_text=[
+                (mode_to_text[m] if m in mode_to_text else m.name)
+                for m in modes])

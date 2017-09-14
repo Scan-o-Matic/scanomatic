@@ -60,12 +60,18 @@ class COMPILE_STATE(Enum):
 
 class ScanningAuxInfoModel(model.Model):
 
-    def __init__(self, stress_level=-1, plate_storage=PLATE_STORAGE.Unknown, plate_age = -1.0,
-                 pinning_project_start_delay=-1, precultures=-1, culture_freshness=-1,
-                 culture_source=CULTURE_SOURCE.Unknown):
+    def __init__(
+            self,
+            stress_level=-1,
+            plate_storage=PLATE_STORAGE.Unknown,
+            plate_age=-1.0,
+            pinning_project_start_delay=-1,
+            precultures=-1,
+            culture_freshness=-1,
+            culture_source=CULTURE_SOURCE.Unknown):
 
         self.stress_level = stress_level
-        self.plate_storage=plate_storage
+        self.plate_storage = plate_storage
         self.plate_age = plate_age
         self.pinning_project_start_delay = pinning_project_start_delay
         self.precultures = precultures
@@ -77,24 +83,33 @@ class ScanningAuxInfoModel(model.Model):
 
 class ScanningModel(model.Model):
 
-    def __init__(self, number_of_scans=217, time_between_scans=20,
-                 project_name="", directory_containing_project="",
-                 project_tag="", scanner_tag="", id="", start_time=0.0,
-                 description="", email="", pinning_formats=tuple(),
-                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU", computer="",
-                 auxillary_info=ScanningAuxInfoModel(),
-                 plate_descriptions=tuple(),
-                 version=scanomatic.__version__,
-                 scanning_program="",
-                 scanning_program_version="",
-                 scanning_program_params=tuple()):
+    def __init__(
+            self,
+            number_of_scans=217,
+            time_between_scans=20,
+            project_name="",
+            directory_containing_project="",
+            id="",
+            start_time=0.0,
+            description="",
+            email="",
+            pinning_formats=tuple(),
+            fixture="",
+            scanner=1,
+            scanner_hardware="EPSON V700",
+            mode="TPU",
+            computer="",
+            auxillary_info=ScanningAuxInfoModel(),
+            plate_descriptions=tuple(),
+            version=scanomatic.__version__,
+            scanning_program="",
+            scanning_program_version="",
+            scanning_program_params=tuple()):
 
         self.number_of_scans = number_of_scans
         self.time_between_scans = time_between_scans
         self.project_name = project_name
         self.directory_containing_project = directory_containing_project
-        self.project_tag = project_tag
-        self.scanner_tag = scanner_tag
         self.id = id
         self.description = description
         self.plate_descriptions = plate_descriptions
@@ -139,8 +154,19 @@ class ScannerOwnerModel(model.Model):
 
 class ScannerModel(model.Model):
 
-    def __init__(self, socket=-1, scanner_name="", owner=None, usb="", model='', power=False, last_on=-1, last_off=-1,
-                 expected_interval=0, email="", warned=False, claiming=False, reported=False):
+    def __init__(
+            self,
+            socket=-1,
+            scanner_name="",
+            owner=None, usb="",
+            model='',
+            power=False,
+            last_on=-1,
+            last_off=-1,
+            expected_interval=0,
+            email="", warned=False,
+            claiming=False,
+            reported=False):
 
         self.socket = socket
         self.scanner_name = scanner_name
@@ -161,14 +187,29 @@ class ScannerModel(model.Model):
 
 class ScanningModelEffectorData(model.Model):
 
-    def __init__(self, current_cycle_step=SCAN_CYCLE.Wait, current_step_start_time=-1, current_image=-1,
-                 current_image_path="", current_image_path_pattern="",
-                 previous_scan_cycle_start=-1.0, current_scan_time=-1.0, scanner_model='',
-                 scanning_image_name="", usb_port="", scanning_thread=None, scan_success=False,
-                 compile_project_model=None, known_file_size=0, warned_file_size=False, warned_scanner_error=False,
-                 warned_terminated=False,
-                 warned_scanner_usb=False, warned_discspace=False, informed_close_to_end=False,
-                 compilation_state=COMPILE_STATE.NotInitialized):
+    def __init__(
+            self,
+            current_cycle_step=SCAN_CYCLE.Wait,
+            current_step_start_time=-1,
+            current_image=-1,
+            current_image_path="",
+            current_image_path_pattern="",
+            previous_scan_cycle_start=-1.0,
+            current_scan_time=-1.0,
+            scanner_model='',
+            scanning_image_name="",
+            usb_port="",
+            scanning_thread=None,
+            scan_success=False,
+            compile_project_model=None,
+            known_file_size=0,
+            warned_file_size=False,
+            warned_scanner_error=False,
+            warned_terminated=False,
+            warned_scanner_usb=False,
+            warned_discspace=False,
+            informed_close_to_end=False,
+            compilation_state=COMPILE_STATE.NotInitialized):
 
         self.current_cycle_step = current_cycle_step
         self.current_step_start_time = current_step_start_time
