@@ -256,8 +256,9 @@ function Extract(button) {
     $.ajax({
         url: '?action=extract',
         data: {
-            analysis_directory: $("#extract").val()
-               },
+            analysis_directory: $("#extract").val(),
+            keep_qc: $('#keep-qc').is(':checked') ? 0 : 1,
+        },
         method: 'POST',
         success: function(data, textStatus) {
             if (data.success) {
