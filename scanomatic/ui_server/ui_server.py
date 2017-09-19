@@ -490,25 +490,26 @@ def launch_server(host, port, debug):
                     for p in plate_descriptions):
 
                 plate_descriptions = tuple(
-                    {"index": i, "description": p} for i, p in
-                    enumerate(plate_descriptions))
+                    {"index": i, "description": p}
+                    for i, p in enumerate(plate_descriptions))
 
             m = ScanningModelFactory.create(
-                 number_of_scans=data_object.get("number_of_scans"),
-                 time_between_scans=data_object.get("time_between_scans"),
-                 project_name=project_name,
-                 directory_containing_project=project_root,
-                 description=data_object.get("description"),
-                 email=data_object.get("email"),
-                 pinning_formats=data_object.get("pinning_formats"),
-                 fixture=data_object.get("fixture"),
-                 scanner=data_object.get("scanner"),
-                 scanner_hardware=data_object.get("scanner_hardware")
-                 if "scanner_hardware" in
-                 request.json else "EPSON V700",
-                 mode=data_object.get("mode", "TPU"),
-                 plate_descriptions=plate_descriptions,
-                 auxillary_info=data_object.get("auxillary_info"),
+                number_of_scans=data_object.get("number_of_scans"),
+                time_between_scans=data_object.get("time_between_scans"),
+                project_name=project_name,
+                directory_containing_project=project_root,
+                description=data_object.get("description"),
+                email=data_object.get("email"),
+                pinning_formats=data_object.get("pinning_formats"),
+                fixture=data_object.get("fixture"),
+                scanner=data_object.get("scanner"),
+                scanner_hardware=data_object.get("scanner_hardware")
+                if "scanner_hardware" in request.json else "EPSON V700",
+                mode=data_object.get("mode", "TPU"),
+                plate_descriptions=plate_descriptions,
+                cell_count_calibration=data_object.get(
+                    "cell_count_calibration"),
+                auxillary_info=data_object.get("auxillary_info"),
             )
 
             validates = ScanningModelFactory.validate(m)

@@ -316,6 +316,7 @@ function StartExperiment(button) {
             fixture: $("#current-fixture").val(),
             scanner: parseInt($("#current-scanner").val()),
             plate_descriptions: get_descriptions(),
+            cell_count_calibration: $('#ccc-selection').val(),
             auxillary_info: auxillary_info
         }
 

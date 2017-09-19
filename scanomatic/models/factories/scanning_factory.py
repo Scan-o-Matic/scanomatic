@@ -1,3 +1,8 @@
+import os
+import re
+import string
+from types import StringTypes
+
 from scanomatic.generics.abstract_model_factory import (
     AbstractModelFactory, email_serializer)
 from scanomatic.models.scanning_model import (
@@ -6,11 +11,8 @@ from scanomatic.models.scanning_model import (
 import scanomatic.io.fixtures as fixtures
 import scanomatic.io.app_config as app_config
 from scanomatic.models.rpc_job_models import RPCjobModel
-
-import os
-import re
-import string
-from types import StringTypes
+from scanomatic.data_processing.calibration import (
+    get_polynomial_coefficients_from_ccc)
 
 
 class PlateDescriptionFactory(AbstractModelFactory):
@@ -210,6 +212,8 @@ class ScanningModelFactory(AbstractModelFactory):
         'computer': str,
         'version': str,
         'id': str,
+        'cell_count_calibration': (tuple, float),
+        'cell_count_calibration_id': str,
         'auxillary_info': ScanningAuxInfoModel,
         'scanning_program': str,
         'scanning_program_version': str,
@@ -220,9 +224,18 @@ class ScanningModelFactory(AbstractModelFactory):
     def create(cls, **settings):
         """
 
-
         :rtype : scanomatic.models.scanning_model.ScanningModel
         """
+        if (not settings.get('cell_count_calibration_id', None) and
+                not settings.get('cell_count_calibration', None)):
+
+            settings['cell_count_calibration_id'] = 'default'
+
+        if (not settings.get('cell_count_calibration', None)):
+
+            settings['cell_count_calibration'] = \
+                get_polynomial_coefficients_from_ccc(
+                    settings['cell_count_calibration_id'])
 
         return super(cls, ScanningModelFactory).create(**settings)
 
@@ -384,7 +397,7 @@ class ScanningModelFactory(AbstractModelFactory):
         """
 
         :type model: scanomatic.models.scanning_model.ScanningModel
-        """
+         """
         if not not isinstance(
                 model.plate_descriptions,
                 cls.STORE_SECTION_SERIALIZERS[

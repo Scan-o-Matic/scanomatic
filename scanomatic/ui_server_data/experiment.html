@@ -10,6 +10,7 @@
     <script src="/js/fixtures.js?ver=_-_VERSIONTAG_-_"></script>
     <script src="/js/scanners.js?ver=_-_VERSIONTAG_-_"></script>
     <script src="/js/experiment.js?ver=_-_VERSIONTAG_-_"></script>
+    <script src="/js/calibration.js?ver=_-_VERSIONTAG_-_"></script>
     <script>
         current_fixture_id = "#current-fixture";
         current_scanner_id = "#current-scanner";
@@ -128,6 +129,15 @@
             <div class="section-frame">
                 <div id="pinnings" class="section"><em>
                     Please select a fixture first.
+                </em></div>
+            </div>
+
+            <h3>Calibration</h3>
+            <div class='section'>
+                <label for="ccc-selection">Calibration to use<em>(optional)</em></label>
+                <select name="ccc-selection" id="ccc-selection"></select>
+                <div class="indented"><em>
+                    Will use default as published in Zackrisson et. al. 2016 if not set.
                 </em></div>
             </div>
 
@@ -291,6 +301,7 @@
         get_free_scanners(current_scanner_id);
         get_fixtures();
         InputEnabled($("#submit-button"), false);
+        createSelector($('#ccc-selection'));
     </script>
 </body>
 </html>
