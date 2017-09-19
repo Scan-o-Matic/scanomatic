@@ -16,39 +16,83 @@
     <div id="cont">
         <h2 id="version-info">Checking version...</h2>
         <div class="section">
-            <p><em>If Scan-o-Matic currently have jobs it is working on or in queue, it is generally
-                not recommended to do anything to the server. In most cases it still should be alright, but
-            some cases remain to be fully tested and verified (especially rebooting server while scanning projects
-            are running). Shutting down the server while scanning experiments are running will always cause issues as
-            the server is needed to acquire scanners.</em></p>
+            <p><em>
+                If Scan-o-Matic currently have jobs it is working on or in
+                queue, it is generally not recommended to do anything to the
+                server.  In most cases it still should be alright, but some
+                cases remain to be fully tested and verified (especially
+                rebooting server while scanning projects are running).
+                Shutting down the server while scanning experiments are running
+                will always cause issues as the server is needed to acquire
+                scanners.
+            </em></p>
         </div>
         <h2>Server</h2>
         <div class="section-frame" id="server-actions">
-            <button type="button" name="Server" value="Reboot" onclick="javascript:server_reboot(this);">Reboot</button>
-            <button type="button" name="Server" value="Shutdown" onclick="javascript:server_shutdown(this);">Shutdown</button>
-            <button type="button" name="Server" value="Kill" onclick="javascript:server_kill(this);">Kill</button>
-            <button type="button" name="Server" value="Launch" onclick="javascript:server_launch(this);">Launch</button>
+            <button type="button" name="Server" value="Reboot"
+                    onclick="javascript:server_reboot(this);">
+                Reboot
+            </button>
+            <button type="button" name="Server" value="Shutdown"
+                    onclick="javascript:server_shutdown(this);">
+                Shutdown
+            </button>
+            <button type="button" name="Server" value="Kill"
+                    onclick="javascript:server_kill(this);">
+                Kill
+            </button>
+            <button type="button" name="Server" value="Launch"
+                    onclick="javascript:server_launch(this);">
+                Launch
+            </button>
         </div>
         <h2>Application</h2>
         <div class="section-frame" id="application-actions">
-            <p><em>It should be fine to close or reboot the application while things are running.</em></p>
+            <p><em>
+                It should be fine to close or reboot the application while
+                things are running.
+            </em></p>
 
-            <button type="button" name="Application" value="Reboot" onclick="javascript:app_reboot(this);">Reboot</button>
-            <button type="button" name="Application" value="Shutdown" onclick="javascript:app_shutdown(this);">Shutdown</button>
+            <button type="button" name="Application" value="Reboot"
+                    onclick="javascript:app_reboot(this);">
+                Reboot
+            </button>
+            <button type="button" name="Application" value="Shutdown"
+                    onclick="javascript:app_shutdown(this);">
+                Shutdown
+            </button>
         </div>
         <h2>Application & Server</h2>
         <div class="section-frame" id="joint-actions">
-            <button type="button" name="Joint" value="Reboot" onclick="javascript:app_server_reboot(this);">Reboot</button>
-            <button type="button" name="Joint" value="Shutdown" onclick="javascript:app_server_shutdown(this);">Shutdown</button>
+            <button type="button" name="Joint" value="Reboot"
+                    onclick="javascript:app_server_reboot(this);">
+                Reboot
+            </button>
+            <button type="button" name="Joint" value="Shutdown"
+                    onclick="javascript:app_server_shutdown(this);">
+                Shutdown
+            </button>
         </div>
 
         <h2>Power Manager</h2>
         <div class="section-frame" id="power-manager">
-            <p>You can test if the running scan-o-matic server knows the power-manager and if it is reachable.</p>
-            <p>Clicking <a href="/api/power_manager/test">here</a> should redirect you to the login page of the power manager.
-            If you get an unformatted page with some data, there should be a reason for the fail in it.
-                If you seem to be redirected to a page that won't load you may need rebooting the router and/or power manager.</p>
-            <p>You can also request unformatted info on the current status for the power manager by clicking <a href="/api/power_manager/status">here</a>.</p>
+            <p>
+                You can test if the running scan-o-matic server knows the
+                power-manager and if it is reachable.
+            </p>
+            <p>
+                Clicking <a href="/api/power_manager/test">here</a> should
+                redirect you to the login page of the power manager.  If you
+                get an unformatted page with some data, there should be a
+                reason for the fail in it.  If you seem to be redirected to a
+                page that won't load you may need rebooting the router and/or
+                power manager.
+            </p>
+            <p>
+                You can also request unformatted info on the current status for
+                the power manager by clicking
+                <a href="/api/power_manager/status">here</a>.
+            </p>
         </div>
 
         <h2>Upgrade</h2>
