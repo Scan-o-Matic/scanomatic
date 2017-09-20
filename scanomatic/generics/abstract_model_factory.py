@@ -1,16 +1,18 @@
-from scanomatic.generics.model import Model
-import scanomatic.generics.decorators as decorators
-from scanomatic.io.logger import Logger
-
 import types
+from types import GeneratorType
 import copy
 import warnings
 import os
-from enum import Enum
-from ConfigParser import ConfigParser, NoSectionError
+from numbers import Number
 import cPickle
-from types import GeneratorType
 from collections import defaultdict
+from ConfigParser import ConfigParser, NoSectionError
+
+from enum import Enum
+
+from scanomatic.generics.model import Model
+import scanomatic.generics.decorators as decorators
+from scanomatic.io.logger import Logger
 
 
 class UnserializationError(ValueError): pass
@@ -519,6 +521,11 @@ class AbstractModelFactory(object):
         else:
             return True
 
+    @staticmethod
+    def _is_number(obj):
+
+        return isinstance(obj, Number)
+
 
 def _is_pinning_format(pinning_format):
     # noinspection PyBroadException
@@ -588,7 +595,7 @@ class _SectionsLink(object):
     def has_link(model):
 
         return model in _SectionsLink._LINKS
-    
+
     @property
     def config_parser(self):
         """

@@ -423,6 +423,20 @@ class ScanningModelFactory(AbstractModelFactory):
 
         return True
 
+
+    @classmethod
+    def _validate_cell_count_calibration(cls, model):
+        """
+
+        :type model: scanomatic.models.scanning_model.ScanningModel
+        """
+        if (cls._is_tuple_or_list(model.cell_count_calibration)
+                and all([
+                    cls._is_number(c) and c >= 0
+                    for c in model.cell_count_calibration])):
+            return True
+        return model.FIELD_TYPES.cell_count_calibration
+
     @classmethod
     def _validate_aux_info(cls, model):
         """
