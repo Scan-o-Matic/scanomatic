@@ -3,7 +3,7 @@ from types import GeneratorType
 import copy
 import warnings
 import os
-from numbers import Number
+from numbers import Real
 import cPickle
 from collections import defaultdict
 from ConfigParser import ConfigParser, NoSectionError
@@ -522,9 +522,9 @@ class AbstractModelFactory(object):
             return True
 
     @staticmethod
-    def _is_number(obj):
+    def _is_real_number(obj):
 
-        return isinstance(obj, Number)
+        return isinstance(obj, Real)
 
 
 def _is_pinning_format(pinning_format):

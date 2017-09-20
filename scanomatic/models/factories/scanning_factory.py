@@ -432,7 +432,7 @@ class ScanningModelFactory(AbstractModelFactory):
         """
         if (cls._is_tuple_or_list(model.cell_count_calibration)
                 and all([
-                    cls._is_number(c) and c >= 0
+                    cls._is_real_number(c) and c >= 0
                     for c in model.cell_count_calibration])):
             return True
         return model.FIELD_TYPES.cell_count_calibration
