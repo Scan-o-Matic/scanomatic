@@ -406,8 +406,8 @@ def launch_server(host, port, debug):
                     compilation=path_compilation,
                     compile_instructions=path_compile_instructions,
                     output_directory=data_object.get("output_directory"),
-                    cell_count_calibration=data_object.get(
-                        "cell_count_calibration"),
+                    cell_count_calibration_id=data_object.get(
+                        "cell_count_calibration_id"),
                     one_time_positioning=bool(data_object.get(
                         'one_time_positioning', default=1, type=int)),
                     chain=bool(data_object.get('chain', default=1, type=int)))
@@ -507,8 +507,8 @@ def launch_server(host, port, debug):
                 if "scanner_hardware" in request.json else "EPSON V700",
                 mode=data_object.get("mode", "TPU"),
                 plate_descriptions=plate_descriptions,
-                cell_count_calibration=data_object.get(
-                    "cell_count_calibration"),
+                cell_count_calibration_id=data_object.get(
+                    "cell_count_calibration_id"),
                 auxillary_info=data_object.get("auxillary_info"),
             )
 

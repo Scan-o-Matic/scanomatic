@@ -105,7 +105,6 @@ class ScanningModel(model.Model):
             scanning_program="",
             scanning_program_version="",
             scanning_program_params=tuple(),
-            cell_count_calibration=None,
             cell_count_calibration_id=None):
 
         self.number_of_scans = number_of_scans
@@ -127,7 +126,6 @@ class ScanningModel(model.Model):
         self.mode = mode
         self.computer = computer
         self.start_time = start_time
-        self.cell_count_calibration = cell_count_calibration
         self.cell_count_calibration_id = cell_count_calibration_id
         self.auxillary_info = auxillary_info
         self.version = version

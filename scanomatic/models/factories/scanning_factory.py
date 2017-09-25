@@ -212,7 +212,6 @@ class ScanningModelFactory(AbstractModelFactory):
         'computer': str,
         'version': str,
         'id': str,
-        'cell_count_calibration': (tuple, float),
         'cell_count_calibration_id': str,
         'auxillary_info': ScanningAuxInfoModel,
         'scanning_program': str,
@@ -226,16 +225,9 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :rtype : scanomatic.models.scanning_model.ScanningModel
         """
-        if (not settings.get('cell_count_calibration_id', None) and
-                not settings.get('cell_count_calibration', None)):
+        if not settings.get('cell_count_calibration_id', None):
 
             settings['cell_count_calibration_id'] = 'default'
-
-        if (not settings.get('cell_count_calibration', None)):
-
-            settings['cell_count_calibration'] = \
-                get_polynomial_coefficients_from_ccc(
-                    settings['cell_count_calibration_id'])
 
         return super(cls, ScanningModelFactory).create(**settings)
 
@@ -422,20 +414,6 @@ class ScanningModelFactory(AbstractModelFactory):
                 return model.FIELD_TYPES.plate_descriptions
 
         return True
-
-
-    @classmethod
-    def _validate_cell_count_calibration(cls, model):
-        """
-
-        :type model: scanomatic.models.scanning_model.ScanningModel
-        """
-        if (cls._is_tuple_or_list(model.cell_count_calibration)
-                and all([
-                    cls._is_real_number(c) and c >= 0
-                    for c in model.cell_count_calibration])):
-            return True
-        return model.FIELD_TYPES.cell_count_calibration
 
     @classmethod
     def _validate_aux_info(cls, model):
