@@ -26,6 +26,10 @@ class TestAnalysisModels:
 
         assert hasattr(analysis_model, 'cell_count_calibration')
 
+    def test_model_has_ccc_id(self, analysis_model):
+
+        assert hasattr(analysis_model, 'cell_count_calibration_id')
+
     def test_model_can_serialize(self, analysis_model):
 
         serial = AnalysisModelFactory.serializer.serialize(analysis_model)
@@ -59,8 +63,8 @@ class TestAnalysisModels:
         'scanomatic.models.factories.analysis_factories.get_polynomial_coefficients_from_ccc',
         return_value=[1, 3, 9, 27])
     def test_can_create_using_ccc_id(self, my_mock):
-        model = AnalysisModelFactory.create(
-            cell_count_calibration_id='mock')
+
+        model = AnalysisModelFactory.create(cell_count_calibration_id='mock')
         assert model.cell_count_calibration_id == 'mock'
         np.testing.assert_allclose(model.cell_count_calibration, [1, 3, 9, 27])
 

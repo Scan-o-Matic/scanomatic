@@ -8,6 +8,7 @@ from scanomatic.models import fixture_models
 from scanomatic.models.factories import fixture_factories
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
+from scanomatic.data_processing.calibration import get_active_cccs
 
 
 class CompileImageFactory(AbstractModelFactory):
@@ -104,6 +105,7 @@ class CompileProjectFactory(AbstractModelFactory):
         'fixture_type': compile_project_model.FIXTURE,
         'fixture_name': str,
         'overwrite_pinning_matrices': (tuple, tuple, int),
+        'cell_count_calibration_id': str,
     }
 
     @classmethod
@@ -190,6 +192,16 @@ class CompileProjectFactory(AbstractModelFactory):
                 return model.FIELD_TYPES.fixture_name
         else:
             return model.FIELD_TYPES.fixture_type
+
+    @classmethod
+    def _validate_cell_count_calibration_id(cls, model):
+        """
+
+        :type model: scanomatic.models.scanning_model.ScanningModel
+        """
+        if model.cell_count_calibration_id in get_active_cccs():
+            return True
+        return model.FIELD_TYPES.cell_count_calibration
 
 
 class CompileImageAnalysisFactory(AbstractModelFactory):
