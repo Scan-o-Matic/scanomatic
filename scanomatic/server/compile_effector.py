@@ -217,10 +217,13 @@ Scan-o-Matic""", self._compile_job)
     def _spawn_analysis(self):
 
         analysis_model = AnalysisModelFactory.create(
-                    chain=True,
-                    compile_instructions=self._compile_instructions_path,
-                    compilation=self._compile_job.path,
-                    email=self._compile_job.email)
+            chain=True,
+            compile_instructions=self._compile_instructions_path,
+            compilation=self._compile_job.path,
+            email=self._compile_job.email,
+            cell_count_calibration_id=\
+                self._compile_job.cell_count_calibration_id,
+        )
 
         if self._compile_job.overwrite_pinning_matrices:
             analysis_model.pinning_matrices = self._compile_job.overwrite_pinning_matrices

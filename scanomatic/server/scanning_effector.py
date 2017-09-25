@@ -111,7 +111,9 @@ class ScannerEffector(proc_effector.ProcessEffector):
             else COMPILE_ACTION.InitiateAndSpawnAnalysis,
             path=paths_object.get_original_compilation_path_from_scan_model(self._scanning_job),
             fixture_type=FIXTURE.Global,
-            fixture_name=self._scanning_job.fixture)
+            fixture_name=self._scanning_job.fixture,
+            cell_count_calibration_id=self._scanning_job.cell_count_calibration_id
+        )
 
         self._scanning_effector_data.compile_project_model.images = []
 
