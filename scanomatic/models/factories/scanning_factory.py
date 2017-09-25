@@ -11,8 +11,7 @@ from scanomatic.models.scanning_model import (
 import scanomatic.io.fixtures as fixtures
 import scanomatic.io.app_config as app_config
 from scanomatic.models.rpc_job_models import RPCjobModel
-from scanomatic.data_processing.calibration import (
-    get_polynomial_coefficients_from_ccc)
+from scanomatic.data_processing.calibration import get_active_cccs
 
 
 class PlateDescriptionFactory(AbstractModelFactory):
@@ -414,6 +413,16 @@ class ScanningModelFactory(AbstractModelFactory):
                 return model.FIELD_TYPES.plate_descriptions
 
         return True
+
+    @classmethod
+    def _validate_cell_count_calibration_id(cls, model):
+        """
+
+        :type model: scanomatic.models.scanning_model.ScanningModel
+        """
+        if model.cell_count_calibration_id in get_active_cccs():
+            return True
+        return model.FIELD_TYPES.cell_count_calibration
 
     @classmethod
     def _validate_aux_info(cls, model):

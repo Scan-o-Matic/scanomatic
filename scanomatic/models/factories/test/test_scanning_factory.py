@@ -3,6 +3,12 @@ import pytest
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
 
+@pytest.fixture(scope='function')
+def scanning_model():
+
+    return ScanningModelFactory.create()
+
+
 class TestCreatingScanningModel:
 
     def test_creating_valid_minimal_model(self):
@@ -33,3 +39,16 @@ class TestCreatingScanningModel:
         model = ScanningModelFactory.create()
 
         assert ScanningModelFactory.validate(model) is False
+
+    def test_model_has_ccc_id(self, scanning_model):
+
+        assert hasattr(scanning_model, 'cell_count_calibration_id')
+
+    def test_can_create_using_default_ccc(self, scanning_model):
+
+        assert scanning_model.cell_count_calibration_id == 'default'
+
+    def test_can_create_using_ccc_id(self):
+
+        model = ScanningModelFactory.create(cell_count_calibration_id='foo')
+        assert model.cell_count_calibration_id == 'foo'
