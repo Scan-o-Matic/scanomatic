@@ -25,6 +25,8 @@ from . import scan_api
 from . import management_api
 from . import tools_api
 from . import data_api
+from . import settings_api
+from . import experiment_api
 from . import help_ui
 from . import settings_ui
 from . import status_ui
@@ -81,7 +83,7 @@ def launch_server(host, port, debug):
     settings_ui.add_routes(app)
     status_ui.add_routes(app, rpc_client)
     qc_norm_ui.add_routes(app)
-    experiment_ui.add_routes(app, rpc_client, _LOGGER)
+    experiment_ui.add_routes(app)
 
     management_api.add_routes(app, rpc_client)
     tools_api.add_routes(app)
@@ -91,6 +93,8 @@ def launch_server(host, port, debug):
     scan_api.add_routes(app)
     data_api.add_routes(app, rpc_client, debug)
     calibration_api.add_routes(app)
+    settings_api.add_routes(app)
+    experiment_api.add_routes(app, rpc_client, _LOGGER)
 
     if debug:
         CORS(app)
