@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Cell Count Calibration</title>
@@ -326,7 +326,7 @@
                 function setCccImageDataError(data) {
                     alert("Error while setting up the images! " + data.responseText);
                 }
-                
+
                 function setCccImageDataSuccess(data) {
                     if (data.success) {
                         $("#imProgress4").toggle();
@@ -361,7 +361,7 @@
                     if (data.success) {
                         $("#imProgress6").toggle();
                         //store target_values and source_values to QC graph ???
-                       
+
                         var fixtureName = getSelectedFixtureName();
                         GetFixturePlates(fixtureName, function(data) {
                             createFixturePlateSelection(data);
@@ -371,7 +371,7 @@
                         alert("Error while starting grayscale analysis:" + data.reason);
                 }
 
-                
+
                 function startGridding() {
                     var values = [];
                     var cbs = document.forms["frmPlateSeclection"].elements["ImagePlates"];
@@ -486,7 +486,7 @@
                         var img = new Image;
                         img.src = GetSliceImageURL(scope.cccId, scope.cccImageId, 1);
                         img.custScope = scope;
-                        
+
                         img.onload = function () {
                             var scope = img.custScope;
                             var canvas = document.getElementById('cvsPlateGrid');
@@ -572,7 +572,7 @@
                     else
                         scope.ColonyNotCompressed = scope.ColonyNotCompressed + 1;
 
-                    
+
                 }
 
                 function setColonyCompressionError(data) {
@@ -599,12 +599,16 @@
                             <p class="validateTips">All form fields are required.</p>
                             <form>
                                 <fieldset>
-                                    <label for="inSpecies">Species</label>
-                                    <input type="text" name="inSpecies" id="inSpecies" value="" class="text ui-widget-content ui-corner-all">
-                                    <label for="inReference">Reference/Contact</label>
-                                    <input type="text" name="inReference" id="inReference" value="" class="text ui-widget-content ui-corner-all">
+                                    <label for="inSpecies">
+                                        Species
+                                    </label>
+                                    <input type="text" name="inSpecies" id="inSpecies" value="" class="text ui-widget-content ui-corner-all"/>
+                                    <label for="inReference">
+                                        Reference/Contact
+                                    </label>
+                                    <input type="text" name="inReference" id="inReference" value="" class="text ui-widget-content ui-corner-all"/>
                                     <!-- Allow form submission with keyboard without duplicating the dialog button -->
-                                    <input type="submit" tabindex="-1" style="position: absolute; top: -1000px">
+                                    <input type="submit" tabindex="-1" style="position: absolute; top: -1000px"/>
                                 </fieldset>
                             </form>
                         </div>
@@ -622,7 +626,7 @@
                                     <tr class="ui-widget-header ">
                                         <th>Identifier</th>
                                         <th>Access Token</th>
-                                        <th>Specie</th>
+                                        <th>Species</th>
                                         <th>Reference</th>
                                     </tr>
                                 </thead>
@@ -634,8 +638,12 @@
                 <div class="row">
                     <div class="col-md-12 " >
                         <div class="floating-box" style="width: 100%; horiz-align: center">
-                            <div style="margin-left: 10px; float: left" id="divFixtureSelector">Fixture:</div>
-                            <div style="margin-left: 10px; float: left" id="divPinningFormatsSelector">Format:</div>
+                            <div style="margin-left: 10px; float: left" id="divFixtureSelector">
+                                Fixture:
+                            </div>
+                            <div style="margin-left: 10px; float: left" id="divPinningFormatsSelector">
+                                Format:
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -645,20 +653,43 @@
                             <input type="file" name="imageUpload" id="imageUpload" accept="image/tiff" />
                         </div>
                         <div style="margin-left: 10px; float: left">
-                            <button id="btnUploadImage" class="btn btn-default btn-xs">Upload</button>
+                            <button id="btnUploadImage" class="btn btn-default btn-xs">
+                                Upload
+                            </button>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
                         <ul id="listProgress_Stage1"style="width:40%">
-                            <li id="imProgress0" class="list-group-item"><span class="glyphicon glyphicon-refresh spinning rightPadding" aria-hidden="true"></span>Processing Image ...</li>
-                            <li id="imProgress1" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Upload to client</li>
-                            <li id="imProgress2" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Process markers</li>
-                            <li id="imProgress3" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Upload to server</li>
-                            <li id="imProgress4" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Set paramaters</li>
-                            <li id="imProgress5" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Slice image</li>
-                            <li id="imProgress6" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Analyze grayscale</li>
+                            <li id="imProgress0" class="list-group-item">
+                                <span class="glyphicon glyphicon-refresh spinning rightPadding" aria-hidden="true"></span>
+                                Processing Image ...
+                            </li>
+                            <li id="imProgress1" class="list-group-item">
+                                <span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>
+                                Upload to client
+                            </li>
+                            <li id="imProgress2" class="list-group-item">
+                                <span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>
+                                Process markers
+                            </li>
+                            <li id="imProgress3" class="list-group-item">
+                                <span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>
+                                Upload to server
+                            </li>
+                            <li id="imProgress4" class="list-group-item">
+                                <span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>
+                                Set paramaters
+                            </li>
+                            <li id="imProgress5" class="list-group-item">
+                                <span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>
+                                Slice image
+                            </li>
+                            <li id="imProgress6" class="list-group-item">
+                                <span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>
+                                Analyze grayscale
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -666,16 +697,18 @@
                     <div class="col-md-12">
                         <div id="divImagePlatesSelection">
                             <form id="frmPlateSeclection">
-                                
+
                             </form>
-                            <button id="btnUploadGridding" class="btn btn-default btn-xs">Start</button>
+                            <button id="btnUploadGridding" class="btn btn-default btn-xs">
+                                Start
+                            </button>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
                         <div id="divColony">
-                            
+
                         </div>
                     </div>
                 </div>
@@ -687,16 +720,8 @@
                     </div>
                 </div>
             </div>
-           
 
         </div>
     </div>
 </body>
-
-
-
-
-
-
-
 </html>
