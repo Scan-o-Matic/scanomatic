@@ -127,7 +127,6 @@ def add_routes(app, rpc_client, logger):
             400,
             reason='Action needed'.format(action))
 
-
     @app.route("/analysis", methods=['post'])
     def _analysis_api():
 

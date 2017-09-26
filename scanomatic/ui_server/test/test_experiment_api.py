@@ -41,7 +41,9 @@ class TestFeatureExtractEndpoint:
         )
         assert response.status_code != 200
 
-    @patch('scanomatic.ui_server.experiment_api.FeaturesFactory._validate_analysis_directory', return_value=True)
+    @patch(
+        'scanomatic.ui_server.experiment_api.FeaturesFactory._validate_analysis_directory',
+        return_value=True)
     def test_keep_previous_qc(self, validator_mock, test_app):
 
         test_app.rpc_client.create_feature_extract_job.return_value = 'Hi'
@@ -63,8 +65,9 @@ class TestFeatureExtractEndpoint:
         assert response.status_code == 200
         assert json.loads(response.data)['success']
 
-
-    @patch('scanomatic.ui_server.experiment_api.FeaturesFactory._validate_analysis_directory', return_value=True)
+    @patch(
+        'scanomatic.ui_server.experiment_api.FeaturesFactory._validate_analysis_directory',
+        return_value=True)
     def test_dont_keep_previous_qc(self, validator_mock, test_app):
 
         test_app.rpc_client.create_feature_extract_job.return_value = 'Hi'

@@ -1,4 +1,4 @@
-from flask import send_from_directory, redirect, jsonify
+from flask import send_from_directory, jsonify
 
 from scanomatic.io.paths import Paths
 from .general import convert_path_to_url
