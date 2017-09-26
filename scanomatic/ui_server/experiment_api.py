@@ -20,7 +20,6 @@ def add_routes(app, rpc_client, logger):
 
     @app.route("/feature_extract", methods=['post'])
     def _feature_extract_api():
-
         action = request.args.get("action")
 
         data_object = request.get_json(silent=True, force=True)
@@ -28,9 +27,7 @@ def add_routes(app, rpc_client, logger):
             data_object = request.values
 
         if action:
-
             if action == 'extract':
-
                 path = data_object.get("analysis_directory")
                 path = os.path.abspath(path.replace(
                     'root', Config().paths.projects_root))
@@ -42,12 +39,11 @@ def add_routes(app, rpc_client, logger):
                     FeaturesFactory.validate(model) and
                     rpc_client.create_feature_extract_job(
                         FeaturesFactory.to_dict(model)))
-
                 if success:
-                    return jsonify(success=success)
+                    return jsonify(success=True)
                 else:
-                    return jsonify(
-                        success=success,
+                    return json_abort(
+                        400,
                         reason="The following has bad data: {0}".format(
                             ", ".join(
                                 FeaturesFactory.get_invalid_names(model)))
@@ -71,7 +67,7 @@ def add_routes(app, rpc_client, logger):
                             "Analysis folder {0} exists, so will overwrite files if needed".format(
                                 output))
                 else:
-                    return jsonify(success=False, reason="No such file")
+                    return json_abort(400, reason="No such file")
 
                 phenotyper.remove_state_from_path(output)
                 preprocess = data_object.get(
@@ -83,15 +79,16 @@ def add_routes(app, rpc_client, logger):
                         bioscreen.Preprocessing.Precog2016_S_cerevisiae)
 
                 except (TypeError, KeyError):
-                    return jsonify(
-                        success=False, reason="Unknown pre-processing state")
+                    return json_abort(
+                        400,
+                        reason="Unknown pre-processing state")
 
                 time_scale = data_object.get(
                     "bioscreen_timescale", default=36000)
                 try:
                     time_scale = float(time_scale)
                 except (ValueError, TypeError):
-                    return jsonify(success=False, reason="Bad timescale")
+                    return json_abort(400, reason="Bad timescale")
 
                 project = bioscreen.load(
                     path, time_scale=time_scale, preprocess=preprocess)
@@ -112,19 +109,24 @@ def add_routes(app, rpc_client, logger):
                         FeaturesFactory.to_dict(model)))
 
                 if success:
-                    return jsonify(success=success)
+                    return jsonify(success=True)
                 else:
-                    return jsonify(
-                        success=success,
+                    return json_abort(
+                        400,
                         reason="The following has bad data: {0}".format(
                             ", ".join(
                                 FeaturesFactory.get_invalid_names(model)))
                         if not FeaturesFactory.validate(model) else
                         "Refused by the server, check logs.")
             else:
-                return jsonify(
-                    success=False,
+                return json_abort(
+                    400,
                     reason='Action "{0}" not recognized'.format(action))
+
+        return json_abort(
+            400,
+            reason='Action needed'.format(action))
+
 
     @app.route("/analysis", methods=['post'])
     def _analysis_api():
