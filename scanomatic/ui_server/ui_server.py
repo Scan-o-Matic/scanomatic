@@ -276,11 +276,16 @@ def launch_server(host, port, debug):
             if action == 'extract':
 
                 path = data_object.get("analysis_directory")
+                try_keep_qc = bool(
+                    data_object.get("keep_qc", default=1, type=int))
                 path = os.path.abspath(path.replace(
                     'root', Config().paths.projects_root))
                 _logger.info(
                     "Attempting to extract features in '{0}'".format(path))
-                model = FeaturesFactory.create(analysis_directory=path)
+                model = FeaturesFactory.create(
+                    analysis_directory=path,
+                    try_keep_qc=try_keep_qc
+                )
 
                 success = (
                     FeaturesFactory.validate(model) and
