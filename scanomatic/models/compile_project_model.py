@@ -22,7 +22,7 @@ class CompileInstructionsModel(Model):
                  start_time=0.0, images=tuple(), path="", start_condition="",
                  fixture_type=FIXTURE.Local, fixture_name=None, email="",
                  overwrite_pinning_matrices=None,
-                 cell_count_calibration_id="foo"):
+                 cell_count_calibration_id="default"):
 
         self.compile_action = compile_action
         self.images = images
