@@ -77,7 +77,7 @@ def launch_server(host, port, debug):
     app.log_recycler = Timer(LOG_RECYCLE_TIME, init_logging)
     app.log_recycler.start()
 
-    add_base_routes(app)
+    add_base_routes(app, rpc_client)
 
     help_ui.add_routes(app)
     settings_ui.add_routes(app)
@@ -120,7 +120,7 @@ def launch_server(host, port, debug):
     return True
 
 
-def add_base_routes(app):
+def add_base_routes(app, rpc_client):
     """
 
     :param app: The flask webb app
@@ -221,7 +221,6 @@ def add_base_routes(app):
 
         return serve_log_as_html(
             path, os.sep.join(path.split(os.path.sep)[-include_levels:]))
-
 
     @app.route("/scanners/<scanner_query>")
     def _scanners(scanner_query=None):
