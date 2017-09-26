@@ -8,7 +8,7 @@ from scanomatic.io.power_manager import POWER_MANAGER_TYPE
 def add_routes(app):
 
     @app.route("/settings", methods=['post'])
-    def _settings():
+    def _settings_api():
 
         app_conf = Config()
 
@@ -44,7 +44,3 @@ def add_routes(app):
         elif action:
             return jsonify(success=False, reason="Not implemented")
 
-    @app.route("/fixtures", methods=['post'])
-    def _fixtures():
-
-        return send_from_directory(Paths().ui_root, Paths().ui_fixture_file)

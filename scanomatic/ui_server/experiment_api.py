@@ -19,7 +19,7 @@ from .general import get_2d_list, json_abort
 def add_routes(app, rpc_client, logger):
 
     @app.route("/feature_extract", methods=['post'])
-    def _feature_extract():
+    def _feature_extract_api():
 
         action = request.args.get("action")
 
@@ -127,7 +127,7 @@ def add_routes(app, rpc_client, logger):
                     reason='Action "{0}" not recognized'.format(action))
 
     @app.route("/analysis", methods=['post'])
-    def _analysis():
+    def _analysis_api():
 
         action = request.args.get("action")
 
@@ -222,7 +222,7 @@ def add_routes(app, rpc_client, logger):
                     reason='Action "{0}" not recognized'.format(action))
 
     @app.route("/experiment", methods=['post'])
-    def _experiment():
+    def _experiment_api():
 
         if request.args.get("enqueue"):
 
@@ -281,7 +281,7 @@ def add_routes(app, rpc_client, logger):
                     "Job refused, probably scanner can't be reached, check connection.")
 
     @app.route("/compile", methods=['post'])
-    def _compile():
+    def _compile_api():
 
         data_object = request.get_json(silent=True, force=True)
         if not data_object:
