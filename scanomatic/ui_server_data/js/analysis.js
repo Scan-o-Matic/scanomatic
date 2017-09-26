@@ -214,7 +214,7 @@ function Analyse(button) {
             compilation: $("#compilation").val(),
             compile_instructions: $("#compile-instructions").val(),
             output_directory: $("#analysis-directory").val(),
-            ccc: $('#ccc-selection').val(),
+            cell_count_calibration_id: $('#ccc-selection').val(),
             chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
             one_time_positioning: $("#one_time_positioning").is(':checked') ? 0 : 1,
     };
@@ -256,9 +256,8 @@ function Extract(button) {
     $.ajax({
         url: '?action=extract',
         data: {
-            analysis_directory: $("#extract").val(),
-            keep_qc: $('#keep-qc').is(':checked') ? 0 : 1,
-        },
+            analysis_directory: $("#extract").val()
+               },
         method: 'POST',
         success: function(data, textStatus) {
             if (data.success) {

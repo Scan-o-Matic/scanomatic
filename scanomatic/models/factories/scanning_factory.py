@@ -1,3 +1,8 @@
+import os
+import re
+import string
+from types import StringTypes
+
 from scanomatic.generics.abstract_model_factory import (
     AbstractModelFactory, email_serializer)
 from scanomatic.models.scanning_model import (
@@ -6,11 +11,7 @@ from scanomatic.models.scanning_model import (
 import scanomatic.io.fixtures as fixtures
 import scanomatic.io.app_config as app_config
 from scanomatic.models.rpc_job_models import RPCjobModel
-
-import os
-import re
-import string
-from types import StringTypes
+from scanomatic.data_processing.calibration import get_active_cccs
 
 
 class PlateDescriptionFactory(AbstractModelFactory):
@@ -210,6 +211,7 @@ class ScanningModelFactory(AbstractModelFactory):
         'computer': str,
         'version': str,
         'id': str,
+        'cell_count_calibration_id': str,
         'auxillary_info': ScanningAuxInfoModel,
         'scanning_program': str,
         'scanning_program_version': str,
@@ -220,9 +222,11 @@ class ScanningModelFactory(AbstractModelFactory):
     def create(cls, **settings):
         """
 
-
         :rtype : scanomatic.models.scanning_model.ScanningModel
         """
+        if not settings.get('cell_count_calibration_id', None):
+
+            settings['cell_count_calibration_id'] = 'default'
 
         return super(cls, ScanningModelFactory).create(**settings)
 
@@ -384,7 +388,7 @@ class ScanningModelFactory(AbstractModelFactory):
         """
 
         :type model: scanomatic.models.scanning_model.ScanningModel
-        """
+         """
         if not not isinstance(
                 model.plate_descriptions,
                 cls.STORE_SECTION_SERIALIZERS[
@@ -409,6 +413,16 @@ class ScanningModelFactory(AbstractModelFactory):
                 return model.FIELD_TYPES.plate_descriptions
 
         return True
+
+    @classmethod
+    def _validate_cell_count_calibration_id(cls, model):
+        """
+
+        :type model: scanomatic.models.scanning_model.ScanningModel
+        """
+        if model.cell_count_calibration_id in get_active_cccs():
+            return True
+        return model.FIELD_TYPES.cell_count_calibration
 
     @classmethod
     def _validate_aux_info(cls, model):

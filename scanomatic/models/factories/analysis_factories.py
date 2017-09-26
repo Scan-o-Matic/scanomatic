@@ -4,7 +4,7 @@ from scanomatic.generics.abstract_model_factory import (
     AbstractModelFactory, rename_setting, email_serializer)
 import scanomatic.models.analysis_model as analysis_model
 from scanomatic.data_processing.calibration import (
-    get_polynomial_coefficients_from_ccc)
+    get_polynomial_coefficients_from_ccc, get_active_cccs)
 
 
 class GridModelFactory(AbstractModelFactory):
@@ -350,6 +350,29 @@ class AnalysisModelFactory(AbstractModelFactory):
         if cls._is_valid_submodel(model, "xml_model"):
             return True
         return model.FIELD_TYPES.xml_model
+
+    @classmethod
+    def _validate_cell_count_calibration_id(cls, model):
+        """
+
+        :type model: scanomatic.models.scanning_model.AnalysisModel
+        """
+        if model.cell_count_calibration_id in get_active_cccs():
+            return True
+        return model.FIELD_TYPES.cell_count_calibration
+
+    @classmethod
+    def _validate_cell_count_calibration(cls, model):
+        """
+
+        :type model: scanomatic.models.scanning_model.AnalysisModel
+        """
+        if (cls._is_tuple_or_list(model.cell_count_calibration)
+                and all([
+                    cls._is_real_number(c) and c >= 0
+                    for c in model.cell_count_calibration])):
+            return True
+        return model.FIELD_TYPES.cell_count_calibration
 
 
 class MetaDataFactory(AbstractModelFactory):
