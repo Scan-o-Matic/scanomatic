@@ -2,6 +2,7 @@ from flask import send_from_directory, redirect
 
 from scanomatic.io.paths import Paths
 
+
 def add_routes(app):
     """
 

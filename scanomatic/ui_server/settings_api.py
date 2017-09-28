@@ -1,6 +1,5 @@
-from flask import send_from_directory, request, jsonify
+from flask import request, jsonify
 
-from scanomatic.io.paths import Paths
 from scanomatic.io.app_config import Config
 from scanomatic.io.power_manager import POWER_MANAGER_TYPE
 
@@ -43,4 +42,3 @@ def add_routes(app):
                     bad_data))
         elif action:
             return jsonify(success=False, reason="Not implemented")
-

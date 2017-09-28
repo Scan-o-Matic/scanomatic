@@ -15,7 +15,8 @@ import scanomatic.generics.decorators as decorators
 from scanomatic.io.logger import Logger
 
 
-class UnserializationError(ValueError): pass
+class UnserializationError(ValueError):
+    pass
 
 
 def float_list_serializer(enforce=None, serialize=None):
