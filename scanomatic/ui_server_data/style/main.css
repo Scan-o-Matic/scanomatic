@@ -404,6 +404,22 @@ label {
     position: absolute; top: 0; bottom: 0; right: 316px;
 }
 
+.onoffswitch.keep-qc{
+    position: relative; width: 380px;
+}
+
+.onoffswitch-inner.keep-qc:after {
+    content: "Keep pre-existing QC if possible" !important;
+}
+
+.onoffswitch-inner.keep-qc:before {
+    content: "Overwrite any pre-existing QC" !important;
+}
+
+.onoffswitch-switch.keep-qc {
+    position: absolute; top: 0; bottom: 0; right: 346px;
+}
+
 .indented {
     margin-left: 50px;
 }
