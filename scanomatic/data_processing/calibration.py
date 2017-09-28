@@ -364,7 +364,7 @@ def add_ccc(ccc):
 
         __CCC[ccc[CellCountCalibration.identifier]] = ccc
 
-        save_ccc_to_disk(ccc[CellCountCalibration.identifier])
+        save_ccc_to_disk(ccc)
         return True
 
     else:
@@ -424,7 +424,7 @@ def activate_ccc(identifier):
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
     ccc[CellCountCalibration.edit_access_token] = uuid1().hex
 
-    return save_ccc_to_disk(identifier)
+    return save_ccc_to_disk(ccc)
 
 
 @_validate_ccc_edit_request
@@ -435,14 +435,14 @@ def delete_ccc(identifier):
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Deleted
     ccc[CellCountCalibration.edit_access_token] = uuid1().hex
 
-    return save_ccc_to_disk(identifier)
+    return save_ccc_to_disk(ccc)
 
 
-def save_ccc_to_disk(identifier):
+def save_ccc_to_disk(ccc):
 
-    if identifier in __CCC:
+    if ccc[CellCountCalibration.identifier] in __CCC:
 
-        return _save_ccc_to_disk(__CCC[identifier])
+        return _save_ccc_to_disk(ccc)
 
     else:
 
@@ -1111,7 +1111,7 @@ def construct_polynomial(identifier, poly_name, power):
             'validation': validation
         }
     _add_poly(ccc, poly_name, power, poly_coeffs)
-    if not save_ccc_to_disk(identifier):
+    if not save_ccc_to_disk(ccc):
         return False
 
     # Darkening -> Cell Count Per pixel
