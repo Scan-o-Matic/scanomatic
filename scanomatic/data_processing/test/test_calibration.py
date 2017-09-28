@@ -17,7 +17,7 @@ Paths().ccc_file_pattern = os.path.join(
     Paths().ccc_folder, '{0}.ccc')
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def ccc():
 
     _ccc = calibration.get_empty_ccc('test-ccc', 'pytest')
@@ -512,3 +512,118 @@ class TestGettingActiveCCCs:
         with pytest.raises(KeyError):
 
             calibration.get_polynomial_coefficients_from_ccc(self._ccc_id2)
+
+
+class TestSaving:
+
+    @mock.patch(
+        'scanomatic.data_processing.calibration._ccc_edit_validator',
+        return_value=True)
+    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    def test_save_ccc(self, save_mock, validator_mock, ccc):
+
+        assert calibration.save_ccc_to_disk(ccc)
+        assert not validator_mock.called
+        assert save_mock.called
+
+    @mock.patch(
+        'scanomatic.data_processing.calibration._ccc_edit_validator',
+        return_value=True)
+    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    def test_add_existing_ccc(self, save_mock, validator_mock, ccc):
+
+        assert not calibration.add_ccc(ccc)
+        assert not validator_mock.called
+        assert not save_mock.called
+
+    @mock.patch(
+        'scanomatic.data_processing.calibration._ccc_edit_validator',
+        return_value=True)
+    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    def test_add_ccc(self, save_mock, validator_mock):
+
+        ccc = calibration.get_empty_ccc('Bogus schmogus', 'Dr Lus')
+        assert calibration.add_ccc(ccc)
+        assert not validator_mock.called
+        assert save_mock.called
+
+    @mock.patch(
+        'scanomatic.data_processing.calibration._ccc_edit_validator',
+        return_value=True)
+    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    @mock.patch(
+        'scanomatic.data_processing.calibration.has_valid_polynomial',
+        return_value=True)
+    def test_activate_ccc(
+            self, poly_validator_mock, save_mock, validator_mock, ccc):
+
+        assert calibration.activate_ccc(
+            ccc[calibration.CellCountCalibration.identifier])
+        assert validator_mock.called
+        assert save_mock.called
+        assert poly_validator_mock.called
+
+    @mock.patch(
+        'scanomatic.data_processing.calibration._ccc_edit_validator',
+        return_value=True)
+    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    def test_delete_ccc(self, save_mock, validator_mock, ccc):
+
+        assert calibration.delete_ccc(
+            ccc[calibration.CellCountCalibration.identifier])
+        assert validator_mock.called
+        assert save_mock.called
+
+    @mock.patch(
+        'scanomatic.data_processing.calibration._ccc_edit_validator',
+        return_value=True)
+    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    def test_add_image_to_ccc(self, save_mock, validator_mock, ccc):
+
+        image_mock = mock.Mock()
+        assert calibration.add_image_to_ccc(
+            ccc[calibration.CellCountCalibration.identifier], image_mock)
+        assert validator_mock.called
+        assert save_mock.called
+        assert image_mock.save.called
+
+    @mock.patch(
+        'scanomatic.data_processing.calibration._ccc_edit_validator',
+        return_value=True)
+    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+
+    def test_add_image_to_ccc(self, save_mock, validator_mock, ccc):
+
+        assert calibration.set_image_info(
+            ccc[calibration.CellCountCalibration.identifier], 0)
+        assert validator_mock.called
+        assert save_mock.called
+
+
+class TestCCCEditValidator:
+
+    def test_allowed_knowing_id(self, ccc):
+
+        assert calibration._ccc_edit_validator(
+            ccc[calibration.CellCountCalibration.identifier],
+            access_token=ccc[
+                calibration.CellCountCalibration.edit_access_token])
+
+    def test_bad_id_existing_ccc(self, ccc):
+
+        assert not calibration._ccc_edit_validator(
+            ccc[calibration.CellCountCalibration.identifier],
+            access_token='Something is wrong')
+
+    def test_non_existing_ccc(self):
+
+        ccc = calibration.get_empty_ccc('Bogus schmogus leoii', 'Dr Lus')
+        assert not calibration._ccc_edit_validator(
+            ccc[calibration.CellCountCalibration.identifier],
+            access_token=ccc[
+                calibration.CellCountCalibration.edit_access_token])
+
+    def test_no_access_(self, ccc):
+
+        assert not calibration._ccc_edit_validator(
+                ccc[calibration.CellCountCalibration.identifier])

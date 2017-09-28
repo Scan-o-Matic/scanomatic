@@ -196,40 +196,48 @@ class CalibrationValidation(Enum):
     """:type : CalibrationValidation"""
 
 
-def _validate_ccc_edit_request(f):
+def _ccc_edit_validator(identifier, **kwargs):
 
-    def wrapped(identifier, *args, **kwargs):
+    if identifier in __CCC:
 
-        if identifier in __CCC:
+        ccc = __CCC[identifier]
 
-            ccc = __CCC[identifier]
+        if ("access_token" in kwargs and
+                ccc[CellCountCalibration.edit_access_token] ==
+                kwargs["access_token"] and
+                kwargs["access_token"]):
 
-            if ("access_token" in kwargs and
-                    ccc[CellCountCalibration.edit_access_token] ==
-                    kwargs["access_token"] and
-                    kwargs["access_token"]):
+            if (ccc[CellCountCalibration.status] ==
+                    CalibrationEntryStatus.UnderConstruction):
 
-                if (ccc[CellCountCalibration.status] ==
-                        CalibrationEntryStatus.UnderConstruction):
-
-                    del kwargs["access_token"]
-                    return f(identifier, *args, **kwargs)
-
-                else:
-
-                    _logger.error(
-                        "Can not modify the CCC {0} because it is not under construction".format(
-                            identifier)
-                    )
+                return True
 
             else:
 
                 _logger.error(
-                    "You don't have the correct access token for {0}, request refused".format(identifier)
+                    "Can not modify the CCC {0} because it is not under construction".format(
+                        identifier)
                 )
+
         else:
 
-            _logger.error("Unknown CCC {0}".format(identifier))
+            _logger.error(
+                "You don't have the correct access token for {0}, request refused".format(identifier)
+            )
+    else:
+
+        _logger.error("Unknown CCC {0}".format(identifier))
+    return False
+
+
+def _validate_ccc_edit_request(f):
+
+    def wrapped(identifier, *args, **kwargs):
+
+        if _ccc_edit_validator(identifier, **kwargs):
+            if "access_token" in kwargs:
+                del kwargs["access_token"]
+            return f(identifier, *args, **kwargs)
 
     return wrapped
 
@@ -446,7 +454,8 @@ def save_ccc_to_disk(ccc):
 
     else:
 
-        _logger.error("Unknown CCC identifier {0}".format(identifier))
+        _logger.error("Unknown CCC identifier {0} ({1})".format(
+            ccc[CellCountCalibration.identifier], __CCC.keys()))
         return False
 
 
