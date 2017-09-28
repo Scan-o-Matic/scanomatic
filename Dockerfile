@@ -1,5 +1,7 @@
 FROM ubuntu:16.04
 RUN apt update && apt -y install usbutils software-properties-common python-pip
+# net-tools & iputils-ping are used in the xml-writer which should be removed soon
+RUN apt -y install net-tools iputils-ping
 RUN echo -e "\n" | add-apt-repository ppa:rolfbensch/sane-release
 RUN apt-get update
 RUN apt -y install libsane=1.0.27-xenial1 sane-utils=1.0.27-xenial1 libsane-common=1.0.27-xenial1
