@@ -235,8 +235,7 @@ def _validate_ccc_edit_request(f):
     def wrapped(identifier, *args, **kwargs):
 
         if _ccc_edit_validator(identifier, **kwargs):
-            if "access_token" in kwargs:
-                del kwargs["access_token"]
+            del kwargs["access_token"]
             return f(identifier, *args, **kwargs)
 
     return wrapped

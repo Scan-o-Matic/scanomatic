@@ -558,7 +558,8 @@ class TestSaving:
             self, poly_validator_mock, save_mock, validator_mock, ccc):
 
         assert calibration.activate_ccc(
-            ccc[calibration.CellCountCalibration.identifier])
+            ccc[calibration.CellCountCalibration.identifier],
+            access_token='not used, but needed')
         assert validator_mock.called
         assert save_mock.called
         assert poly_validator_mock.called
@@ -570,7 +571,8 @@ class TestSaving:
     def test_delete_ccc(self, save_mock, validator_mock, ccc):
 
         assert calibration.delete_ccc(
-            ccc[calibration.CellCountCalibration.identifier])
+            ccc[calibration.CellCountCalibration.identifier],
+            access_token='not used, but needed')
         assert validator_mock.called
         assert save_mock.called
 
@@ -582,7 +584,8 @@ class TestSaving:
 
         image_mock = mock.Mock()
         assert calibration.add_image_to_ccc(
-            ccc[calibration.CellCountCalibration.identifier], image_mock)
+            ccc[calibration.CellCountCalibration.identifier], image_mock,
+            access_token='not used, but needed')
         assert validator_mock.called
         assert save_mock.called
         assert image_mock.save.called
@@ -595,7 +598,8 @@ class TestSaving:
     def test_add_image_to_ccc(self, save_mock, validator_mock, ccc):
 
         assert calibration.set_image_info(
-            ccc[calibration.CellCountCalibration.identifier], 0)
+            ccc[calibration.CellCountCalibration.identifier], 0,
+            access_token='not used, but needed')
         assert validator_mock.called
         assert save_mock.called
 
