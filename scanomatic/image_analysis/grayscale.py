@@ -6,6 +6,7 @@ import numpy as np
 #
 
 import scanomatic.io.paths as paths
+from scanomatic.io.logger import Logger
 
 #
 # GLOBALS
@@ -34,6 +35,7 @@ _GRAYSCALE_VALUE_TYPES = {
     'length': float,
 }
 
+_logger = Logger("Grayscale settings")
 #
 # METHODS
 #
@@ -44,7 +46,8 @@ def getGrayscales():
     try:
         _GRAYSCALE_CONFIGS.readfp(open(_GRAYSCALE_PATH, 'r'))
     except:
-        pass
+        _logger.critical(
+            "Settings for grayscales not found at: " + _GRAYSCALE_PATH)
     return _GRAYSCALE_CONFIGS.sections()
 
 
