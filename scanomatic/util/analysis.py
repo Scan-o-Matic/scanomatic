@@ -67,8 +67,17 @@ def produce_grid_images(path=".", plates=None, image=None, mark_position=None, c
             continue
 
         plate_image = image[plate.y1: plate.y2, plate.x1: plate.x2]
-        grid = unpickle_with_unpickler(np.load, os.path.join(path, Paths().grid_pattern.format(plate.index)))
-        make_grid_im(plate_image, grid, os.path.join(path, Paths().experiment_grid_image_pattern.format(plate.index)),
+
+        grid_path = os.path.join(
+            path, Paths().grid_pattern.format(plate.index))
+        try:
+            grid = unpickle_with_unpickler(np.load, grid_path)
+        except IOError:
+            _logger.warning("Could not find any grid: " + grid_path)
+            grid = None
+
+        image_path = Paths().experiment_grid_image_pattern.format(plate.index)
+        make_grid_im(plate_image, grid, os.path.join(path, image_path),
                      marked_position=mark_position)
 
 
@@ -83,20 +92,25 @@ def make_grid_im(im, grid, save_grid_name, marked_position=None):
             x = 0
             y = 1
 
-            for row in range(grid.shape[1]):
+            if grid is not None:
+                for row in range(grid.shape[1]):
 
-                grid_plot.plot(grid[x, row, :], -grid[y, row, :] + im.shape[y], 'r-')
+                    grid_plot.plot(
+                        grid[x, row, :], -grid[y, row, :] + im.shape[y], 'r-')
 
-            for col in range(grid.shape[2]):
+                for col in range(grid.shape[2]):
 
-                grid_plot.plot(grid[x, :, col], -grid[y, :, col] + im.shape[y], 'r-')
+                    grid_plot.plot(
+                        grid[x, :, col], -grid[y, :, col] + im.shape[y], 'r-')
 
-            if marked_position is None:
-                marked_position = (-1, 0)
+                if marked_position is None:
+                    marked_position = (-1, 0)
 
-                grid_plot.plot(grid[x, marked_position[0], marked_position[1]],
-                               -grid[y, marked_position[0], marked_position[1]] + im.shape[y],
-                               'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
+                    grid_plot.plot(
+                        grid[x, marked_position[0], marked_position[1]],
+                        grid[y, marked_position[0], marked_position[1]] +
+                        im.shape[y],
+                        'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
 
             ax = grid_image.gca()
             ax.set_xlim(0, im.shape[x])
