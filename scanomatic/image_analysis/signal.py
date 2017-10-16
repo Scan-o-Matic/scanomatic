@@ -57,12 +57,11 @@ def get_signal_data(strip_values, up_spikes, grayscale, delta_threshold):
     return np.array(deltas), observed_spikes, observed_to_expected_index_map
 
 
-def get_signal_edges(observed_to_expected_index_map, deltas, observed_spikes, number_of_segments):
-
-    _logger.info('observed_to_expected_index_map ' + list(observed_to_expected_index_map))
-    _logger.info('deltas ' + list(deltas))
-    _logger.info('observed_spikes ' + observed_spikes)
-    _logger.info('number_of_segments ' + number_of_segments)
+def get_signal_edges(
+        observed_to_expected_index_map,
+        deltas,
+        observed_spikes,
+        number_of_segments):
 
     edges = np.ones((number_of_segments + 1,)) * np.nan
 
@@ -78,11 +77,17 @@ def get_signal_edges(observed_to_expected_index_map, deltas, observed_spikes, nu
 
     nan_edges = np.isnan(edges)
     fin_edges = np.isfinite(edges)
-    edge_ordinals = np.arange(edges.size, dtype=np.float) + 1
-    edges[nan_edges] = np.interp(edge_ordinals[nan_edges], edge_ordinals[fin_edges],
-                                 edges[fin_edges],
-                                 left=np.nan,
-                                 right=np.nan)
+    if fin_edges.any() and nan_edges.any():
+        edge_ordinals = np.arange(edges.size, dtype=np.float) + 1
+        edges[nan_edges] = np.interp(
+            edge_ordinals[nan_edges],
+            edge_ordinals[fin_edges],
+            edges[fin_edges],
+            left=np.nan,
+            right=np.nan)
+
+    elif nan_edges.any():
+        _logger.warning("No finite edges")
 
     return edges
 

@@ -399,13 +399,16 @@ class FixtureImage(object):
             return False
 
         try:
-            current_model.grayscale.values = image_grayscale.get_grayscale(self, current_model.grayscale)[1]
+            current_model.grayscale.values = image_grayscale.get_grayscale(
+                self, current_model.grayscale)[1]
         except TypeError:
+            self._logger.error("Grayscale detection failed / caused TypeError")
             current_model.grayscale.values = None
 
         if current_model.grayscale.values is None:
-            self._logger.error("Grayscale detection failed")
             return False
+
+        return True
 
     def _set_area_relative(self, area, rotation=None, offset=(0, 0), issues={}):
 

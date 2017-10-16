@@ -221,6 +221,8 @@ def detect_grayscale(im_trimmed, grayscale):
 
     if gs_l_diff < NEW_GS_ALG_L_DIFF_T:
 
+        _logger.info('Using new method')
+
         deltas, observed_spikes, observed_to_expected_map = signal.get_signal_data(
             para_signal_trimmed_im, up_spikes, grayscale,
             grayscale["length"] * NEW_GS_ALG_L_DIFF_SPIKE_T)
@@ -241,6 +243,10 @@ def detect_grayscale(im_trimmed, grayscale):
                                             grayscale['sections'])
 
             fin_edges = np.isfinite(edges)
+            if not fin_edges.any():
+                _logger.error("No finite edges found")
+                return None, None
+
             where_fin_edges = np.where(fin_edges)[0]
 
             if DEBUG_DETECTION:
@@ -251,13 +257,13 @@ def detect_grayscale(im_trimmed, grayscale):
             frequency = frequency[np.isfinite(frequency)].mean()
 
             if not np.isfinite(frequency):
-                _logger.critical("No frequency was detected, thus no grayscale")
+                _logger.error("No frequency was detected, thus no grayscale")
                 return None, None
 
             edges = signal.extrapolate_edges(edges, frequency, para_signal_trimmed_im.size)
 
             if edges.size != grayscale['sections'] + 1:
-                _logger.critical(
+                _logger.error(
                     "Number of edges doesn't correspond to the grayscale segments ({0}!={1})".format(
                         edges.size, grayscale['sections'] + 1))
                 return None, None
