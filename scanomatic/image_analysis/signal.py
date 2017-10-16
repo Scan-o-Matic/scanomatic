@@ -59,6 +59,11 @@ def get_signal_data(strip_values, up_spikes, grayscale, delta_threshold):
 
 def get_signal_edges(observed_to_expected_index_map, deltas, observed_spikes, number_of_segments):
 
+    _logger.info('observed_to_expected_index_map ' + list(observed_to_expected_index_map))
+    _logger.info('deltas ' + list(deltas))
+    _logger.info('observed_spikes ' + observed_spikes)
+    _logger.info('number_of_segments ' + number_of_segments)
+
     edges = np.ones((number_of_segments + 1,)) * np.nan
 
     for edge_i in range(number_of_segments + 1):
