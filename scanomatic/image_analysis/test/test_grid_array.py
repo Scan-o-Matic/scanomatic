@@ -5,9 +5,7 @@ from scanomatic.image_analysis import grid_array as grid_array_module
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 
 
-@pytest.fixture(scope='session')
-def grid_array(easy_plate):
-    """Instantiate a GridArray object with a gridded image"""
+def _get_grid_array_instance(im):
     image_identifier = [42, 1337]
     pinning = (8, 12)
     analysis_model = AnalysisModelFactory.create()
@@ -15,8 +13,19 @@ def grid_array(easy_plate):
     grid_array_instance = grid_array_module.GridArray(
         image_identifier, pinning, analysis_model)
     correction = (0, 0)
-    grid_array_instance.detect_grid(easy_plate, grid_correction=correction)
+    grid_array_instance.detect_grid(im, grid_correction=correction)
     return grid_array_instance
+
+
+@pytest.fixture(scope='session')
+def grid_array(easy_plate):
+    """Instantiate a GridArray object with a gridded image"""
+    return _get_grid_array_instance(easy_plate)
+
+
+@pytest.fixture(scope='session')
+def bad_grid_array(hard_plate):
+    return _get_grid_array_instance(hard_plate)
 
 
 class TestGridDetection():
@@ -74,3 +83,12 @@ class TestGridDetection():
             a == b for a, b in zip(
                 grid_array_instance[(0, 0)]._polynomial_coeffs,
                 coeffs))
+
+    def test_hard_plate_has_no_grid(self, bad_grid_array):
+        """This tests a side effect of if gridding fails.
+
+        Because the way the fixture works here there's no direct way.
+        Basically, had a valid grid been detected the below
+        field would have gotten a value.
+        """
+        assert bad_grid_array._grid_cell_size is None
