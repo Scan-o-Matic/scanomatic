@@ -427,6 +427,9 @@ class GridArray(object):
             grid_shape=self._pinning_matrix,
             grid_correction=grid_correction)
 
+        if draft_grid is None:
+            return None
+        
         dx, dy = spacings
 
         self._grid, _, self._valid_grid = grid.get_validated_grid(

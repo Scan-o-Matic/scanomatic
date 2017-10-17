@@ -152,6 +152,8 @@ def get_grid_parameters(x_data, y_data, grid_shape, spacings=(54, 54)):
 
     data = (x_data, y_data)
     new_spacings = get_grid_spacings(x_data, y_data, *spacings)
+    if new_spacings is None:
+        return None, None
     centers = get_centre_candidates(grid_shape, new_spacings)
     votes = get_votes(data, centers)
     weights = get_weights(votes, data, 1.0)
@@ -273,9 +275,13 @@ def get_grid_spacings(x_data, y_data, expected_dx, expected_dy, leeway=0.1):
     # noinspection PyUnresolvedReferences
     def get_delta(data, expected_delta):
         deltas = np.abs(np.subtract.outer(data, data))
-        return deltas[np.logical_and(
+        filt = np.logical_and(
             deltas > expected_delta * (1 - leeway),
-            deltas < expected_delta * (1 + leeway))].mean()
+            deltas < expected_delta * (1 + leeway))
+
+        if filt.any():
+            return deltas[filt].mean()
+        return None
 
     return get_delta(x_data, expected_dx), get_delta(y_data, expected_dy)
 
@@ -432,23 +438,32 @@ def get_valid_parameters(center, spacing, expected_center, expected_spacing,
     return tuple(center), tuple(spacing), values_adjusted
 
 
-def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
-             x_data=None, y_data=None,
-             expected_center=(100, 100), run_dev=False, dev_reduce_grid_data_fraction=None,
-             validate_parameters=False, grid_correction=None):
+def get_grid(
+        im,
+        expected_spacing=(105, 105),
+        grid_shape=(16, 24),
+        x_data=None,
+        y_data=None,
+        expected_center=(100, 100),
+        run_dev=False,
+        dev_reduce_grid_data_fraction=None,
+        validate_parameters=False,
+        grid_correction=None):
     """Detects grid candidates and constructs a grid"""
 
     adjusted_values = True
     center = expected_center
     spacings = expected_spacing
 
-    adaptive_threshold = get_adaptive_threshold(im, threshold_filter=None, segments=100, sigma=30)
+    adaptive_threshold = get_adaptive_threshold(
+        im, threshold_filter=None, segments=100, sigma=30)
 
     im_filtered = get_denoise_segments(im < adaptive_threshold, iterations=3)
     del adaptive_threshold
 
     if expected_spacing is None:
-        expected_spacing = tuple(float(a)/b for a, b in zip(im.shape, grid_shape))
+        expected_spacing = tuple(
+            float(a) / b for a, b in zip(im.shape, grid_shape))
 
     get_segments_by_size(
         im_filtered, min_size=40,
@@ -467,7 +482,9 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
     del labeled
 
     if dev_reduce_grid_data_fraction is not None:
-        filter_grid_data = np.random.random(x_data.shape) < dev_reduce_grid_data_fraction
+        filter_grid_data = (
+            np.random.random(x_data.shape) < dev_reduce_grid_data_fraction
+        )
         x_data = x_data[filter_grid_data]
         y_data = y_data[filter_grid_data]
 
@@ -477,6 +494,9 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
 
             center, spacings = get_grid_parameters(
                 x_data, y_data, grid_shape, spacings=expected_spacing)
+
+            if center is None or spacings is None:
+                return None, x_data, y_data, center, spacings, adjusted_values
 
             if validate_parameters:
                 center, spacings, adjusted_values = get_valid_parameters(
@@ -488,6 +508,9 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
 
             center, spacings = get_grid_parameters(
                 x_data, y_data, grid_shape, spacings=expected_spacing)
+
+            if center is None or spacings is None:
+                return None, x_data, y_data, center, spacings, adjusted_values
 
             if grid_correction is not None:
                 center = tuple(a + b for a, b in
