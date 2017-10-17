@@ -1,25 +1,21 @@
 from itertools import product
 import pytest
 
-from scipy import ndimage
-
 from scanomatic.image_analysis import grid_array as grid_array_module
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 
 
-@pytest.fixture(scope="class")
-def grid_array():
+@pytest.fixture(scope='session')
+def grid_array(easy_plate):
     """Instantiate a GridArray object with a gridded image"""
     image_identifier = [42, 1337]
     pinning = (8, 12)
     analysis_model = AnalysisModelFactory.create()
     analysis_model.output_directory = ""
-    image = ndimage.io.imread(
-        './scanomatic/image_analysis/test/testdata/test_fixture_easy.tiff')
     grid_array_instance = grid_array_module.GridArray(
         image_identifier, pinning, analysis_model)
     correction = (0, 0)
-    grid_array_instance.detect_grid(image, grid_correction=correction)
+    grid_array_instance.detect_grid(easy_plate, grid_correction=correction)
     return grid_array_instance
 
 
