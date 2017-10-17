@@ -152,7 +152,7 @@ def get_grid_parameters(x_data, y_data, grid_shape, spacings=(54, 54)):
 
     data = (x_data, y_data)
     new_spacings = get_grid_spacings(x_data, y_data, *spacings)
-    if new_spacings is None:
+    if None in new_spacings:
         return None, None
     centers = get_centre_candidates(grid_shape, new_spacings)
     votes = get_votes(data, centers)
@@ -160,7 +160,8 @@ def get_grid_parameters(x_data, y_data, grid_shape, spacings=(54, 54)):
     sigma = np.max((spacings[0], new_spacings[1])) * 0.1 / np.sqrt(2) + 0.5
     heatmap = get_heatmap(data, votes, weights, sigma)
 
-    _center_dim2, _center_dim1 = np.unravel_index(heatmap.argmax(), heatmap.shape)
+    _center_dim2, _center_dim1 = np.unravel_index(
+        heatmap.argmax(), heatmap.shape)
 
     new_center = (_center_dim1, _center_dim2)
 
