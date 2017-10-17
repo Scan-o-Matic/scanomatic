@@ -87,7 +87,6 @@ def get_downsampled_plates(data, subsampling="BR"):
                 The subsampling used
     """
 
-
     # Generic -> Per plate
     if isinstance(subsampling, StringTypes):
         subsampling = [subsampling for _ in range(data.shape[0])]
@@ -110,17 +109,14 @@ def get_downsampled_plates(data, subsampling="BR"):
     for i, plate in enumerate(data):
         offset = subsampling[i]
 
-        # How much smaller the cut should be than the original
-        # (e.g. take every second)
-        subsample_scale = 2 if offset.sum() == 1 else 0
-        if not subsample_scale:
+        if offset.sum() != 1 or offset.shape != (2, 2):
             raise ValueError(
-                "Only exactly one reference position offset per plate allowed. "
+                "Only exactly 1 reference position offset per plate allowed. "
                 "You had {0}".format(offset))
 
         d1, d2 = np.where(offset)
 
-        out.append(plate[d1::2, d2::2])
+        out.append(plate[d1[0]::2, d2[0]::2])
 
     return out
 
