@@ -446,7 +446,6 @@ def get_grid(
         x_data=None,
         y_data=None,
         expected_center=(100, 100),
-        run_dev=False,
         dev_reduce_grid_data_fraction=None,
         validate_parameters=False,
         grid_correction=None):
@@ -491,38 +490,22 @@ def get_grid(
 
     if adjusted_values is False:
 
-        if run_dev:
+        center, spacings = get_grid_parameters(
+            x_data, y_data, grid_shape, spacings=expected_spacing)
 
-            center, spacings = get_grid_parameters(
-                x_data, y_data, grid_shape, spacings=expected_spacing)
+        if center is None or spacings is None:
+            return None, x_data, y_data, center, spacings, adjusted_values
 
-            if center is None or spacings is None:
-                return None, x_data, y_data, center, spacings, adjusted_values
+        if grid_correction is not None:
+            center = tuple(a + b for a, b in
+                           zip(center, [i * j for i, j in
+                                        zip(grid_correction, spacings)]))
 
-            if validate_parameters:
-                center, spacings, adjusted_values = get_valid_parameters(
-                    center, spacings, expected_center, expected_spacing)
-            else:
-                adjusted_values = False
+            adjusted_values = True
 
-        else:
-
-            center, spacings = get_grid_parameters(
-                x_data, y_data, grid_shape, spacings=expected_spacing)
-
-            if center is None or spacings is None:
-                return None, x_data, y_data, center, spacings, adjusted_values
-
-            if grid_correction is not None:
-                center = tuple(a + b for a, b in
-                               zip(center, [i * j for i, j in
-                                            zip(grid_correction, spacings)]))
-
-                adjusted_values = True
-
-            if validate_parameters:
-                center, spacings, adjusted_values = get_valid_parameters(
-                    center, spacings, expected_center, expected_spacing)
+        if validate_parameters:
+            center, spacings, adjusted_values = get_valid_parameters(
+                center, spacings, expected_center, expected_spacing)
 
     dx, dy = spacings
 
