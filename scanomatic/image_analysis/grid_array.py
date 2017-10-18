@@ -86,16 +86,17 @@ def _set_image_transposition(grid_cell, transpose_polynomial):
 
 
 def _get_image_slice(im, grid_cell):
-
     """
 
     :type grid_cell: scanomatic.imageAnalysis.grid_cell.GridCell or None
     """
+    if not grid_cell or im is None:
+        return None
 
     xy1 = grid_cell.xy1
     xy2 = grid_cell.xy2
 
-    if len(xy1) == 2 and len(xy2) == 2:
+    if xy1 and len(xy1) == 2 and xy2 and len(xy2) == 2:
         return im[xy1[0]: xy2[0], xy1[1]: xy2[1]].copy()
     else:
         return None

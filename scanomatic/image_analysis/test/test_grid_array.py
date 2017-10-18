@@ -1,8 +1,14 @@
 from itertools import product
 import pytest
+from collections import namedtuple
+
+from types import NoneType
+from numpy import ndarray
 
 from scanomatic.image_analysis import grid_array as grid_array_module
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+
+MockedGridCell = namedtuple('GridCell', ['xy1', ['xy2']])
 
 
 def _get_grid_array_instance(im):
@@ -26,6 +32,26 @@ def grid_array(easy_plate):
 @pytest.fixture(scope='session')
 def bad_grid_array(hard_plate):
     return _get_grid_array_instance(hard_plate)
+
+
+@pytest.mark.parametrize("im,grid_cell,expected_type,expected_shape", (
+    (None, None, NoneType, None),
+    (easy_plate, None, NoneType, None),
+    (None, MockedGridCell(xy1=None, xy2=None), NoneType, None),
+    (easy_plate, MockedGridCell(xy1=None, xy2=None), NoneType, None),
+    (easy_plate, MockedGridCell(xy1=(1, 1), xy2=None), NoneType, None),
+    (easy_plate, MockedGridCell(xy1=None, xy2=(1, 1)), NoneType, None),
+    (easy_plate, MockedGridCell(xy1=(1, 1), xy2=(1,)), NoneType, None),
+    (easy_plate, MockedGridCell(xy1=(1,), xy2=(1, 1)), NoneType, None),
+    (easy_plate, MockedGridCell(xy1=(1, 1), xy2=(1, 1)), ndarray, (0, 0)),
+    (easy_plate, MockedGridCell(xy1=(0, 1), xy2=(10, 20)), ndarray, (10, 19)),
+))
+def test_get_im_slice(im, grid_cell, expected_type, expected_shape):
+
+    im_slice = grid_array_module._get_image_slice(im, grid_cell)
+    assert isinstance(im_slice, expected_type)
+    if expected_shape is not None:
+        assert im_slice.shape == expected_shape
 
 
 class TestGridDetection():
