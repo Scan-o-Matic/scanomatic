@@ -1,4 +1,5 @@
 import time
+import traceback
 import itertools
 import numpy as np
 
@@ -402,7 +403,10 @@ class FixtureImage(object):
             current_model.grayscale.values = image_grayscale.get_grayscale(
                 self, current_model.grayscale)[1]
         except TypeError:
-            self._logger.error("Grayscale detection failed / caused TypeError")
+            self._logger.error(
+                "Grayscale detection failed due to: \n{0}".format(
+                    traceback.format_exc()))
+                    
             current_model.grayscale.values = None
 
         if current_model.grayscale.values is None:
