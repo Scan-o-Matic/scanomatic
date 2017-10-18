@@ -8,7 +8,7 @@ from numpy import ndarray
 from scanomatic.image_analysis import grid_array as grid_array_module
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 
-MockedGridCell = namedtuple('GridCell', ['xy1', ['xy2']])
+MockedGridCell = namedtuple('GridCell', ['xy1', 'xy2'])
 
 
 def _get_grid_array_instance(im):
@@ -34,21 +34,29 @@ def bad_grid_array(hard_plate):
     return _get_grid_array_instance(hard_plate)
 
 
-@pytest.mark.parametrize("im,grid_cell,expected_type,expected_shape", (
-    (None, None, NoneType, None),
-    (easy_plate, None, NoneType, None),
-    (None, MockedGridCell(xy1=None, xy2=None), NoneType, None),
-    (easy_plate, MockedGridCell(xy1=None, xy2=None), NoneType, None),
-    (easy_plate, MockedGridCell(xy1=(1, 1), xy2=None), NoneType, None),
-    (easy_plate, MockedGridCell(xy1=None, xy2=(1, 1)), NoneType, None),
-    (easy_plate, MockedGridCell(xy1=(1, 1), xy2=(1,)), NoneType, None),
-    (easy_plate, MockedGridCell(xy1=(1,), xy2=(1, 1)), NoneType, None),
-    (easy_plate, MockedGridCell(xy1=(1, 1), xy2=(1, 1)), ndarray, (0, 0)),
-    (easy_plate, MockedGridCell(xy1=(0, 1), xy2=(10, 20)), ndarray, (10, 19)),
+@pytest.mark.parametrize("grid_cell,expected_type", (
+    (None, NoneType),
+    (MockedGridCell(xy1=None, xy2=None), NoneType),
 ))
-def test_get_im_slice(im, grid_cell, expected_type, expected_shape):
-
+def test_get_im_slicei_no_im(grid_cell, expected_type):
+    im = None
     im_slice = grid_array_module._get_image_slice(im, grid_cell)
+    assert isinstance(im_slice, expected_type)
+
+
+@pytest.mark.parametrize("grid_cell,expected_type,expected_shape", (
+    (None, NoneType, None),
+    (MockedGridCell(xy1=None, xy2=None), NoneType, None),
+    (MockedGridCell(xy1=(1, 1), xy2=None), NoneType, None),
+    (MockedGridCell(xy1=None, xy2=(1, 1)), NoneType, None),
+    (MockedGridCell(xy1=(1, 1), xy2=(1,)), NoneType, None),
+    (MockedGridCell(xy1=(1,), xy2=(1, 1)), NoneType, None),
+    (MockedGridCell(xy1=(1, 1), xy2=(1, 1)), ndarray, (0, 0)),
+    (MockedGridCell(xy1=(0, 1), xy2=(10, 20)), ndarray, (10, 19)),
+))
+def test_get_im_slice(easy_plate, grid_cell, expected_type, expected_shape):
+
+    im_slice = grid_array_module._get_image_slice(easy_plate, grid_cell)
     assert isinstance(im_slice, expected_type)
     if expected_shape is not None:
         assert im_slice.shape == expected_shape
