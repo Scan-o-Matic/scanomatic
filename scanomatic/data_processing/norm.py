@@ -115,7 +115,7 @@ def get_downsampled_plates(data, subsampling="BR"):
                 "You had {0}".format(offset))
         elif offset.shape != (2, 2):
             raise ValueError(
-                "Only subsampling by 2x2 arrayes allowed. You had {0}".format(
+                "Only subsampling by 2x2 arrays allowed. You had {0}".format(
                     offset.shape))
 
         d1, d2 = np.where(offset)
