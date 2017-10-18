@@ -67,19 +67,7 @@ class TestGetSignalEdges:
             22, 22, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23
         ])
 
-        deltas = np.array([
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan,
-        ])
+        deltas = np.ones(observed_to_expected_index_map.shape) * np.nan
 
         observed_spikes = np.array([
             0, 1, 2, 3, 4, 5, 6, 32, 61, 62, 91, 120, 121, 150, 151, 179, 180,
