@@ -683,20 +683,16 @@ $(document)
             //drawCanvasGrid(scope, ctx);
         }
 
-        function setGriddingError(data) {
-            alert("set Griderror:" + data.reason);
+        function setGriddingError(data, scope) {
+            setStep(2.3);
+            $("#divGridStatus").text("Gridding was unsuccesful. <br>Reason: " + data.reason + "<br>Please enter Offset and retry!");
+            renderGridFail(data, scope);
         }
 
         function setGriddingSuccess(data, scope) {
-            if (data.success) {
-                setStep(2.2);
-                $("#divGridStatus").text("Gridding was sucessful!");
-                renderGrid(data, scope);
-            } else {
-                setStep(2.3);
-                $("#divGridStatus").text("Gridding was unsuccesful. <br/>Reason: " + data.reason + "<br/>Please enter Offset and retry!");
-                renderGridFail(data, scope);
-            }
+            setStep(2.2);
+            $("#divGridStatus").text("Gridding was sucessful!");
+            renderGrid(data, scope);
         }
 
         function doDetectColonyTask(scope, row, col, next) {
