@@ -109,10 +109,14 @@ def get_downsampled_plates(data, subsampling="BR"):
     for i, plate in enumerate(data):
         offset = subsampling[i]
 
-        if offset.sum() != 1 or offset.shape != (2, 2):
+        if offset.astype(bool).sum() != 1:
             raise ValueError(
                 "Only exactly 1 reference position offset per plate allowed. "
                 "You had {0}".format(offset))
+        elif offset.shape != (2, 2):
+            raise ValueError(
+                "Only subsampling by 2x2 arrayes allowed. You had {0}".format(
+                    offset.shape))
 
         d1, d2 = np.where(offset)
 
