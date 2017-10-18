@@ -371,8 +371,8 @@ class GridArray(object):
         spacings = self._calculate_grid_and_get_spacings(
             im, grid_correction=grid_correction)
 
-        if self._grid is None or not self._valid_grid or \
-                np.isnan(spacings).any():
+        if (self._grid is None or not self._valid_grid or
+                spacings is None or np.isnan(spacings).any()):
 
             if self._analysis_model.output_directory:
 
@@ -426,6 +426,9 @@ class GridArray(object):
             validate_parameters=validate_parameters,
             grid_shape=self._pinning_matrix,
             grid_correction=grid_correction)
+
+        if draft_grid is None:
+            return None
 
         dx, dy = spacings
 
