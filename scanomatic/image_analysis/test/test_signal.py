@@ -1,6 +1,7 @@
 import numpy as np
 from scanomatic.image_analysis import signal
 
+
 class TestGetSignalEdges:
 
     def test_works_with_useful_data(self):
@@ -68,21 +69,16 @@ class TestGetSignalEdges:
 
         deltas = np.array([
             np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan,
+            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
             np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
             np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan, np.nan,
-            np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
-            np.nan,
         ])
 
         observed_spikes = np.array([

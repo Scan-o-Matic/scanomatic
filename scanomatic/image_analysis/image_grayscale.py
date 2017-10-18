@@ -221,7 +221,7 @@ def detect_grayscale(im_trimmed, grayscale):
 
     if gs_l_diff < NEW_GS_ALG_L_DIFF_T:
 
-        _logger.info('Using new method')
+        _logger.info('Using default grayscale detection method')
 
         deltas, observed_spikes, observed_to_expected_map = signal.get_signal_data(
             para_signal_trimmed_im, up_spikes, grayscale,
