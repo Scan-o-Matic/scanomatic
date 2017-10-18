@@ -501,8 +501,7 @@ $(document)
             if (data.success) {
                 setStep(2.1);
                 $("#divGridStatus").text("Calculating Gridding ... please wait ...!");
-                //SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, [0, 0], scope.AccessToken, setGriddingSuccess, setGriddingError);
-                SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, [4, 0], scope.AccessToken, setGriddingSuccess, setGriddingError);
+                SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, [0, 0], scope.AccessToken, setGriddingSuccess, setGriddingError);
             } else
                 alert("set grayscale transform error:" + data.reason);
         }
@@ -597,11 +596,9 @@ $(document)
         }
 
         function renderGridFail(data, scope) {
-            var gridding = {
+            scope.PlateGridding = {
                 grid: data.grid
-            }
-            scope.PlateGridding = gridding;
-
+            };
             var imgPlateSlice = new Image;
             imgPlateSlice.src = GetSliceImageURL(scope.cccId, scope.CurrentImageId, scope.Plate);
             $("#divGridStatus").text($("#divGridStatus").text()+"\nFecthing Plate Slice ...");
@@ -618,19 +615,18 @@ $(document)
                     offset.push(offsetRow);
                     offset.push(offsetCol);
                     $("#divGridStatus").text("Calculating Gridding ... please wait ...!");
-                    //SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, [4, 0], scope.AccessToken, setGriddingSuccess, setGriddingError);
                     SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, offset, scope.AccessToken, setGriddingSuccess, setGriddingError);
                 });
             }
         }
 
         function renderGrid(data, scope) {
-            var gridding = {
+            scope.PlateGridding = {
                 grid: data.grid,
                 xy1: data.xy1,
                 xy2: data.xy2
-            }
-            scope.PlateGridding = gridding;
+            };
+
             var imgPlateSlice = new Image;
             var sliceUrl = GetSliceImageURL(scope.cccId, scope.CurrentImageId, scope.Plate);
             imgPlateSlice.src = sliceUrl;
