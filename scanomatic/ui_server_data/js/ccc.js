@@ -483,28 +483,15 @@ $(document)
             $(document).dequeue("plateProcess");
         };
 
-        function createSetGrayScaleTransformTask(scope, plateId) {
+        function createSetGrayScaleTransformTask(scope, plate) {
             return function(next) {
-                doSetGrayScaleTransformTask(scope, plateId, next);
-            }
+                setStep(2);
+                scope.Plate = plate;
+                scope.PlateNextTaskInQueue = next;
+                SetGrayScaleTransform(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.AccessToken, setGrayScaleTransformSuccess, setGrayScaleTransformError);
+            };
         }
 
-        function doSetGrayScaleTransformTask(scope, plateId, next) {
-            setGrayScaleTransform(scope, plateId, next);
-            //test(plateId, next);
-        }
-
-        //function test(plateId, next) {
-        //    alert("plate: " + plateId);
-        //    next();
-        //}
-
-        function setGrayScaleTransform(scope, plate, next) {
-            setStep(2);
-            scope.Plate = plate;
-            scope.PlateNextTaskInQueue = next;
-            SetGrayScaleTransform(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.AccessToken, setGrayScaleTransformSuccess, setGrayScaleTransformError);
-        }
 
         function setGrayScaleTransformError(data) {
             alert("set grayscale transform error:" + data.reason);
