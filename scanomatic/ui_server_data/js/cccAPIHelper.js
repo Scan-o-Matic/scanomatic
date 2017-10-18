@@ -210,11 +210,12 @@ function SetGridding(scope, cccId, imageId, plate, pinningFormat, offSet, access
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
-        success: function (data) {
-            successCallback(data, scope);
-        },
-        error: errorCallback
-    });
+    })
+        .done( function(data) { successCallback(data, scope); } )
+        .fail( function(jqXHR) {
+            const data = JSON.parse(jqXHR.responseText);
+            errorCallback(data, scope);
+        } );
 }
 
 function SetColonyDetection(scope, cccId, imageId, plate, accessToken, row, col, successCallback, errorCallback) {
