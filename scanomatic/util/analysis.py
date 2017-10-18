@@ -81,41 +81,50 @@ def produce_grid_images(path=".", plates=None, image=None, mark_position=None, c
                      marked_position=mark_position)
 
 
+def make_grid(im, grid_plot, grid, marked_position):
+
+        x = 0
+        y = 1
+        for row in range(grid.shape[1]):
+
+            grid_plot.plot(
+                grid[x, row, :], -grid[y, row, :] + im.shape[y], 'r-')
+
+        for col in range(grid.shape[2]):
+
+            grid_plot.plot(
+                grid[x, :, col], -grid[y, :, col] + im.shape[y], 'r-')
+
+        if marked_position is None:
+            marked_position = (-1, 0)
+
+        grid_plot.plot(
+            grid[x, marked_position[0], marked_position[1]],
+            grid[y, marked_position[0], marked_position[1]] +
+            im.shape[y],
+            'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
+
+
 def make_grid_im(im, grid, save_grid_name, marked_position=None):
 
-    with ExpiringModule("matplotlib", run_code="mod.use('Svg')") as _:
+    with ExpiringModule("matplotlib", run_code="mod.use('Svg')"):
         with ExpiringModule("matplotlib.pyplot") as plt:
 
             grid_image = plt.figure()
             grid_plot = grid_image.add_subplot(111)
             grid_plot.imshow(im.T, cmap=plt.cm.gray)
-            x = 0
-            y = 1
 
             if grid is not None:
-                for row in range(grid.shape[1]):
-
-                    grid_plot.plot(
-                        grid[x, row, :], -grid[y, row, :] + im.shape[y], 'r-')
-
-                for col in range(grid.shape[2]):
-
-                    grid_plot.plot(
-                        grid[x, :, col], -grid[y, :, col] + im.shape[y], 'r-')
-
-                if marked_position is None:
-                    marked_position = (-1, 0)
-
-                    grid_plot.plot(
-                        grid[x, marked_position[0], marked_position[1]],
-                        grid[y, marked_position[0], marked_position[1]] +
-                        im.shape[y],
-                        'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
+                make_grid(im, grid_plot, grid, marked_position)
 
             ax = grid_image.gca()
-            ax.set_xlim(0, im.shape[x])
-            ax.set_ylim(0, im.shape[y])
+            ax.set_xlim(0, im.shape[0])
+            ax.set_ylim(0, im.shape[1])
             ax.get_xaxis().set_visible(False)
             ax.get_yaxis().set_visible(False)
 
-            grid_image.savefig(save_grid_name, pad_inches=0.01, format='svg', bbox_inches='tight')
+            grid_image.savefig(
+                save_grid_name,
+                pad_inches=0.01,
+                format='svg',
+                bbox_inches='tight')
