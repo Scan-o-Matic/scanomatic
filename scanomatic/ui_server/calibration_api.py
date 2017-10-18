@@ -26,6 +26,19 @@ from .general import (
 _VALID_CHARACTERS = letters + "-._1234567890"
 
 
+def get_bounding_box_for_colony(grid, x, y, width, height):
+
+    px_y, px_x = grid[:, y, x]
+
+    return {
+        'ylow': int(round(px_y - height / 2)),
+        'yhigh': int(round(px_y + height / 2) + 1),
+        'xlow': int(round(px_x - width / 2)),
+        'xhigh': int(round(px_x + width / 2) + 1),
+        'center': (px_y, px_x),
+    }
+
+
 def add_routes(app):
     """
 
@@ -569,11 +582,10 @@ def add_routes(app):
         plate_json = image_json[calibration.CCCImage.plates][plate]
         h, w = plate_json[calibration.CCCPlate.grid_cell_size]
 
-        px_y, px_x = grid[:, grid.shape[1] - y, x]
-
+        box = get_bounding_box_for_colony(grid, x, y, w, h)
         colony_im = image[
-            int(round(px_y - h / 2)): int(round(px_y + h / 2) + 1),
-            int(round(px_x - w / 2)): int(round(px_x + w / 2) + 1)
+            box['ylow']: box['yhigh'],
+            box['xlow']: box['xhigh'],
         ]
 
         # first plate, upper left colony (just need something):
@@ -615,7 +627,7 @@ def add_routes(app):
             blob_exists=int(blob_exists),
             background_exists=int(background_exists),
             background_reasonable=int(background_reasonable),
-            grid_position=(px_y, px_x),
+            grid_position=box['center'],
         )
 
     @app.route(
