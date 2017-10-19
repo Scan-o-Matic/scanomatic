@@ -40,6 +40,13 @@ def get_bounding_box_for_colony(grid, x, y, width, height):
     }
 
 
+def get_int_tuple(data):
+
+    if data:
+        return tuple(int(v) for v in data)
+    return None
+
+
 def add_routes(app):
     """
 
@@ -464,34 +471,8 @@ def add_routes(app):
         if not data_object:
             data_object = request.values
 
-        pinning_format = data_object.get("pinning_format")
-        try:
-            pinning_format = tuple(int(v) for v in pinning_format.split(u","))
-        except (ValueError, TypeError):
-            app.logger.error(
-                "Pinning-format not understood ({0})".format(
-                    data_object.get("pinning_format"))
-            )
-            return json_abort(
-                400,
-                reason="Bad pinning format",
-            )
-
-        correction = data_object.get('gridding_correction')
-        if correction:
-            try:
-                correction = tuple(int(v) for v in correction.split(u","))
-            except ValueError:
-                app.logger.error(
-                    "Correction-format not understood ({0})".format(
-                        correction)
-                )
-                return json_abort(
-                    400,
-                    reason="Bad grid correction {0}".format(correction),
-                )
-        else:
-            correction = None
+        pinning_format = get_int_tuple(data_object.get("pinning_format"))
+        correction = get_int_tuple(data_object.get('gridding_correction'))
 
         analysis_model = AnalysisModelFactory.create()
         analysis_model.output_directory = ""
