@@ -625,6 +625,7 @@ window.executeCCC = function() {
             });
         }
     }
+    cccFunctions.renderGridFail = renderGridFail;
 
     function renderGrid(data, scope) {
         scope.PlateGridding = {
@@ -649,6 +650,7 @@ window.executeCCC = function() {
             });
         }
     }
+    cccFunctions.renderGrid = renderGrid;
 
     function nextColonyDetection(scope) {
         //var scope = getCurrentScope();
@@ -692,14 +694,18 @@ window.executeCCC = function() {
     function setGriddingError(data, scope) {
         cccFunctions.setStep(2.3);
         $("#divGridStatus").text("Gridding was unsuccesful. Reason: '" + data.reason + "'. Please enter Offset and retry!");
-        renderGridFail(data, scope);
+        cccFunctions.renderGridFail(data, scope);
     }
+
+    cccFunctions.setGriddingError = setGriddingError;
 
     function setGriddingSuccess(data, scope) {
         cccFunctions.setStep(2.2);
         $("#divGridStatus").text("Gridding was sucessful!");
-        renderGrid(data, scope);
+        cccFunctions.renderGrid(data, scope);
     }
+
+    cccFunctions.setGriddingSuccess = setGriddingSuccess;
 
     function doDetectColonyTask(scope, row, col, next) {
         scope.PlateColonyNextTaskInQueue = next;
