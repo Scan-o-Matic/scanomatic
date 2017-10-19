@@ -29,11 +29,12 @@ _VALID_CHARACTERS = letters + "-._1234567890"
 def get_bounding_box_for_colony(grid, x, y, width, height):
 
     px_y, px_x = grid[:, y, x]
-
+    px_y = max(px_y, 0)
+    px_x = max(px_x, 0)
     return {
-        'ylow': int(round(px_y - height / 2)),
+        'ylow': int(max(round(px_y - height / 2), 0)),
         'yhigh': int(round(px_y + height / 2) + 1),
-        'xlow': int(round(px_x - width / 2)),
+        'xlow': int(max(round(px_x - width / 2), 0)),
         'xhigh': int(round(px_x + width / 2) + 1),
         'center': (px_y, px_x),
     }
