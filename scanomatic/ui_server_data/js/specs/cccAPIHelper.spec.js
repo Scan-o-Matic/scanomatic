@@ -1,4 +1,4 @@
-describe('SetGridding', ()=>{
+describe('SetGridding', () => {
     // function SetGridding(scope, cccId, imageId, plate, pinningFormat, offSet, accessToken, successCallback, errorCallback)
 
     const cccId = 'hello';

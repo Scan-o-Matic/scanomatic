@@ -12,6 +12,8 @@
 #   - dist/**/*.js
 #
 src_files:
+    - "jquery-2.2.3.js"
+    - "d3.js"
     - "js/*.js"
 
 # stylesheets
