@@ -67,6 +67,17 @@ def test_app():
     return app.test_client()
 
 
+@pytest.mark.parametrize('data,expected', (
+    (None, None),
+    ([], None),
+    ((1, 2), (1, 2)),
+    (('1', '2'), (1, 2)),
+))
+def test_get_int_tuple(data, expected):
+
+    assert calibration_api.get_int_tuple(data) == expected
+
+
 def test_get_bounding_box_for_colony():
 
     # 3x3 colony grid
