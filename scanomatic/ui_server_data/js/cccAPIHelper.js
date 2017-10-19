@@ -198,18 +198,16 @@ function SetGrayScaleTransform(scope, cccId, imageId, plate, accessToken, succes
 
 function SetGridding(scope, cccId, imageId, plate, pinningFormat, offSet, accessToken, successCallback, errorCallback) {
     var path = SetGriddingPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate);
-
-    var formData = new FormData();
-    formData.append("pinning_format", pinningFormat);
-    formData.append("gridding_correction", offSet);
-    formData.append("access_token", accessToken);
     $.ajax({
         url: path,
         type: "POST",
-        contentType: false,
-        enctype: 'multipart/form-data',
-        data: formData,
-        processData: false,
+        dataType: 'json',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            pinning_format: pinningFormat,
+            gridding_correction: offSet,
+            access_token: accessToken,
+        }),
     })
         .done( function(data) { successCallback(data, scope); } )
         .fail( function(jqXHR) {
@@ -354,8 +352,6 @@ function GetTransposedMarkers(fixtureName, markers, successCallback, errorCallba
     });
 }
 
-
-
 function GetAPILock(url, callback) {
     if (url) {
         var path = baseUrl + url+"/" + addCacheBuster(true);
@@ -405,4 +401,3 @@ function RemoveLock(url, key, callback) {
         }
     });
 };
-
