@@ -120,7 +120,7 @@ window.executeCCC = function() {
         width: 350,
         modal: true,
         buttons: {
-            "Initiate new CCC": initiateNewCcc,
+            "Initiate new CCC": cccFunctions.initiateNewCcc,
             Cancel: function() { dialogCCCIni.dialog("close"); }
         },
         close: function() {
@@ -132,7 +132,7 @@ window.executeCCC = function() {
     form = dialogCCCIni.find("form").on("submit",
         function(event) {
             event.preventDefault();
-            initiateNewCcc();
+            cccFunctions.initiateNewCcc();
         });
 
     $("#btnIniCCC").click(openCCCIniDialog);
@@ -192,11 +192,11 @@ window.executeCCC = function() {
             500);
     }
 
-    function checkLength(o, n, min, max) {
-        if (o.val().length > max || o.val().length < min) {
-            o.addClass("ui-state-error");
+    function checkLength(obj, min, max, field) {
+        if (obj.val().length > max || obj.val().length < min) {
+            obj.addClass("ui-state-error");
             updateTips("Length of " +
-                n +
+                field +
                 " must be between " +
                 min +
                 " and " +
@@ -208,15 +208,19 @@ window.executeCCC = function() {
         }
     }
 
-    function checkRegexp(o, regexp, n) {
-        if (!(regexp.test(o.val()))) {
-            o.addClass("ui-state-error");
-            updateTips(n);
+    cccFunctions.checkLength = checkLength;
+
+    function checkName(obj, regexp, message) {
+        if (!(regexp.test(obj.val()))) {
+            obj.addClass("ui-state-error");
+            updateTips(message);
             return false;
         } else {
             return true;
         }
     };
+
+    cccFunctions.checkName = checkName;
 
     function openCCCIniDialog() {
         dialogCCCIni.dialog("open");
@@ -308,30 +312,36 @@ window.executeCCC = function() {
 
     function initiateNewCcc() {
         var valid = true;
-        var validCharsRegexp = /^[a-z]([0-9a-z_\s])+$/i;
-        var invalidCharsMessage = "This field may consist of a-z, 0-9, underscores and spaces, and must begin with a letter.";
+        var validNameRegexp = /^[a-z]([0-9a-z_\s])+$/i;
+        var invalidNameMsg = "This field may consist of a-z, 0-9, underscores and spaces, and must begin with a letter.";
 
         allFields.removeClass("ui-state-error");
 
-        valid = valid && checkLength(species, "species", 3, 20);
-        valid = valid && checkLength(reference, "reference", 3, 20);
+        valid = valid && checkLength(species, 3, 20, "species");
+        valid = valid && checkLength(reference, 3, 20, "reference");
 
-        valid = valid && checkRegexp(
-            species, validCharsRegexp, invalidCharsMessage);
-        valid = valid && checkRegexp(
-            reference, validCharsRegexp, invalidCharsMessage);
+        valid = valid && checkName(species, validNameRegexp, invalidNameMsg);
+        valid = valid && checkName(reference, validNameRegexp, invalidNameMsg);
 
         if (valid) {
             var sp = species.val();
             var ref = reference.val();
-            InitiateCCC(sp, ref, initiateCccSuccess, initiateCccError);
+            InitiateCCC(
+                sp,
+                ref,
+                cccFunctions.initiateCccSuccess,
+                cccFunctions.initiateCccError);
         }
         return valid;
     }
 
+    cccFunctions.initiateNewCcc = initiateNewCcc;
+
     function initiateCccError(data) {
         updateTips(data.responseJSON.reason);
     }
+
+    cccFunctions.initiateCccError = initateCccError;
 
     function initiateCccSuccess(data) {
         if (data.success) {
@@ -362,6 +372,8 @@ window.executeCCC = function() {
             alert("Problem initializing:" + data.reason);
         }
     }
+
+    cccFunctions.initiateCccSuccess = initiateCccSuccess;
 
     function initiateProcessImageWizard() {
         cccFunctions.setStep(1);
