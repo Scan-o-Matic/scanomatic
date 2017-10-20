@@ -341,7 +341,7 @@ window.executeCCC = function() {
         updateTips(data.responseJSON.reason);
     }
 
-    cccFunctions.initiateCccError = initateCccError;
+    cccFunctions.initiateCccError = initiateCccError;
 
     function initiateCccSuccess(data) {
         if (data.success) {
