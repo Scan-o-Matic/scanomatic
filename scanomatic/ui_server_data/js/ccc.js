@@ -1,5 +1,6 @@
 window.cccFunctions = {
     setStep: function(step) {
+        'use strict';
         switch (step) {
         case 0:
             $("#divImageProcessing").hide();
