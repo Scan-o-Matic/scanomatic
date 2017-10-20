@@ -1,7 +1,10 @@
 import pytest
-from scanomatic.data_processing.phases.analysis import _locate_segment, get_data_needed_for_segmentation,\
-    DEFAULT_THRESHOLDS, segment, _phenotype_phases, CurvePhasePhenotypes, assign_linear_phase_phenotypes, \
-    assign_common_phase_phenotypes, assign_non_linear_phase_phenotypes
+from scanomatic.data_processing.phases.analysis import (
+    _locate_segment, get_data_needed_for_segmentation, DEFAULT_THRESHOLDS,
+    segment, _phenotype_phases, CurvePhasePhenotypes,
+    assign_linear_phase_phenotypes, assign_common_phase_phenotypes,
+    assign_non_linear_phase_phenotypes
+)
 
 from scanomatic.data_processing.phenotyper import Phenotyper
 import numpy as np
@@ -19,12 +22,24 @@ def build_test_phenotyper():
     np.random.seed = 42
     x_data = np.arange(100) * 1/3.
     y_data = np.array([[[
-        np.ones(100) * np.nan,  # 0: No data
-        np.ones(100) * 2 ** 17,  # 1: Flat data
-        np.power(2, 17 + np.arange(100) * 0.02),  # 2: Linear sloped data
-        np.hstack((np.ones(50) * 2 ** 17, np.power(2, np.arange(50) * 0.1 + 17))),  # 3: Flat to Sloped with kink
-        np.power(2, np.random.normal(17, size=(100,))),  # 4: Flat noise data
-        np.hstack((np.ones(50) * 2 ** 17, np.power(2, 17 - np.arange(50) * 0.1))),  # 5: Flat to Neg Sloped with kink
+        # 0: No data
+        np.ones(100) * np.nan,
+        # 1: Flat data
+        np.ones(100) * 2 ** 17,
+        # 2: Linear sloped data
+        np.power(2, 17 + np.arange(100) * 0.02),
+        # 3: Flat to Sloped with kink
+        np.hstack((
+            np.ones(50) * 2 ** 17,
+            np.power(2, np.arange(50) * 0.1 + 17)
+        )),
+        # 4: Flat noise data
+        np.power(2, np.random.normal(17, size=(100,))),
+        # 5: Flat to Neg Sloped with kink
+        np.hstack((
+            np.ones(50) * 2 ** 17,
+            np.power(2, 17 - np.arange(50) * 0.1)
+        )),
     ]]], ndmin=4)
 
     phenotyper_object = Phenotyper(y_data, x_data)
@@ -35,9 +50,12 @@ def build_test_phenotyper():
 
 def build_model(phenotyper_object, test_curve):
 
-    assert phenotyper_object.smooth_growth_data[0][0, 0].size == phenotyper_object.times.size
-    assert phenotyper_object.raw_growth_data[0].shape == phenotyper_object.smooth_growth_data[0].shape
-    return get_data_needed_for_segmentation(phenotyper_object, 0, (0, test_curve), DEFAULT_THRESHOLDS)
+    assert phenotyper_object.smooth_growth_data[0][0, 0].size \
+        == phenotyper_object.times.size
+    assert phenotyper_object.raw_growth_data[0].shape \
+        == phenotyper_object.smooth_growth_data[0].shape
+    return get_data_needed_for_segmentation(
+        phenotyper_object, 0, (0, test_curve), DEFAULT_THRESHOLDS)
 
 
 def test_no_growth_only_noise():
@@ -49,10 +67,16 @@ def test_no_growth_only_noise():
     filt = np.ones_like(model.times, dtype=bool)
     assign_linear_phase_phenotypes(data, model, filt)
 
-    assert np.isfinite(data[CurvePhasePhenotypes.LinearModelSlope]), "Invalid slope"
-    assert np.isfinite(data[CurvePhasePhenotypes.LinearModelIntercept]), "Invalid intercept"
-    assert np.allclose(data[CurvePhasePhenotypes.LinearModelIntercept], 17, atol=0.5), "Unexpected intercept"
-    assert np.allclose(data[CurvePhasePhenotypes.LinearModelSlope], 0, atol=0.05), "Unexpected intercept"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.LinearModelSlope]), "Invalid slope"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.LinearModelIntercept]), "Invalid intercept"
+    assert np.allclose(
+        data[CurvePhasePhenotypes.LinearModelIntercept], 17, atol=0.5
+    ), "Unexpected intercept"
+    assert np.allclose(
+        data[CurvePhasePhenotypes.LinearModelSlope], 0, atol=0.05
+    ), "Unexpected intercept"
 
 
 def test_no_data():
@@ -68,10 +92,13 @@ def test_no_data():
 
     assign_common_phase_phenotypes(data, model, left, right)
     assign_linear_phase_phenotypes(data, model, filt)
-    assign_non_linear_phase_phenotypes(data, model, left, right, left_time, right_time)
+    assign_non_linear_phase_phenotypes(
+        data, model, left, right, left_time, right_time)
 
     for phenotype in CurvePhasePhenotypes:
-        assert np.isnan(data[phenotype]) or data[phenotype] is None, "Got phenotype " + phenotype.name + " without data"
+        assert (
+            np.isnan(data[phenotype]) or data[phenotype] is None
+        ), "Got phenotype " + phenotype.name + " without data"
 
 
 def test_locate_segment():
@@ -105,7 +132,9 @@ def test_assign_common_phase_phenotypes():
     assert np.isfinite(data[CurvePhasePhenotypes.Start]), "Invalid start"
     assert np.isfinite(data[CurvePhasePhenotypes.Duration]), "Invalid duration"
     assert np.isfinite(data[CurvePhasePhenotypes.Yield]), "Invalid yield"
-    assert np.isfinite(data[CurvePhasePhenotypes.PopulationDoublings]), "Invalid population doubling"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.PopulationDoublings]
+    ), "Invalid population doubling"
     assert data[CurvePhasePhenotypes.Start] == 0
     assert data[CurvePhasePhenotypes.Duration] == model.times[-1]
     assert data[CurvePhasePhenotypes.Yield] == 0
@@ -115,10 +144,13 @@ def test_assign_common_phase_phenotypes():
     data = {}
     assign_common_phase_phenotypes(data, model, left, right)
 
-    assert np.isfinite(data[CurvePhasePhenotypes.Start]), "Invalid start"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.Start]), "Invalid start"
     assert np.isfinite(data[CurvePhasePhenotypes.Duration]), "Invalid duration"
     assert np.isfinite(data[CurvePhasePhenotypes.Yield]), "Invalid yield"
-    assert np.isfinite(data[CurvePhasePhenotypes.PopulationDoublings]), "Invalid population doubling"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.PopulationDoublings]
+    ), "Invalid population doubling"
     assert data[CurvePhasePhenotypes.Start] == 0
     assert data[CurvePhasePhenotypes.Duration] == model.times[-1]
     assert data[CurvePhasePhenotypes.Yield] > 0
@@ -134,8 +166,10 @@ def test_assign_linear_phase_phenotypes():
     filt = np.ones_like(model.times, dtype=bool)
     assign_linear_phase_phenotypes(data, model, filt)
 
-    assert np.isfinite(data[CurvePhasePhenotypes.LinearModelSlope]), "Invalid slope"
-    assert np.isfinite(data[CurvePhasePhenotypes.LinearModelIntercept]), "Invalid intercept"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.LinearModelSlope]), "Invalid slope"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.LinearModelIntercept]), "Invalid intercept"
     assert data[CurvePhasePhenotypes.LinearModelIntercept] != 0
     assert data[CurvePhasePhenotypes.LinearModelSlope] == 0
 
@@ -144,9 +178,12 @@ def test_assign_linear_phase_phenotypes():
     filt = np.ones_like(model.times, dtype=bool)
     assign_linear_phase_phenotypes(data, model, filt)
 
-    assert np.isfinite(data[CurvePhasePhenotypes.LinearModelSlope]), "Invalid slope"
-    assert np.isfinite(data[CurvePhasePhenotypes.LinearModelIntercept]), "Invalid intercept"
-    np.testing.assert_allclose(data[CurvePhasePhenotypes.LinearModelIntercept], 17)
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.LinearModelSlope]), "Invalid slope"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.LinearModelIntercept]), "Invalid intercept"
+    np.testing.assert_allclose(
+        data[CurvePhasePhenotypes.LinearModelIntercept], 17)
     assert data[CurvePhasePhenotypes.LinearModelSlope] > 0
 
     model = build_model(phenotyper_object, 3)
@@ -154,8 +191,10 @@ def test_assign_linear_phase_phenotypes():
     filt = np.ones_like(model.times, dtype=bool)
     assign_linear_phase_phenotypes(data, model, filt)
 
-    assert np.isfinite(data[CurvePhasePhenotypes.LinearModelSlope]), "Invalid slope"
-    assert np.isfinite(data[CurvePhasePhenotypes.LinearModelIntercept]), "Invalid intercept"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.LinearModelSlope]), "Invalid slope"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.LinearModelIntercept]), "Invalid intercept"
     assert data[CurvePhasePhenotypes.LinearModelIntercept] != 0
     assert data[CurvePhasePhenotypes.LinearModelSlope] > 0
 
@@ -171,11 +210,17 @@ def test_assign_non_linear_phase_phenotypes():
     left_time = model.times[left]
     right_time = model.times[right - 1]
 
-    assign_non_linear_phase_phenotypes(data, model, left, right, left_time, right_time)
+    assign_non_linear_phase_phenotypes(
+        data, model, left, right, left_time, right_time)
 
-    assert np.isfinite(data[CurvePhasePhenotypes.AsymptoteIntersection]), "Invalid intersection phenotype"
-    assert np.isfinite(data[CurvePhasePhenotypes.AsymptoteAngle]), "Invalid angle"
-    np.testing.assert_allclose(data[CurvePhasePhenotypes.AsymptoteIntersection], 0.5, atol=0.01)
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.AsymptoteIntersection]
+    ), "Invalid intersection phenotype"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.AsymptoteAngle]
+    ), "Invalid angle"
+    np.testing.assert_allclose(
+        data[CurvePhasePhenotypes.AsymptoteIntersection], 0.5, atol=0.01)
     assert data[CurvePhasePhenotypes.AsymptoteAngle] > 0
 
     model = build_model(phenotyper_object, 5)
@@ -185,11 +230,17 @@ def test_assign_non_linear_phase_phenotypes():
     left_time = model.times[left]
     right_time = model.times[right - 1]
 
-    assign_non_linear_phase_phenotypes(data, model, left, right, left_time, right_time)
+    assign_non_linear_phase_phenotypes(
+        data, model, left, right, left_time, right_time)
 
-    assert np.isfinite(data[CurvePhasePhenotypes.AsymptoteIntersection]), "Invalid intersection phenotype"
-    assert np.isfinite(data[CurvePhasePhenotypes.AsymptoteAngle]), "Invalid angle"
-    np.testing.assert_allclose(data[CurvePhasePhenotypes.AsymptoteIntersection], 0.5, atol=0.01)
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.AsymptoteIntersection]
+    ), "Invalid intersection phenotype"
+    assert np.isfinite(
+        data[CurvePhasePhenotypes.AsymptoteAngle]
+    ), "Invalid angle"
+    np.testing.assert_allclose(
+        data[CurvePhasePhenotypes.AsymptoteIntersection], 0.5, atol=0.01)
     assert data[CurvePhasePhenotypes.AsymptoteAngle] < 0
 
 
@@ -206,8 +257,13 @@ def test_using_filter_for_phase_phenotypes_correctly():
 
     assign_common_phase_phenotypes(data, model, left, right)
 
-    assert data[CurvePhasePhenotypes.Start] == model.times[left], "Error in initial time"
-    assert data[CurvePhasePhenotypes.Duration] == model.times[right - 1] - model.times[left], "Error in duration"
+    assert (
+        data[CurvePhasePhenotypes.Start] == model.times[left]
+    ), "Error in initial time"
+    assert (
+        data[CurvePhasePhenotypes.Duration]
+        == model.times[right - 1] - model.times[left]
+    ), "Error in duration"
 
     filt[:20] = False
 
@@ -218,8 +274,14 @@ def test_using_filter_for_phase_phenotypes_correctly():
 
     assign_common_phase_phenotypes(data, model, left, right)
 
-    assert data[CurvePhasePhenotypes.Start] == (model.times[left] + model.times[left - 1]) / 2, "Error in initial time"
-    assert data[CurvePhasePhenotypes.Duration] == model.times[right - 1] - data[CurvePhasePhenotypes.Start], "Error in duration"
+    assert (
+        data[CurvePhasePhenotypes.Start]
+        == (model.times[left] + model.times[left - 1]) / 2
+    ), "Error in initial time"
+    assert (
+        data[CurvePhasePhenotypes.Duration]
+        == model.times[right - 1] - data[CurvePhasePhenotypes.Start]
+    ), "Error in duration"
 
     filt[-10:] = False
 
@@ -232,8 +294,15 @@ def test_using_filter_for_phase_phenotypes_correctly():
 
     assign_common_phase_phenotypes(data, model, left, right)
 
-    assert data[CurvePhasePhenotypes.Start] == (model.times[left] + model.times[left - 1]) / 2, "Error in initial time"
-    assert data[CurvePhasePhenotypes.Duration] == (model.times[right - 1] + model.times[right]) / 2 - data[CurvePhasePhenotypes.Start], "Error in duration"
+    assert (
+        data[CurvePhasePhenotypes.Start]
+        == (model.times[left] + model.times[left - 1]) / 2
+    ), "Error in initial time"
+    assert (
+        data[CurvePhasePhenotypes.Duration]
+        == (model.times[right - 1] + model.times[right]) / 2
+        - data[CurvePhasePhenotypes.Start]
+    ), "Error in duration"
 
 
 def test_phases_are_chronological_and_not_overlapping():
@@ -250,15 +319,26 @@ def test_phases_are_chronological_and_not_overlapping():
 
         phenotypes = _phenotype_phases(model, 5)
 
-        assert len(model.times) == len(model.phases), "Inconsistency in number of phase positions for curve " + i
+        assert (
+            len(model.times) == len(model.phases)
+        ), "Inconsistency in number of phase positions for curve " + i
 
-        starts = np.array([phase[CurvePhasePhenotypes.Start] for _, phase in phenotypes if phase is not None])
+        starts = np.array([
+            phase[CurvePhasePhenotypes.Start]
+            for _, phase in phenotypes if phase is not None
+        ])
 
-        assert all(np.diff(starts) > 0), "Non chronological phases for curve " + i
+        assert all(
+            np.diff(starts) > 0), "Non chronological phases for curve " + i
 
-        ends = np.array([phase[CurvePhasePhenotypes.Start] + phase[CurvePhasePhenotypes.Duration] for _, phase in phenotypes if phase is not  None])
+        ends = np.array([
+            phase[CurvePhasePhenotypes.Start]
+            + phase[CurvePhasePhenotypes.Duration]
+            for _, phase in phenotypes if phase is not None
+        ])
 
-        assert not any(ends[:-1] - starts[1:] > 0), "Overlapping phases for curve " + 1
+        assert not any(
+            ends[:-1] - starts[1:] > 0), "Overlapping phases for curve " + 1
 
 
 def test_segments():
