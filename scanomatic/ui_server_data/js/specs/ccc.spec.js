@@ -79,7 +79,7 @@ describe('setGriddingError', () => {
         expect(cccFunctions.renderGridFail).toHaveBeenCalledWith(
             data, scope
         );
-    })
+    });
 });
 
 describe('setGriddingSuccess', () => {
@@ -100,5 +100,77 @@ describe('setGriddingSuccess', () => {
         expect(cccFunctions.renderGrid).toHaveBeenCalledWith(
             data, scope
         );
-    })
+    });
+});
+
+describe('checkName', () => {
+
+  it('rejects names starting with a number', () => {
+    // returns false
+  });
+
+  it('rejects names starting with forbidded chars', () => {
+    // returns false
+  });
+
+  it('accepts names with allowed chars', () => {
+    // returns true
+  });
+
+  it('sets correct error message', () => {
+    // spy on text
+  });
+
+});
+
+describe('checkLength', () => {
+
+  it('rejects too short names', () => {
+    // returns false
+  });
+
+  it('rejects too long names', () => {
+    // returns false
+  });
+
+  it('accepts names with allowed length', () => {
+    // returns true
+  });
+
+  it('sets correct error message', () => {
+    // spy on text
+  });
+
+});
+
+describe('initiateCccError', () => {
+
+  it('sets correct error message', () => {
+    // spy on text
+  });
+
+});
+
+describe('initiateNewCcc', () => {
+
+  it('rejects invalid species', () => {
+    // returns false
+  });
+
+  it('rejects invalid reference', () => {
+    // returns false
+  });
+
+  it('accepts valid species and reference', () => {
+    // initateCccSuccess called once, initiateCccError not called
+    // returns true
+  });
+
+  it('rejects duplicated valid species and reference', () => {
+    // initateCccSuccess called once, initiateCccError not called
+    // returns true
+    // initateCccSuccess called once, initiateCccError called once
+    // returns true
+  });
+
 });
