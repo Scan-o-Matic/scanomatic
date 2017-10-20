@@ -324,7 +324,7 @@ window.executeCCC = function() {
     }
 
     function initiateCccError(data) {
-        alert("ini failure!");
+        alert(data.responseJSON.reason);
     }
 
     function initiateCccSuccess(data) {
