@@ -307,13 +307,18 @@ window.executeCCC = function() {
 
     function initiateNewCcc() {
         var valid = true;
+        var validCharsRegexp = /^[a-z]([0-9a-z_\s])+$/i;
+        var invalidCharsMessage = "This field may consist of a-z, 0-9, underscores and spaces, and must begin with a letter.";
+
         allFields.removeClass("ui-state-error");
 
         valid = valid && checkLength(species, "species", 3, 20);
         valid = valid && checkLength(reference, "reference", 3, 20);
 
-        valid = valid && checkRegexp(species, /^[a-z]([0-9a-z_\s])+$/i, "This field may consist of a-z, 0-9, underscores, spaces and must begin with a letter.");
-        valid = valid && checkRegexp(reference, /^[a-z]([0-9a-z_\s])+$/i, "This field may consist of a-z, 0-9, underscores, spaces and must begin with a letter.");
+        valid = valid && checkRegexp(
+            species, validCharsRegexp, invalidCharsMessage);
+        valid = valid && checkRegexp(
+            reference, validCharsRegexp, invalidCharsMessage);
 
         if (valid) {
             var sp = species.val();
@@ -324,7 +329,7 @@ window.executeCCC = function() {
     }
 
     function initiateCccError(data) {
-        alert(data.responseJSON.reason);
+        updateTips(data.responseJSON.reason);
     }
 
     function initiateCccSuccess(data) {
