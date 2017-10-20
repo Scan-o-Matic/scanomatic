@@ -2,7 +2,9 @@ import os
 import json
 
 import pytest
+import numpy as np
 from flask import Flask
+from itertools import product
 
 from scanomatic.ui_server import calibration_api
 from scanomatic.io.paths import Paths
@@ -63,6 +65,82 @@ def test_app():
     calibration_api.add_routes(app)
     app.testing = True
     return app.test_client()
+
+
+@pytest.mark.parametrize('data,expected', (
+    (None, None),
+    ([], None),
+    ((1, 2), (1, 2)),
+    (('1', '2'), (1, 2)),
+))
+def test_get_int_tuple(data, expected):
+
+    assert calibration_api.get_int_tuple(data) == expected
+
+
+def test_get_bounding_box_for_colony():
+
+    # 3x3 colony grid
+    grid = np.array(
+        [
+            # Colony positions' y according to their positions in the grid
+            [
+                [51, 102, 151],
+                [51, 101, 151],
+                [50, 102, 152],
+            ],
+
+            # X according to their positions on the grid
+            [
+                [75, 125, 175],
+                [75, 123, 175],
+                [75, 125, 175],
+            ]
+        ]
+    )
+    width = 50
+    height = 30
+
+    for x, y in product(range(3), range(3)):
+
+        box = calibration_api.get_bounding_box_for_colony(
+            grid, x, y, width, height)
+
+        assert (box['center'] == grid[:, y, x]).all()
+        assert box['yhigh'] - box['ylow'] == height + 1
+        assert box['xhigh'] - box['xlow'] == width + 1
+        assert box['xlow'] >= 0
+        assert box['ylow'] >= 0
+
+
+def test_get_boundin_box_for_colony_if_grid_partially_outside():
+    """only important that never gets negative numbers for box"""
+
+    grid = np.array(
+        [
+            [
+                [-5, 10],
+                [51, 101],
+            ],
+
+            [
+                [10, 125],
+                [-5, 123],
+            ]
+        ]
+    )
+    width = 50
+    height = 30
+
+    for x, y in product(range(2), range(2)):
+
+        box = calibration_api.get_bounding_box_for_colony(
+            grid, x, y, width, height)
+
+        assert box['center'][0] >= 0
+        assert box['center'][1] >= 0
+        assert box['xlow'] >= 0
+        assert box['ylow'] >= 0
 
 
 class TestFinalizeEndpoint:

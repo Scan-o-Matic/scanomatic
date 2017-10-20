@@ -1,4 +1,0 @@
--rrequirements.in
-pytest
-pytest-cov
-mock

@@ -214,6 +214,7 @@ if len(sys.argv) > 1:
                 'ui_server_data/*.html',
                 'ui_server_data/js/*.js',
                 'ui_server_data/style/*.css',
+                'ui_server_data/fonts/*',
                 'ui_server_data/templates/*',
                 'images/*',
             ]
@@ -331,4 +332,3 @@ if len(sys.argv) > 1:
     from subprocess import call
 
     call(["python", "get_installed_version.py"])
-

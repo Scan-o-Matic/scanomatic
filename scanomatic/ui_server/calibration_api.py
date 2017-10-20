@@ -26,6 +26,27 @@ from .general import (
 _VALID_CHARACTERS = letters + "-._1234567890"
 
 
+def get_bounding_box_for_colony(grid, x, y, width, height):
+
+    px_y, px_x = grid[:, y, x]
+    px_y = max(px_y, 0)
+    px_x = max(px_x, 0)
+    return {
+        'ylow': int(max(round(px_y - height / 2), 0)),
+        'yhigh': int(round(px_y + height / 2) + 1),
+        'xlow': int(max(round(px_x - width / 2), 0)),
+        'xhigh': int(round(px_x + width / 2) + 1),
+        'center': (px_y, px_x),
+    }
+
+
+def get_int_tuple(data):
+
+    if data:
+        return tuple(int(v) for v in data)
+    return None
+
+
 def add_routes(app):
     """
 
@@ -450,34 +471,8 @@ def add_routes(app):
         if not data_object:
             data_object = request.values
 
-        pinning_format = data_object.get("pinning_format")
-        try:
-            pinning_format = tuple(int(v) for v in pinning_format.split(u","))
-        except (ValueError, TypeError):
-            app.logger.error(
-                "Pinning-format not understood ({0})".format(
-                    data_object.get("pinning_format"))
-            )
-            return json_abort(
-                400,
-                reason="Bad pinning format",
-            )
-
-        correction = data_object.get('gridding_correction')
-        if correction:
-            try:
-                correction = tuple(int(v) for v in correction.split(u","))
-            except ValueError:
-                app.logger.error(
-                    "Correction-format not understood ({0})".format(
-                        correction)
-                )
-                return json_abort(
-                    400,
-                    reason="Bad grid correction {0}".format(correction),
-                )
-        else:
-            correction = None
+        pinning_format = get_int_tuple(data_object.get("pinning_format"))
+        correction = get_int_tuple(data_object.get('gridding_correction'))
 
         analysis_model = AnalysisModelFactory.create()
         analysis_model.output_directory = ""
@@ -569,11 +564,10 @@ def add_routes(app):
         plate_json = image_json[calibration.CCCImage.plates][plate]
         h, w = plate_json[calibration.CCCPlate.grid_cell_size]
 
-        px_y, px_x = grid[:, grid.shape[1] - y, x]
-
+        box = get_bounding_box_for_colony(grid, x, y, w, h)
         colony_im = image[
-            int(round(px_y - h / 2)): int(round(px_y + h / 2) + 1),
-            int(round(px_x - w / 2)): int(round(px_x + w / 2) + 1)
+            box['ylow']: box['yhigh'],
+            box['xlow']: box['xhigh'],
         ]
 
         # first plate, upper left colony (just need something):
@@ -615,7 +609,7 @@ def add_routes(app):
             blob_exists=int(blob_exists),
             background_exists=int(background_exists),
             background_reasonable=int(background_reasonable),
-            grid_position=(px_y, px_x),
+            grid_position=box['center'],
         )
 
     @app.route(
