@@ -5,4 +5,6 @@ python:
 before_install:
     - sudo apt-get install -qq python-numpy python-scipy python-matplotlib chromium-chromedriver
     - pip install tox
+    - export DISPLAY=:99.0
+    - sh -e /etc/init.d/xvfb start
 script: sh run_travis.sh
