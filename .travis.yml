@@ -3,6 +3,6 @@ python:
     - "2.7"
 
 before_install:
-    - sudo apt-get install -qq python-numpy python-scipy python-matplotlib
+    - sudo apt-get install -qq python-numpy python-scipy python-matplotlib chromium-chromedriver
     - pip install tox
 script: sh run_travis.sh
