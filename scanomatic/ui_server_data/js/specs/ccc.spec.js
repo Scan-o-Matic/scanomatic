@@ -3,12 +3,12 @@ describe('createSetGrayScaleTransformTask', () => {
     beforeEach(() => {
         spyOn(window, 'SetGrayScaleTransform');
         spyOn(window, '$').and.returnValue({
-            hide: () => {},
-            show: () => {},
-            add: ()=>{return {add: ()=>{} };},
+            hide: ()=>{},
+            show: ()=>{},
+            add: ()=>{return {add: ()=>{}};},
             click: ()=>{},
             change: ()=>{},
-            dialog: ()=>{return {find: ()=>{return {on: () => {}};}};},
+            dialog: ()=>{return {find: ()=>{return {on: ()=>{}};}};},
         });
         executeCCC();
     });
@@ -162,14 +162,14 @@ describe('initiateNewCcc', () => {
   });
 
   it('accepts valid species and reference', () => {
-    // initateCccSuccess called once, initiateCccError not called
+    // initiateCccSuccess called once, initiateCccError not called
     // returns true
   });
 
   it('rejects duplicated valid species and reference', () => {
-    // initateCccSuccess called once, initiateCccError not called
+    // initiateCccSuccess called once, initiateCccError not called
     // returns true
-    // initateCccSuccess called once, initiateCccError called once
+    // initiateCccSuccess called once, initiateCccError called once
     // returns true
   });
 
