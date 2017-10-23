@@ -3,7 +3,6 @@ version: '2'
 services:
   scanomatic:
     ports:
-      - 5000:5000
       - 12451:12451
     entrypoint: scan-o-matic --no-browser --debug
     volumes:

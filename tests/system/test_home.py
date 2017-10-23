@@ -46,3 +46,10 @@ def browser(request):
 def test_title(scanomatic, browser):
     browser.get(scanomatic)
     assert "Scan-o-Matic" in browser.title
+
+def test_name_new_fixture(scanomatic, browser):
+    browser.get(scanomatic + '/fixtures')
+    browser.find_element_by_id('add-fixture').click()
+    element = browser.find_element_by_id('new-fixture-name')
+    element.send_keys('Exterminate')
+    assert element.get_attribute('value') == "Exterminate"
