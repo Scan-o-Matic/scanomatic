@@ -10,6 +10,6 @@ services:
       - scan-o-matic-home:/root/.scan-o-matic
       - /dev/bus/usb:/dev/bus/usb
       - /somprojects:/somprojects
-      
+
 volumes:
   scan-o-matic-home: {}
