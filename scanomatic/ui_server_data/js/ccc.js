@@ -195,13 +195,8 @@ window.executeCCC = function() {
     function checkLength(obj, min, max, field) {
         if (obj.val().length > max || obj.val().length < min) {
             obj.addClass("ui-state-error");
-            updateTips("Length of " +
-                field +
-                " must be between " +
-                min +
-                " and " +
-                max +
-                ".");
+            updateTips(
+                "Length of ${field} must be between ${min} and ${max}.");
             return false;
         } else {
             return true;
@@ -227,18 +222,15 @@ window.executeCCC = function() {
     }
 
     function getSelectedFixtureName() {
-        var fixture = $("#" + selFixtureName + " option:selected").text();
-        return fixture;
+        return $("#" + selFixtureName + " option:selected").text();
     }
 
     function getSelectedPinningFormat() {
-        var format = $("#" + selPinFormatsName + " option:selected").val();
-        return format;
+        return $("#" + selPinFormatsName + " option:selected").val();
     }
 
     function getSelectedPinningFormatName() {
-        var format = $("#" + selPinFormatsName + " option:selected").text();
-        return format;
+        return $("#" + selPinFormatsName + " option:selected").text();
     }
 
     function getCccId() {
@@ -311,9 +303,9 @@ window.executeCCC = function() {
     //main functions
 
     function initiateNewCcc() {
-        var valid = true;
-        var validNameRegexp = /^[a-z]([0-9a-z_\s])+$/i;
-        var invalidNameMsg = "This field may consist of a-z, 0-9, underscores and spaces, and must begin with a letter.";
+        let valid = true;
+        const validNameRegexp = /^[a-z]([0-9a-z_\s])+$/i;
+        const invalidNameMsg = "This field may consist of a-z, 0-9, underscores and spaces, and must begin with a letter.";
 
         allFields.removeClass("ui-state-error");
 
@@ -324,11 +316,9 @@ window.executeCCC = function() {
         valid = valid && checkName(reference, validNameRegexp, invalidNameMsg);
 
         if (valid) {
-            var sp = species.val();
-            var ref = reference.val();
             InitiateCCC(
-                sp,
-                ref,
+                sp = species.val();
+                ref = reference.val();
                 cccFunctions.initiateCccSuccess,
                 cccFunctions.initiateCccError);
         }
