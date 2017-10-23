@@ -317,8 +317,8 @@ window.executeCCC = function() {
 
         if (valid) {
             InitiateCCC(
-                sp = species.val();
-                ref = reference.val();
+                species.val(),
+                reference.val(),
                 cccFunctions.initiateCccSuccess,
                 cccFunctions.initiateCccError);
         }
