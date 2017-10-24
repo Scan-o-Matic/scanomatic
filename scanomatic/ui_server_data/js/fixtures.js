@@ -296,7 +296,7 @@ function testAsGrayScale(plate) {
     }
 }
 
-function OnEnterFixtureName(input) {
+function OnEnterFixtureName() {
     SetAllowDetect();
 }
 
