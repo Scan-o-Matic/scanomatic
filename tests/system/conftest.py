@@ -13,7 +13,6 @@ def docker_compose_file(pytestconfig):
 
 @pytest.fixture(scope='session')
 def scanomatic(docker_ip, docker_services):
-    ### return "http://localhost:5001"
     def is_responsive(url):
         try:
             requests.get(url).raise_for_status()
