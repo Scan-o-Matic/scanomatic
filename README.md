@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Scan-o-Matic/scanomatic.svg?branch=master)](https://travis-ci.org/Scan-o-Matic/scanomatic)
+
 # Scan-o-matic (program) and scanomatic (python module)
 
 This project contains the code for the massive microbial phenotyping platform Scan-o-matic.
