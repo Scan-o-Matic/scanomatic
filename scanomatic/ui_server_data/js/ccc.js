@@ -120,7 +120,8 @@ window.executeCCC = function() {
         width: 350,
         modal: true,
         buttons: {
-            "Initiate new CCC": cccFunctions.initiateNewCcc,
+            "Initiate new CCC": () => cccFunctions.initiateNewCcc(
+                species, reference, allFields),
             Cancel: function() { dialogCCCIni.dialog("close"); }
         },
         close: function() {
@@ -132,7 +133,7 @@ window.executeCCC = function() {
     form = dialogCCCIni.find("form").on("submit",
         function(event) {
             event.preventDefault();
-            cccFunctions.initiateNewCcc();
+            cccFunctions.initiateNewCcc(species, reference, allFields);
         });
 
     $("#btnIniCCC").click(openCCCIniDialog);
@@ -166,7 +167,7 @@ window.executeCCC = function() {
         });
         GetPinningFormats(function(formats) {
             if (formats == null) {
-                alert("ERROR: There was a problem with the API while fetching pinnnig formats! ");
+                alert("ERROR: There was a problem with the API while fetching pinnnig formats!");
                 return;
             }
             var elementName = selPinFormatsName;
@@ -192,11 +193,13 @@ window.executeCCC = function() {
             500);
     }
 
+    cccFunctions.updateTips = updateTips;
+
     function checkLength(obj, min, max, field) {
         if (obj.val().length > max || obj.val().length < min) {
             obj.addClass("ui-state-error");
-            updateTips(
-                "Length of ${field} must be between ${min} and ${max}.");
+            cccFunctions.updateTips(
+                `Length of ${field} must be between ${min} and ${max}.`);
             return false;
         } else {
             return true;
@@ -208,7 +211,7 @@ window.executeCCC = function() {
     function checkName(obj, regexp, message) {
         if (!(regexp.test(obj.val()))) {
             obj.addClass("ui-state-error");
-            updateTips(message);
+            cccFunctions.updateTips(message);
             return false;
         } else {
             return true;
@@ -302,18 +305,22 @@ window.executeCCC = function() {
 
     //main functions
 
-    function initiateNewCcc() {
+    function initiateNewCcc(species, reference, allFields) {
         let valid = true;
         const validNameRegexp = /^[a-z]([0-9a-z_\s])+$/i;
         const invalidNameMsg = "This field may consist of a-z, 0-9, underscores and spaces, and must begin with a letter.";
 
         allFields.removeClass("ui-state-error");
 
-        valid = valid && checkLength(species, 3, 20, "species");
-        valid = valid && checkLength(reference, 3, 20, "reference");
+        valid = valid && cccFunctions.checkLength(
+            species, 3, 20, "species");
+        valid = valid && cccFunctions.checkLength(
+            reference, 3, 20, "reference");
 
-        valid = valid && checkName(species, validNameRegexp, invalidNameMsg);
-        valid = valid && checkName(reference, validNameRegexp, invalidNameMsg);
+        valid = valid && cccFunctions.checkName(
+            species, validNameRegexp, invalidNameMsg);
+        valid = valid && cccFunctions.checkName(
+            reference, validNameRegexp, invalidNameMsg);
 
         if (valid) {
             InitiateCCC(
@@ -328,7 +335,7 @@ window.executeCCC = function() {
     cccFunctions.initiateNewCcc = initiateNewCcc;
 
     function initiateCccError(data) {
-        updateTips(data.responseJSON.reason);
+        cccFunctions.updateTips(data.responseJSON.reason);
     }
 
     cccFunctions.initiateCccError = initiateCccError;

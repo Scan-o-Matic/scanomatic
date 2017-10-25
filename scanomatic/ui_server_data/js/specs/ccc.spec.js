@@ -3,12 +3,12 @@ describe('createSetGrayScaleTransformTask', () => {
     beforeEach(() => {
         spyOn(window, 'SetGrayScaleTransform');
         spyOn(window, '$').and.returnValue({
-            hide: ()=>{},
-            show: ()=>{},
-            add: ()=>{return {add: ()=>{}};},
-            click: ()=>{},
-            change: ()=>{},
-            dialog: ()=>{return {find: ()=>{return {on: ()=>{}};}};},
+            hide: () => {},
+            show: () => {},
+            add: () => {return {add: () => {}};},
+            click: () => {},
+            change: () => {},
+            dialog: () => {return {find: () => {return {on: () => {}};}};},
         });
         executeCCC();
     });
@@ -104,84 +104,125 @@ describe('setGriddingSuccess', () => {
 });
 
 describe('checkName', () => {
-  const validNameRegexp = /^[a-z]([0-9a-z_\s])+$/i;
-  const invalidNameMsg = 'This foo';
 
-  it('rejects names starting with a number', () => {
-      expext(cccFunctions.checkName(
-          '42foo', validNameRegexp, invalidNameMsg).toBe(false);
-  });
+    const validNameRegexp = /^[a-z]([0-9a-z_\s])+$/i;
+    const invalidNameMsg = 'This foo';
 
-  it('rejects names with forbidded chars', () => {
-      expext(cccFunctions.checkName(
-          'foobar;', validNameRegexp, invalidNameMsg).toBe(false);
-  });
+    beforeEach(() => {
+        spyOn(cccFunctions, 'updateTips');
+    });
 
-  it('accepts names with allowed chars', () => {
-      expext(cccFunctions.checkName(
-          'foobar', validNameRegexp, invalidNameMsg).toBe(true);
-  });
+    it('rejects names starting with a number', () => {
+        const obj = {val: () => '42foo', addClass: () => true};
+        expect(cccFunctions.checkName(
+            obj, validNameRegexp, invalidNameMsg)).toBe(false);
+    });
 
-  it('sets correct error message', () => {
-    // spy on text
-  });
+    it('rejects names with forbidded chars', () => {
+        const obj = {val: () => 'foobar;', addClass: () => true};
+        expect(cccFunctions.checkName(
+            obj, validNameRegexp, invalidNameMsg)).toBe(false);
+    });
+
+    it('accepts names with allowed chars', () => {
+        const obj = {val: () => 'foobar', addClass: () => true};
+        expect(cccFunctions.checkName(
+            obj, validNameRegexp, invalidNameMsg)).toBe(true);
+    });
+
+    it('sets correct error message', () => {
+        const obj = {val: () => 'foobar;', addClass: () => true};
+        cccFunctions.checkName(obj, validNameRegexp, invalidNameMsg);
+        expect(cccFunctions.updateTips).toHaveBeenCalledWith(invalidNameMsg);
+    });
 
 });
 
 describe('checkLength', () => {
-  const minLength = 3;
-  const maxLength = 20;
-  const field = 'foobar';
 
-  it('rejects too short names', () => {
-      expext(cccFunctions.checkLength(
-          '42', minLength, maxLength, field).toBe(false);
-  });
+    const minLength = 3;
+    const maxLength = 20;
+    const field = 'answer';
 
-  it('rejects too long names', () => {
-      expext(cccFunctions.checkLength(
-          'six multiplied by nine', minLength, maxLength, field).toBe(false);
-  });
+    beforeEach(() => {
+        spyOn(cccFunctions, 'updateTips');
+    });
 
-  it('accepts names with allowed length', () => {
-      expext(cccFunctions
-          .checkLength('forty-two', minLength, maxLength, field).toBe(true);
-  });
+    it('rejects too short names', () => {
+        const obj = {val: () => '42', addClass: () => true};
+        expect(cccFunctions.checkLength(
+            obj, minLength, maxLength, field)).toBe(false);
+    });
 
-  it('sets correct error message', () => {
-    // spy on text
-  });
+    it('rejects too long names', () => {
+        const obj = {
+            val: () => 'six multiplied by nine', addClass: () => true};
+        expect(cccFunctions.checkLength(
+            obj, minLength, maxLength, field)).toBe(false);
+    });
+
+    it('accepts names with allowed length', () => {
+        const obj = {val: () => 'forty-two', addClass: () => true};
+        expect(cccFunctions.checkLength(
+            obj, minLength, maxLength, field)).toBe(true);
+    });
+
+    it('sets correct error message', () => {
+        const obj = {val: () => '42', addClass: () => true};
+        cccFunctions.checkLength(obj, minLength, maxLength, field);
+        expect(cccFunctions.updateTips).toHaveBeenCalledWith(
+            'Length of answer must be between 3 and 20.');
+    });
 
 });
 
 describe('initiateCccError', () => {
 
-  it('sets correct error message', () => {
-    // spy on text
-  });
+    beforeEach(() => {
+        spyOn(cccFunctions, 'updateTips');
+    });
+
+    it('sets correct error message', () => {
+        cccFunctions.initiateCccError({responseJSON: {reason: 'foo'}});
+        expect(cccFunctions.updateTips).toHaveBeenCalledWith('foo');
+
+    });
 
 });
 
 describe('initiateNewCcc', () => {
 
-  it('rejects invalid species', () => {
-    // returns false
-  });
+    beforeEach(() => {
+        spyOn(cccFunctions, 'updateTips');
+        spyOn(cccFunctions, 'initiateCccSuccess');
+        spyOn(cccFunctions, 'initiateCccError');
+    });
 
-  it('rejects invalid reference', () => {
-    // returns false
-  });
+    it('rejects invalid species', () => {
+        const species = {
+            val: () => 'Ravenous Bugblatterbeast of Traal',
+            addClass: () => true};
+        const reference = {val: () => 'The Guide', addClass: () => true};
+        const allFields = {removeClass: () => true};
+        expect(cccFunctions.initiateNewCcc(species, reference, allFields))
+            .toBe(false);
+    });
 
-  it('accepts valid species and reference', () => {
-    // initiateCccSuccess called once, initiateCccError not called
-    // returns true
-  });
+    it('rejects invalid reference', () => {
+        const species = {val: () => 'Hoolovoo', addClass: () => true};
+        const reference = {
+            val: () => 'The Encyclopedia Galactica', addClass: () => true};
+        const allFields = {removeClass: () => true};
+        expect(cccFunctions.initiateNewCcc(species, reference, allFields))
+            .toBe(false);
+    });
 
-  it('rejects duplicated valid species and reference', () => {
-    // initiateCccSuccess called once, initiateCccError not called
-    // returns true
-    // initiateCccSuccess called once, initiateCccError called once
-    // returns true
-  });
+    it('accepts valid species and reference', () => {
+        const species = {val: () => 'Hooloovoo', addClass: () => true};
+        const reference = {val: () => 'The Guide', addClass: () => true};
+        const allFields = {removeClass: () => true};
+        expect(cccFunctions.initiateNewCcc(species, reference, allFields))
+            .toBe(true);
+    });
 
 });
