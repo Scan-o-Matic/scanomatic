@@ -296,10 +296,7 @@ function testAsGrayScale(plate) {
     }
 }
 
-function OnEnterFixtureName(button) {
-    button = $(button);
-    fixture_name = get_fixture_from_name(button.val());
-    button.text(get_fixture_as_name(fixture_name));
+function OnEnterFixtureName() {
     SetAllowDetect();
 }
 
