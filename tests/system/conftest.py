@@ -33,7 +33,7 @@ def scanomatic(docker_ip, docker_services):
 
 
 @pytest.fixture(
-    'session',
+    'function',
     ids=['chrome', 'firefox'],
     params=[webdriver.Chrome, webdriver.Firefox],
 )
