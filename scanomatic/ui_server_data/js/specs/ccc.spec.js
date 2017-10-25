@@ -104,17 +104,22 @@ describe('setGriddingSuccess', () => {
 });
 
 describe('checkName', () => {
+  const validNameRegexp = /^[a-z]([0-9a-z_\s])+$/i;
+  const invalidNameMsg = 'This foo';
 
   it('rejects names starting with a number', () => {
-    // returns false
+      expext(cccFunctions.checkName(
+          '42foo', validNameRegexp, invalidNameMsg).toBe(false);
   });
 
-  it('rejects names starting with forbidded chars', () => {
-    // returns false
+  it('rejects names with forbidded chars', () => {
+      expext(cccFunctions.checkName(
+          'foobar;', validNameRegexp, invalidNameMsg).toBe(false);
   });
 
   it('accepts names with allowed chars', () => {
-    // returns true
+      expext(cccFunctions.checkName(
+          'foobar', validNameRegexp, invalidNameMsg).toBe(true);
   });
 
   it('sets correct error message', () => {
@@ -124,17 +129,23 @@ describe('checkName', () => {
 });
 
 describe('checkLength', () => {
+  const minLength = 3;
+  const maxLength = 20;
+  const field = 'foobar';
 
   it('rejects too short names', () => {
-    // returns false
+      expext(cccFunctions.checkLength(
+          '42', minLength, maxLength, field).toBe(false);
   });
 
   it('rejects too long names', () => {
-    // returns false
+      expext(cccFunctions.checkLength(
+          'six multiplied by nine', minLength, maxLength, field).toBe(false);
   });
 
   it('accepts names with allowed length', () => {
-    // returns true
+      expext(cccFunctions
+          .checkLength('forty-two', minLength, maxLength, field).toBe(true);
   });
 
   it('sets correct error message', () => {
