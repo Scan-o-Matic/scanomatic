@@ -1,5 +1,6 @@
 window.cccFunctions = {
-    setStep: function(step) {
+    setStep: (step) => {
+        'use strict';
         switch (step) {
         case 0:
             $("#divImageProcessing").hide();
@@ -96,6 +97,54 @@ window.cccFunctions = {
             break;
         default:
         }
+    },
+    initiateNewCcc: (species, reference, allFields) => {
+        let valid = true;
+        const validNameRegexp = /^[a-z]([0-9a-z_\s])+$/i;
+        const invalidNameMsg = "This field may consist of a-z, 0-9, underscores and spaces, and must begin with a letter.";
+
+        allFields.removeClass("ui-state-error");
+
+        valid = valid && cccFunctions.checkLength(
+            species, 3, 20, "species");
+        valid = valid && cccFunctions.checkLength(
+            reference, 3, 20, "reference");
+
+        valid = valid && cccFunctions.checkName(
+            species, validNameRegexp, invalidNameMsg);
+        valid = valid && cccFunctions.checkName(
+            reference, validNameRegexp, invalidNameMsg);
+
+        if (valid) {
+            InitiateCCC(
+                species.val(),
+                reference.val(),
+                cccFunctions.initiateCccSuccess,
+                cccFunctions.initiateCccError);
+        }
+        return valid;
+    },
+    initiateCccError: (data) => {
+        cccFunctions.updateTips(data.responseJSON.reason);
+    },
+    checkLength: (obj, min, max, field) => {
+        if (obj.val().length > max || obj.val().length < min) {
+            obj.addClass("ui-state-error");
+            cccFunctions.updateTips(
+                `Length of ${field} must be between ${min} and ${max}.`);
+            return false;
+        } else {
+            return true;
+        }
+    },
+    checkName: (obj, regexp, message) => {
+        if (!(regexp.test(obj.val()))) {
+            obj.addClass("ui-state-error");
+            cccFunctions.updateTips(message);
+            return false;
+        } else {
+            return true;
+        }
     }
 };
 
@@ -119,7 +168,8 @@ window.executeCCC = function() {
         width: 350,
         modal: true,
         buttons: {
-            "Initiate new CCC": initiateNewCcc,
+            "Initiate new CCC": () => cccFunctions.initiateNewCcc(
+                species, reference, allFields),
             Cancel: function() { dialogCCCIni.dialog("close"); }
         },
         close: function() {
@@ -131,7 +181,7 @@ window.executeCCC = function() {
     form = dialogCCCIni.find("form").on("submit",
         function(event) {
             event.preventDefault();
-            initiateNewCcc();
+            cccFunctions.initiateNewCcc(species, reference, allFields);
         });
 
     $("#btnIniCCC").click(openCCCIniDialog);
@@ -139,7 +189,6 @@ window.executeCCC = function() {
     $("#btnUploadGridding").click(startGridding);
     $("#btnProcessNewImage").click(initiateProcessImageWizard);
     $("#inImageUpload").change(uploadImage);
-
 
     ini();
 
@@ -165,7 +214,7 @@ window.executeCCC = function() {
         });
         GetPinningFormats(function(formats) {
             if (formats == null) {
-                alert("ERROR: There was a problem with the API while fetching pinnnig formats! ");
+                alert("ERROR: There was a problem with the API while fetching pinnnig formats!");
                 return;
             }
             var elementName = selPinFormatsName;
@@ -188,52 +237,58 @@ window.executeCCC = function() {
         setTimeout(function() {
                 tips.removeClass("ui-state-highlight", 1500);
             },
-            500);
+            500
+        );
     }
 
-    function checkLength(o, n, min, max) {
-        if (o.val().length > max || o.val().length < min) {
-            o.addClass("ui-state-error");
-            updateTips("Length of " +
-                n +
-                " must be between " +
-                min +
-                " and " +
-                max +
-                ".");
-            return false;
+    cccFunctions.updateTips = updateTips;
+
+    function initiateCccSuccess(data) {
+        if (data.success) {
+            $("#btnIniCCC").hide();
+            $("#divIniCCC").show();
+            var id = data.identifier;
+            var token = data.access_token;
+            var sp = species.val();
+            var ref = reference.val();
+            var fixture = getSelectedFixtureName();
+            var pinFormat = getSelectedPinningFormat();
+            var outputFormat = getSelectedPinningFormatName();
+            $("#tblCurrentCCC tbody").append(
+                "<tr><td>Id</td><td>" + id + "</td></tr>" +
+                "<tr><td>Token</td><td>" + token + "</td></tr>" +
+                "<tr><td>Species</td><td>" + sp + "</td></tr>" +
+                "<tr><td>Reference</td><td>" + ref + "</td></tr>" +
+                "<tr><td>Pinning Format</td><td>" + outputFormat + "</td></tr>" +
+                "<tr><td>Fixture</td><td>" + fixture + "</td></tr>" +
+                "<tr><td>Uploaded Images</td><td></td></tr>"
+            );
+            setCccId(id);
+            settAccessToken(token);
+            setCccFixture(fixture);
+            setCccPinningFormat(pinFormat);
+            dialogCCCIni.dialog("close");
         } else {
-            return true;
+            alert("Problem initializing:" + data.reason);
         }
     }
 
-    function checkRegexp(o, regexp, n) {
-        if (!(regexp.test(o.val()))) {
-            o.addClass("ui-state-error");
-            updateTips(n);
-            return false;
-        } else {
-            return true;
-        }
-    };
+    cccFunctions.initiateCccSuccess = initiateCccSuccess;
 
     function openCCCIniDialog() {
         dialogCCCIni.dialog("open");
     }
 
     function getSelectedFixtureName() {
-        var fixture = $("#" + selFixtureName + " option:selected").text();
-        return fixture;
+        return $("#" + selFixtureName + " option:selected").text();
     }
 
     function getSelectedPinningFormat() {
-        var format = $("#" + selPinFormatsName + " option:selected").val();
-        return format;
+        return $("#" + selPinFormatsName + " option:selected").val();
     }
 
     function getSelectedPinningFormatName() {
-        var format = $("#" + selPinFormatsName + " option:selected").text();
-        return format;
+        return $("#" + selPinFormatsName + " option:selected").text();
     }
 
     function getCccId() {
@@ -304,58 +359,6 @@ window.executeCCC = function() {
     }
 
     //main functions
-
-    function initiateNewCcc() {
-        var valid = true;
-        allFields.removeClass("ui-state-error");
-
-        valid = valid && checkLength(species, "species", 3, 20);
-        valid = valid && checkLength(reference, "reference", 3, 20);
-
-        valid = valid && checkRegexp(species, /^[a-z]([0-9a-z_\s])+$/i, "This field may consist of a-z, 0-9, underscores, spaces and must begin with a letter.");
-        valid = valid && checkRegexp(reference, /^[a-z]([0-9a-z_\s])+$/i, "This field may consist of a-z, 0-9, underscores, spaces and must begin with a letter.");
-
-        if (valid) {
-            var sp = species.val();
-            var ref = reference.val();
-            InitiateCCC(sp, ref, initiateCccSuccess, initiateCccError);
-        }
-        return valid;
-    }
-
-    function initiateCccError(data) {
-        alert("ini failure!");
-    }
-
-    function initiateCccSuccess(data) {
-        if (data.success) {
-            $("#btnIniCCC").hide();
-            $("#divIniCCC").show();
-            var id = data.identifier;
-            var token = data.access_token;
-            var sp = species.val();
-            var ref = reference.val();
-            var fixture = getSelectedFixtureName();
-            var pinFormat = getSelectedPinningFormat();
-            var outputFormat = getSelectedPinningFormatName();
-            $("#tblCurrentCCC tbody").append(
-                "<tr><td>Id</td><td>" + id + "</td></tr>" +
-                "<tr><td>Token</td><td>" + token + "</td></tr>" +
-                "<tr><td>Species</td><td>" + sp + "</td></tr>" +
-                "<tr><td>Reference</td><td>" + ref + "</td></tr>" +
-                "<tr><td>Pinning Format</td><td>" + outputFormat + "</td></tr>" +
-                "<tr><td>Fixture</td><td>" + fixture + "</td></tr>" +
-                "<tr><td>Uploaded Images</td><td></td></tr>"
-                );
-            setCccId(id);
-            settAccessToken(token);
-            setCccFixture(fixture);
-            setCccPinningFormat(pinFormat);
-            dialogCCCIni.dialog("close");
-        } else {
-            alert("Problem initializing:" + data.reason);
-        }
-    }
 
     function initiateProcessImageWizard() {
         cccFunctions.setStep(1);
@@ -625,6 +628,7 @@ window.executeCCC = function() {
             });
         }
     }
+
     cccFunctions.renderGridFail = renderGridFail;
 
     function renderGrid(data, scope) {
@@ -650,6 +654,7 @@ window.executeCCC = function() {
             });
         }
     }
+
     cccFunctions.renderGrid = renderGrid;
 
     function nextColonyDetection(scope) {
