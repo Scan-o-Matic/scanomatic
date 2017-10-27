@@ -615,18 +615,18 @@ window.executeCCC = function() {
         imgPlateSlice.onload = function () {
             $("#divGridStatus").text($("#divGridStatus").text() +"\nDrawing gridding...");
             plotGridOnPlateSliceInCanvas(scope, imgPlateSlice, "cvsPlateGrid");
-            //cccFunctions.setStep(3.1);
-            $("#btnReGrid").click(function () {
-                cccFunctions.setStep(2.4);
-                var offsetRow = $("#inOffsetRow").val();
-                var offsetCol = $("#inOffsetCol").val();
-                var offset = [];
-                offset.push(offsetRow);
-                offset.push(offsetCol);
-                $("#divGridStatus").text("Calculating Gridding ... please wait ...!");
-                SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, offset, scope.AccessToken, setGriddingSuccess, setGriddingError);
-            });
         }
+
+        $("#btnReGrid").off('click').click(function () {
+            cccFunctions.setStep(2.4);
+            var offsetRow = $("#inOffsetRow").val();
+            var offsetCol = $("#inOffsetCol").val();
+            var offset = [];
+            offset.push(offsetRow);
+            offset.push(offsetCol);
+            $("#divGridStatus").text("Calculating Gridding ... please wait ...!");
+            SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, offset, scope.AccessToken, setGriddingSuccess, setGriddingError);
+        });
     }
 
     cccFunctions.renderGridFail = renderGridFail;
