@@ -226,3 +226,39 @@ describe('initiateNewCcc', () => {
     });
 
 });
+
+describe('renderGridFail', () => {
+    let scope;
+    let btnReGrid;
+
+    beforeEach(() => {
+        jasmine.Ajax.install();
+        btnReGrid = document.createElement('button');
+        btnReGrid.id = 'btnReGrid';
+        document.body.appendChild(btnReGrid);
+        spyOn(window, 'SetGridding');
+        scope = {};
+    });
+
+    afterEach(() => {
+        jasmine.Ajax.uninstall();
+        document.body.removeChild(btnReGrid);
+    });
+
+    it('should let the user re-grid by clicking the corresponding button', () => {
+        const data = 1;
+        cccFunctions.setGriddingError(data, scope);
+        btnReGrid.click();
+        expect(window.SetGridding).toHaveBeenCalled();
+    });
+
+    it('should make only one request each time the button is clicked', () => {
+        const data = 1;
+        cccFunctions.setGriddingError(data, scope);
+        btnReGrid.click();
+        expect(window.SetGridding).toHaveBeenCalledTimes(1);
+        cccFunctions.setGriddingError(data, scope);
+        btnReGrid.click();
+        expect(window.SetGridding).toHaveBeenCalledTimes(2);
+    });
+});

@@ -695,6 +695,7 @@ window.executeCCC = function() {
         //optional squares
         //drawCanvasGrid(scope, ctx);
     }
+    cccFunctions.plotGridOnPlateSliceInCanvas = plotGridOnPlateSliceInCanvas;
 
     function setGriddingError(data, scope) {
         cccFunctions.setStep(2.3);
