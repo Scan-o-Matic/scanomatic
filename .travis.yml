@@ -15,8 +15,11 @@ before_install:
     - sudo chmod +x /usr/local/share/chromedriver
     - sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
     - wget -O- 'https://github.com/mozilla/geckodriver/releases/download/v0.19.0/geckodriver-v0.19.0-linux64.tar.gz' | sudo tar -C /usr/local/bin -xz
+    - npm install
 before_script:
     - export DISPLAY=':99.0'
     - sh -e /etc/init.d/xvfb start
     - sleep 3
-script: sh run_travis.sh
+script:
+    - tox
+    - npm test
