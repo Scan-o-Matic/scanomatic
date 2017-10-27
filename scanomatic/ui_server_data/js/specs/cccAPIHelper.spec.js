@@ -1,3 +1,5 @@
+import { SetGridding } from '../ccc/api';
+
 describe('SetGridding', () => {
     // function SetGridding(scope, cccId, imageId, plate, pinningFormat, offSet, accessToken, successCallback, errorCallback)
 

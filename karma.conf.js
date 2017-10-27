@@ -1,4 +1,4 @@
-path = require('path');
+const webpackConfig = require('./webpack.config')
 
 module.exports = function(config) {
   config.set({
@@ -15,18 +15,21 @@ module.exports = function(config) {
         "js/d3.js",
         "js/*.js",
         'js/specs/helpers/*.js',
-        'js/specs/*.js',
+        { pattern: 'js/specs/*.js', watched: false },
     ],
 
     // list of files to exclude
     exclude: [
         'js/image.js',
         '**/*.swp',
+        "js/ccc.js",
     ],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    preprocessors: { },
+    preprocessors: {
+        'js/specs/*.js': ['webpack'],
+    },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
@@ -59,5 +62,7 @@ module.exports = function(config) {
     // Concurrency level
     // how many browser should be started simultaneous
     concurrency: Infinity,
+
+    webpack: webpackConfig,
   })
 }
