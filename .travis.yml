@@ -2,11 +2,16 @@ language: python
 python:
     - "2.7"
 addons:
+  apt:
+    packages:
+      - docker-ce
+      - python-numpy
+      - python-scipy
+      - python-matplotlib
   chrome: stable
   firefox: latest
 
 before_install:
-    - sudo apt-get install -qq python-numpy python-scipy python-matplotlib
     - pip install tox
     - wget -N http://chromedriver.storage.googleapis.com/2.30/chromedriver_linux64.zip -P ~/
     - unzip ~/chromedriver_linux64.zip -d ~/

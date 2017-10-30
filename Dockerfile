@@ -1,3 +1,9 @@
+FROM node:4 as npmbuilder
+COPY . /src
+WORKDIR /src
+RUN npm install
+RUN npm run build
+
 FROM ubuntu:16.04
 RUN apt update && apt -y install usbutils software-properties-common python-pip
 # net-tools & iputils-ping are used in the xml-writer which should be removed soon
@@ -20,6 +26,7 @@ COPY scanomatic/ /tmp/scanomatic/
 COPY setup.py /tmp/setup.py
 COPY setup_tools.py /tmp/setup_tools.py
 COPY get_installed_version.py /tmp/get_installed_version.py
+COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/ccc.js /tmp/scanomatic/ui_server_data/js/ccc.js
 
 RUN cd /tmp && python setup.py install --default
 CMD scan-o-matic --no-browser

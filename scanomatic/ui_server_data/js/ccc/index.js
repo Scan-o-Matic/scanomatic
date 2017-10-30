@@ -1,6 +1,30 @@
+import {
+    getDataUrlfromUrl, createCanvasImage, createCanvasMarker, getMarkerData,
+} from './helpers';
+import {
+    GetSliceImageURL,
+    GetFixtures,
+    GetFixturePlates,
+    GetPinningFormats,
+    InitiateCCC,
+    SetCccImageData,
+    SetCccImageSlice,
+    SetGrayScaleImageAnalysis,
+    SetGrayScaleTransform,
+    SetGridding,
+    SetColonyDetection,
+    SetColonyCompressionV2,
+    GetImageId,
+    GetMarkers,
+} from './api';
+import Blob from './Blob';
+import CanvasState from './CanvasState';
+import { createScope, getCurrentScope, setCurrentScope, iniColonyStats } from './scope';
+
+
+
 window.cccFunctions = {
     setStep: (step) => {
-        'use strict';
         switch (step) {
         case 0:
             $("#divImageProcessing").hide();
@@ -887,3 +911,5 @@ window.executeCCC = function() {
 
 
 $(document).ready(executeCCC);
+
+export default cccFunctions;
