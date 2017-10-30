@@ -239,7 +239,7 @@ describe('renderGridFail', () => {
         btnReGrid = document.createElement('button');
         btnReGrid.id = 'btnReGrid';
         document.body.appendChild(btnReGrid);
-        spyOn(window, 'SetGridding');
+        spyOn(cccAPI, 'SetGridding');
         scope = {};
     });
 
@@ -252,16 +252,16 @@ describe('renderGridFail', () => {
         const data = 1;
         cccFunctions.setGriddingError(data, scope);
         btnReGrid.click();
-        expect(window.SetGridding).toHaveBeenCalled();
+        expect(cccAPI.SetGridding).toHaveBeenCalled();
     });
 
     it('should make only one request each time the button is clicked', () => {
         const data = 1;
         cccFunctions.setGriddingError(data, scope);
         btnReGrid.click();
-        expect(window.SetGridding).toHaveBeenCalledTimes(1);
+        expect(cccAPI.SetGridding).toHaveBeenCalledTimes(1);
         cccFunctions.setGriddingError(data, scope);
         btnReGrid.click();
-        expect(window.SetGridding).toHaveBeenCalledTimes(2);
+        expect(cccAPI.SetGridding).toHaveBeenCalledTimes(2);
     });
 });
