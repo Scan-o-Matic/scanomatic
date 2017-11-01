@@ -86,9 +86,8 @@ export function createCanvasMarker(data, canvas) {
     ctx.putImageData(imgdata, 0, 0);
 }
 
-export function getMarkerData(canvasId) {
+export function getMarkerData(cvPlot) {
 
-    var cvPlot = document.getElementById(canvasId);
     var rows = cvPlot.height;
     var cols = cvPlot.width;
 
@@ -150,7 +149,7 @@ export function hexToRgb(hex) {
 export function getLinearMapping(data) {
 
     var colorScheme = ["white", "grey", "black"];
-    var intensityMin = data.blobMin;
+    var intensityMin = data.imageMin;
     var intensityMax = data.imageMax;
     var intensityMean = (intensityMax + intensityMin) / 2;
 
