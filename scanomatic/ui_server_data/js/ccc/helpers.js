@@ -1,4 +1,4 @@
-function getDataUrlfromUrl(src, callback) {
+export function getDataUrlfromUrl(src, callback) {
     var img = new Image();
     img.crossOrigin = 'Anonymous';
     img.onload = function () {
