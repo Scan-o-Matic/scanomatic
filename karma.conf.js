@@ -15,7 +15,7 @@ module.exports = function(config) {
         "js/d3.js",
         "js/*.js",
         'js/specs/helpers/*.js',
-        { pattern: 'js/specs/*.js', watched: false },
+        { pattern: 'js/specs/**/*.spec.js', watched: false },
     ],
 
     // list of files to exclude
@@ -28,7 +28,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-        'js/specs/*.js': ['webpack'],
+        'js/specs/**/*.spec.js': ['webpack'],
     },
 
     // test results reporter to use
