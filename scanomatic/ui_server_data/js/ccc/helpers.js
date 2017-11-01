@@ -20,7 +20,6 @@ export function getDataUrlfromUrl(src, callback) {
 
 
 export function createCanvasImage(data, canvas) {
-
     var cs = getLinearMapping(data);
     var rows = data.image.length;
     var cols = data.image[0].length;

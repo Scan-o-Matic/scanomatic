@@ -273,8 +273,6 @@ export function SetColonyCompressionV2(scope, cccId, imageId, plate, accessToken
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         success: function (data) {
-            scope.ColonyRow = row;
-            scope.ColonyCol = col;
             successCallback(data, scope);
         },
         error: errorCallback

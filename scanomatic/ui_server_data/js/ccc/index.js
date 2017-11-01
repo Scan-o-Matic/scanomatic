@@ -1,6 +1,7 @@
-import {
-    getDataUrlfromUrl, createCanvasImage, createCanvasMarker, getMarkerData,
-} from './helpers';
+import React from 'react';
+import ReactDOM from 'react-dom';
+
+import { getDataUrlfromUrl } from './helpers';
 import {
     GetSliceImageURL,
     GetFixtures,
@@ -12,14 +13,11 @@ import {
     SetGrayScaleImageAnalysis,
     SetGrayScaleTransform,
     SetGridding,
-    SetColonyDetection,
-    SetColonyCompressionV2,
     GetImageId,
     GetMarkers,
 } from './api';
-import Blob from './Blob';
-import CanvasState from './CanvasState';
 import { createScope, getCurrentScope, setCurrentScope, iniColonyStats } from './scope';
+import ColonyEditorContainer from './containers/ColonyEditorContainer';
 
 
 
@@ -103,22 +101,6 @@ window.cccFunctions = {
             $("#divProcessImageStep3").show();
             $("#divColony").text("Gridding successfull, ploting grid");
             break;
-        case 3.1:
-            //setColonyUpdateMetaDataButtonsState Ini
-            $("#btnFixColonyMetadata").show();
-            $("#btnSetUpdatedColonyMetadata").hide();
-            $("#btnColonyBlobSizePlus").hide();
-            $("#btnColonyBlobSizeMinus").hide();
-            $("#btnNextColonyDetect").show();
-            break;
-        case 3.2:
-            //setColonyUpdateMetaDataButtonsState update
-            $("#btnFixColonyMetadata").hide();
-            $("#btnSetUpdatedColonyMetadata").show();
-            $("#btnColonyBlobSizePlus").show();
-            $("#btnColonyBlobSizeMinus").show();
-            $("#btnNextColonyDetect").hide();
-            break;
         default:
         }
     },
@@ -173,14 +155,10 @@ window.cccFunctions = {
 };
 
 window.executeCCC = function() {
-
-    'use strict';
-
     var selFixtureName = "selFixtures";
     var selPinFormatsName = "selPinFormats";
     var dialogCCCIni;
     var form;
-    var metaDataCanvasState;
     var species = $("#inSpecies");
     var reference = $("#inReference");
     var allFields = $([]).add(species).add(reference);
@@ -737,21 +715,23 @@ window.executeCCC = function() {
 
     cccFunctions.setGriddingSuccess = setGriddingSuccess;
 
-    function doDetectColonyTask(scope, row, col, next) {
-        scope.PlateColonyNextTaskInQueue = next;
-        detectColony(scope, row, col);
-    }
-
     function detectColony(scope, row, col) {
         scope.PlateCurrentColonyRow = row;
         scope.PlateCurrentColonyCol = col;
-        SetColonyDetection(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.AccessToken, row, col, setColonyDetectionSuccess, setColonyDetectionError);
-    }
-
-    function createDetectColonyTask(scope, row, col) {
-        return function (next) {
-            doDetectColonyTask(scope, row, col, next);
-        }
+        ReactDOM.render(
+            <ColonyEditorContainer
+                scope={scope}
+                ccc={scope.cccId}
+                image={scope.CurrentImageId}
+                plate={scope.Plate}
+                row={row}
+                col={col}
+                accessToken={scope.AccessToken}
+                scope={scope}
+                onFinish={() => {nextColonyDetection(scope)}}
+            />,
+            document.getElementById('colony-editor'),
+        );
     }
 
     function moveProgress(row, col, totalRow, totalCol) {
@@ -759,115 +739,6 @@ window.executeCCC = function() {
         var percent = (m * 100) / (totalCol * totalRow);
         $("#progressbar").progressbar({ value: percent });
         $("#divPro").text("col:"+col+" row:"+row+" m: "+m +" %:"+percent);
-    }
-
-    function setColonyDetectionSuccess(data, scope, row, col) {
-        if (data.success) {
-            var colony = {
-                x: row,
-                y: col,
-                blob: data.blob,
-                blobMax: data.blob_max,
-                blobMin: data.blob_min,
-                blobExist: data.blob_exists,
-                background: data.background,
-                backgroundExists: data.background_exists,
-                backgroundReasonable: data.background_reasonable,
-                image: data.image,
-                imageMax: data.image_max,
-                imageMin: data.image_min,
-                gridPosition: data.grid_position
-            };
-            scope.PlateCurrentColony = colony;
-            cccFunctions.setStep(3.1);
-
-            var canvasBg = document.getElementById("colonyImageCanvas");
-            var canvasFg = document.getElementById("colonyMarkingsCanvas");
-            var canvasMarkings = document.getElementById("colonyPlotCanvas");
-
-            createCanvasMarker(colony, canvasMarkings);
-            createCanvasImage(colony, canvasBg);
-
-            canvasFg.width = canvasBg.width;
-            canvasFg.height = canvasBg.height;
-
-            setCurrentScope(scope);
-            //runNextPlateColonyTask(scope);
-
-        } else {
-            alert("no success");
-        }
-    }
-
-    $("#btnFixColonyMetadata").click(function () {
-        var canvasBg = document.getElementById("colonyImageCanvas");
-        var canvasFg = document.getElementById("colonyMarkingsCanvas");
-        metaDataCanvasState = new CanvasState(canvasFg);
-
-        cccFunctions.setStep(3.2);
-        metaDataCanvasState.addShape(new Blob(canvasBg.width / 2, canvasBg.height / 2, 15, "rgba(255, 0, 0, .2)"));
-    });
-
-    function updateColonyData(blob, background, updateBlob, updatedBackground) {
-        for (var row = 0; row < blob.length; row++) {
-            for (var col = 0; col < blob[0].length; col++) {
-                var valueBlob = blob[row][col];
-                var valuebackground = background[row][col];
-                if (!valueBlob && !valuebackground)
-                    continue;
-                blob[row][col] = updateBlob[row][col];
-                background[row][col] = updatedBackground[row][col];
-            }
-        }
-        var newMetadata = {
-            blob: blob,
-            background: background
-        }
-        return newMetadata;
-    }
-
-    $("#btnSetUpdatedColonyMetadata").click(function () {
-        var canvasMarkings = document.getElementById("colonyPlotCanvas");
-        var newMetaData = getMarkerData("colonyMarkingsCanvas");
-        var scope = getCurrentScope();
-
-        var updatedMetaData = updateColonyData(scope.PlateCurrentColony.blob, scope.PlateCurrentColony.background, newMetaData.blob, newMetaData.background);
-        scope.PlateCurrentColony.blob = updatedMetaData.blob;
-        scope.PlateCurrentColony.background = updatedMetaData.background;
-
-        createCanvasMarker(scope.PlateCurrentColony, canvasMarkings);
-        cccFunctions.setStep(3.1);
-        metaDataCanvasState.shapes = [];
-        metaDataCanvasState.needsRender = true;
-        metaDataCanvasState = null;
-
-        setCurrentScope(scope);
-    });
-    $("#btnColonyBlobSizePlus").click(function () {
-        var blob = metaDataCanvasState.shapes[0];
-        blob.r += 5;
-        metaDataCanvasState.needsRender = true;
-    });
-    $("#btnColonyBlobSizeMinus").click(function () {
-        var blob = metaDataCanvasState.shapes[0];
-        blob.r -= 5;
-        metaDataCanvasState.needsRender = true;
-    });
-    $("#btnNextColonyDetect").click(function () {
-        var scope = getCurrentScope();
-        SetColonyCompressionV2(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.AccessToken, scope.PlateCurrentColony, scope.PlateCurrentColonyRow, scope.PlateCurrentColonyCol, setColonyCompressionSuccess, setColonyCompressionError);
-    });
-
-    function setColonyDetectionError(data) {
-        alert("set Colony Detection Error:" + data.reason);
-    }
-
-    function setColonyCompressionSuccess(data, scope) {
-        nextColonyDetection(scope);
-    }
-
-    function setColonyCompressionError(data) {
-        alert("set Colony compression Error:" + data.reason);
     }
 
     function reportColonyDetectionProgress(data, scope) {

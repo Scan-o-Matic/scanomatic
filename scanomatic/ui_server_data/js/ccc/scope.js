@@ -10,6 +10,7 @@ function Scope() {
     this.AccessToken = null;
     this.Plate = null;
     this.PlateNextTaskInQueue = null;
+    this.PlateColonies = null;
     this.PlateDataURL = null;
     this.PlateGridding = null;
     this.PlateCurrentColony = null;
