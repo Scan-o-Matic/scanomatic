@@ -13,17 +13,15 @@ export default class ColonyEditorContainer extends React.Component {
     }
 
     componentDidMount() {
-        const { scope, ccc, image, plate, row, col, accessToken } = this.props;
-        SetColonyDetection(
-            scope, ccc, image, plate, accessToken, row, col,
-            this.handleColonyDetectionSuccess.bind(this),
-            () => {},
-        );
+        this.getColonyData(this.props);
     }
 
     componentWillReceiveProps(newProps) {
         this.setState({ colonyData: null });
-        const { scope, ccc, image, plate, row, col, accessToken } = newProps;
+        this.getColonyData(newProps);
+    }
+
+    getColonyData({ scope, ccc, image, plate, row, col, accessToken }) {
         SetColonyDetection(
             scope, ccc, image, plate, accessToken, row, col,
             this.handleColonyDetectionSuccess.bind(this),
