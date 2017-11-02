@@ -32,13 +32,6 @@ export default class ColonyEditor extends React.Component {
     }
 
     render() {
-        const style = {
-            background: 'white',
-            display: 'inline-block',
-            paddingd: '3px',
-            textAlign: 'center',
-        };
-
         return (
             <div>
                 <div><span>Colony Image</span></div>
@@ -49,9 +42,7 @@ export default class ColonyEditor extends React.Component {
                 />
                 <div><br /></div>
                 <div><span>Colony MetaData</span></div>
-                <div style={style} >
-                    <ColonyFeatures data={this.state.data} />
-                </div>
+                <ColonyFeatures data={this.state.data} />
                 <button
                     className="btn btn-default btn-fix"
                     style={{ horizAlign: 'center' }}
