@@ -11,7 +11,6 @@ describe('<PlateEditorContainer />', () => {
         cccId: 'CCC42',
         imageId: '1M4G3',
         plateId: 'PL4T3',
-        scope: {},
     };
 
     it('should render a <PlateEditor />', () => {

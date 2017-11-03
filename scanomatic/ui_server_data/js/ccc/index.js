@@ -488,7 +488,6 @@ window.executeCCC = function() {
                     plateId={scope.Plate}
                     pinFormat={scope.PinFormat.map((i) => parseInt(i))}
                     accessToken={scope.AccessToken}
-                    scope={scope}
                 />,
                 document.getElementById('react-root'),
             );

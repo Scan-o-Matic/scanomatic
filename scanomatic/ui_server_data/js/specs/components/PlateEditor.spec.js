@@ -15,7 +15,6 @@ describe('<PlateEditor />', () => {
             imageId: '1M4G3',
             plateId: 'PL4T3',
             pinFormat: [8, 12],
-            scope: {},
             onGriddingFinish: jasmine.createSpy('onGriddingFinish'),
             onColonyFinish: jasmine.createSpy('onColonyFinish'),
         };

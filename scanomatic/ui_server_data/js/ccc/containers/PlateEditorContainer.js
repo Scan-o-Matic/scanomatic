@@ -41,7 +41,6 @@ export default class PlateEditorContainer extends React.Component {
                 cccId={this.props.cccId}
                 imageId={this.props.imageId}
                 plateId={this.props.plateId}
-                scope={this.props.scope}
                 accessToken={this.props.accessToken}
                 pinFormat={this.props.pinFormat}
                 selectedColony={this.state.selectedColony}
@@ -56,5 +55,4 @@ PlateEditorContainer.propTypes = {
     cccId: PropTypes.string.isRequired,
     imageId: PropTypes.string.isRequired,
     plateId: PropTypes.string.isRequired,
-    scope: PropTypes.object.isRequired,
 };

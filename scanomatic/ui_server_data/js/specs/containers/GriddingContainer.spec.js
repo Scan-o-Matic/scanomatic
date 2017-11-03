@@ -12,7 +12,6 @@ describe('<GriddingContainer />', () => {
         imageId: '1M4G3',
         plateId: 'PL4T3',
         pinFormat: [8, 12],
-        scope: {},
         onFinish: jasmine.createSpy('onFinish'),
     };
 
@@ -47,9 +46,8 @@ describe('<GriddingContainer />', () => {
     it('should get the grid from the API', () => {
         mount(<GriddingContainer {...props} />);
         expect(API.SetGridding).toHaveBeenCalledWith(
-            props.scope, props.cccId, props.imageId, props.plateId,
-            props.pinFormat, [0, 0], props.accessToken,
-            jasmine.any(Function), jasmine.any(Function)
+            props.cccId, props.imageId, props.plateId, props.pinFormat,
+            [0, 0], props.accessToken, jasmine.any(Function), jasmine.any(Function)
         );
     });
 
@@ -69,7 +67,7 @@ describe('<GriddingContainer />', () => {
 
         beforeEach(() => {
             API.SetGridding.and.callFake(
-                (scope, cccId, imageId, plateId, pinFormat, offsets, accessToken, onSuccess) => {
+                (cccId, imageId, plateId, pinFormat, offsets, accessToken, onSuccess) => {
                     onSuccess(data);
                 }
             );
@@ -100,7 +98,7 @@ describe('<GriddingContainer />', () => {
 
         beforeEach(() => {
             API.SetGridding.and.callFake(
-                (scope, cccId, imageId, plateId, pinFormat, offsets, accessToken, onSuccess, onError) => {
+                (cccId, imageId, plateId, pinFormat, offsets, accessToken, onSuccess, onError) => {
                     onError(data);
                 }
             );
@@ -128,7 +126,7 @@ describe('<GriddingContainer />', () => {
         wrapper.setState( { rowOffset: 2, colOffset: 3 });
         wrapper.children().prop('onRegrid')();
         expect(API.SetGridding).toHaveBeenCalledWith(
-            props.scope, props.cccId, props.imageId, props.plateId,
+            props.cccId, props.imageId, props.plateId,
             props.pinFormat, [2, 3], props.accessToken,
             jasmine.any(Function), jasmine.any(Function)
         );

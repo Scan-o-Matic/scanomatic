@@ -196,7 +196,7 @@ export function SetGrayScaleTransform(scope, cccId, imageId, plate, accessToken,
     });
 }
 
-export function SetGridding(scope, cccId, imageId, plate, pinningFormat, offSet, accessToken, successCallback, errorCallback) {
+export function SetGridding(cccId, imageId, plate, pinningFormat, offSet, accessToken, successCallback, errorCallback) {
     var path = SetGriddingPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate);
     $.ajax({
         url: path,
@@ -209,14 +209,14 @@ export function SetGridding(scope, cccId, imageId, plate, pinningFormat, offSet,
             access_token: accessToken,
         }),
     })
-        .done( function(data) { successCallback(data, scope); } )
+        .done( function(data) { successCallback(data); } )
         .fail( function(jqXHR) {
             const data = JSON.parse(jqXHR.responseText);
-            errorCallback(data, scope);
+            errorCallback(data);
         } );
 }
 
-export function SetColonyDetection(scope, cccId, imageId, plate, accessToken, row, col, successCallback, errorCallback) {
+export function SetColonyDetection(cccId, imageId, plate, accessToken, row, col, successCallback, errorCallback) {
     var path = SetColonyDetectionPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate).replace("#3#", col).replace("#4#", row);
 
     var formData = new FormData();
@@ -228,36 +228,12 @@ export function SetColonyDetection(scope, cccId, imageId, plate, accessToken, ro
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
-        success: function (data) {
-            successCallback(data, scope, row, col);
-        },
-        error: errorCallback
+        success: data => successCallback(data),
+        error: (jqXHR) => errorCallback(JSON.parse(jqXHR.responseText)),
     });
 }
 
-export function SetColonyCompression(scope, cccId, imageId, plate, accessToken, colony, row, col, successCallback, errorCallback) {
-    var path = SetColonyCompressionPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate).replace("#3#", row).replace("#4#", col);
-
-    var formData = new FormData();
-    formData.append("access_token", accessToken);
-    formData.append("image", JSON.stringify(colony.image));
-    formData.append("blob", JSON.stringify(colony.blob));
-    formData.append("background", JSON.stringify(colony.background));
-    $.ajax({
-        url: path,
-        type: "POST",
-        contentType: false,
-        enctype: 'multipart/form-data',
-        data: formData,
-        processData: false,
-        success: function (data) {
-            successCallback(data, scope);
-        },
-        error: errorCallback
-    });
-}
-
-export function SetColonyCompressionV2(scope, cccId, imageId, plate, accessToken, colony, row, col, successCallback, errorCallback) {
+export function SetColonyCompression(cccId, imageId, plate, accessToken, colony, row, col, successCallback, errorCallback) {
     var path = SetColonyCompressionPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate).replace("#3#", col).replace("#4#", row);
 
     var data = {
@@ -273,9 +249,9 @@ export function SetColonyCompressionV2(scope, cccId, imageId, plate, accessToken
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         success: function (data) {
-            successCallback(data, scope);
+            successCallback(data);
         },
-        error: errorCallback
+        error: (jqXHR) => errorCallback(JSON.parse(jqXHR.responseText)),
     });
 }
 

@@ -34,9 +34,9 @@ export default class GriddingContainer extends React.Component {
             alert: 'Calculating Gridding ... please wait ...!',
             status: 'loading',
         });
-        const { scope, cccId, imageId, plateId, pinFormat, accessToken } = this.props;
+        const { cccId, imageId, plateId, pinFormat, accessToken } = this.props;
         SetGridding(
-            scope, cccId, imageId, plateId, pinFormat, offsets, accessToken,
+            cccId, imageId, plateId, pinFormat, offsets, accessToken,
             this.handleSetGriddingSuccess.bind(this),
             this.handleSetGriddingError.bind(this),
         );
@@ -89,7 +89,6 @@ GriddingContainer.propTypes = {
     cccId: PropTypes.string.isRequired,
     imageId: PropTypes.string.isRequired,
     plateId: PropTypes.string.isRequired,
-    scope: PropTypes.object.isRequired,
     pinFormat: PropTypes.arrayOf(PropTypes.number).isRequired,
     onFinish: PropTypes.func.isRequired,
     selectedColony: PropTypes.shape({

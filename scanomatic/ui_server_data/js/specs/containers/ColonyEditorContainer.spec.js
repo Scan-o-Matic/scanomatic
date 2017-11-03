@@ -14,14 +14,13 @@ describe('</ColonyEditorContainer />', () => {
         image: '1M4G3',
         plate: 'PL4T3',
         row: 4,
-        scope: {},
         onFinish: jasmine.createSpy('onFinish'),
     };
 
     beforeEach(() => {
         props.onFinish.calls.reset();
         spyOn(API, 'SetColonyDetection').and.callFake(
-            (scope, ccc, image, plate, accessToken, row, col, onSuccess) => {
+            (ccc, image, plate, accessToken, row, col, onSuccess) => {
                 onSuccess({
                     image: colonyData.image,
                     image_min: colonyData.imageMin,
@@ -31,7 +30,7 @@ describe('</ColonyEditorContainer />', () => {
                 });
             }
         );
-        spyOn(API, 'SetColonyCompressionV2')    });
+        spyOn(API, 'SetColonyCompression')    });
 
     it('should render a <ColonyEditor />', () => {
         const wrapper = shallow(<ColonyEditorContainer {...props} />);
@@ -41,7 +40,7 @@ describe('</ColonyEditorContainer />', () => {
     it('should load the colony data from the api', () => {
         mount(<ColonyEditorContainer {...props}/>);
         expect(API.SetColonyDetection).toHaveBeenCalledWith(
-            props.scope, props.ccc, props.image, props.plate,
+            props.ccc, props.image, props.plate,
             props.accessToken, props.row, props.col, jasmine.any(Function),
             jasmine.any(Function));
     });
@@ -50,7 +49,7 @@ describe('</ColonyEditorContainer />', () => {
         const wrapper = mount(<ColonyEditorContainer {...props}/>);
         wrapper.setProps({ col: 2 });
         expect(API.SetColonyDetection).toHaveBeenCalledWith(
-            props.scope, props.ccc, props.image, props.plate,
+            props.ccc, props.image, props.plate,
             props.accessToken, props.row, 2, jasmine.any(Function),
             jasmine.any(Function));
     });
@@ -65,16 +64,16 @@ describe('</ColonyEditorContainer />', () => {
         it('should send the data to the server', () => {
             const wrapper = mount(<ColonyEditorContainer {...props}/>);
             wrapper.find('ColonyEditor').prop('onSet')();
-            expect(API.SetColonyCompressionV2).toHaveBeenCalledWith(
-                props.scope, props.ccc, props.image, props.plate,
+            expect(API.SetColonyCompression).toHaveBeenCalledWith(
+                props.ccc, props.image, props.plate,
                 props.accessToken, colonyData, props.row, props.col,
                 jasmine.any(Function), jasmine.any(Function),
             );
         });
 
         it('should call the onFinish callback on success', () => {
-            API.SetColonyCompressionV2.and.callFake(
-                (scope, ccc, image, plate, accessToken, row, col, data, onSuccess) => {
+            API.SetColonyCompression.and.callFake(
+                (ccc, image, plate, accessToken, row, col, data, onSuccess) => {
                     onSuccess();
                 }
             );
@@ -84,8 +83,8 @@ describe('</ColonyEditorContainer />', () => {
         });
 
         it('should show an alert on error', () => {
-            API.SetColonyCompressionV2.and.callFake(
-                (scope, ccc, image, plate, accessToken, row, col, data, onSuccess, onError) => {
+            API.SetColonyCompression.and.callFake(
+                (ccc, image, plate, accessToken, row, col, data, onSuccess, onError) => {
                     onError({ reason: 'Whoops' });
                 }
             );

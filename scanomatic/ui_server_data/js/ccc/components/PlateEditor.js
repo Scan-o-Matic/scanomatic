@@ -22,7 +22,6 @@ export default function PlateEditor(props) {
                         imageId={props.imageId}
                         plateId={props.plateId}
                         pinFormat={props.pinFormat}
-                        scope={props.scope}
                         onFinish={props.onGriddingFinish}
                         selectedColony={props.selectedColony}
                     />
@@ -34,7 +33,6 @@ export default function PlateEditor(props) {
                             ccc={props.cccId}
                             image={props.imageId}
                             plate={props.plateId}
-                            scope={props.scope}
                             onFinish={props.onColonyFinish}
                             row={props.selectedColony.row}
                             col={props.selectedColony.col}
@@ -62,7 +60,6 @@ PlateEditor.propTypes = {
     cccId: PropTypes.string.isRequired,
     imageId: PropTypes.string.isRequired,
     plateId: PropTypes.string.isRequired,
-    scope: PropTypes.object.isRequired,
     step: PropTypes.oneOf(['gridding', 'colony']),
     onGriddingFinish: PropTypes.func,
     onColonyFinish: PropTypes.func,
