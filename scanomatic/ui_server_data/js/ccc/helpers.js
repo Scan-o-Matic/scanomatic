@@ -1,4 +1,4 @@
-function getDataUrlfromUrl(src, callback) {
+export function getDataUrlfromUrl(src, callback) {
     var img = new Image();
     img.crossOrigin = 'Anonymous';
     img.onload = function () {
@@ -20,7 +20,6 @@ function getDataUrlfromUrl(src, callback) {
 
 
 export function createCanvasImage(data, canvas) {
-
     var cs = getLinearMapping(data);
     var rows = data.image.length;
     var cols = data.image[0].length;
@@ -86,9 +85,8 @@ export function createCanvasMarker(data, canvas) {
     ctx.putImageData(imgdata, 0, 0);
 }
 
-export function getMarkerData(canvasId) {
+export function getMarkerData(cvPlot) {
 
-    var cvPlot = document.getElementById(canvasId);
     var rows = cvPlot.height;
     var cols = cvPlot.width;
 
@@ -150,7 +148,7 @@ export function hexToRgb(hex) {
 export function getLinearMapping(data) {
 
     var colorScheme = ["white", "grey", "black"];
-    var intensityMin = data.blobMin;
+    var intensityMin = data.imageMin;
     var intensityMax = data.imageMax;
     var intensityMean = (intensityMax + intensityMin) / 2;
 

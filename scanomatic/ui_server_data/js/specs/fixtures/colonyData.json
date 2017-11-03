@@ -1,0 +1,7 @@
+{
+    "image": [[0, 1], [1, 0]],
+    "imageMin": 0,
+    "imageMax": 1,
+    "blob": [[true, false], [false, true]],
+    "background": [[false, true], [true, false]]
+}
