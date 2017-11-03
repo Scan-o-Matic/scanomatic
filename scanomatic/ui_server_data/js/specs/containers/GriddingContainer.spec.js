@@ -134,7 +134,6 @@ describe('<GriddingContainer />', () => {
 
     it('should call onFinish when children calls onNext', () => {
         const wrapper = mount(<GriddingContainer {...props} />);
-        console.log(wrapper.children().props());
         wrapper.children().prop('onNext')();
         expect(props.onFinish).toHaveBeenCalled();
     });
