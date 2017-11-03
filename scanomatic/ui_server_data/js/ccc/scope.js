@@ -10,30 +10,6 @@ function Scope() {
     this.AccessToken = null;
     this.Plate = null;
     this.PlateNextTaskInQueue = null;
-    this.PlateColonies = null;
-    this.PlateDataURL = null;
-    this.PlateGridding = null;
-    this.PlateCurrentColony = null;
-    this.PlateCurrentColonyRow = null;
-    this.PlateCurrentColonyCol = null;
-    //stats
-    this.ColonyDetection = null;
-    this.ColonyDetected = null;
-    this.ColonyNotDetected = null;
-    this.ColonyCompression = null;
-    this.ColonyCompressed = null;
-    this.ColonyNotCompressed = null;
-
-}
-
-export function iniColonyStats(scope) {
-    scope.PlateColonies = [];
-    scope.ColonyDetection = [];
-    scope.ColonyDetected = 0;
-    scope.ColonyNotDetected = 0;
-    scope.ColonyCompression = [];
-    scope.ColonyCompressed = 0;
-    scope.ColonyNotCompressed = 0;
 }
 
 export function getCurrentScope() {
