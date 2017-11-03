@@ -258,7 +258,7 @@ export function SetColonyCompression(scope, cccId, imageId, plate, accessToken, 
 }
 
 export function SetColonyCompressionV2(scope, cccId, imageId, plate, accessToken, colony, row, col, successCallback, errorCallback) {
-    var path = SetColonyCompressionPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate).replace("#3#", row).replace("#4#", col);
+    var path = SetColonyCompressionPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate).replace("#3#", col).replace("#4#", row);
 
     var data = {
         access_token: accessToken,
