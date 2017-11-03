@@ -9,9 +9,9 @@ export default function PlateProgress(props) {
             <div
                 className="progress-bar"
                 role="progressbar"
-                ariaValuenow={props.now}
-                ariaValuemin={0}
-                ariaValuemax={props.max}
+                aria-valuenow={props.now}
+                aria-valuemin={0}
+                aria-valuemax={props.max}
                 style={ { width, minWidth: '3em' } }
             >{props.now}/{props.max}</div>
         </div>

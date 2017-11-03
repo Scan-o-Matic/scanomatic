@@ -55,7 +55,8 @@ describe('<Gridding />', () => {
 
     it('should call onRowOffsetChange when the row offset is changed', () => {
         const wrapper = shallow(<Gridding {...props} />);
-        wrapper.find('input.row-offset').simulate('change', {target: {value: 42}});
+        wrapper.find('input.row-offset')
+            .simulate('change', { target: { value: '42' } });
         expect(props.onRowOffsetChange).toHaveBeenCalledWith(42);
     });
 
@@ -70,7 +71,8 @@ describe('<Gridding />', () => {
 
     it('should call onColOffsetChange when the col offset is changed', () => {
         const wrapper = shallow(<Gridding {...props} />);
-        wrapper.find('input.col-offset').simulate('change', { target: { value: 42 } });
+        wrapper.find('input.col-offset')
+            .simulate('change', { target: { value: '42' } });
         expect(props.onColOffsetChange).toHaveBeenCalledWith(42);
     });
 
