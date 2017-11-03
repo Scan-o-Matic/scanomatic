@@ -9,6 +9,9 @@ describe('<Gridding />', () => {
 
     beforeEach(() => {
         props = {
+            cccId: 'CCC42',
+            imageId: '1M4G3',
+            plateId: 'PL4T3',
             status: 'error',
             alert: 'The foobar is broken',
             image: new Image,
