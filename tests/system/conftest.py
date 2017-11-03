@@ -5,10 +5,7 @@ from selenium import webdriver
 
 @pytest.fixture(scope='session')
 def docker_compose_file(pytestconfig):
-    return (
-        pytestconfig.rootdir.join('docker-compose.yml'),
-        pytestconfig.rootdir.join('docker-compose.override.yml'),
-    )
+    return pytestconfig.rootdir.join('docker-compose.yml')
 
 
 @pytest.fixture(scope='session')
