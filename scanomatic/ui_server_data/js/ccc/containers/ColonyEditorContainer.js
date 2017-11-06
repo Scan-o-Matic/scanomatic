@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import ColonyEditor from '../components/ColonyEditor';
-import { SetColonyCompressionV2, SetColonyDetection } from '../api';
+import { SetColonyCompression, SetColonyDetection } from '../api';
 
 export default class ColonyEditorContainer extends React.Component {
     constructor(props) {
@@ -21,9 +21,9 @@ export default class ColonyEditorContainer extends React.Component {
         this.getColonyData(newProps);
     }
 
-    getColonyData({ scope, ccc, image, plate, row, col, accessToken }) {
+    getColonyData({ ccc, image, plate, row, col, accessToken }) {
         SetColonyDetection(
-            scope, ccc, image, plate, accessToken, row, col,
+            ccc, image, plate, accessToken, row, col,
             this.handleColonyDetectionSuccess.bind(this),
             () => {},
         );
@@ -45,10 +45,10 @@ export default class ColonyEditorContainer extends React.Component {
     }
 
     handleSet() {
-        const { scope, ccc, image, plate, row, col, accessToken } = this.props;
+        const { ccc, image, plate, row, col, accessToken } = this.props;
         const { colonyData } = this.state;
-        SetColonyCompressionV2(
-            scope, ccc, image, plate, accessToken, colonyData, row, col,
+        SetColonyCompression(
+            ccc, image, plate, accessToken, colonyData, row, col,
             () => { this.props.onFinish && this.props.onFinish() },
             (data) => { alert(`Set Colony compression Error: ${data.reason}`); }
         );
@@ -75,6 +75,5 @@ ColonyEditorContainer.propTypes = {
     plate: PropTypes.string.isRequired,
     row: PropTypes.number.isRequired,
     col: PropTypes.number.isRequired,
-    scope: PropTypes.object.isRequired,
     onFinish: PropTypes.func,
 };

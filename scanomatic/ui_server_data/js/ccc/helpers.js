@@ -159,5 +159,11 @@ export function getLinearMapping(data) {
     return cs;
 }
 
-
-
+export function loadImage(url) {
+    return new Promise((resolve, reject) => {
+        const image = new Image;
+        image.onload = () => resolve(image);
+        image.onerror = () => reject();
+        image.src = url;
+    });
+}

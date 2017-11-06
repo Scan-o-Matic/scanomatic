@@ -1,9 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import { getDataUrlfromUrl } from './helpers';
 import {
-    GetSliceImageURL,
     GetFixtures,
     GetFixturePlates,
     GetPinningFormats,
@@ -12,12 +10,11 @@ import {
     SetCccImageSlice,
     SetGrayScaleImageAnalysis,
     SetGrayScaleTransform,
-    SetGridding,
     GetImageId,
     GetMarkers,
 } from './api';
-import { createScope, getCurrentScope, setCurrentScope, iniColonyStats } from './scope';
-import ColonyEditorContainer from './containers/ColonyEditorContainer';
+import { createScope, getCurrentScope, setCurrentScope } from './scope';
+import PlateEditorContainer from './containers/PlateEditorContainer';
 
 
 
@@ -76,30 +73,6 @@ window.cccFunctions = {
             $("#divProcessImageStep1").hide();
             $("#divProcessImageStep2").show();
             $("#divGridding").hide();
-            break;
-        case 2.1:
-            $("#divGridding").show();
-            $("#divRegrid").hide();
-            $("#divShowColonyDetectionStep").hide();
-            break;
-        case 2.2:
-            $("#cvsPlateGrid").show();
-            $("#divShowColonyDetectionStep").show();
-            break;
-        case 2.3:
-            $("#cvsPlateGrid").show();
-            $("#divRegrid").show();
-            break;
-        case 2.4:
-            $("#cvsPlateGrid").hide();
-            $("#divRegrid").hide();
-            $("#divShowColonyDetectionStep").hide();
-            break;
-        case 3:
-            $("#divProcessImageStep1").hide();
-            $("#divProcessImageStep2").hide();
-            $("#divProcessImageStep3").show();
-            $("#divColony").text("Gridding successfull, ploting grid");
             break;
         default:
         }
@@ -508,276 +481,22 @@ window.executeCCC = function() {
 
     function setGrayScaleTransformSuccess(data, scope) {
         if (data.success) {
-            cccFunctions.setStep(2.1);
-            $("#divGridStatus").text("Calculating Gridding ... please wait ...!");
-            SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, [0, 0], scope.AccessToken, setGriddingSuccess, setGriddingError);
+            ReactDOM.render(
+                <PlateEditorContainer
+                    cccId={scope.cccId}
+                    imageId={scope.CurrentImageId}
+                    plateId={scope.Plate}
+                    pinFormat={scope.PinFormat.map((i) => parseInt(i))}
+                    accessToken={scope.AccessToken}
+                    onFinish={() => alert('Level completed!')}
+                />,
+                document.getElementById('react-root'),
+            );
         } else
             alert("set grayscale transform error:" + data.reason);
     }
 
     cccFunctions.setGrayScaleTransformSuccess = setGrayScaleTransformSuccess;
-
-    function drawCanvasGridCentersReGrid(scope, ctx) {
-        var first = true;
-        var size = 20;
-        var totalRows = scope.PlateGridding.grid[0].length;
-        var totalCols = scope.PlateGridding.grid[0][0].length;
-        for (var row = 0; row < totalRows; row++) {
-            for (var col = 0; col < totalCols; col++) {
-                var x = scope.gridding.grid[1][row][col];
-                var y = scope.gridding.grid[0][row][col];
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, 2 * Math.PI);
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = "red";
-                ctx.closePath();
-                if (first) {
-                    ctx.fillStyle = "#c82124";
-                    ctx.fill();
-                    first = false;
-                }
-                ctx.stroke();
-            }
-        }
-    }
-
-    function drawCanvasGridCenters(scope, ctx, currentRow, currentCol) {
-
-        var markCurrentPos = false;
-        if (currentRow != undefined && currentCol != undefined)
-            markCurrentPos = true;
-        var first = true;
-        var outlineSize = 20;
-        var markerSize = 40;
-        var totalRows = scope.PlateGridding.grid[0].length;
-        var totalCols = scope.PlateGridding.grid[0][0].length;
-        for (var row = 0; row < totalRows; row++) {
-            for (var col = 0; col < totalCols; col++) {
-                renderColonyOutlines(row, col, outlineSize);
-                renderColonyMarker(row, col, currentRow, currentCol, markerSize);
-            }
-        }
-
-        function renderColonyOutlines(row, col, size) {
-            var x = scope.PlateGridding.grid[1][row][col];
-            var y = scope.PlateGridding.grid[0][row][col];
-            if (first) {
-                ctx.fillStyle = "#c82124";
-            }
-            ctx.beginPath();
-            ctx.arc(x, y, size, 0, 2 * Math.PI);
-            if (first) {
-                ctx.closePath();
-                ctx.fill();
-                first = false;
-            }
-            else
-                ctx.stroke();
-        }
-
-        function renderColonyMarker(row, col, currentRow, currentCol, size) {
-            if (markCurrentPos && col === currentCol && row === currentRow) {
-                var x = scope.PlateGridding.grid[1][row][col];
-                var y = scope.PlateGridding.grid[0][row][col];
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, 2 * Math.PI);
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
-        }
-    }
-
-    function drawCanvasGrid(scope, ctx) {
-        var totalRows = scope.gridding.xy1.length;
-        var totalCols = scope.gridding.xy1[0].length;
-        for (var row = 0; row < totalRows; row++) {
-            for (var col = 0; col < totalCols; col++) {
-                var p1 = scope.gridding.xy1[row][col];
-                var p2 = scope.gridding.xy2[row][col];
-                var x1 = p1[1];
-                var y1 = p1[0];
-                var x2 = p2[1];
-                var y2 = p2[0];
-                var w = x2 - x1;
-                var h = y2 - y1;
-                ctx.rect(x1, y1, w, h);
-                ctx.stroke();
-            }
-        }
-    }
-
-    function renderGridFail(data, scope) {
-        scope.PlateGridding = {
-            grid: data.grid
-        };
-        var imgPlateSlice = new Image;
-        imgPlateSlice.src = GetSliceImageURL(scope.cccId, scope.CurrentImageId, scope.Plate);
-        $("#divGridStatus").text($("#divGridStatus").text()+"\nFecthing Plate Slice ...");
-
-        imgPlateSlice.onload = function () {
-            $("#divGridStatus").text($("#divGridStatus").text() +"\nDrawing gridding...");
-            plotGridOnPlateSliceInCanvas(scope, imgPlateSlice, "cvsPlateGrid");
-        }
-
-        $("#btnReGrid").off('click').click(function () {
-            cccFunctions.setStep(2.4);
-            var offsetRow = $("#inOffsetRow").val();
-            var offsetCol = $("#inOffsetCol").val();
-            var offset = [];
-            offset.push(offsetRow);
-            offset.push(offsetCol);
-            $("#divGridStatus").text("Calculating Gridding ... please wait ...!");
-            SetGridding(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.PinFormat, offset, scope.AccessToken, setGriddingSuccess, setGriddingError);
-        });
-    }
-
-    cccFunctions.renderGridFail = renderGridFail;
-
-    function renderGrid(data, scope) {
-        scope.PlateGridding = {
-            grid: data.grid,
-            xy1: data.xy1,
-            xy2: data.xy2
-        };
-
-        var imgPlateSlice = new Image;
-        var sliceUrl = GetSliceImageURL(scope.cccId, scope.CurrentImageId, scope.Plate);
-        imgPlateSlice.src = sliceUrl;
-        getDataUrlfromUrl(sliceUrl, function (dataUrl) { scope.PlateDataURL = dataUrl; });
-        imgPlateSlice.onload = function () {
-            plotGridOnPlateSliceInCanvas(scope, imgPlateSlice, "cvsPlateGrid");
-            $("#btnStartColonyDetection").click(function () {
-                cccFunctions.setStep(3);
-                iniColonyStats(scope);
-                plotGridOnPlateSliceInCanvas(scope, imgPlateSlice, "cvsPlateGridColonyMarker", 0, 0);
-                scope.PlateCurrentColonyRow = 0;
-                scope.PlateCurrentColonyCol = 0;
-                detectColony(scope, 0, 0);
-            });
-        }
-    }
-
-    cccFunctions.renderGrid = renderGrid;
-
-    function nextColonyDetection(scope) {
-        //var scope = getCurrentScope();
-        var plateRows = scope.PinFormat[1];
-        var plateCols = scope.PinFormat[0];
-        var colonyRow = scope.PlateCurrentColonyRow;
-        var colonyCol = scope.PlateCurrentColonyCol;
-
-        colonyCol += 1;
-        if (colonyCol >= plateCols) {
-            colonyRow += 1;
-            colonyCol = 0;
-        }
-
-        $("#divColony").text("Colony: " + colonyRow + "," + colonyCol);
-        moveProgress(colonyRow, colonyCol, plateRows, plateCols);
-
-        var img = new Image();
-        img.src = scope.PlateDataURL;
-        img.onload = function () {
-            plotGridOnPlateSliceInCanvas(scope, img, "cvsPlateGridColonyMarker", colonyRow, colonyCol);
-            detectColony(scope, colonyRow, colonyCol);
-        }
-    }
-
-    function plotGridOnPlateSliceInCanvas(scope, image, canvasId, row, col) {
-        var scaleFactor = 0.25;
-
-        var canvas = document.getElementById(canvasId);
-        canvas.width = image.naturalWidth * scaleFactor;
-        canvas.height = image.naturalHeight * scaleFactor;
-        var ctx = canvas.getContext('2d');
-        ctx.scale(0.2, 0.2);
-
-        ctx.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight);
-        drawCanvasGridCenters(scope, ctx, row, col);
-        //optional squares
-        //drawCanvasGrid(scope, ctx);
-    }
-    cccFunctions.plotGridOnPlateSliceInCanvas = plotGridOnPlateSliceInCanvas;
-
-    function setGriddingError(data, scope) {
-        cccFunctions.setStep(2.3);
-        $("#divGridStatus").text("Gridding was unsuccesful. Reason: '" + data.reason + "'. Please enter Offset and retry!");
-        cccFunctions.renderGridFail(data, scope);
-    }
-
-    cccFunctions.setGriddingError = setGriddingError;
-
-    function setGriddingSuccess(data, scope) {
-        cccFunctions.setStep(2.2);
-        $("#divGridStatus").text("Gridding was sucessful!");
-        cccFunctions.renderGrid(data, scope);
-    }
-
-    cccFunctions.setGriddingSuccess = setGriddingSuccess;
-
-    function detectColony(scope, row, col) {
-        scope.PlateCurrentColonyRow = row;
-        scope.PlateCurrentColonyCol = col;
-        ReactDOM.render(
-            <ColonyEditorContainer
-                scope={scope}
-                ccc={scope.cccId}
-                image={scope.CurrentImageId}
-                plate={scope.Plate}
-                row={row}
-                col={col}
-                accessToken={scope.AccessToken}
-                scope={scope}
-                onFinish={() => {nextColonyDetection(scope)}}
-            />,
-            document.getElementById('colony-editor'),
-        );
-    }
-
-    function moveProgress(row, col, totalRow, totalCol) {
-        var m = (row * totalCol) + col;
-        var percent = (m * 100) / (totalCol * totalRow);
-        $("#progressbar").progressbar({ value: percent });
-        $("#divPro").text("col:"+col+" row:"+row+" m: "+m +" %:"+percent);
-    }
-
-    function reportColonyDetectionProgress(data, scope) {
-        var success = data.success;
-        var reason = data.reason;
-        if (typeof reason == 'undefined')
-            reason = '';
-        var item = success + "- " + reason;
-        scope.ColonyDetection.push(item);
-        if (success)
-            scope.ColonyDetected = scope.ColonyDetected + 1;
-        else
-            scope.ColonyNotDetected = scope.ColonyNotDetected + 1;
-        $("#divCompress").text("Detected:" + scope.ColonyDetected + " fails:" + scope.ColonyNotDetected + " last error:" + data.reason);
-    }
-
-    function reportColonyCompressionProgress(data) {
-        var success = data.success;
-        var reason = data.reason;
-        if (typeof reason == 'undefined')
-            reason = '';
-        var item = success + "- " + reason;
-        scope.ColonyCompression.push(item);
-        if (success)
-            scope.ColonyCompressed = scope.ColonyCompressed + 1;
-        else
-            scope.ColonyNotCompressed = scope.ColonyNotCompressed + 1;
-        $("#divCompress").text("compressed:" + scope.ColonyCompressed + " fails:" + scope.ColonyNotCompressed + " last error:" + data.reason);
-    }
-
-    function runNextPlateColonyTask(scope) {
-        var next = scope.PlateColonyNextTaskInQueue;
-        if (next == null) {
-            alert("the end");
-        }
-        setTimeout(function () {
-            next();
-        }, 500);
-    }
 };
 
 

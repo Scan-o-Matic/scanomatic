@@ -64,48 +64,6 @@ describe('createSetGrayScaleTransformTask', () => {
     });
 });
 
-describe('setGriddingError', () => {
-    let textSpy = null;
-    beforeEach(() => {
-        spyOn(cccFunctions, 'renderGridFail');
-        spyOn(cccFunctions, 'setStep');
-        textSpy = jasmine.createSpy('text');
-        spyOn(window, '$').and.returnValue({text: textSpy});
-    });
-
-    it('Sets step and renders grid', () => {
-        const data = 1;
-        const scope = 2;
-        cccFunctions.setGriddingError(data, scope);
-        expect(cccFunctions.setStep).toHaveBeenCalledWith(2.3);
-        expect(textSpy).toHaveBeenCalled();
-        expect(cccFunctions.renderGridFail).toHaveBeenCalledWith(
-            data, scope
-        );
-    });
-});
-
-describe('setGriddingSuccess', () => {
-    let textSpy = null;
-    beforeEach(() => {
-        spyOn(cccFunctions, 'renderGrid');
-        spyOn(cccFunctions, 'setStep');
-        textSpy = jasmine.createSpy('text');
-        spyOn(window, '$').and.returnValue({text: textSpy});
-    });
-
-    it('Sets step and renders grid', () => {
-        const data = 1;
-        const scope = 2;
-        cccFunctions.setGriddingSuccess(data, scope);
-        expect(cccFunctions.setStep).toHaveBeenCalledWith(2.2);
-        expect(textSpy).toHaveBeenCalledWith("Gridding was sucessful!");
-        expect(cccFunctions.renderGrid).toHaveBeenCalledWith(
-            data, scope
-        );
-    });
-});
-
 describe('checkName', () => {
 
     const validNameRegexp = /^[a-z]([0-9a-z_\s])+$/i;
@@ -228,40 +186,4 @@ describe('initiateNewCcc', () => {
             .toBe(true);
     });
 
-});
-
-describe('renderGridFail', () => {
-    let scope;
-    let btnReGrid;
-
-    beforeEach(() => {
-        jasmine.Ajax.install();
-        btnReGrid = document.createElement('button');
-        btnReGrid.id = 'btnReGrid';
-        document.body.appendChild(btnReGrid);
-        spyOn(cccAPI, 'SetGridding');
-        scope = {};
-    });
-
-    afterEach(() => {
-        jasmine.Ajax.uninstall();
-        document.body.removeChild(btnReGrid);
-    });
-
-    it('should let the user re-grid by clicking the corresponding button', () => {
-        const data = 1;
-        cccFunctions.setGriddingError(data, scope);
-        btnReGrid.click();
-        expect(cccAPI.SetGridding).toHaveBeenCalled();
-    });
-
-    it('should make only one request each time the button is clicked', () => {
-        const data = 1;
-        cccFunctions.setGriddingError(data, scope);
-        btnReGrid.click();
-        expect(cccAPI.SetGridding).toHaveBeenCalledTimes(1);
-        cccFunctions.setGriddingError(data, scope);
-        btnReGrid.click();
-        expect(cccAPI.SetGridding).toHaveBeenCalledTimes(2);
-    });
 });
