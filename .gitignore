@@ -30,3 +30,4 @@ nohup.out
 data/config/rpc.admin
 /htmlcov
 /Scan_o_Matic.egg-info
+docker-compose.override.yml
