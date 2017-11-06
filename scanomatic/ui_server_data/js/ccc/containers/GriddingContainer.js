@@ -8,7 +8,7 @@ export default class GriddingContainer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            rowOffset: 4,
+            rowOffset: 0,
             colOffset: 0,
             status: 'loading',
         };
@@ -26,10 +26,11 @@ export default class GriddingContainer extends React.Component {
     }
 
     componentDidMount() {
-        this.updateGrid([0, 0]);
+        this.updateGrid();
     }
 
-    updateGrid(offsets) {
+    updateGrid() {
+        const offsets = [this.state.rowOffset, this.state.colOffset];
         this.setState({
             alert: 'Calculating Gridding ... please wait ...!',
             status: 'loading',
@@ -59,7 +60,7 @@ export default class GriddingContainer extends React.Component {
     }
 
     handleRegrid() {
-        this.updateGrid([this.state.rowOffset, this.state.colOffset]);
+        this.updateGrid();
     }
 
     render() {

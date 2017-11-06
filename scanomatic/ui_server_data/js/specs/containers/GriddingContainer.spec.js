@@ -25,9 +25,9 @@ describe('<GriddingContainer />', () => {
         expect(wrapper.find('Gridding').exists()).toBe(true);
     });
 
-    it('should set the row/col offsets to 4/0', () => {
+    it('should set the row/col offsets to 0/0', () => {
         const wrapper = mount(<GriddingContainer {...props} />);
-        expect(wrapper.children().prop('rowOffset')).toEqual(4);
+        expect(wrapper.children().prop('rowOffset')).toEqual(0);
         expect(wrapper.children().prop('colOffset')).toEqual(0);
     });
 
