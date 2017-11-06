@@ -8,7 +8,7 @@ import PlateProgress from './PlateProgress';
 export default function PlateEditor(props) {
     let title = "Step 2: Gridding";
     if (props.step === 'colony') {
-        title = 'Colony Detection'
+        title = 'Step 3: Colony Detection'
     }
     const [nCols, nRows] = props.pinFormat;
     return (

@@ -50,7 +50,7 @@ describe('<PlateEditor />', () => {
 
         it('should set the title to "Colony Detection"', () => {
             const wrapper = shallow(<PlateEditor {...props} />);
-            expect(wrapper.find('h3').text()).toEqual('Colony Detection');
+            expect(wrapper.find('h3').text()).toEqual('Step 3: Colony Detection');
         });
 
         it('should render a <ColonyEditorContainer />', () => {
