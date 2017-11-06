@@ -4,12 +4,12 @@ services:
   scanomatic:
     privileged: true
     build: .
-    ports:
-      - 5000:5000
+    ports: ["5000"]
     volumes:
       - scan-o-matic-home:/root/.scan-o-matic
+      - somprojects:/somprojects
       - /dev/bus/usb:/dev/bus/usb
-      - /somprojects:/somprojects
 
 volumes:
   scan-o-matic-home: {}
+  somprojects: {}
