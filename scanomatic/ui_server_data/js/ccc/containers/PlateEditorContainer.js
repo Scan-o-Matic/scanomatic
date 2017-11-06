@@ -29,6 +29,8 @@ export default class PlateEditorContainer extends React.Component {
             this.setState({ selectedColony: { row, col: col + 1 } });
         } else if (row < nRow - 1) {
             this.setState({ selectedColony: { row: row + 1, col: 0 } });
+        } else {
+            this.props.onFinish && this.props.onFinish()
         }
     }
 
@@ -55,4 +57,5 @@ PlateEditorContainer.propTypes = {
     cccId: PropTypes.string.isRequired,
     imageId: PropTypes.string.isRequired,
     plateId: PropTypes.string.isRequired,
+    onFinish: PropTypes.func,
 };

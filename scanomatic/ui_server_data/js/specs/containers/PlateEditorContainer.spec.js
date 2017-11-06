@@ -11,7 +11,12 @@ describe('<PlateEditorContainer />', () => {
         cccId: 'CCC42',
         imageId: '1M4G3',
         plateId: 'PL4T3',
+        onFinish: jasmine.createSpy('onFinish'),
     };
+
+    beforeEach(() => {
+        props.onFinish.calls.reset();
+    });
 
     it('should render a <PlateEditor />', () => {
         const wrapper = shallow(<PlateEditorContainer {...props} />);
@@ -52,5 +57,14 @@ describe('<PlateEditorContainer />', () => {
         wrapper.prop('onColonyFinish')();
         wrapper.update();
         expect(wrapper.prop('selectedColony')).toEqual({ row: 1, col: 0 });
+    });
+
+    it('should call the onFinish callback after the last colony', () => {
+        const wrapper = shallow(<PlateEditorContainer {...props} />);
+        wrapper.prop('onGriddingFinish')();
+        wrapper.setState({ selectedColony: { row: 2, col: 1 } });
+        wrapper.prop('onColonyFinish')();
+        wrapper.update();
+        expect(props.onFinish).toHaveBeenCalled();
     });
 });

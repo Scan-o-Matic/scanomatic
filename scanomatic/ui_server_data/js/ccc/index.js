@@ -488,6 +488,7 @@ window.executeCCC = function() {
                     plateId={scope.Plate}
                     pinFormat={scope.PinFormat.map((i) => parseInt(i))}
                     accessToken={scope.AccessToken}
+                    onFinish={() => alert('Level completed!')}
                 />,
                 document.getElementById('react-root'),
             );
