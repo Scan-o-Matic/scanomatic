@@ -11,6 +11,7 @@
     "enzyme": "^3.1.0",
     "enzyme-adapter-react-16": "^1.0.2",
     "file-loader": "^1.1.5",
+    "jasmine-ajax": "^3.3.1",
     "jasmine-core": "^2.8.0",
     "karma": "^1.7.1",
     "karma-chrome-launcher": "^2.2.0",
@@ -21,7 +22,6 @@
     "webpack": "^3.8.1"
   },
   "dependencies": {
-    "jasmine-ajax": "^3.3.1",
     "prop-types": "^15.6.0",
     "react": "^16.0.0",
     "react-dom": "^16.0.0"
