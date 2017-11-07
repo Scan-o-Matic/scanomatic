@@ -28,3 +28,5 @@ before_script:
 script:
     - tox
     - npm test
+after_success:
+    - coveralls
