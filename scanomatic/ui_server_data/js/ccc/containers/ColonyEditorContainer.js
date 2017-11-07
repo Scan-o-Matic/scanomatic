@@ -9,6 +9,7 @@ export default class ColonyEditorContainer extends React.Component {
         super(props);
         this.state = {};
         this.handleSet = this.handleSet.bind(this);
+        this.handleSkip = this.handleSkip.bind(this);
         this.handleUpdate = this.handleUpdate.bind(this);
     }
 
@@ -54,6 +55,10 @@ export default class ColonyEditorContainer extends React.Component {
         );
     }
 
+    handleSkip() {
+        this.props.onFinish && this.props.onFinish();
+    }
+
     render() {
         if (!this.state.colonyData) {
             return null;
@@ -62,6 +67,7 @@ export default class ColonyEditorContainer extends React.Component {
             <ColonyEditor
                 data={this.state.colonyData}
                 onSet={this.handleSet}
+                onSkip={this.handleSkip}
                 onUpdate={this.handleUpdate}
             />
         );
