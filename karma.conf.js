@@ -14,7 +14,6 @@ module.exports = function(config) {
         "js/jquery-2.2.3.js",
         "js/d3.js",
         "js/*.js",
-        'js/specs/helpers/*.js',
         { pattern: 'js/specs/**/*.spec.js', watched: false },
     ],
 
