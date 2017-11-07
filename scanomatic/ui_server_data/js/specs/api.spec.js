@@ -1,3 +1,5 @@
+import 'jasmine-ajax';
+
 import { SetColonyCompression, SetColonyDetection, SetGridding } from '../ccc/api';
 
 describe('API', () => {
