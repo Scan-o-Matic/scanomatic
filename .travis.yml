@@ -12,7 +12,7 @@ addons:
   firefox: latest
 
 before_install:
-    - pip install tox
+    - pip install tox python-coverage
     - wget -N http://chromedriver.storage.googleapis.com/2.30/chromedriver_linux64.zip -P ~/
     - unzip ~/chromedriver_linux64.zip -d ~/
     - rm ~/chromedriver_linux64.zip
