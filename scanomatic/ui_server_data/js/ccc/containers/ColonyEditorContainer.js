@@ -59,7 +59,7 @@ export default class ColonyEditorContainer extends React.Component {
     }
 
     handleSet() {
-        if (!this.state.cellCount || this.state.cellCountError) {
+        if (this.state.cellCount == null || this.state.cellCountError) {
             this.setState({ cellCountError: true });
             return;
         }

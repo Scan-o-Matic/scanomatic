@@ -83,9 +83,15 @@ describe('</ColonyEditorContainer />', () => {
             expect(wrapper.find('ColonyEditor').prop('cellCountError')).toBeTruthy();
         });
 
-        it('should set cellCountError to false if cell count is >= 0', () => {
+        it('should set cellCountError to false if cell count is > 0', () => {
             const wrapper = mount(<ColonyEditorContainer {...props}/>);
             wrapper.find('ColonyEditor').prop('onCellCountChange')(666);
+            expect(wrapper.find('ColonyEditor').prop('cellCountError')).toBeFalsy();
+        });
+
+        it('should set cellCountError to false if cell count is = 0', () => {
+            const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.find('ColonyEditor').prop('onCellCountChange')(0);
             expect(wrapper.find('ColonyEditor').prop('cellCountError')).toBeFalsy();
         });
     });
@@ -111,7 +117,6 @@ describe('</ColonyEditorContainer />', () => {
             wrapper.find('ColonyEditor').prop('onSet')();
             expect(API.SetColonyCompression).not.toHaveBeenCalled()
         });
-
 
         it('should send the data to the server', () => {
             const wrapper = mount(<ColonyEditorContainer {...props}/>);
