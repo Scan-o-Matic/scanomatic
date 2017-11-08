@@ -43,17 +43,21 @@ export default class ColonyEditor extends React.Component {
                 <div><br /></div>
                 <div><span>Colony MetaData</span></div>
                 <ColonyFeatures data={this.state.data} />
-                <button
-                    className="btn btn-default btn-fix"
-                    style={{ horizAlign: 'center' }}
-                    onClick={this.handleClickFix}
-                >Fix</button>
-                <div style={{ textAlign: 'center' }}>
-                    <button
-                        className="btn btn-default btn-set"
-                        style={{ marginLeft: '30px' }}
-                        onClick={this.props.onSet}
-                    >Set</button>
+                <div className="text-center">
+                    <div className="btn-group">
+                        <button
+                            className="btn btn-default btn-fix"
+                            onClick={this.handleClickFix}
+                        >Fix</button>
+                        <button
+                            className="btn btn-default btn-skip"
+                            onClick={this.props.onSkip}
+                        >Skip</button>
+                        <button
+                            className="btn btn-primary btn-set"
+                            onClick={this.props.onSet}
+                        >Set</button>
+                    </div>
                 </div>
             </div>
         );
@@ -64,5 +68,6 @@ ColonyEditor.propTypes = {
     data: PropTypes.object.isRequired,
     onFix: PropTypes.func,
     onSet: PropTypes.func,
+    onSkip: PropTypes.func,
     onUpdate: PropTypes.func,
 };

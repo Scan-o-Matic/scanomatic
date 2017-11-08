@@ -12,15 +12,17 @@ describe('<ColonyEditor />', () => {
         background: [[false, true], [true, false]],
     };
     const onSet = jasmine.createSpy('onSet');
+    const onSkip = jasmine.createSpy('onSkip');
     const onUpdate = jasmine.createSpy('onUpdate');
     let wrapper;
 
 
     beforeEach(() => {
         onSet.calls.reset();
+        onSkip.calls.reset();
         onUpdate.calls.reset();
         wrapper = shallow(
-            <ColonyEditor data={data} onSet={onSet} onUpdate={onUpdate} />
+            <ColonyEditor data={data} onSet={onSet} onSkip={onSkip} onUpdate={onUpdate} />
         );
     });
 
@@ -45,6 +47,12 @@ describe('<ColonyEditor />', () => {
 
     });
 
+    it('should render a "Skip" <button />', () => {
+        const button = wrapper.find('button.btn-skip')
+        expect(button.exists()).toBeTruthy();
+        expect(button.text()).toEqual('Skip');
+    });
+
     it('should set `draw` to true when the "fix" button is clicked', () => {
         const button = wrapper.find('button.btn-fix');
         button.simulate('click');
@@ -52,10 +60,16 @@ describe('<ColonyEditor />', () => {
         expect(imageCanvas.prop('draw')).toBe(true);
     });
 
-    it('should call the onSet callback whet the "Set" button is clicked', () => {
+    it('should call the onSet callback when the "Set" button is clicked', () => {
         const button = wrapper.find('button.btn-set');
         button.simulate('click');
         expect(onSet).toHaveBeenCalledWith();
+    });
+
+    it('should call the onSkip callback when the "Skip" button is clicked', () => {
+        const button = wrapper.find('button.btn-skip');
+        button.simulate('click');
+        expect(onSkip).toHaveBeenCalled();
     });
 
     describe('when the blob is updated', () => {

@@ -97,6 +97,14 @@ describe('</ColonyEditorContainer />', () => {
         });
     });
 
+    describe('#handleSkip', () => {
+        it('should call the onFinish callback', () => {
+            const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.find('ColonyEditor').prop('onSkip')();
+            expect(props.onFinish).toHaveBeenCalled();
+        });
+    });
+
     describe('#handleUpdate', () => {
         const newData = {
             blob: [[true, true], [false, false]],
