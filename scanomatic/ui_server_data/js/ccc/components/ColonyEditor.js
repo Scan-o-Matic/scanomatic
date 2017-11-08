@@ -12,6 +12,7 @@ export default class ColonyEditor extends React.Component {
             data: props.data,
         }
         this.handleClickFix = this.handleClickFix.bind(this);
+        this.handleInputChange = this.handleInputChange.bind(this);
         this.handleUpdate = this.handleUpdate.bind(this);
     }
 
@@ -31,7 +32,18 @@ export default class ColonyEditor extends React.Component {
         this.props.onUpdate && this.props.onUpdate(data);
     }
 
+    handleInputChange(event) {
+        if (this.props.onCellCountChange) {
+            this.props.onCellCountChange(parseInt(event.target.value));
+        }
+    }
+
+
     render() {
+        const cellCountValue =
+            this.props.cellCount == null ? '' : this.props.cellCount;
+        const cellCountFormGroupClass =
+            'form-group' + (this.props.cellCountError ? ' has-error' : '');
         return (
             <div>
                 <div><span>Colony Image</span></div>
@@ -43,6 +55,17 @@ export default class ColonyEditor extends React.Component {
                 <div><br /></div>
                 <div><span>Colony MetaData</span></div>
                 <ColonyFeatures data={this.state.data} />
+                <div><span>Cell Count</span></div>
+                <div className={cellCountFormGroupClass} >
+                    <label className="control-label" htmlFor="cell-count">Cell Count</label>
+                    <input
+                        className="form-control"
+                        type="number"
+                        name="cell-count"
+                        value={cellCountValue}
+                        onChange={this.handleInputChange}
+                    />
+                </div>
                 <div className="text-center">
                     <div className="btn-group">
                         <button
@@ -66,6 +89,9 @@ export default class ColonyEditor extends React.Component {
 
 ColonyEditor.propTypes = {
     data: PropTypes.object.isRequired,
+    cellCount: PropTypes.number,
+    cellCountError: PropTypes.bool,
+    onCellCountChange: PropTypes.func,
     onFix: PropTypes.func,
     onSet: PropTypes.func,
     onSkip: PropTypes.func,

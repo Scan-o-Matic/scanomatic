@@ -68,6 +68,7 @@ describe('API', () => {
     describe('SetColonyCompression', () => {
         const onSuccess = jasmine.createSpy('onSuccess');
         const onError = jasmine.createSpy('onError');
+        const cellCount = 666;
         const args = [
             'CCC42',
             '1M4G3',
@@ -77,6 +78,7 @@ describe('API', () => {
                 blob: [[true, false], [false, true]],
                 background: [[false, true], [true, false]],
             },
+            cellCount,
             4,
             1,
             onSuccess,
@@ -97,6 +99,12 @@ describe('API', () => {
             SetColonyCompression(...args);
             expect(jasmine.Ajax.requests.mostRecent().url)
                 .toBe('/api/data/calibration/CCC42/image/1M4G3/plate/PL4T3/compress/colony/1/4');
+        });
+
+        it('should send the cell count', () => {
+            SetColonyCompression(...args);
+            const params = JSON.parse(jasmine.Ajax.requests.mostRecent().params);
+            expect(params.cell_count).toEqual(cellCount);
         });
 
         it('should call onSuccess on success', () => {

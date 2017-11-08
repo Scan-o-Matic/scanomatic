@@ -14,6 +14,7 @@ describe('<ColonyEditor />', () => {
     const onSet = jasmine.createSpy('onSet');
     const onSkip = jasmine.createSpy('onSkip');
     const onUpdate = jasmine.createSpy('onUpdate');
+    const onCellCountChange = jasmine.createSpy('onCellCountChange');
     let wrapper;
 
 
@@ -21,8 +22,17 @@ describe('<ColonyEditor />', () => {
         onSet.calls.reset();
         onSkip.calls.reset();
         onUpdate.calls.reset();
+        onCellCountChange.calls.reset();
         wrapper = shallow(
-            <ColonyEditor data={data} onSet={onSet} onSkip={onSkip} onUpdate={onUpdate} />
+            <ColonyEditor
+                data={data}
+                cellCount={1234}
+                cellCountError={false}
+                onSet={onSet}
+                onSkip={onSkip}
+                onUpdate={onUpdate}
+                onCellCountChange={onCellCountChange}
+            />
         );
     });
 
@@ -51,6 +61,30 @@ describe('<ColonyEditor />', () => {
         const button = wrapper.find('button.btn-skip')
         expect(button.exists()).toBeTruthy();
         expect(button.text()).toEqual('Skip');
+    });
+
+    it('should render an <input /> for the cell count', () => {
+        const input = wrapper.find('input[name="cell-count"]');
+        expect(input.exists()).toBeTruthy();
+        expect(input.prop('value')).toEqual(1234);
+    });
+
+    it('should not mark the <input /> as error if cellCountError is false', () => {
+        wrapper.setProps({ cellCountError: false });
+        const input = wrapper.find('input[name="cell-count"]');
+        expect(input.parent().prop('className')).not.toContain('has-error');
+    });
+
+    it('should mark the <input /> as error if cellCountError is true', () => {
+        wrapper.setProps({ cellCountError: true });
+        const input = wrapper.find('input[name="cell-count"]');
+        expect(input.parent().prop('className')).toContain('has-error');
+    });
+
+    it('should call the onCellCountChange callback when the input is changed', () => {
+        const input = wrapper.find('input[name="cell-count"]');
+        input.simulate('change', { target: { value: '666' } });
+        expect(onCellCountChange).toHaveBeenCalledWith(666);
     });
 
     it('should set `draw` to true when the "fix" button is clicked', () => {
