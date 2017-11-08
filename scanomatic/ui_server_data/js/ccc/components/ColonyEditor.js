@@ -55,7 +55,6 @@ export default class ColonyEditor extends React.Component {
                 <div><br /></div>
                 <div><span>Colony MetaData</span></div>
                 <ColonyFeatures data={this.state.data} />
-                <div><span>Cell Count</span></div>
                 <div className={cellCountFormGroupClass} >
                     <label className="control-label" htmlFor="cell-count">Cell Count</label>
                     <input
