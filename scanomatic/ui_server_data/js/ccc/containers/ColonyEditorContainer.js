@@ -7,7 +7,12 @@ import { SetColonyCompression, SetColonyDetection } from '../api';
 export default class ColonyEditorContainer extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {};
+        this.state = {
+            colonyData: null,
+            cellCount: null,
+            cellCountError: false,
+        };
+        this.handleCellCountChange = this.handleCellCountChange.bind(this);
         this.handleSet = this.handleSet.bind(this);
         this.handleSkip = this.handleSkip.bind(this);
         this.handleUpdate = this.handleUpdate.bind(this);
@@ -18,7 +23,11 @@ export default class ColonyEditorContainer extends React.Component {
     }
 
     componentWillReceiveProps(newProps) {
-        this.setState({ colonyData: null });
+        this.setState({
+            cellCount: null,
+            cellCountError: false,
+            colonyData: null,
+        });
         this.getColonyData(newProps);
     }
 
@@ -28,6 +37,10 @@ export default class ColonyEditorContainer extends React.Component {
             this.handleColonyDetectionSuccess.bind(this),
             () => {},
         );
+    }
+
+    handleCellCountChange(cellCount) {
+        this.setState({ cellCount, cellCountError: cellCount < 0 });
     }
 
     handleColonyDetectionSuccess(data) {
@@ -46,10 +59,14 @@ export default class ColonyEditorContainer extends React.Component {
     }
 
     handleSet() {
+        if (this.state.cellCount == null || this.state.cellCountError) {
+            this.setState({ cellCountError: true });
+            return;
+        }
         const { ccc, image, plate, row, col, accessToken } = this.props;
-        const { colonyData } = this.state;
+        const { cellCount, colonyData } = this.state;
         SetColonyCompression(
-            ccc, image, plate, accessToken, colonyData, row, col,
+            ccc, image, plate, accessToken, colonyData, cellCount, row, col,
             () => { this.props.onFinish && this.props.onFinish() },
             (data) => { alert(`Set Colony compression Error: ${data.reason}`); }
         );
@@ -66,6 +83,9 @@ export default class ColonyEditorContainer extends React.Component {
         return (
             <ColonyEditor
                 data={this.state.colonyData}
+                cellCount={this.state.cellCount}
+                cellCountError={this.state.cellCountError}
+                onCellCountChange={this.handleCellCountChange}
                 onSet={this.handleSet}
                 onSkip={this.handleSkip}
                 onUpdate={this.handleUpdate}

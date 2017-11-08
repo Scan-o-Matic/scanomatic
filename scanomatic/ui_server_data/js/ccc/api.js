@@ -233,14 +233,15 @@ export function SetColonyDetection(cccId, imageId, plate, accessToken, row, col,
     });
 }
 
-export function SetColonyCompression(cccId, imageId, plate, accessToken, colony, row, col, successCallback, errorCallback) {
+export function SetColonyCompression(cccId, imageId, plate, accessToken, colony, cellCount, row, col, successCallback, errorCallback) {
     var path = SetColonyCompressionPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate).replace("#3#", col).replace("#4#", row);
 
     var data = {
         access_token: accessToken,
         image: colony.image,
         blob: colony.blob,
-        background: colony.background
+        background: colony.background,
+        cell_count: cellCount,
     };
     $.ajax({
         url: path,

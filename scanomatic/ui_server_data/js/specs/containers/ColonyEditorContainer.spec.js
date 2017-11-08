@@ -54,46 +54,105 @@ describe('</ColonyEditorContainer />', () => {
             jasmine.any(Function));
     });
 
+    it('should reset the cellCount and cellCountError state when props are updated', () => {
+        const wrapper = mount(<ColonyEditorContainer {...props}/>);
+        wrapper.setState({ cellCount: 33, cellCountError: true });
+        wrapper.setProps({ col: 2 });
+        expect(wrapper.state('cellCount')).toBe(null);
+        expect(wrapper.state('cellCountError')).toBeFalsy();
+    });
+
     it('should pass the loaded data to the <ColonyEditor />', () => {
         const wrapper = mount(<ColonyEditorContainer {...props}/>);
         expect(wrapper.find('ColonyEditor').prop('data'))
             .toEqual(colonyData);
     });
 
+    describe('#handleCellCountChange', () => {
+        it('should set cell count', () => {
+            const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.find('ColonyEditor').prop('onCellCountChange')(666);
+            wrapper.update();
+            expect(wrapper.find('ColonyEditor').prop('cellCount')).toEqual(666);
+        });
+
+        it('should set cellCountError to true if cell count is < 0', () => {
+            const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.find('ColonyEditor').prop('onCellCountChange')(-666);
+            wrapper.update();
+            expect(wrapper.find('ColonyEditor').prop('cellCountError')).toBeTruthy();
+        });
+
+        it('should set cellCountError to false if cell count is > 0', () => {
+            const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.find('ColonyEditor').prop('onCellCountChange')(666);
+            expect(wrapper.find('ColonyEditor').prop('cellCountError')).toBeFalsy();
+        });
+
+        it('should set cellCountError to false if cell count is = 0', () => {
+            const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.find('ColonyEditor').prop('onCellCountChange')(0);
+            expect(wrapper.find('ColonyEditor').prop('cellCountError')).toBeFalsy();
+        });
+    });
+
     describe('#handleSet', () => {
-        it('should send the data to the server', () => {
+        it('should not call the API if cell count not set', () => {
             const wrapper = mount(<ColonyEditorContainer {...props}/>);
             wrapper.find('ColonyEditor').prop('onSet')();
+            expect(API.SetColonyCompression).not.toHaveBeenCalled()
+        });
+
+        it('should set cellCountError to true if cell count is not set', () => {
+            const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.find('ColonyEditor').prop('onSet')();
+            wrapper.update();
+            expect(wrapper.find('ColonyEditor').prop('cellCountError')).toBeTruthy();
+        });
+
+        it('should not call the API if cell count error is true', () => {
+            const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.setState({ cellCount: -666 });
+            wrapper.setState({ cellCountError: true });
+            wrapper.find('ColonyEditor').prop('onSet')();
+            expect(API.SetColonyCompression).not.toHaveBeenCalled()
+        });
+
+        it('should send the data to the server', () => {
+            const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.setState({ cellCount: 666 });
+            wrapper.find('ColonyEditor').prop('onSet')();
             expect(API.SetColonyCompression).toHaveBeenCalledWith(
-                props.ccc, props.image, props.plate,
-                props.accessToken, colonyData, props.row, props.col,
+                props.ccc, props.image, props.plate, props.accessToken,
+                colonyData, 666, props.row, props.col,
                 jasmine.any(Function), jasmine.any(Function),
             );
         });
 
         it('should call the onFinish callback on success', () => {
             API.SetColonyCompression.and.callFake(
-                (ccc, image, plate, accessToken, row, col, data, onSuccess) => {
+                (ccc, image, plate, accessToken, row, col, data, cellCount, onSuccess) => {
                     onSuccess();
                 }
             );
             const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.setState({ cellCount: 666 });
             wrapper.find('ColonyEditor').prop('onSet')();
             expect(props.onFinish).toHaveBeenCalled();
         });
 
         it('should show an alert on error', () => {
             API.SetColonyCompression.and.callFake(
-                (ccc, image, plate, accessToken, row, col, data, onSuccess, onError) => {
+                (ccc, image, plate, accessToken, row, col, data, cellCount, onSuccess, onError) => {
                     onError({ reason: 'Whoops' });
                 }
             );
             spyOn(window, 'alert');
             const wrapper = mount(<ColonyEditorContainer {...props}/>);
+            wrapper.setState({ cellCount: 666 });
             wrapper.find('ColonyEditor').prop('onSet')();
             expect(window.alert)
                 .toHaveBeenCalledWith("Set Colony compression Error: Whoops");
-
         });
     });
 
