@@ -12,7 +12,8 @@ addons:
   firefox: latest
 
 before_install:
-    - pip install tox python-coveralls
+    - pip install tox coveralls
+    - gem install coveralls-lcov
     - wget -N http://chromedriver.storage.googleapis.com/2.30/chromedriver_linux64.zip -P ~/
     - unzip ~/chromedriver_linux64.zip -d ~/
     - rm ~/chromedriver_linux64.zip
@@ -29,4 +30,5 @@ script:
     - tox
     - npm test
 after_success:
-    - coveralls
+    - coveralls-lcov -v -n scanomatic/ui_server_data/coverage/report-lcov/lcov.info > js-coverage.json
+    - coveralls --merge=js-coverage.json
