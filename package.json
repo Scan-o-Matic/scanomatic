@@ -1,11 +1,12 @@
 {
   "scripts": {
-    "test": "karma start --single-run",
+    "test": "BABEL_ENV=test karma start --single-run",
     "build": "webpack"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
+    "babel-plugin-istanbul": "^4.1.5",
     "babel-preset-env": "^1.6.1",
     "babel-preset-react": "^6.24.1",
     "enzyme": "^3.1.0",
@@ -15,6 +16,7 @@
     "jasmine-core": "^2.8.0",
     "karma": "^1.7.1",
     "karma-chrome-launcher": "^2.2.0",
+    "karma-coverage": "^1.1.1",
     "karma-jasmine": "^1.1.0",
     "karma-mocha-reporter": "^2.2.5",
     "karma-webpack": "^2.0.5",
