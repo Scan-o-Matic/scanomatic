@@ -704,9 +704,19 @@ def add_routes(app):
                 " This check can be over-ridden."
             )
 
+        try:
+            cell_count = int(data_object['cell_count'])
+        except KeyError:
+            return json_abort(
+                400, reason="Missing expected parameter cell_count")
+        except ValueError:
+            return json_abort(400, reason="cell_count should be an integer")
+        if cell_count < 0:
+            return json_abort(
+                400, reason="cell_count should be greater or equal than zero")
+
         if calibration.set_colony_compressed_data(
-                ccc_identifier, image_identifier, plate, x, y,
-                included=True,
+                ccc_identifier, image_identifier, plate, x, y, cell_count,
                 image=image, blob_filter=blob_filter,
                 background_filter=background_filter,
                 access_token=data_object.get("access_token")):

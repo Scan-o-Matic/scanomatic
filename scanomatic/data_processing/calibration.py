@@ -160,6 +160,8 @@ class CCCMeasurement(Enum):
     """:type : CCCMeasurement"""
     source_value_counts = 2
     """:type : CCCMeasurement"""
+    cell_count = 3
+    """:type : CCCMeasurement"""
 
 
 CalibrationEntry = namedtuple(
@@ -795,32 +797,29 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
 
 @_validate_ccc_edit_request
 def set_colony_compressed_data(
-        identifier, image_identifier, plate_id, x, y, included=True,
-        image=None, blob_filter=None, background_filter=None):
+        identifier, image_identifier, plate_id, x, y, cell_count,
+        image, blob_filter, background_filter):
 
     ccc = __CCC[identifier]
-    only_update_included = True
-    if image is not None:
-        only_update_included = False
-        background = mid50_mean(image[background_filter].ravel())
-        if np.isnan(background):
-            _logger.error(
-                "The background had too little information to make mid50 mean")
-            return False
+    background = mid50_mean(image[background_filter].ravel())
+    if np.isnan(background):
+        _logger.error(
+            "The background had too little information to make mid50 mean")
+        return False
 
-        colony = image[blob_filter].ravel() - background
+    colony = image[blob_filter].ravel() - background
 
-        values, counts = zip(
-            *{k: (colony == k).sum() for k in
-              np.unique(colony).tolist()}.iteritems())
+    values, counts = zip(
+        *{k: (colony == k).sum() for k in
+          np.unique(colony).tolist()}.iteritems())
 
-        if np.sum(counts) != blob_filter.sum():
-            _logger.error(
-                "Counting mismatch between compressed format and blob filter")
-            return False
+    if np.sum(counts) != blob_filter.sum():
+        _logger.error(
+            "Counting mismatch between compressed format and blob filter")
+        return False
 
-        image_data = get_image_json_from_ccc(identifier, image_identifier)
-        plate = image_data[CCCImage.plates][plate_id]
+    image_data = get_image_json_from_ccc(identifier, image_identifier)
+    plate = image_data[CCCImage.plates][plate_id]
 
     while len(plate[CCCPlate.compressed_ccc_data]) <= x:
 
@@ -828,36 +827,17 @@ def set_colony_compressed_data(
 
     while len(plate[CCCPlate.compressed_ccc_data][x]) <= y:
 
-        plate[CCCPlate.compressed_ccc_data][x].append(
-            {CCCMeasurement.included: False,
+        plate[CCCPlate.compressed_ccc_data][x].append({
              CCCMeasurement.source_value_counts: [],
-             CCCMeasurement.source_values: []})
+             CCCMeasurement.source_values: [],
+        })
 
-    if only_update_included:
-
-        if included and not (
-                plate[CCCPlate.compressed_ccc_data][x][y][
-                    CCCMeasurement.source_values] or
-                plate[CCCPlate.compressed_ccc_data][x][y][
-                    CCCMeasurement.source_value_counts]):
-
-            _logger.warning(
-                "Attempting to include CCC Measurement for position {0}, {1} while it has no data".format(
-                    x, y)
-            )
-
-            return False
-
-        plate[CCCPlate.compressed_ccc_data][x][y][
-            CCCMeasurement.included] = included
-
-    else:
-        plate[CCCPlate.compressed_ccc_data][x][y][
-            CCCMeasurement.included] = included
-        plate[CCCPlate.compressed_ccc_data][x][y][
-            CCCMeasurement.source_value_counts] = counts
-        plate[CCCPlate.compressed_ccc_data][x][y][
-            CCCMeasurement.source_values] = values
+    plate[CCCPlate.compressed_ccc_data][x][y][
+        CCCMeasurement.source_value_counts] = counts
+    plate[CCCPlate.compressed_ccc_data][x][y][
+        CCCMeasurement.source_values] = values
+    plate[CCCPlate.compressed_ccc_data][x][y][
+        CCCMeasurement.cell_count] = cell_count
 
     return save_ccc_to_disk(ccc)
 
