@@ -98,7 +98,7 @@ describe('API', () => {
         it('should query the correct url', () => {
             SetColonyCompression(...args);
             expect(jasmine.Ajax.requests.mostRecent().url)
-                .toBe('/api/data/calibration/CCC42/image/1M4G3/plate/PL4T3/compress/colony/1/4');
+                .toBe('/api/calibration/CCC42/image/1M4G3/plate/PL4T3/compress/colony/1/4');
         });
 
         it('should send the cell count', () => {
@@ -153,7 +153,7 @@ describe('API', () => {
         it('should query the correct url', () => {
             SetColonyDetection(...args);
             expect(jasmine.Ajax.requests.mostRecent().url)
-                .toBe('/api/data/calibration/CCC42/image/1M4G3/plate/PL4T3/detect/colony/1/4');
+                .toBe('/api/calibration/CCC42/image/1M4G3/plate/PL4T3/detect/colony/1/4');
         });
 
         it('should call onSuccess on success', () => {

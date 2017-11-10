@@ -14,8 +14,8 @@ var SetCccImageSlicePath = baseUrl + "/api/calibration/#0#/image/#1#/slice/set";
 var SetGrayScaleImageAnalysisPath = baseUrl + "/api/calibration/#0#/image/#1#/grayscale/analyse";
 var SetGrayScaleTransformPath = baseUrl + "/api/calibration/#0#/image/#1#/plate/#2#/transform";
 var SetGriddingPath = baseUrl + "/api/calibration/#0#/image/#1#/plate/#2#/grid/set";
-var SetColonyDetectionPath = baseUrl + "/api/data/calibration/#0#/image/#1#/plate/#2#/detect/colony/#3#/#4#";
-var SetColonyCompressionPath = baseUrl + "/api/data/calibration/#0#/image/#1#/plate/#2#/compress/colony/#3#/#4#";
+var SetColonyDetectionPath = baseUrl + "/api/calibration/#0#/image/#1#/plate/#2#/detect/colony/#3#/#4#";
+var SetColonyCompressionPath = baseUrl + "/api/calibration/#0#/image/#1#/plate/#2#/compress/colony/#3#/#4#";
 
 
 export function GetSliceImageURL(cccId, imageId, slice) {
