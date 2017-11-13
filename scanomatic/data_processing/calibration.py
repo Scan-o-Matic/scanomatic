@@ -3,11 +3,7 @@ from enum import Enum
 import json
 from itertools import izip
 import os
-import shutil
 from scipy.optimize import curve_fit
-import time
-from datetime import datetime
-from dateutil import tz
 from scipy.stats import linregress
 import re
 from uuid import uuid1
@@ -856,16 +852,6 @@ def validate_polynomial(data, poly):
         return CalibrationValidation.BadStatistics
 
     return CalibrationValidation.OK
-
-
-def _jsonify_entry(entry):
-
-    return {k.name: v for k, v in entry.iteritems()}
-
-
-def _jsonify(data):
-
-    return json.dumps([_jsonify_entry(e) for e in data])
 
 
 def _collect_all_included_data(ccc):
