@@ -92,7 +92,8 @@ def launch_server(host, port, debug):
     compilation_api.add_routes(app)
     scan_api.add_routes(app)
     data_api.add_routes(app, rpc_client, debug)
-    calibration_api.add_routes(app)
+    app.register_blueprint(
+        calibration_api.blueprint, url_prefix="/api/calibration")
     settings_api.add_routes(app)
     experiment_api.add_routes(app, rpc_client, _LOGGER)
 

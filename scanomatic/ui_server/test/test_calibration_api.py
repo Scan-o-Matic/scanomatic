@@ -63,7 +63,7 @@ def deleted_ccc():
 @pytest.fixture(scope="function")
 def test_app():
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
-    calibration_api.add_routes(app)
+    app.register_blueprint(calibration_api.blueprint)
     app.testing = True
     return app.test_client()
 
@@ -145,7 +145,7 @@ def test_get_boundin_box_for_colony_if_grid_partially_outside():
 
 
 class TestFinalizeEndpoint:
-    route = "/api/data/calibration/{identifier}/finalize"
+    route = "/{identifier}/finalize"
 
     def test_token_not_valid(self, test_app, finalizable_ccc):
         identifier = finalizable_ccc[
@@ -261,7 +261,7 @@ class TestFinalizeEndpoint:
 
 
 class TestDeleteEndpoint:
-    route = "/api/data/calibration/{identifier}/delete"
+    route = "/{identifier}/delete"
 
     def test_token_not_valid(self, test_app, finalizable_ccc):
         identifier = finalizable_ccc[
@@ -348,7 +348,7 @@ class TestDeleteEndpoint:
 
 
 class TestCompressCalibration:
-    url = "/api/data/calibration/ccc0/image/img0/plate/0/compress/colony/0/0"
+    url = "/ccc0/image/img0/plate/0/compress/colony/0/0"
 
     @pytest.fixture(autouse=True)
     def get_image_json_from_ccc(self):
