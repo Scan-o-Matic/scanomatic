@@ -54,14 +54,14 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
                         [
                             [
                                 {
-                                    CCCMeasurement.included: bool,
-                                        # If included
                                     CCCMeasurement.source_values:
                                         [123.1, 10.4, ...],
                                         # GS transf pixel transparencies
                                     CCCMeasurement.source_value_counts:
                                         [100, 1214, ...],
                                         # Num of corresponding pixels
+                                    CCCMeasurement.cell_count: 300000
+                                        # Num of cells (independent data)
                                 },
                                 ...
                             ],
@@ -78,11 +78,6 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
             },
             ...
         ],
-    CellCountCalibration.independent_data:
-        [[[12300, 121258, 1241240, 141410, ...], ..., ...]
-        # Continuous list of measurements of population sizes from OD or FACS
-        # Plates, columns, row
-    CellCountCalibration.independent_data_source: string  # File format
     CellCountCalibration.polynomial: {
         string: {'power': int, 'coefficients': [10, 0, 0, 0, 150, 0]},
         ....
@@ -108,13 +103,9 @@ class CellCountCalibration(Enum):
     """:type : CellCountCalibration"""
     images = 4
     """:type : CellCountCalibration"""
-    independent_data = 5
-    """:type : CellCountCalibration"""
     polynomial = 6
     """:type : CellCountCalibration"""
     edit_access_token = 7
-    """:type : CellCountCalibration"""
-    independent_data_source = 8
     """:type : CellCountCalibration"""
     deployed_polynomial = 9
     """:type : CellCountCalibration"""
@@ -150,8 +141,6 @@ class CCCPlate(Enum):
 
 
 class CCCMeasurement(Enum):
-    included = 0
-    """:type : CCCMeasurement"""
     source_values = 1
     """:type : CCCMeasurement"""
     source_value_counts = 2
@@ -257,8 +246,6 @@ def get_empty_ccc(species, reference):
         CellCountCalibration.edit_access_token: uuid1().hex,
         CellCountCalibration.polynomial: {},
         CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
-        CellCountCalibration.independent_data: [],
-        CellCountCalibration.independent_data_source: None,
         CellCountCalibration.deployed_polynomial: None,
     }
 
@@ -855,7 +842,7 @@ def validate_polynomial(data, poly):
 
 
 def _collect_all_included_data(ccc):
-
+    raise NotImplemented('Old implementation')
     source_values = []
     source_value_counts = []
     target_value = []
@@ -883,8 +870,6 @@ def _collect_all_included_data(ccc):
                                 id_image, id_plate, id_row, id_col) +
                             '\nContents:{0}'.format(item)
                         )
-
-    target_value = np.array(ccc[CellCountCalibration.independent_data]).ravel()
 
     return CalibrationEntry(
         target_value=target_value[inclusion_filter].tolist(),
@@ -1003,71 +988,6 @@ def _get_all_grid_shapes(ccc):
                 cells.append(plate[CCCPlate.compressed_ccc_data])
 
     return plates, cells
-
-
-@_validate_ccc_edit_request
-def add_external_data_to_ccc(identifier, data_file, report):
-
-    warnings = report.get('warnings', [])
-    report['warnings'] = warnings
-
-    errors = report.get('errors', [])
-    report['errors'] = errors
-
-    filetype = data_file.filename.split(".")[-1].lower()
-    if filetype not in ['.xls', '.xlsx', '.csv']:
-        errors.append('File format {0} not supported'.format(filetype))
-        return False
-
-    ccc = __CCC[identifier]
-
-    file_path = Paths().ccc_external_data_pattern.format(identifier, filetype)
-    data_file.save(file_path)
-    ccc[CellCountCalibration.independent_data_source] = filetype
-
-    grid_shapes, measurements = _get_all_grid_shapes(ccc)
-    meta_data = MetaData(grid_shapes, file_path)
-    if not meta_data.loaded:
-        errors.append(
-            'File could not be understood in terms of plates included'
-            '(Grid shapes: {0})'.format(grid_shapes))
-        return False
-
-    data_errors = False
-    for id_plate, measurement_set in enumerate(measurements):
-        for id_outer, outer in enumerate(measurement_set):
-            for id_inner, compressed_measurement in enumerate(outer):
-                measured = compressed_measurement[CCCMeasurement.included]
-                independent_data = meta_data[id_plate][id_outer][id_inner][-1]
-                independent_data = (
-                    (isinstance(independent_data, float) or
-                     isinstance(independent_data, int)) and
-                    independent_data > 0)
-
-                if independent_data and not measured:
-                    warnings.append(
-                        "Plate {0}, Pos ({1}, {2}) is not included but has independent data {3}".format(
-                            id_plate, id_outer, id_inner,
-                            meta_data[id_plate][id_outer][id_inner])
-                    )
-
-                elif not independent_data and measured:
-
-                    errors.append(
-                        "Plate {0}, Pos ({1}, {2}) is included but has no valid independent data {3}".format(
-                            id_plate, id_outer, id_inner,
-                            meta_data[id_plate][id_outer][id_inner])
-                    )
-
-                    data_errors = True
-
-    if data_errors:
-        return False
-
-    ccc[CellCountCalibration.independent_data] = (
-        meta_data.get_column_index_from_all_plates(-1))
-
-    return save_ccc_to_disk(ccc)
 
 
 @_validate_ccc_edit_request
