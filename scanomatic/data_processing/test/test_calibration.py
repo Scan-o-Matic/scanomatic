@@ -655,7 +655,8 @@ class TestSetColonyCompressedData:
                 calibration.CCCImage.identifier: image_identifier,
                 calibration.CCCImage.plates: {
                     plate_id: {
-                        calibration.CCCPlate.compressed_ccc_data: [[colony_data]],
+                        calibration.CCCPlate.compressed_ccc_data:
+                            {(0, 0): colony_data},
                     }
                 }
             }
@@ -688,8 +689,8 @@ class TestSetColonyCompressedData:
 
         return (
             ccc[calibration.CellCountCalibration.images][0]
-                [calibration.CCCImage.plates]['plate0']
-                [calibration.CCCPlate.compressed_ccc_data][0][0]
+            [calibration.CCCImage.plates]['plate0']
+            [calibration.CCCPlate.compressed_ccc_data][(0, 0)]
         )
 
     def test_source_values(self, measurement):
