@@ -587,7 +587,8 @@ def set_plate_grid_info(
     else:
         plate_json = {
             CCCPlate.grid_cell_size: None,
-            CCCPlate.grid_shape: None, CCCPlate.compressed_ccc_data: []
+            CCCPlate.grid_shape: None,
+            CCCPlate.compressed_ccc_data: {}
         }
         im_json[CCCImage.plates][plate] = plate_json
 
@@ -804,23 +805,11 @@ def set_colony_compressed_data(
     image_data = get_image_json_from_ccc(identifier, image_identifier)
     plate = image_data[CCCImage.plates][plate_id]
 
-    while len(plate[CCCPlate.compressed_ccc_data]) <= x:
-
-        plate[CCCPlate.compressed_ccc_data].append([])
-
-    while len(plate[CCCPlate.compressed_ccc_data][x]) <= y:
-
-        plate[CCCPlate.compressed_ccc_data][x].append({
-             CCCMeasurement.source_value_counts: [],
-             CCCMeasurement.source_values: [],
-        })
-
-    plate[CCCPlate.compressed_ccc_data][x][y][
-        CCCMeasurement.source_value_counts] = counts
-    plate[CCCPlate.compressed_ccc_data][x][y][
-        CCCMeasurement.source_values] = values
-    plate[CCCPlate.compressed_ccc_data][x][y][
-        CCCMeasurement.cell_count] = cell_count
+    plate[CCCPlate.compressed_ccc_data][(x, y)] = {
+        CCCMeasurement.source_value_counts: counts,
+        CCCMeasurement.source_values: values,
+        CCCMeasurement.cell_count: cell_count,
+    }
 
     return save_ccc_to_disk(ccc)
 
