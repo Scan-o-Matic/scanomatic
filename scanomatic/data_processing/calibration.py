@@ -21,6 +21,11 @@ from scanomatic.image_analysis.image_basics import (
     load_image_to_numpy, Image_Transpose)
 from scanomatic.image_analysis.first_pass_image import FixtureImage
 
+
+class CCCKeyError(Exception):
+    pass
+
+
 """ Data structure for CCC-jsons
 {
     CellCountCalibration.status:
@@ -78,11 +83,13 @@ from scanomatic.image_analysis.first_pass_image import FixtureImage
             },
             ...
         ],
-    CellCountCalibration.polynomial: {
-        string: {'power': int, 'coefficients': [10, 0, 0, 0, 150, 0]},
-        ....
+    CellCountCalibration.polynomial:
+        {
+            CCCPolynomial.power: int,
+            CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
+        },
+        # Or None
     }
-    CellCountCalibration.deployed_polynomial: string
 }
 
 """
@@ -106,8 +113,6 @@ class CellCountCalibration(Enum):
     polynomial = 6
     """:type : CellCountCalibration"""
     edit_access_token = 7
-    """:type : CellCountCalibration"""
-    deployed_polynomial = 9
     """:type : CellCountCalibration"""
 
 
@@ -149,10 +154,13 @@ class CCCMeasurement(Enum):
     """:type : CCCMeasurement"""
 
 
-CalibrationEntry = namedtuple(
-    "CalibrationEntry", [
-        'image',
-        'colony_name',
+class CCCPolynomial(Enum):
+    power = 0
+    coefficients = 1
+
+
+CalibrationData = namedtuple(
+    "CalibrationData", [
         'target_value',
         'source_values',
         'source_value_counts'
@@ -244,9 +252,8 @@ def get_empty_ccc(species, reference):
         CellCountCalibration.reference: reference,
         CellCountCalibration.images: [],
         CellCountCalibration.edit_access_token: uuid1().hex,
-        CellCountCalibration.polynomial: {},
+        CellCountCalibration.polynomial: None,
         CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
-        CellCountCalibration.deployed_polynomial: None,
     }
 
 
@@ -277,14 +284,13 @@ def _insert_default_ccc():
         reference='Zackrisson et. al. 2016',
     )
     ccc[CellCountCalibration.identifier] = 'default'
-    ccc[CellCountCalibration.polynomial]['default'] = {
-        'coefficients':
+    ccc[CellCountCalibration.polynomial] = {
+        CCCPolynomial.coefficients:
             (3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.),
-        'power': 5,
+        CCCPolynomial.power: 5,
     }
     ccc[CellCountCalibration.edit_access_token] = None
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
-    ccc[CellCountCalibration.deployed_polynomial] = 'default'
 
     __CCC[ccc[CellCountCalibration.identifier]] = ccc
 
@@ -298,7 +304,10 @@ def __load_cccs():
         with open(ccc_path, mode='rb') as fh:
             data = json.load(fh)
 
-        data = _parse_ccc(data)
+        try:
+            data = _parse_ccc(data)
+        except CCCKeyError:
+            _logger.warning("{} is an outdated CCC".format(ccc_path))
 
         if (data is None or
                 CellCountCalibration.identifier not in data or
@@ -337,8 +346,7 @@ def get_polynomial_coefficients_from_ccc(identifier):
     if ccc[CellCountCalibration.status] != CalibrationEntryStatus.Active:
         raise KeyError
 
-    return ccc[CellCountCalibration.polynomial][
-        ccc[CellCountCalibration.deployed_polynomial]]['coefficients']
+    return ccc[CellCountCalibration.polynomial][CCCPolynomial.coefficients]
 
 
 def get_under_construction_cccs():
@@ -390,12 +398,9 @@ def validate_polynomial_struct(polynomial):
 
 
 def has_valid_polynomial(ccc):
+    poly = ccc[CellCountCalibration.polynomial]
     try:
-        validate_polynomial_struct(
-            ccc[CellCountCalibration.polynomial][
-                ccc[CellCountCalibration.deployed_polynomial]
-            ]
-        )
+        validate_polynomial_struct(poly)
     except (KeyError, TypeError) as err:
         _logger.error(
             "Checking that CCC has valid polynomial failed with {}".format(
@@ -479,11 +484,16 @@ def _parse_ccc(data):
             return _decode_dict(v)
         if isinstance(v, list) or isinstance(v, tuple):
             return type(v)(_decode_val(e) for e in v)
+        elif isinstance(v, StringTypes):
+            try:
+                return _decode_ccc_enum(v)
+            except (CCCKeyError, ValueError):
+                return v
         else:
-            return _decode_ccc_enum(v)
+            return v
 
     def _decode_dict(d):
-        return {_decode_ccc_enum(k): _decode_val(v) for k, v in d.iteritems()}
+        return {_decode_ccc_key(k): _decode_val(v) for k, v in d.iteritems()}
 
     data = _decode_dict(data)
 
@@ -497,31 +507,54 @@ def _parse_ccc(data):
 
     return data
 
+
 __DECODABLE_ENUMS = {
     "CellCountCalibration": CellCountCalibration,
     "CalibrationEntryStatus": CalibrationEntryStatus,
     "CCCImage": CCCImage,
     "CCCMeasurement": CCCMeasurement,
     "CCCPlate": CCCPlate,
+    "CCCPolynomial": CCCPolynomial,
 }
 
 
-def _decode_ccc_enum(val):
-    if isinstance(val, StringTypes):
-        try:
-            enum_name, enum_value = val.split(".")
-            return __DECODABLE_ENUMS[enum_name][enum_value]
-        except (ValueError, KeyError):
-            pass
-    return val
+def _decode_ccc_key(key):
+    if isinstance(key, StringTypes):
+        if '.' in key:
+            return _decode_ccc_enum(key)
+        else:
+            if re.match(r'\(\d+, \d+\)', key):
+                return eval(key)
+            else:
+                try:
+                    return int(key)
+                except ValueError:
+                    raise CCCKeyError("{} not recognized".format(key))
+    raise CCCKeyError("{} not recognized".format(key))
 
 
-def _encode_ccc_enum(val):
+def _decode_ccc_enum(key):
+    enum_name, enum_value = key.split(".")
+    try:
+        return __DECODABLE_ENUMS[enum_name][enum_value]
+    except (ValueError, KeyError):
+        raise CCCKeyError("'{}' not a valid property of '{}'".format(
+            enum_value, enum_name))
 
-    if type(val) in __DECODABLE_ENUMS.values():
-        return "{0}.{1}".format(str(val).split(".")[-2], val.name)
+
+def _encode_ccc_key(key):
+    if isinstance(key, tuple):
+        return str(key)
+    elif isinstance(key, Enum):
+        return _encode_ccc_key(key)
+    return key
+
+
+def _encode_ccc_enum(key):
+    if type(key) in __DECODABLE_ENUMS.values():
+        return "{}.{}".format(str(key).split(".")[-2], key.name)
     else:
-        return val
+        raise CCCKeyError("'{}' not usable in CCC keys".format(key))
 
 
 @_validate_ccc_edit_request
@@ -831,42 +864,25 @@ def validate_polynomial(data, poly):
 
 
 def _collect_all_included_data(ccc):
-    raise NotImplemented('Old implementation')
     source_values = []
     source_value_counts = []
     target_value = []
-    inclusion_filter = []
 
     for id_image, image_data in enumerate(ccc[CellCountCalibration.images]):
 
         for id_plate, plate in image_data[CCCImage.plates].items():
 
-            for id_row, row in enumerate(plate[CCCPlate.compressed_ccc_data]):
+            for colony_data in plate[CCCPlate.compressed_ccc_data].values():
 
-                for id_col, item in enumerate(row):
+                source_value_counts.append(
+                    colony_data[CCCMeasurement.source_value_counts])
+                source_values.append(colony_data[CCCMeasurement.source_values])
+                target_value.append(colony_data[CCCMeasurement.cell_count])
 
-                    try:
-                        inclusion_filter.append(item[CCCMeasurement.included])
-
-                        source_value_counts.append(
-                            item[CCCMeasurement.source_value_counts])
-                        source_values.append(
-                            item[CCCMeasurement.source_values])
-                    except KeyError as e:
-                        raise type(e), type(e)(
-                            str(e.message) +
-                            ' not in img {0} plate {1}, pos {2}, {3} '.format(
-                                id_image, id_plate, id_row, id_col) +
-                            '\nContents:{0}'.format(item)
-                        )
-
-    return CalibrationEntry(
-        target_value=target_value[inclusion_filter].tolist(),
-        source_values=np.array(source_values)[inclusion_filter].tolist(),
-        source_value_counts=np.array(
-            source_value_counts)[inclusion_filter].tolist(),
-        image=None,
-        colony_name=None)
+    return CalibrationData(
+        target_value=target_value,
+        source_values=source_values,
+        source_value_counts=source_value_counts)
 
 
 def get_calibration_optimization_function(degree=5, include_intercept=False):
