@@ -2,6 +2,7 @@ import os
 import json
 
 import pytest
+import mock
 import numpy as np
 from flask import Flask
 from itertools import product
@@ -344,3 +345,84 @@ class TestDeleteEndpoint:
             response.status_code == 401
         ), "POST gave unexpected response {} (expected 401)".format(
             response.status)
+
+
+class TestCompressCalibration:
+    url = "/api/data/calibration/ccc0/image/img0/plate/0/compress/colony/0/0"
+
+    @pytest.fixture(autouse=True)
+    def get_image_json_from_ccc(self):
+        with mock.patch(
+            'scanomatic.ui_server.calibration_api.calibration.get_image_json_from_ccc',
+            return_value={},
+        ):
+            yield
+
+    @pytest.fixture
+    def set_colony_compressed_data(self):
+        with mock.patch(
+            'scanomatic.ui_server.calibration_api.calibration.set_colony_compressed_data'
+        ) as function:
+            yield function
+
+    @pytest.fixture
+    def set_colony_compressed_data(self):
+        with mock.patch(
+            'scanomatic.ui_server.calibration_api.calibration.set_colony_compressed_data'
+        ) as function:
+            yield function
+
+    @pytest.fixture
+    def params(self):
+        return {
+            "blob": [[0] * 20, [1] * 20],
+            'background': [[1] * 20, [0] * 20],
+            "cell_count": 42,
+            'access_token': 'XXX'
+        }
+
+    def test_valid_params(self, test_app, set_colony_compressed_data, params):
+        response = test_app.post(self.url, data=json.dumps(params))
+        assert response.status_code == 200
+        args, kwargs = set_colony_compressed_data.call_args
+        assert args == ('ccc0', 'img0', 0, 0, 0, 42)
+        assert kwargs['access_token'] == 'XXX'
+        assert np.array_equal(
+            kwargs['background_filter'],
+            np.array([[True] * 20, [False] * 20])
+        )
+        assert np.array_equal(
+            kwargs['blob_filter'],
+            np.array([[False] * 20, [True] * 20]),
+        )
+        assert kwargs['access_token'] == 'XXX'
+
+    def test_missing_cell_count(self, test_app, set_colony_compressed_data, params):
+        del params['cell_count']
+        response = test_app.post(self.url, data=json.dumps(params))
+        assert response.status_code == 400
+        assert (
+            json.loads(response.data)['reason']
+            == 'Missing expected parameter cell_count'
+        )
+        set_colony_compressed_data.assert_not_called()
+
+    def test_non_integer_cell_count(self, test_app, set_colony_compressed_data, params):
+        params['cell_count'] = 'abc'
+        response = test_app.post(self.url, data=json.dumps(params))
+        assert response.status_code == 400
+        assert (
+            json.loads(response.data)['reason']
+            == 'cell_count should be an integer'
+        )
+        set_colony_compressed_data.assert_not_called()
+
+    def test_negative_cell_count(self, test_app, set_colony_compressed_data, params):
+        params['cell_count'] = -1
+        response = test_app.post(self.url, data=json.dumps(params))
+        assert response.status_code == 400
+        assert (
+            json.loads(response.data)['reason']
+            == 'cell_count should be greater or equal than zero'
+        )
+        set_colony_compressed_data.assert_not_called()

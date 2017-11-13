@@ -13,7 +13,9 @@ module.exports = function(config) {
     files: [
         "js/jquery-2.2.3.js",
         "js/d3.js",
-        "js/*.js",
+        "js/jquery.modal.js",
+        "js/jquery.treetable.js",
+        "js/jquery-ui.js",
         { pattern: 'js/specs/**/*.spec.js', watched: false },
     ],
 
