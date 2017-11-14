@@ -190,11 +190,15 @@ class TestFinalizeEndpoint:
             calibration.CellCountCalibration.identifier]
         token = 'password'
 
-        response = test_app.post(
-            self.route.format(identifier=identifier),
-            data={"access_token": token},
-            follow_redirects=True
-        )
+        with mock.patch(
+                'scanomatic.data_processing.calibration.save_ccc') as save_ccc:
+            response = test_app.post(
+                self.route.format(identifier=identifier),
+                data={"access_token": token},
+                follow_redirects=True
+            )
+            save_ccc.assert_called()
+
         assert (
             response.status_code == 200
         ), "POST gave unexpected response {} (expected 200)".format(
@@ -306,11 +310,14 @@ class TestDeleteEndpoint:
             calibration.CellCountCalibration.identifier]
         token = 'password'
 
-        response = test_app.post(
-            self.route.format(identifier=identifier),
-            data={"access_token": token},
-            follow_redirects=True
-        )
+        with mock.patch(
+                'scanomatic.data_processing.calibration.save_ccc') as save_ccc:
+            response = test_app.post(
+                self.route.format(identifier=identifier),
+                data={"access_token": token},
+                follow_redirects=True
+            )
+            save_ccc.assert_called()
         assert (
             response.status_code == 200
         ), "POST gave unexpected response {} (expected 200)".format(
