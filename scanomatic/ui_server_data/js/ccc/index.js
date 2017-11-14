@@ -356,11 +356,12 @@ window.executeCCC = function() {
         var pinFormat = getCccPinningFormat();
         scope.PinFormat = pinFormat.split(",");
         cccFunctions.setStep(1.2);
-        GetMarkers(scope, scope.FixtureName, scope.File, getMarkersSuccess, getMarkersError);
+        GetMarkers(scope.FixtureName, scope.File)
+            .then(data => getMarkersSuccess(data, scope), getMarkersError);
     }
 
-    function getMarkersError(data) {
-        alert("Markers error:" + data.responseText);
+    function getMarkersError(reason) {
+        alert("Markers error:" + reason);
     }
 
     function getMarkersSuccess(data, scope) {
@@ -368,11 +369,12 @@ window.executeCCC = function() {
         scope.Markers = processMarkers(data.markers);
         var file = scope.File;
         scope.File = null;
-        GetImageId(scope, scope.cccId, file, scope.AccessToken, getImageIdSuccess, getImageIdError);
+        GetImageId(scope.cccId, file, scope.AccessToken)
+            .then(data => getImageIdSuccess(data, scope), getImageIdError);
     }
 
-    function getImageIdError(data) {
-        alert("Fatal error uploading the image: \n " + data.responseText);
+    function getImageIdError(reason) {
+        alert("Fatal error uploading the image: \n " + reason);
     }
 
     function getImageIdSuccess(data, scope) {
@@ -382,37 +384,39 @@ window.executeCCC = function() {
         var toSetData = [];
         toSetData.push({ key: "marker_x", value: markers[0] });
         toSetData.push({ key: "marker_y", value: markers[1] });
-        SetCccImageData(scope, scope.cccId, scope.CurrentImageId, scope.AccessToken, toSetData, scope.FixtureName, setCccImageDataSuccess, setCccImageDataError);
+        SetCccImageData(scope.cccId, scope.CurrentImageId, scope.AccessToken, toSetData, scope.FixtureName)
+            .then(data => setCccImageDataSuccess(data, scope), setCccImageDataError);
     }
 
-    function setCccImageDataError(data) {
-        alert("Error while setting up the images! " + data.responseText);
+    function setCccImageDataError(reason) {
+        alert("Error while setting up the images! " + reason);
     }
 
     function setCccImageDataSuccess(data, scope) {
         cccFunctions.setStep(1.5);
-        SetCccImageSlice(scope, scope.cccId, scope.CurrentImageId, scope.AccessToken, setCccImageSliceSuccess, setCccImageSliceError);
+        SetCccImageSlice(scope.cccId, scope.CurrentImageId, scope.AccessToken)
+            .then(data => setCccImageSliceSuccess(data, scope), setCccImageSliceError);
     }
 
-    function setCccImageSliceError(data) {
-        alert("Error while setting up the images slice!" + data.responseText);
+    function setCccImageSliceError(reason) {
+        alert("Error while setting up the images slice!" + reason);
     }
 
     function setCccImageSliceSuccess(data, scope) {
         cccFunctions.setStep(1.6);
-        SetGrayScaleImageAnalysis(scope, scope.cccId, scope.CurrentImageId, scope.AccessToken, setGrayScaleImageAnalysisSuccess, setGrayScaleImageAnalysisError);
+        SetGrayScaleImageAnalysis(scope.cccId, scope.CurrentImageId, scope.AccessToken)
+            .then(data => setGrayScaleImageAnalysisSuccess(data, scope), setGrayScaleImageAnalysisError);
     }
 
-    function setGrayScaleImageAnalysisError(data) {
-        alert("Error while starting grayscale analysis! " + data.responseText);
+    function setGrayScaleImageAnalysisError(reason) {
+        alert("Error while starting grayscale analysis! " + reason);
     }
 
     function setGrayScaleImageAnalysisSuccess(data, scope) {
         cccFunctions.setStep(1.7);
         //store target_values and source_values to QC graph ???
-        GetFixturePlates(scope.FixtureName, function(data) {
-            createFixturePlateSelection(data, scope);
-        });
+        GetFixturePlates(scope.FixtureName)
+            .then(data => createFixturePlateSelection(data, scope));
     }
 
     function startGridding() {
@@ -446,14 +450,15 @@ window.executeCCC = function() {
             cccFunctions.setStep(2);
             scope.Plate = plate;
             scope.PlateNextTaskInQueue = next;
-            SetGrayScaleTransform(scope, scope.cccId, scope.CurrentImageId, scope.Plate, scope.AccessToken, setGrayScaleTransformSuccess, setGrayScaleTransformError);
+            SetGrayScaleTransform(scope.cccId, scope.CurrentImageId, scope.Plate, scope.AccessToken)
+                .then(data => setGrayScaleTransformSuccess(data, scope), setGrayScaleTransformError);
         };
     }
 
     cccFunctions.createSetGrayScaleTransformTask = createSetGrayScaleTransformTask;
 
-    function setGrayScaleTransformError(data) {
-        alert("set grayscale transform error:" + data.reason);
+    function setGrayScaleTransformError(reason) {
+        alert("set grayscale transform error:" + reason);
     }
 
     cccFunctions.setGrayScaleTransformError = setGrayScaleTransformError;

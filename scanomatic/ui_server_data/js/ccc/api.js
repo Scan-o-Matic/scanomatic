@@ -18,6 +18,30 @@ var SetColonyDetectionPath = baseUrl + "/api/calibration/#0#/image/#1#/plate/#2#
 var SetColonyCompressionPath = baseUrl + "/api/calibration/#0#/image/#1#/plate/#2#/compress/colony/#3#/#4#";
 
 
+class API {
+    static get(url) {
+        return new Promise((resolve, reject) => $.ajax({
+            url,
+            type: 'GET',
+            success: resolve,
+            error: jqXHR => reject(JSON.parse(jqXHR.responseText)),
+        }));
+    }
+
+    static postFormData(url, formData) {
+        return new Promise((resolve, reject) => $.ajax({
+            url,
+            type: 'POST',
+            contentType: false,
+            enctype: 'multipart/form-data',
+            data: formData,
+            processData: false,
+            success: resolve,
+            error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
+        }));
+    }
+}
+
 export function GetSliceImageURL(cccId, imageId, slice) {
     var path = GetSliceImagePath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", slice);
     return path;
@@ -42,24 +66,14 @@ export function GetFixtures(callback) {
     });
 };
 
-export function GetFixtureData(fixtureName, callback) {
+function GetFixtureData(fixtureName) {
     var path = GetFixtruesDataPath + fixtureName;
+    return API.get(path);
+}
 
-    d3.json(path, function (error, json) {
-        if (error) console.warn(error);
-        else {
-            callback(json);
-        }
-    });
-};
-
-export function GetFixturePlates(fixtureName, callback) {
-
-    GetFixtureData(fixtureName, function (data) {
-        var plates = data.plates;
-        callback(plates);
-    });
-};
+export function GetFixturePlates(fixtureName) {
+    return GetFixtureData(fixtureName).then(data => data.plates);
+}
 
 export function GetPinningFormats(callback) {
     var path = GetPinningFormatsPath;
@@ -101,7 +115,7 @@ export function InitiateCCC(species, reference, successCallback, errorCallback) 
     });
 }
 
-export function SetCccImageData(scope, cccId, imageId, accessToken, dataArray, fixture, successCallback, errorCallback) {
+export function SetCccImageData(cccId, imageId, accessToken, dataArray, fixture) {
     var path = SetCccImageDataPath.replace("#0#", cccId).replace("#1#", imageId);
     var formData = new FormData();
     formData.append("ccc_identifier", cccId);
@@ -112,54 +126,21 @@ export function SetCccImageData(scope, cccId, imageId, accessToken, dataArray, f
         var item = dataArray[i];
         formData.append(item.key, item.value);
     }
-    $.ajax({
-        url: path,
-        type: "POST",
-        contentType: false,
-        enctype: 'multipart/form-data',
-        data: formData,
-        processData: false,
-        success: function(data) {
-            successCallback(data, scope);
-        },
-        error: errorCallback
-    });
+    return API.postFormData(path, formData);
 }
 
-export function SetCccImageSlice(scope, cccId, imageId, accessToken, successCallback, errorCallback) {
+export function SetCccImageSlice(cccId, imageId, accessToken) {
     var path = SetCccImageSlicePath.replace("#0#", cccId).replace("#1#", imageId);
     var formData = new FormData();
     formData.append("access_token", accessToken);
-    $.ajax({
-        url: path,
-        type: "POST",
-        contentType: false,
-        enctype: 'multipart/form-data',
-        data: formData,
-        processData: false,
-        success: function (data) {
-            successCallback(data, scope);
-        },
-        error: errorCallback
-    });
+    return API.postFormData(path, formData);
 }
 
-export function SetGrayScaleImageAnalysis(scope, cccId, imageId, accessToken, successCallback, errorCallback) {
+export function SetGrayScaleImageAnalysis(cccId, imageId, accessToken) {
     var path = SetGrayScaleImageAnalysisPath.replace("#0#", cccId).replace("#1#", imageId);
     var formData = new FormData();
     formData.append("access_token", accessToken);
-    $.ajax({
-        url: path,
-        type: "POST",
-        contentType: false,
-        enctype: 'multipart/form-data',
-        data: formData,
-        processData: false,
-        success: function (data) {
-            successCallback(data, scope);
-        },
-        error: errorCallback
-    });
+    return API.postFormData(path, formData);
 }
 
 export function GetGrayScaleAnalysis(grayScaleName, imageData, successCallback, errorCallback) {
@@ -173,27 +154,14 @@ export function GetGrayScaleAnalysis(grayScaleName, imageData, successCallback, 
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
-        success: successCallback,
-        error: errorCallback
     });
 }
 
-export function SetGrayScaleTransform(scope, cccId, imageId, plate, accessToken, successCallback, errorCallback) {
+export function SetGrayScaleTransform(cccId, imageId, plate, accessToken) {
     var path = SetGrayScaleTransformPath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", plate);
     var formData = new FormData();
     formData.append("access_token", accessToken);
-    $.ajax({
-        url: path,
-        type: "POST",
-        contentType: false,
-        enctype: 'multipart/form-data',
-        data: formData,
-        processData: false,
-        success: function(data) {
-            successCallback(data, scope);
-        },
-        error: errorCallback
-    });
+    return API.postFormData(path, formData);
 }
 
 export function SetGridding(cccId, imageId, plate, pinningFormat, offSet, accessToken, successCallback, errorCallback) {
@@ -256,42 +224,20 @@ export function SetColonyCompression(cccId, imageId, plate, accessToken, colony,
     });
 }
 
-export function GetImageId(scope, cccId, file, accessToken, successCallback, errorCallback) {
+export function GetImageId(cccId, file, accessToken) {
     var path = GetImageId_Path.replace("#0#", cccId);
     var formData = new FormData();
     formData.append("image", file);
     formData.append("access_token", accessToken);
-    $.ajax({
-        url: path,
-        type: "POST",
-        contentType: false,
-        enctype: 'multipart/form-data',
-        data: formData,
-        processData: false,
-        success: function (data) {
-            successCallback(data, scope);
-        },
-        error: errorCallback
-    });
+    return API.postFormData(path, formData);
 }
 
-export function GetMarkers(scope, fixtureName, file, successCallback, errorCallback) {
+export function GetMarkers(fixtureName, file) {
     var path = GetMarkersPath + fixtureName;
     var formData = new FormData();
     formData.append("image", file);
     formData.append("save", "false");
-    $.ajax({
-        url: path,
-        type: "POST",
-        contentType: false,
-        enctype: 'multipart/form-data',
-        data: formData,
-        processData: false,
-        success: function (data) {
-            successCallback(data, scope);
-        },
-        error: errorCallback
-    });
+    return API.postFormData(path, formData);
 }
 
 export function GetTransposedMarkersV2(fixtureName, markers, file, successCallback, errorCallback) {

@@ -4,7 +4,8 @@ import cccFunctions from '../ccc/index';
 describe('createSetGrayScaleTransformTask', () => {
 
     beforeEach(() => {
-        spyOn(cccAPI, 'SetGrayScaleTransform');
+        spyOn(cccAPI, 'SetGrayScaleTransform')
+            .and.callFake(() => Promise.resolve({}));
         spyOn(window, '$').and.returnValue({
             hide: () => {},
             show: () => {},
@@ -51,13 +52,10 @@ describe('createSetGrayScaleTransformTask', () => {
             );
             f('something');
             expect(cccAPI.SetGrayScaleTransform).toHaveBeenCalledWith(
-                scope,
                 undefined,
                 undefined,
                 'whatever',
                 undefined,
-                cccFunctions.setGrayScaleTransformSuccess,
-                cccFunctions.setGrayScaleTransformError,
             );
 
         });
