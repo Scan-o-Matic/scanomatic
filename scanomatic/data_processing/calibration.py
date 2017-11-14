@@ -1,14 +1,10 @@
 import numpy as np
 from enum import Enum
-import json
 from itertools import izip
-import os
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
 import re
 from uuid import uuid1
-from glob import iglob
-from types import StringTypes
 from collections import namedtuple
 
 
@@ -16,154 +12,21 @@ from scanomatic.generics.maths import mid50_mean
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
-from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.image_analysis.image_basics import (
     load_image_to_numpy, Image_Transpose)
 from scanomatic.image_analysis.first_pass_image import FixtureImage
-
-""" Data structure for CCC-jsons
-{
-    CellCountCalibration.status:
-        CalibrationEntryStatus,  # One of UnderConstruction, Active, Deleted
-    CellCountCalibration.edit_access_token:
-        string, # During CalibrationEntryStatus.UnderConstruction this is
-                # needed to edit.
-    CellCountCalibration.species:
-        string,  # The species & possibly strain, combo of this and reference
-                 # must be unique.
-    CellCountCalibration.reference:
-        string,  # Typically publication reference or contact info i.e. email
-    CellCountCalibration.identifier:
-        string,  # Unique ID of CCC
-    CellCountCalibration.images:
-        list,  # The images in sequence added, must correspond to order
-               # in reference data (below)
-        [
-            {
-            CCCImage.identifier: string,  # How to find the saved image
-            CCCImage.plates:
-                {
-                int :  # plate index (get valid from fixture),
-                    {
-                    CCCPlate.grid_shape: (16, 24),
-                        # Number of rows and columns of colonies on plate
-                    CCCPlate.grid_cell_size: (52.5, 53.1),
-                        # Number of pixels for each colony (yes is in decimal)
-                    CCCPlate.compressed_ccc_data:
-                        # Row, column info on CCC analysis of each colony
-                        [
-                            [
-                                {
-                                    CCCMeasurement.included: bool,
-                                        # If included
-                                    CCCMeasurement.source_values:
-                                        [123.1, 10.4, ...],
-                                        # GS transf pixel transparencies
-                                    CCCMeasurement.source_value_counts:
-                                        [100, 1214, ...],
-                                        # Num of corresponding pixels
-                                },
-                                ...
-                            ],
-                            ...
-                        ],
-                    }
-                },
-            CCCImage.grayscale_name: string,
-            CCCImage.grayscale_source_values:
-                [123, 2.14, ...],  # reference values
-            CCCImage.grayscale_target_values:
-                [123, 12412, ...], # Analysis values
-            CCCImage.fixture: string,
-            },
-            ...
-        ],
-    CellCountCalibration.independent_data:
-        [[[12300, 121258, 1241240, 141410, ...], ..., ...]
-        # Continuous list of measurements of population sizes from OD or FACS
-        # Plates, columns, row
-    CellCountCalibration.independent_data_source: string  # File format
-    CellCountCalibration.polynomial: {
-        string: {'power': int, 'coefficients': [10, 0, 0, 0, 150, 0]},
-        ....
-    }
-    CellCountCalibration.deployed_polynomial: string
-}
-
-"""
+from scanomatic.io.ccc_data import (
+    CCCImage, CCCPlate, CCCPolynomial, CCCMeasurement, CellCountCalibration,
+    CalibrationEntryStatus, get_empty_ccc_entry, load_cccs,
+    get_polynomal_entry, get_empty_image_entry, save_ccc,
+    validate_polynomial_format,
+)
 
 __CCC = {}
-_logger = Logger("Cell Count Calibration")
+_logger = Logger("CCC")
 
-
-class CellCountCalibration(Enum):
-
-    status = 0
-    """:type : CellCountCalibration"""
-    species = 1
-    """:type : CellCountCalibration"""
-    reference = 2
-    """:type : CellCountCalibration"""
-    identifier = 3
-    """:type : CellCountCalibration"""
-    images = 4
-    """:type : CellCountCalibration"""
-    independent_data = 5
-    """:type : CellCountCalibration"""
-    polynomial = 6
-    """:type : CellCountCalibration"""
-    edit_access_token = 7
-    """:type : CellCountCalibration"""
-    independent_data_source = 8
-    """:type : CellCountCalibration"""
-    deployed_polynomial = 9
-    """:type : CellCountCalibration"""
-
-
-class CCCImage(Enum):
-
-    identifier = 0
-    """:type : CCCImage"""
-    plates = 1
-    """:type : CCCImage"""
-    grayscale_name = 2
-    """:type : CCCImage"""
-    grayscale_source_values = 3
-    """:type : CCCImage"""
-    grayscale_target_values = 4
-    """:type : CCCImage"""
-    fixture = 5
-    """:type : CCCImage"""
-    marker_x = 6
-    """:type : CCCImage"""
-    marker_y = 7
-    """:type : CCCImage"""
-
-
-class CCCPlate(Enum):
-    grid_shape = 0
-    """:type : CCCPlate"""
-    grid_cell_size = 1
-    """:type : CCCPlate"""
-    compressed_ccc_data = 2
-    """:type : CCCPlate"""
-
-
-class CCCMeasurement(Enum):
-    included = 0
-    """:type : CCCMeasurement"""
-    source_values = 1
-    """:type : CCCMeasurement"""
-    source_value_counts = 2
-    """:type : CCCMeasurement"""
-    cell_count = 3
-    """:type : CCCMeasurement"""
-
-
-CalibrationEntry = namedtuple(
-    "CalibrationEntry", [
-        'image',
-        'colony_name',
+CalibrationData = namedtuple(
+    "CalibrationData", [
         'target_value',
         'source_values',
         'source_value_counts'
@@ -173,16 +36,6 @@ CalibrationEntry = namedtuple(
 
 class ActivationError(Exception):
     pass
-
-
-class CalibrationEntryStatus(Enum):
-
-    UnderConstruction = 0
-    """:type: CalibrationEntryStatus"""
-    Active = 1
-    """:type: CalibrationEntryStatus"""
-    Deleted = 2
-    """:type: CalibrationEntryStatus"""
 
 
 class CalibrationValidation(Enum):
@@ -248,19 +101,7 @@ def get_empty_ccc(species, reference):
     ccc_id = _get_ccc_identifier(species, reference)
     if ccc_id is None:
         return None
-
-    return {
-        CellCountCalibration.identifier: ccc_id,
-        CellCountCalibration.species: species,
-        CellCountCalibration.reference: reference,
-        CellCountCalibration.images: [],
-        CellCountCalibration.edit_access_token: uuid1().hex,
-        CellCountCalibration.polynomial: {},
-        CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
-        CellCountCalibration.independent_data: [],
-        CellCountCalibration.independent_data_source: None,
-        CellCountCalibration.deployed_polynomial: None,
-    }
+    return get_empty_ccc_entry(ccc_id, species, reference)
 
 
 def _get_ccc_identifier(species, reference):
@@ -290,51 +131,33 @@ def _insert_default_ccc():
         reference='Zackrisson et. al. 2016',
     )
     ccc[CellCountCalibration.identifier] = 'default'
-    ccc[CellCountCalibration.polynomial]['default'] = {
-        'coefficients':
+    ccc[CellCountCalibration.polynomial] = {
+        CCCPolynomial.coefficients:
             (3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.),
-        'power': 5,
+        CCCPolynomial.power: 5,
     }
     ccc[CellCountCalibration.edit_access_token] = None
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
-    ccc[CellCountCalibration.deployed_polynomial] = 'default'
 
     __CCC[ccc[CellCountCalibration.identifier]] = ccc
-
-
-def __load_cccs():
-
-    _insert_default_ccc()
-
-    for ccc_path in iglob(Paths().ccc_file_pattern.format("*")):
-
-        with open(ccc_path, mode='rb') as fh:
-            data = json.load(fh)
-
-        data = _parse_ccc(data)
-
-        if (data is None or
-                CellCountCalibration.identifier not in data or
-                not data[CellCountCalibration.identifier]):
-
-            _logger.error("Data file '{0}' is corrupt.".format(ccc_path))
-
-        elif data[CellCountCalibration.identifier] in __CCC:
-
-            _logger.error(
-                "Duplicated identifier {0} is not allowed!".format(
-                    data[CellCountCalibration.identifier])
-            )
-
-        else:
-
-            __CCC[data[CellCountCalibration.identifier]] = data
 
 
 def reload_cccs():
 
     __CCC.clear()
-    __load_cccs()
+    _insert_default_ccc()
+
+    for ccc in load_cccs():
+        if ccc[CellCountCalibration.identifier] in __CCC:
+
+            _logger.error(
+                "Duplicated identifier {0} is not allowed!".format(
+                    ccc[CellCountCalibration.identifier])
+            )
+
+        else:
+
+            __CCC[ccc[CellCountCalibration.identifier]] = ccc
 
 
 def get_active_cccs():
@@ -350,8 +173,7 @@ def get_polynomial_coefficients_from_ccc(identifier):
     if ccc[CellCountCalibration.status] != CalibrationEntryStatus.Active:
         raise KeyError
 
-    return ccc[CellCountCalibration.polynomial][
-        ccc[CellCountCalibration.deployed_polynomial]]['coefficients']
+    return ccc[CellCountCalibration.polynomial][CCCPolynomial.coefficients]
 
 
 def get_under_construction_cccs():
@@ -381,35 +203,11 @@ def add_ccc(ccc):
         return False
 
 
-def validate_polynomial_struct(polynomial):
-    try:
-        if (not (
-                isinstance(polynomial['power'], int) and
-                isinstance(polynomial['coefficients'], list) and
-                len(polynomial['coefficients']) == polynomial['power'] + 1)):
-            _logger.error(
-                "Validation of polynomial representaiton {} failed".format(
-                    polynomial)
-            )
-            raise ActivationError(
-                "Invalid polynomial representation: {}".format(polynomial)
-            )
-    except (KeyError, TypeError) as err:
-        _logger.error(
-            "Validation of polynomial representation failed with {}".format(
-                err.message)
-        )
-        raise ActivationError(err.message)
-
-
 def has_valid_polynomial(ccc):
+    poly = ccc[CellCountCalibration.polynomial]
     try:
-        validate_polynomial_struct(
-            ccc[CellCountCalibration.polynomial][
-                ccc[CellCountCalibration.deployed_polynomial]
-            ]
-        )
-    except (KeyError, TypeError) as err:
+        validate_polynomial_format(poly)
+    except ValueError as err:
         _logger.error(
             "Checking that CCC has valid polynomial failed with {}".format(
                 err.message)
@@ -447,7 +245,7 @@ def save_ccc_to_disk(ccc):
 
     if ccc[CellCountCalibration.identifier] in __CCC:
 
-        return _save_ccc_to_disk(ccc)
+        return save_ccc(ccc)
 
     else:
 
@@ -456,92 +254,11 @@ def save_ccc_to_disk(ccc):
         return False
 
 
-def _encode_val(v):
-    if isinstance(v, dict):
-        return _encode_dict(v)
-    if isinstance(v, list) or isinstance(v, tuple):
-        return type(v)(_encode_val(e) for e in v)
-    else:
-        return _encode_ccc_enum(v)
-
-
-def _encode_dict(d):
-    return {_encode_ccc_enum(k): _encode_val(v) for k, v in d.iteritems()}
-
-
-def _save_ccc_to_disk(data):
-
-    identifier = data[CellCountCalibration.identifier]
-
-    try:
-        os.makedirs(
-            os.path.dirname(Paths().ccc_file_pattern.format(identifier)))
-    except os.error:
-        pass
-
-    with open(Paths().ccc_file_pattern.format(identifier), 'wb') as fh:
-        json.dump(_encode_dict(data), fh)
-
-    return True
-
-
-def _parse_ccc(data):
-
-    def _decode_val(v):
-        if isinstance(v, dict):
-            return _decode_dict(v)
-        if isinstance(v, list) or isinstance(v, tuple):
-            return type(v)(_decode_val(e) for e in v)
-        else:
-            return _decode_ccc_enum(v)
-
-    def _decode_dict(d):
-        return {_decode_ccc_enum(k): _decode_val(v) for k, v in d.iteritems()}
-
-    data = _decode_dict(data)
-
-    for ccc_data_type in CellCountCalibration:
-        if ccc_data_type not in data:
-            _logger.error(
-                "Corrupt CCC-data, missing {0} in {1}".format(
-                    ccc_data_type, data)
-            )
-            return None
-
-    return data
-
-__DECODABLE_ENUMS = {
-    "CellCountCalibration": CellCountCalibration,
-    "CalibrationEntryStatus": CalibrationEntryStatus,
-    "CCCImage": CCCImage,
-    "CCCMeasurement": CCCMeasurement,
-    "CCCPlate": CCCPlate,
-}
-
-
-def _decode_ccc_enum(val):
-    if isinstance(val, StringTypes):
-        try:
-            enum_name, enum_value = val.split(".")
-            return __DECODABLE_ENUMS[enum_name][enum_value]
-        except (ValueError, KeyError):
-            pass
-    return val
-
-
-def _encode_ccc_enum(val):
-
-    if type(val) in __DECODABLE_ENUMS.values():
-        return "{0}.{1}".format(str(val).split(".")[-2], val.name)
-    else:
-        return val
-
-
 @_validate_ccc_edit_request
 def add_image_to_ccc(identifier, image):
 
     ccc = __CCC[identifier]
-    im_json = _get_new_image_json(ccc)
+    im_json = get_empty_image_entry(ccc)
     im_identifier = im_json[CCCImage.identifier]
     image.save(Paths().ccc_image_pattern.format(identifier, im_identifier))
 
@@ -600,7 +317,8 @@ def set_plate_grid_info(
     else:
         plate_json = {
             CCCPlate.grid_cell_size: None,
-            CCCPlate.grid_shape: None, CCCPlate.compressed_ccc_data: []
+            CCCPlate.grid_shape: None,
+            CCCPlate.compressed_ccc_data: {}
         }
         im_json[CCCImage.plates][plate] = plate_json
 
@@ -622,25 +340,6 @@ def get_image_json_from_ccc(identifier, image_identifier):
 
                 return im_json
     return None
-
-
-def _get_new_image_json(ccc):
-
-    return {
-        CCCImage.identifier: _get_new_image_identifier(ccc),
-        CCCImage.plates: {},
-        CCCImage.grayscale_name: None,
-        CCCImage.grayscale_source_values: None,
-        CCCImage.grayscale_target_values: None,
-        CCCImage.marker_x: None,
-        CCCImage.marker_y: None,
-        CCCImage.fixture: None,
-    }
-
-
-def _get_new_image_identifier(ccc):
-
-    return "CalibIm_{0}".format(len(ccc[CellCountCalibration.images]))
 
 
 def get_local_fixture_for_image(identifier, image_identifier):
@@ -817,23 +516,11 @@ def set_colony_compressed_data(
     image_data = get_image_json_from_ccc(identifier, image_identifier)
     plate = image_data[CCCImage.plates][plate_id]
 
-    while len(plate[CCCPlate.compressed_ccc_data]) <= x:
-
-        plate[CCCPlate.compressed_ccc_data].append([])
-
-    while len(plate[CCCPlate.compressed_ccc_data][x]) <= y:
-
-        plate[CCCPlate.compressed_ccc_data][x].append({
-             CCCMeasurement.source_value_counts: [],
-             CCCMeasurement.source_values: [],
-        })
-
-    plate[CCCPlate.compressed_ccc_data][x][y][
-        CCCMeasurement.source_value_counts] = counts
-    plate[CCCPlate.compressed_ccc_data][x][y][
-        CCCMeasurement.source_values] = values
-    plate[CCCPlate.compressed_ccc_data][x][y][
-        CCCMeasurement.cell_count] = cell_count
+    plate[CCCPlate.compressed_ccc_data][(x, y)] = {
+        CCCMeasurement.source_value_counts: counts,
+        CCCMeasurement.source_values: values,
+        CCCMeasurement.cell_count: cell_count,
+    }
 
     return save_ccc_to_disk(ccc)
 
@@ -855,44 +542,25 @@ def validate_polynomial(data, poly):
 
 
 def _collect_all_included_data(ccc):
-
     source_values = []
     source_value_counts = []
     target_value = []
-    inclusion_filter = []
 
     for id_image, image_data in enumerate(ccc[CellCountCalibration.images]):
 
         for id_plate, plate in image_data[CCCImage.plates].items():
 
-            for id_row, row in enumerate(plate[CCCPlate.compressed_ccc_data]):
+            for colony_data in plate[CCCPlate.compressed_ccc_data].values():
 
-                for id_col, item in enumerate(row):
+                source_value_counts.append(
+                    colony_data[CCCMeasurement.source_value_counts])
+                source_values.append(colony_data[CCCMeasurement.source_values])
+                target_value.append(colony_data[CCCMeasurement.cell_count])
 
-                    try:
-                        inclusion_filter.append(item[CCCMeasurement.included])
-
-                        source_value_counts.append(
-                            item[CCCMeasurement.source_value_counts])
-                        source_values.append(
-                            item[CCCMeasurement.source_values])
-                    except KeyError as e:
-                        raise type(e), type(e)(
-                            str(e.message) +
-                            ' not in img {0} plate {1}, pos {2}, {3} '.format(
-                                id_image, id_plate, id_row, id_col) +
-                            '\nContents:{0}'.format(item)
-                        )
-
-    target_value = np.array(ccc[CellCountCalibration.independent_data]).ravel()
-
-    return CalibrationEntry(
-        target_value=target_value[inclusion_filter].tolist(),
-        source_values=np.array(source_values)[inclusion_filter].tolist(),
-        source_value_counts=np.array(
-            source_value_counts)[inclusion_filter].tolist(),
-        image=None,
-        colony_name=None)
+    return CalibrationData(
+        target_value=target_value,
+        source_values=source_values,
+        source_value_counts=source_value_counts)
 
 
 def get_calibration_optimization_function(degree=5, include_intercept=False):
@@ -1006,72 +674,7 @@ def _get_all_grid_shapes(ccc):
 
 
 @_validate_ccc_edit_request
-def add_external_data_to_ccc(identifier, data_file, report):
-
-    warnings = report.get('warnings', [])
-    report['warnings'] = warnings
-
-    errors = report.get('errors', [])
-    report['errors'] = errors
-
-    filetype = data_file.filename.split(".")[-1].lower()
-    if filetype not in ['.xls', '.xlsx', '.csv']:
-        errors.append('File format {0} not supported'.format(filetype))
-        return False
-
-    ccc = __CCC[identifier]
-
-    file_path = Paths().ccc_external_data_pattern.format(identifier, filetype)
-    data_file.save(file_path)
-    ccc[CellCountCalibration.independent_data_source] = filetype
-
-    grid_shapes, measurements = _get_all_grid_shapes(ccc)
-    meta_data = MetaData(grid_shapes, file_path)
-    if not meta_data.loaded:
-        errors.append(
-            'File could not be understood in terms of plates included'
-            '(Grid shapes: {0})'.format(grid_shapes))
-        return False
-
-    data_errors = False
-    for id_plate, measurement_set in enumerate(measurements):
-        for id_outer, outer in enumerate(measurement_set):
-            for id_inner, compressed_measurement in enumerate(outer):
-                measured = compressed_measurement[CCCMeasurement.included]
-                independent_data = meta_data[id_plate][id_outer][id_inner][-1]
-                independent_data = (
-                    (isinstance(independent_data, float) or
-                     isinstance(independent_data, int)) and
-                    independent_data > 0)
-
-                if independent_data and not measured:
-                    warnings.append(
-                        "Plate {0}, Pos ({1}, {2}) is not included but has independent data {3}".format(
-                            id_plate, id_outer, id_inner,
-                            meta_data[id_plate][id_outer][id_inner])
-                    )
-
-                elif not independent_data and measured:
-
-                    errors.append(
-                        "Plate {0}, Pos ({1}, {2}) is included but has no valid independent data {3}".format(
-                            id_plate, id_outer, id_inner,
-                            meta_data[id_plate][id_outer][id_inner])
-                    )
-
-                    data_errors = True
-
-    if data_errors:
-        return False
-
-    ccc[CellCountCalibration.independent_data] = (
-        meta_data.get_column_index_from_all_plates(-1))
-
-    return save_ccc_to_disk(ccc)
-
-
-@_validate_ccc_edit_request
-def construct_polynomial(identifier, poly_name, power):
+def construct_polynomial(identifier, power):
 
     ccc = __CCC[identifier]
     data_store = _collect_all_included_data(ccc)
@@ -1084,7 +687,10 @@ def construct_polynomial(identifier, poly_name, power):
         return {
             'validation': validation
         }
-    _add_poly(ccc, poly_name, power, poly_coeffs)
+    ccc[CellCountCalibration.polynomial] = get_polynomal_entry(
+        power, poly_coeffs,
+    )
+
     if not save_ccc_to_disk(ccc):
         return False
 
@@ -1101,7 +707,6 @@ def construct_polynomial(identifier, poly_name, power):
     return {
         'ccc': identifier,
         'polynomial_coefficients': poly_coeffs,
-        'polynomial_name': poly_name,
         'polynomial_degree': power,
         'measured_sizes': data_store.target_value,
         'calculated_sizes': calc_sizes,
@@ -1109,9 +714,5 @@ def construct_polynomial(identifier, poly_name, power):
     }
 
 
-def _add_poly(ccc, poly_name, power, poly_coeffs):
-
-    ccc[poly_name] = {"power": power, "coefficients": poly_coeffs}
-
 if not __CCC:
-    __load_cccs()
+    reload_cccs()

@@ -9,6 +9,7 @@ import pytest
 
 from scanomatic.data_processing import calibration
 from scanomatic.io.paths import Paths
+from scanomatic.io import ccc_data
 
 # Needs adding for all ccc_* paths if tests extended
 # Don't worry Paths is a singleton
@@ -119,7 +120,7 @@ def _fixture_load_ccc(rel_path):
     parent = os.path.dirname(__file__)
     with open(os.path.join(parent, rel_path), 'rb') as fh:
         data = json.load(fh)
-    _ccc = calibration._parse_ccc(data)
+    _ccc = ccc_data.parse_ccc(data)
     if _ccc:
         calibration.__CCC[
             _ccc[calibration.CellCountCalibration.identifier]] = _ccc
@@ -144,7 +145,6 @@ def edit_bad_slope_ccc():
 @pytest.fixture(scope='function')
 def finalizable_ccc():
     _ccc = _fixture_load_ccc('data/test_good.ccc')
-    _ccc[calibration.CellCountCalibration.deployed_polynomial] = "stiff"
     yield _ccc
     calibration.reload_cccs()
 
@@ -152,7 +152,6 @@ def finalizable_ccc():
 @pytest.fixture(scope='function')
 def active_ccc():
     _ccc = _fixture_load_ccc('data/test_good.ccc')
-    _ccc[calibration.CellCountCalibration.deployed_polynomial] = "stiff"
     _ccc[
         calibration.CellCountCalibration.status
     ] = calibration.CalibrationEntryStatus.Active
@@ -224,34 +223,31 @@ class TestEditCCC:
         # The fixture needs to be included, otherwise test is not correct
         identifier = edit_bad_slope_ccc[
             calibration.CellCountCalibration.identifier]
-        poly_name = 'test'
         power = 5
         token = 'password'
 
         response = calibration.construct_polynomial(
-            identifier, poly_name, power, access_token=token)
+            identifier, power, access_token=token)
 
         assert (
-            response['validation'] is
-            calibration.CalibrationValidation.BadSlope)
+            response['validation'] is not
+            calibration.CalibrationValidation.OK)
 
     @pytest.mark.skip("Unreliable with current data")
     def test_construct_good_polynomial(self, edit_ccc):
         # The fixture needs to be included, otherwise test is not correct
         identifier = edit_ccc[calibration.CellCountCalibration.identifier]
-        poly_name = 'test'
         power = 5
         token = 'password'
         print(identifier)
 
         response = calibration.construct_polynomial(
-            identifier, poly_name, power, access_token=token)
+            identifier, power, access_token=token)
 
         assert (
             response['validation'] is
             calibration.CalibrationValidation.OK)
 
-        assert response['polynomial_name'] == poly_name
         assert response['polynomial_degree'] == power
         assert response['ccc'] == identifier
 
@@ -260,30 +256,6 @@ class TestEditCCC:
 
 
 class TestActivateCCC:
-
-    @pytest.mark.parametrize("polynomial", [
-        {"power": "apa", "coefficients": [0, 1]},
-        {"power": 1.0, "coefficients": [0, 1]},
-        {"power": 2, "coefficients": [0, 1]},
-        {"browser": 2, "coffee": [0, 1]},
-    ])
-    def test_polynomial_malformed(self, polynomial):
-        with pytest.raises(calibration.ActivationError):
-            calibration.validate_polynomial_struct(polynomial)
-
-    @pytest.mark.parametrize("polynomial", [
-        {"power": 0, "coefficients": [0]},
-        {"power": 1, "coefficients": [0, 1]},
-        {"power": 2, "coefficients": [1, 2, 3]},
-    ])
-    def test_polynomial_correct(self, polynomial):
-        assert calibration.validate_polynomial_struct(polynomial) is None
-
-    def test_no_has_selected_polynomial(self, edit_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        with pytest.raises(calibration.ActivationError):
-            calibration.has_valid_polynomial(edit_ccc)
-
     def test_has_selected_polynomial(self, finalizable_ccc):
         # The fixture needs to be included, otherwise test is not correct
         assert (
@@ -318,15 +290,14 @@ class TestActivateCCC:
             calibration.CalibrationEntryStatus.Active
         ), "CCC not initialized with UnderConstruction entry status"
 
-        poly_name = 'test'
         power = 5
 
         response = calibration.construct_polynomial(
-            identifier, poly_name, power, access_token=token)
+            identifier, power, access_token=token)
 
         assert response is None, "Could edit active CCC but shouldn't have"
 
-    def test_activated_status_is_not_set(self, edit_ccc):
+    def test_activated_status_is_not_set_if_no_poly(self, edit_ccc):
         # The fixture needs to be included, otherwise test is not correct
         identifier = edit_ccc[
             calibration.CellCountCalibration.identifier]
@@ -337,6 +308,7 @@ class TestActivateCCC:
             calibration.CalibrationEntryStatus.UnderConstruction
         ), "CCC not initialized with UnderConstruction entry status"
 
+        edit_ccc[calibration.CellCountCalibration.polynomial] = None
         calibration.activate_ccc(identifier, access_token=token)
 
         assert (
@@ -470,9 +442,9 @@ class TestGettingActiveCCCs:
         ccc1 = calibration.get_empty_ccc('Cylon', 'Boomer')
         self._ccc_id1 = ccc1[calibration.CellCountCalibration.identifier]
         ccc1[calibration.CellCountCalibration.polynomial] = {
-            'test': {'power': 5, 'coefficients': [10, 0, 0, 0, 150, 0]}
+            calibration.CCCPolynomial.power: 5,
+            calibration.CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
         }
-        ccc1[calibration.CellCountCalibration.deployed_polynomial] = 'test'
         ccc1[calibration.CellCountCalibration.status] = \
             calibration.CalibrationEntryStatus.Active
         calibration.add_ccc(ccc1)
@@ -480,9 +452,9 @@ class TestGettingActiveCCCs:
         ccc2 = calibration.get_empty_ccc('Deep Ones', 'Stross')
         self._ccc_id2 = ccc2[calibration.CellCountCalibration.identifier]
         ccc2[calibration.CellCountCalibration.polynomial] = {
-            'test': {'power': 5, 'coefficients': [10, 0, 0, 0, 150, 0]}
+            calibration.CCCPolynomial.power: 5,
+            calibration.CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
         }
-        ccc2[calibration.CellCountCalibration.deployed_polynomial] = 'test'
         calibration.add_ccc(ccc2)
 
     def teardown_method(self):
@@ -519,7 +491,7 @@ class TestSaving:
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
     def test_save_ccc(self, save_mock, validator_mock, ccc):
 
         assert calibration.save_ccc_to_disk(ccc)
@@ -529,7 +501,7 @@ class TestSaving:
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
     def test_add_existing_ccc(self, save_mock, validator_mock, ccc):
 
         assert not calibration.add_ccc(ccc)
@@ -539,7 +511,7 @@ class TestSaving:
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
     def test_add_ccc(self, save_mock, validator_mock):
 
         ccc = calibration.get_empty_ccc('Bogus schmogus', 'Dr Lus')
@@ -550,7 +522,7 @@ class TestSaving:
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
     @mock.patch(
         'scanomatic.data_processing.calibration.has_valid_polynomial',
         return_value=True)
@@ -567,7 +539,7 @@ class TestSaving:
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
     def test_delete_ccc(self, save_mock, validator_mock, ccc):
 
         assert calibration.delete_ccc(
@@ -579,7 +551,7 @@ class TestSaving:
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
     def test_add_image_to_ccc(self, save_mock, validator_mock, ccc):
 
         image_mock = mock.Mock()
@@ -593,10 +565,9 @@ class TestSaving:
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration._save_ccc_to_disk')
+    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
 
     def test_add_image_to_ccc(self, save_mock, validator_mock, ccc):
-
         assert calibration.set_image_info(
             ccc[calibration.CellCountCalibration.identifier], 0,
             access_token='not used, but needed')
@@ -655,7 +626,8 @@ class TestSetColonyCompressedData:
                 calibration.CCCImage.identifier: image_identifier,
                 calibration.CCCImage.plates: {
                     plate_id: {
-                        calibration.CCCPlate.compressed_ccc_data: [[colony_data]],
+                        calibration.CCCPlate.compressed_ccc_data:
+                            {(0, 0): colony_data},
                     }
                 }
             }
@@ -688,15 +660,17 @@ class TestSetColonyCompressedData:
 
         return (
             ccc[calibration.CellCountCalibration.images][0]
-                [calibration.CCCImage.plates]['plate0']
-                [calibration.CCCPlate.compressed_ccc_data][0][0]
+            [calibration.CCCImage.plates]['plate0']
+            [calibration.CCCPlate.compressed_ccc_data][(0, 0)]
         )
 
     def test_source_values(self, measurement):
-        assert measurement[calibration.CCCMeasurement.source_values] == (0, 1, 2)
+        assert measurement[
+            calibration.CCCMeasurement.source_values] == (0, 1, 2)
 
     def test_source_value_counts(self, measurement):
-        assert measurement[calibration.CCCMeasurement.source_value_counts] == (1, 2, 1)
+        assert measurement[
+            calibration.CCCMeasurement.source_value_counts] == (1, 2, 1)
 
     def test_cell_count(self, measurement):
         assert measurement[calibration.CCCMeasurement.cell_count] == 1234

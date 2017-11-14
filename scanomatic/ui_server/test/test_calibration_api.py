@@ -9,6 +9,7 @@ from itertools import product
 
 from scanomatic.ui_server import calibration_api
 from scanomatic.io.paths import Paths
+from scanomatic.io.ccc_data import parse_ccc
 from scanomatic.data_processing import calibration
 
 
@@ -16,7 +17,7 @@ def _fixture_load_ccc(rel_path):
     parent = os.path.dirname(__file__)
     with open(os.path.join(parent, rel_path), 'rb') as fh:
         data = json.load(fh)
-    _ccc = calibration._parse_ccc(data)
+    _ccc = parse_ccc(data)
     if _ccc:
         calibration.__CCC[
             _ccc[calibration.CellCountCalibration.identifier]] = _ccc
@@ -27,6 +28,7 @@ def _fixture_load_ccc(rel_path):
 @pytest.fixture(scope='function')
 def edit_ccc():
     _ccc = _fixture_load_ccc('data/test_good.ccc')
+    _ccc[calibration.CellCountCalibration.polynomial] = None
     yield _ccc
     calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
@@ -34,7 +36,6 @@ def edit_ccc():
 @pytest.fixture(scope='function')
 def finalizable_ccc():
     _ccc = _fixture_load_ccc('data/test_good.ccc')
-    _ccc[calibration.CellCountCalibration.deployed_polynomial] = "stiff"
     yield _ccc
     calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
@@ -42,7 +43,6 @@ def finalizable_ccc():
 @pytest.fixture(scope='function')
 def active_ccc():
     _ccc = _fixture_load_ccc('data/test_good.ccc')
-    _ccc[calibration.CellCountCalibration.deployed_polynomial] = "stiff"
     _ccc[
         calibration.CellCountCalibration.status
     ] = calibration.CalibrationEntryStatus.Active
@@ -160,11 +160,11 @@ class TestFinalizeEndpoint:
         expected = "Invalid access token or CCC not under construction"
         assert (
             json.loads(response.data)['reason'] == expected
-        ), "POST with bad token gave unexpected reason {} (expected '{}')".format(
+        ), "POST with bad token gave wrong reason {} (expected '{}')".format(
             json.loads(response.data)['reason'], expected)
         assert (
             response.status_code == 401
-        ), "POST with bad token gave unexpected response {} (expected 401)".format(
+        ), "POST with bad token gave wrong response {} (expected 401)".format(
             response.status)
 
     @pytest.mark.parametrize("method", ["get", "put", "delete"])
@@ -212,11 +212,11 @@ class TestFinalizeEndpoint:
         )
         assert (
             json.loads(response.data)['reason'] == "Failed to activate ccc"
-        ), "POST when unfinished gave unexpected reason {} (expected 'Failed to activate ccc')".format(
+        ), "POST when unfinished gave wrong reason {} (expected 'Failed to activate ccc')".format(
             json.loads(response.data)['reason'])
         assert (
             response.status_code == 400
-        ), "POST when unfinished gave unexpected response {} (expected 400)".format(
+        ), "POST when unfinished gave wrong response {} (expected 400)".format(
             response.status)
 
     def test_finalize_fails_when_activated(self, test_app, active_ccc):
@@ -397,7 +397,8 @@ class TestCompressCalibration:
         )
         assert kwargs['access_token'] == 'XXX'
 
-    def test_missing_cell_count(self, test_app, set_colony_compressed_data, params):
+    def test_missing_cell_count(
+            self, test_app, set_colony_compressed_data, params):
         del params['cell_count']
         response = test_app.post(self.url, data=json.dumps(params))
         assert response.status_code == 400
@@ -407,7 +408,8 @@ class TestCompressCalibration:
         )
         set_colony_compressed_data.assert_not_called()
 
-    def test_non_integer_cell_count(self, test_app, set_colony_compressed_data, params):
+    def test_non_integer_cell_count(
+            self, test_app, set_colony_compressed_data, params):
         params['cell_count'] = 'abc'
         response = test_app.post(self.url, data=json.dumps(params))
         assert response.status_code == 400
@@ -417,7 +419,8 @@ class TestCompressCalibration:
         )
         set_colony_compressed_data.assert_not_called()
 
-    def test_negative_cell_count(self, test_app, set_colony_compressed_data, params):
+    def test_negative_cell_count(
+            self, test_app, set_colony_compressed_data, params):
         params['cell_count'] = -1
         response = test_app.post(self.url, data=json.dumps(params))
         assert response.status_code == 400
