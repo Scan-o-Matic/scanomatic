@@ -219,33 +219,29 @@ window.executeCCC = function() {
     cccFunctions.updateTips = updateTips;
 
     function initiateCccSuccess(data) {
-        if (data.success) {
-            $("#btnIniCCC").hide();
-            $("#divIniCCC").show();
-            var id = data.identifier;
-            var token = data.access_token;
-            var sp = species.val();
-            var ref = reference.val();
-            var fixture = getSelectedFixtureName();
-            var pinFormat = getSelectedPinningFormat();
-            var outputFormat = getSelectedPinningFormatName();
-            $("#tblCurrentCCC tbody").append(
-                "<tr><td>Id</td><td>" + id + "</td></tr>" +
-                "<tr><td>Token</td><td>" + token + "</td></tr>" +
-                "<tr><td>Species</td><td>" + sp + "</td></tr>" +
-                "<tr><td>Reference</td><td>" + ref + "</td></tr>" +
-                "<tr><td>Pinning Format</td><td>" + outputFormat + "</td></tr>" +
-                "<tr><td>Fixture</td><td>" + fixture + "</td></tr>" +
-                "<tr><td>Uploaded Images</td><td></td></tr>"
-            );
-            setCccId(id);
-            settAccessToken(token);
-            setCccFixture(fixture);
-            setCccPinningFormat(pinFormat);
-            dialogCCCIni.dialog("close");
-        } else {
-            alert("Problem initializing:" + data.reason);
-        }
+        $("#btnIniCCC").hide();
+        $("#divIniCCC").show();
+        var id = data.identifier;
+        var token = data.access_token;
+        var sp = species.val();
+        var ref = reference.val();
+        var fixture = getSelectedFixtureName();
+        var pinFormat = getSelectedPinningFormat();
+        var outputFormat = getSelectedPinningFormatName();
+        $("#tblCurrentCCC tbody").append(
+            "<tr><td>Id</td><td>" + id + "</td></tr>" +
+            "<tr><td>Token</td><td>" + token + "</td></tr>" +
+            "<tr><td>Species</td><td>" + sp + "</td></tr>" +
+            "<tr><td>Reference</td><td>" + ref + "</td></tr>" +
+            "<tr><td>Pinning Format</td><td>" + outputFormat + "</td></tr>" +
+            "<tr><td>Fixture</td><td>" + fixture + "</td></tr>" +
+            "<tr><td>Uploaded Images</td><td></td></tr>"
+        );
+        setCccId(id);
+        settAccessToken(token);
+        setCccFixture(fixture);
+        setCccPinningFormat(pinFormat);
+        dialogCCCIni.dialog("close");
     }
 
     cccFunctions.initiateCccSuccess = initiateCccSuccess;
@@ -368,14 +364,11 @@ window.executeCCC = function() {
     }
 
     function getMarkersSuccess(data, scope) {
-        if (data.success == true) {
-            cccFunctions.setStep(1.3);
-            scope.Markers = processMarkers(data.markers);
-            var file = scope.File;
-            scope.File = null;
-            GetImageId(scope, scope.cccId, file, scope.AccessToken, getImageIdSuccess, getImageIdError);
-        } else
-            alert("There was a problem with the upload: " + data.reason);
+        cccFunctions.setStep(1.3);
+        scope.Markers = processMarkers(data.markers);
+        var file = scope.File;
+        scope.File = null;
+        GetImageId(scope, scope.cccId, file, scope.AccessToken, getImageIdSuccess, getImageIdError);
     }
 
     function getImageIdError(data) {
@@ -383,17 +376,13 @@ window.executeCCC = function() {
     }
 
     function getImageIdSuccess(data, scope) {
-        if (data.success) {
-            cccFunctions.setStep(1.4);
-            scope.CurrentImageId = data.image_identifier;
-            var markers = scope.Markers;
-            var toSetData = [];
-            toSetData.push({ key: "marker_x", value: markers[0] });
-            toSetData.push({ key: "marker_y", value: markers[1] });
-            SetCccImageData(scope, scope.cccId, scope.CurrentImageId, scope.AccessToken, toSetData, scope.FixtureName, setCccImageDataSuccess, setCccImageDataError);
-        }
-        else
-            alert("there was a problem uploading the image:" + data.reason);
+        cccFunctions.setStep(1.4);
+        scope.CurrentImageId = data.image_identifier;
+        var markers = scope.Markers;
+        var toSetData = [];
+        toSetData.push({ key: "marker_x", value: markers[0] });
+        toSetData.push({ key: "marker_y", value: markers[1] });
+        SetCccImageData(scope, scope.cccId, scope.CurrentImageId, scope.AccessToken, toSetData, scope.FixtureName, setCccImageDataSuccess, setCccImageDataError);
     }
 
     function setCccImageDataError(data) {
@@ -401,11 +390,8 @@ window.executeCCC = function() {
     }
 
     function setCccImageDataSuccess(data, scope) {
-        if (data.success) {
-            cccFunctions.setStep(1.5);
-            SetCccImageSlice(scope, scope.cccId, scope.CurrentImageId, scope.AccessToken, setCccImageSliceSuccess, setCccImageSliceError);
-        } else
-            alert("set image error!");
+        cccFunctions.setStep(1.5);
+        SetCccImageSlice(scope, scope.cccId, scope.CurrentImageId, scope.AccessToken, setCccImageSliceSuccess, setCccImageSliceError);
     }
 
     function setCccImageSliceError(data) {
@@ -413,11 +399,8 @@ window.executeCCC = function() {
     }
 
     function setCccImageSliceSuccess(data, scope) {
-        if (data.success) {
-            cccFunctions.setStep(1.6);
-            SetGrayScaleImageAnalysis(scope, scope.cccId, scope.CurrentImageId, scope.AccessToken, setGrayScaleImageAnalysisSuccess, setGrayScaleImageAnalysisError);
-        } else
-            alert("Error while setting up the images slice!:" + data.reason);
+        cccFunctions.setStep(1.6);
+        SetGrayScaleImageAnalysis(scope, scope.cccId, scope.CurrentImageId, scope.AccessToken, setGrayScaleImageAnalysisSuccess, setGrayScaleImageAnalysisError);
     }
 
     function setGrayScaleImageAnalysisError(data) {
@@ -425,15 +408,11 @@ window.executeCCC = function() {
     }
 
     function setGrayScaleImageAnalysisSuccess(data, scope) {
-        if (data.success) {
-            cccFunctions.setStep(1.7);
-            //store target_values and source_values to QC graph ???
-            GetFixturePlates(scope.FixtureName, function(data) {
-                createFixturePlateSelection(data, scope);
-            });
-
-        } else
-            alert("Error while starting grayscale analysis:" + data.reason);
+        cccFunctions.setStep(1.7);
+        //store target_values and source_values to QC graph ???
+        GetFixturePlates(scope.FixtureName, function(data) {
+            createFixturePlateSelection(data, scope);
+        });
     }
 
     function startGridding() {
@@ -480,20 +459,17 @@ window.executeCCC = function() {
     cccFunctions.setGrayScaleTransformError = setGrayScaleTransformError;
 
     function setGrayScaleTransformSuccess(data, scope) {
-        if (data.success) {
-            ReactDOM.render(
-                <PlateEditorContainer
-                    cccId={scope.cccId}
-                    imageId={scope.CurrentImageId}
-                    plateId={scope.Plate}
-                    pinFormat={scope.PinFormat.map((i) => parseInt(i))}
-                    accessToken={scope.AccessToken}
-                    onFinish={() => alert('Level completed!')}
-                />,
-                document.getElementById('react-root'),
-            );
-        } else
-            alert("set grayscale transform error:" + data.reason);
+        ReactDOM.render(
+            <PlateEditorContainer
+                cccId={scope.cccId}
+                imageId={scope.CurrentImageId}
+                plateId={scope.Plate}
+                pinFormat={scope.PinFormat.map((i) => parseInt(i))}
+                accessToken={scope.AccessToken}
+                onFinish={() => alert('Level completed!')}
+            />,
+            document.getElementById('react-root'),
+        );
     }
 
     cccFunctions.setGrayScaleTransformSuccess = setGrayScaleTransformSuccess;

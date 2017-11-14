@@ -63,11 +63,7 @@ def get_active_calibrations():
         for ccc in calibration.get_active_cccs().values()
     ]
 
-    return jsonify(
-        cccs=cccs,
-        success=True,
-        is_endpoint=True,
-    )
+    return jsonify(cccs=cccs)
 
 @blueprint.route("/under_construction", methods=['GET'])
 def get_under_construction_calibrations():
@@ -76,8 +72,6 @@ def get_under_construction_calibrations():
         identifiers, cccs = zip(
             *calibration.get_under_construction_cccs().iteritems())
         return jsonify(
-            success=True,
-            is_endpoint=True,
             identifiers=identifiers,
             species=[
                 ccc[calibration.CellCountCalibration.species]
@@ -118,8 +112,6 @@ def initiate_new_ccc():
         )
 
     return jsonify(
-        success=True,
-        is_endpoint=True,
         identifier=ccc[calibration.CellCountCalibration.identifier],
         access_token=ccc[
             calibration.CellCountCalibration.edit_access_token]
@@ -149,11 +141,7 @@ def upload_ccc_image(ccc_identifier):
             reason="Refused to save image, probably bad access token"
         )
 
-    return jsonify(
-        success=True,
-        is_endpoint=True,
-        image_identifier=image_identifier
-    )
+    return jsonify(image_identifier=image_identifier)
 
 @blueprint.route("/<ccc_identifier>/image_list", methods=['GET'])
 def list_ccc_images(ccc_identifier):
@@ -165,11 +153,7 @@ def list_ccc_images(ccc_identifier):
             reason="No such ccc known"
         )
 
-    return jsonify(
-        success=True,
-        is_endpoint=True,
-        image_identifiers=image_list
-    )
+    return jsonify(image_identifiers=image_list)
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/get",
@@ -246,10 +230,8 @@ def set_ccc_image_data(ccc_identifier, image_identifier):
             reason="Update refused, probably bad access token"
         )
 
-    return jsonify(
-        success=True,
-        is_endpoint=True
-    )
+    return jsonify()
+
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/data/get",
@@ -264,13 +246,10 @@ def get_ccc_image_data(ccc_identifier, image_identifier):
             reason="The image or CCC don't exist"
         )
 
-    return jsonify(
-        success=True,
-        is_endpoint=True,
-        **{
+    return jsonify(**{
             k.name: val for k, val in data.iteritems()
-            if k is not calibration.CCCImage.plates}
-    )
+            if k is not calibration.CCCImage.plates
+    })
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/slice/set",
@@ -302,10 +281,7 @@ def slice_ccc_image(ccc_identifier, image_identifier):
             reason="Probably not the correct access token."
         )
 
-    return jsonify(
-        success=True,
-        is_endpoint=True
-    )
+    return jsonify()
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/slice/get/<slice>",
@@ -373,8 +349,6 @@ def analyse_ccc_image_grayscale(ccc_identifier, image_identifier):
     if success:
 
         return jsonify(
-            success=True,
-            is_endpoint=True,
             source_values=values,
             target_values=grayscale_object['targets']
         )
@@ -409,10 +383,7 @@ def transform_ccc_image_plate(ccc_identifier, image_identifier, plate):
             "image and analysed grayscale first"
         )
 
-    return jsonify(
-        success=True,
-        is_endpoint=True
-    )
+    return jsonify()
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/grid/set",
@@ -514,8 +485,6 @@ def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
         )
 
     return jsonify(
-        success=True,
-        is_endpoint=True,
         grid=grid_array.grid,
         xy1=xy1,
         xy2=xy2
@@ -593,7 +562,6 @@ def detect_colony(ccc_identifier, image_identifier, plate, x, y):
     background_reasonable = background.sum() >= 20
 
     return jsonify(
-        success=True,
         blob=blob.tolist(),
         background=background.tolist(),
         image=grid_cell.source.tolist(),
@@ -716,10 +684,7 @@ def compress_calibration(ccc_identifier, image_identifier, plate, x, y):
             background_filter=background_filter,
             access_token=data_object.get("access_token")):
 
-        return jsonify(
-            success=True,
-            is_endpoint=True
-        )
+        return jsonify()
 
     else:
 
@@ -760,11 +725,7 @@ def upload_external_data(ccc_identifier):
             access_token=data_object.get("access_token"),
             report=report):
 
-        return jsonify(
-            success=True,
-            is_endpoint=True,
-            report=report
-        )
+        return jsonify(report=report)
 
     else:
 
@@ -791,10 +752,7 @@ def delete_non_deployed_calibration(ccc_identifier):
             ccc_identifier,
             access_token=data_object.get("access_token")):
 
-        return jsonify(
-            success=True,
-            is_endpoint=True
-        )
+        return jsonify()
 
     else:
 
@@ -839,11 +797,7 @@ def construct_calibration(ccc_identifier, poly_name, power):
     )
 
     if response["validation"] is calibration.CalibrationValidation.OK:
-        return jsonify(
-            success=True,
-            is_endpoint=True,
-            **response
-        )
+        return jsonify(**response)
     elif response is False:
         return json_abort(
             400,
@@ -874,10 +828,7 @@ def finalize_calibration(ccc_identifier):
     if calibration.activate_ccc(
             ccc_identifier,
             access_token=data_object.get("access_token")):
-        return jsonify(
-            success=True,
-            is_endpoint=True
-        )
+        return jsonify()
     else:
         return json_abort(
             400,
