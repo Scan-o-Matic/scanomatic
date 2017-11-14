@@ -1,4 +1,3 @@
-from string import letters
 from itertools import product
 from types import StringTypes
 import re
@@ -23,7 +22,6 @@ from .general import (
     json_abort
 )
 
-_VALID_CHARACTERS = letters + "-._1234567890"
 
 
 def get_bounding_box_for_colony(grid, x, y, width, height):
@@ -693,45 +691,6 @@ def compress_calibration(ccc_identifier, image_identifier, plate, x, y):
             reason="Probably invalid access token"
         )
 
-@blueprint.route('/<ccc_identifier>/external_data/upload', methods=['POST'])
-def upload_external_data(ccc_identifier):
-
-    data_object = request.get_json(silent=True, force=True)
-    if not data_object:
-        data_object = request.values
-
-    population_size_data = request.files.get(
-        'population_size_data', default=None)
-
-    if population_size_data is None:
-        return json_abort(
-            400,
-            reason="Didn't get any data"
-        )
-
-    if not calibration.is_valid_edit_request(
-            ccc_identifier,
-            access_token=data_object.get("access_token")):
-
-        return json_abort(
-            401,
-            reason="Invalid access token or CCC not under construction"
-        )
-
-    report = {}
-    if calibration.add_external_data_to_ccc(
-            ccc_identifier,
-            population_size_data,
-            access_token=data_object.get("access_token"),
-            report=report):
-
-        return jsonify(report=report)
-
-    else:
-
-        return json_abort(
-            400,
-            report=report)
 
 @blueprint.route('/<ccc_identifier>/delete', methods=['POST'])
 def delete_non_deployed_calibration(ccc_identifier):
@@ -761,11 +720,9 @@ def delete_non_deployed_calibration(ccc_identifier):
             reason='Unexpected error removing CCC'
         )
 
-@blueprint.route('/<ccc_identifier>/construct/<poly_name>',
-           defaults={'power': 5}, methods=['POST'])
-@blueprint.route('/<ccc_identifier>/construct/<poly_name>/<int:power>',
-               methods=['POST'])
-def construct_calibration(ccc_identifier, poly_name, power):
+
+@blueprint.route('/<ccc_identifier>/construct/<int:power>', methods=['POST'])
+def construct_calibration(ccc_identifier, power):
 
     data_object = request.get_json(silent=True, force=True)
     if not data_object:
@@ -780,28 +737,20 @@ def construct_calibration(ccc_identifier, poly_name, power):
             reason="Invalid access token or CCC not under construction"
         )
 
-    poly_name = re.sub(r'[ .,]]', '_', poly_name)
-    checked_name = "".join(c for c in poly_name if c in _VALID_CHARACTERS)
-
-    if poly_name != checked_name:
-        return json_abort(
-            400,
-            reason="Name is containing invalid characters"
-        )
-
     response = calibration.construct_polynomial(
         ccc_identifier,
-        poly_name,
         power,
         access_token=data_object.get("access_token")
     )
 
     if response["validation"] is calibration.CalibrationValidation.OK:
-        return jsonify(**response)
+        return jsonify(
+            **response
+        )
     elif response is False:
         return json_abort(
             400,
-            reason="Failed to save ccc")
+            reason="Failed to save ccc.")
 
     return json_abort(
         400,
@@ -809,6 +758,7 @@ def construct_calibration(ccc_identifier, poly_name, power):
         "Validation of polynomial says: {}".format(
             response["validation"].name
         ))
+
 
 @blueprint.route('/<ccc_identifier>/finalize', methods=['POST'])
 def finalize_calibration(ccc_identifier):
