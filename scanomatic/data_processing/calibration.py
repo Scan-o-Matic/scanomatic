@@ -22,7 +22,7 @@ from scanomatic.image_analysis.image_basics import (
 from scanomatic.image_analysis.first_pass_image import FixtureImage
 
 
-class CCCKeyError(Exception):
+class CCCFormatError(Exception):
     pass
 
 
@@ -302,11 +302,16 @@ def __load_cccs():
     for ccc_path in iglob(Paths().ccc_file_pattern.format("*")):
 
         with open(ccc_path, mode='rb') as fh:
-            data = json.load(fh)
-
+            try:
+                data = json.load(fh)
+            except ValueError:
+                _logger.warning("JSON format corrupt in file '{}'".format(
+                    ccc_path
+                ))
+                continue
         try:
             data = _parse_ccc(data)
-        except CCCKeyError:
+        except CCCFormatError:
             _logger.warning("{} is an outdated CCC".format(ccc_path))
 
         if (data is None or
@@ -379,9 +384,10 @@ def add_ccc(ccc):
 def validate_polynomial_struct(polynomial):
     try:
         if (not (
-                isinstance(polynomial['power'], int) and
-                isinstance(polynomial['coefficients'], list) and
-                len(polynomial['coefficients']) == polynomial['power'] + 1)):
+                isinstance(polynomial[CCCPolynomial.power], int) and
+                isinstance(polynomial[CCCPolynomial.coefficients], list) and
+                len(polynomial[CCCPolynomial.coefficients]) ==
+                polynomial[CCCPolynomial.power] + 1)):
             _logger.error(
                 "Validation of polynomial representaiton {} failed".format(
                     polynomial)
@@ -454,11 +460,14 @@ def _encode_val(v):
     if isinstance(v, list) or isinstance(v, tuple):
         return type(v)(_encode_val(e) for e in v)
     else:
-        return _encode_ccc_enum(v)
+        try:
+            return _encode_ccc_enum(v)
+        except CCCFormatError:
+            return v
 
 
 def _encode_dict(d):
-    return {_encode_ccc_enum(k): _encode_val(v) for k, v in d.iteritems()}
+    return {_encode_ccc_key(k): _encode_val(v) for k, v in d.iteritems()}
 
 
 def _save_ccc_to_disk(data):
@@ -487,7 +496,7 @@ def _parse_ccc(data):
         elif isinstance(v, StringTypes):
             try:
                 return _decode_ccc_enum(v)
-            except (CCCKeyError, ValueError):
+            except (CCCFormatError, ValueError):
                 return v
         else:
             return v
@@ -529,16 +538,16 @@ def _decode_ccc_key(key):
                 try:
                     return int(key)
                 except ValueError:
-                    raise CCCKeyError("{} not recognized".format(key))
-    raise CCCKeyError("{} not recognized".format(key))
+                    raise CCCFormatError("{} not recognized".format(key))
+    raise CCCFormatError("{} not recognized".format(key))
 
 
-def _decode_ccc_enum(key):
-    enum_name, enum_value = key.split(".")
+def _decode_ccc_enum(value):
+    enum_name, enum_value = value.split(".")
     try:
         return __DECODABLE_ENUMS[enum_name][enum_value]
     except (ValueError, KeyError):
-        raise CCCKeyError("'{}' not a valid property of '{}'".format(
+        raise CCCFormatError("'{}' not a valid property of '{}'".format(
             enum_value, enum_name))
 
 
@@ -546,7 +555,7 @@ def _encode_ccc_key(key):
     if isinstance(key, tuple):
         return str(key)
     elif isinstance(key, Enum):
-        return _encode_ccc_key(key)
+        return _encode_ccc_enum(key)
     return key
 
 
@@ -554,7 +563,7 @@ def _encode_ccc_enum(key):
     if type(key) in __DECODABLE_ENUMS.values():
         return "{}.{}".format(str(key).split(".")[-2], key.name)
     else:
-        raise CCCKeyError("'{}' not usable in CCC keys".format(key))
+        raise CCCFormatError("'{}' not usable in CCC keys".format(key))
 
 
 @_validate_ccc_edit_request

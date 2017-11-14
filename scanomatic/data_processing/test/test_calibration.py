@@ -144,7 +144,6 @@ def edit_bad_slope_ccc():
 @pytest.fixture(scope='function')
 def finalizable_ccc():
     _ccc = _fixture_load_ccc('data/test_good.ccc')
-    _ccc[calibration.CellCountCalibration.deployed_polynomial] = "stiff"
     yield _ccc
     calibration.reload_cccs()
 
@@ -152,7 +151,6 @@ def finalizable_ccc():
 @pytest.fixture(scope='function')
 def active_ccc():
     _ccc = _fixture_load_ccc('data/test_good.ccc')
-    _ccc[calibration.CellCountCalibration.deployed_polynomial] = "stiff"
     _ccc[
         calibration.CellCountCalibration.status
     ] = calibration.CalibrationEntryStatus.Active
@@ -262,27 +260,41 @@ class TestEditCCC:
 class TestActivateCCC:
 
     @pytest.mark.parametrize("polynomial", [
-        {"power": "apa", "coefficients": [0, 1]},
-        {"power": 1.0, "coefficients": [0, 1]},
-        {"power": 2, "coefficients": [0, 1]},
+        {
+            calibration.CCCPolynomial.power: "apa",
+            calibration.CCCPolynomial.coefficients: [0, 1]
+        },
+        {
+            calibration.CCCPolynomial.power: 1.0,
+            calibration.CCCPolynomial.coefficients: [0, 1]
+        },
+        {
+            calibration.CCCPolynomial.power: 2,
+            calibration.CCCPolynomial.coefficients: [0, 1]
+        },
         {"browser": 2, "coffee": [0, 1]},
+        {'power': 1, 'coefficients': [0, 1]},
     ])
     def test_polynomial_malformed(self, polynomial):
         with pytest.raises(calibration.ActivationError):
             calibration.validate_polynomial_struct(polynomial)
 
     @pytest.mark.parametrize("polynomial", [
-        {"power": 0, "coefficients": [0]},
-        {"power": 1, "coefficients": [0, 1]},
-        {"power": 2, "coefficients": [1, 2, 3]},
+        {
+            calibration.CCCPolynomial.power: 0,
+            calibration.CCCPolynomial.coefficients: [0]
+        },
+        {
+            calibration.CCCPolynomial.power: 1,
+            calibration.CCCPolynomial.coefficients: [0, 1]
+        },
+        {
+            calibration.CCCPolynomial.power: 2,
+            calibration.CCCPolynomial.coefficients: [1, 2, 3]
+        },
     ])
     def test_polynomial_correct(self, polynomial):
         assert calibration.validate_polynomial_struct(polynomial) is None
-
-    def test_no_has_selected_polynomial(self, edit_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        with pytest.raises(calibration.ActivationError):
-            calibration.has_valid_polynomial(edit_ccc)
 
     def test_has_selected_polynomial(self, finalizable_ccc):
         # The fixture needs to be included, otherwise test is not correct
@@ -326,7 +338,7 @@ class TestActivateCCC:
 
         assert response is None, "Could edit active CCC but shouldn't have"
 
-    def test_activated_status_is_not_set(self, edit_ccc):
+    def test_activated_status_is_not_set_if_no_poly(self, edit_ccc):
         # The fixture needs to be included, otherwise test is not correct
         identifier = edit_ccc[
             calibration.CellCountCalibration.identifier]
@@ -337,6 +349,7 @@ class TestActivateCCC:
             calibration.CalibrationEntryStatus.UnderConstruction
         ), "CCC not initialized with UnderConstruction entry status"
 
+        edit_ccc[calibration.CellCountCalibration.polynomial] = None
         calibration.activate_ccc(identifier, access_token=token)
 
         assert (
@@ -470,9 +483,9 @@ class TestGettingActiveCCCs:
         ccc1 = calibration.get_empty_ccc('Cylon', 'Boomer')
         self._ccc_id1 = ccc1[calibration.CellCountCalibration.identifier]
         ccc1[calibration.CellCountCalibration.polynomial] = {
-            'test': {'power': 5, 'coefficients': [10, 0, 0, 0, 150, 0]}
+            calibration.CCCPolynomial.power: 5,
+            calibration.CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
         }
-        ccc1[calibration.CellCountCalibration.deployed_polynomial] = 'test'
         ccc1[calibration.CellCountCalibration.status] = \
             calibration.CalibrationEntryStatus.Active
         calibration.add_ccc(ccc1)
@@ -480,9 +493,9 @@ class TestGettingActiveCCCs:
         ccc2 = calibration.get_empty_ccc('Deep Ones', 'Stross')
         self._ccc_id2 = ccc2[calibration.CellCountCalibration.identifier]
         ccc2[calibration.CellCountCalibration.polynomial] = {
-            'test': {'power': 5, 'coefficients': [10, 0, 0, 0, 150, 0]}
+            calibration.CCCPolynomial.power: 5,
+            calibration.CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
         }
-        ccc2[calibration.CellCountCalibration.deployed_polynomial] = 'test'
         calibration.add_ccc(ccc2)
 
     def teardown_method(self):
