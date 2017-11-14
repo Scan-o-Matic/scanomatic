@@ -711,10 +711,10 @@ def construct_polynomial(identifier, power):
     return {
         'ccc': identifier,
         'polynomial_coefficients': poly_coeffs,
-        'polynomial_degree': power,
+        'polynomial_power': power,
         'measured_sizes': data_store.target_value,
         'calculated_sizes': calc_sizes,
-        'validation': validation,
+        'validation': validation.name,
     }
 
 

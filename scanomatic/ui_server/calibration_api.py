@@ -755,7 +755,7 @@ def construct_calibration(ccc_identifier, power):
         access_token=data_object.get("access_token")
     )
 
-    if response["validation"] is calibration.CalibrationValidation.OK:
+    if response["validation"] == "OK":
         return jsonify(
             **response
         )
