@@ -23,7 +23,6 @@ from .general import (
 )
 
 
-
 def get_bounding_box_for_colony(grid, x, y, width, height):
 
     px_y, px_x = grid[:, y, x]
@@ -63,6 +62,7 @@ def get_active_calibrations():
 
     return jsonify(cccs=cccs)
 
+
 @blueprint.route("/under_construction", methods=['GET'])
 def get_under_construction_calibrations():
 
@@ -83,6 +83,7 @@ def get_under_construction_calibrations():
             400,
             reason="No CCCs are under constructions"
         )
+
 
 @blueprint.route("/initiate_new", methods=['POST'])
 def initiate_new_ccc():
@@ -115,6 +116,7 @@ def initiate_new_ccc():
             calibration.CellCountCalibration.edit_access_token]
     )
 
+
 @blueprint.route("/<ccc_identifier>/add_image", methods=['POST'])
 def upload_ccc_image(ccc_identifier):
 
@@ -141,6 +143,7 @@ def upload_ccc_image(ccc_identifier):
 
     return jsonify(image_identifier=image_identifier)
 
+
 @blueprint.route("/<ccc_identifier>/image_list", methods=['GET'])
 def list_ccc_images(ccc_identifier):
 
@@ -153,6 +156,7 @@ def list_ccc_images(ccc_identifier):
 
     return jsonify(image_identifiers=image_list)
 
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/get",
     methods=['GET'])
@@ -161,6 +165,7 @@ def download_ccc_image(ccc_identifier, image_identifier):
     im_path = Paths().ccc_image_pattern.format(
         ccc_identifier, image_identifier)
     return send_file(im_path, mimetype='Image/Tiff')
+
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/data/set",
@@ -249,6 +254,7 @@ def get_ccc_image_data(ccc_identifier, image_identifier):
             if k is not calibration.CCCImage.plates
     })
 
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/slice/set",
     methods=['POST'])
@@ -281,6 +287,7 @@ def slice_ccc_image(ccc_identifier, image_identifier):
 
     return jsonify()
 
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/slice/get/<slice>",
     methods=['GET'])
@@ -305,6 +312,7 @@ def get_ccc_image_slice(ccc_identifier, image_identifier, slice):
             reason="No such image slice exists, has it been sliced?"
         )
     return serve_numpy_as_image(image)
+
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/grayscale/analyse",
@@ -359,6 +367,7 @@ def analyse_ccc_image_grayscale(ccc_identifier, image_identifier):
             "access token"
         )
 
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/transform",
     methods=['POST'])
@@ -382,6 +391,7 @@ def transform_ccc_image_plate(ccc_identifier, image_identifier, plate):
         )
 
     return jsonify()
+
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/grid/set",
@@ -488,6 +498,7 @@ def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
         xy2=xy2
     )
 
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>" +
     "/plate/<int:plate>/detect/colony/<int:x>/<int:y>", methods=["POST"])
@@ -572,6 +583,7 @@ def detect_colony(ccc_identifier, image_identifier, plate, x, y):
         background_reasonable=int(background_reasonable),
         grid_position=box['center'],
     )
+
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/" +

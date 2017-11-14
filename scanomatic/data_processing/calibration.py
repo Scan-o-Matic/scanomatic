@@ -66,14 +66,18 @@ def _ccc_edit_validator(identifier, **kwargs):
             else:
 
                 _logger.error(
-                    "Can not modify the CCC {0} because it is not under construction".format(
+                    "Can not modify {0} sincet not under construction".format(
                         identifier)
                 )
 
         else:
 
             _logger.error(
-                "You don't have the correct access token for {0}, request refused".format(identifier)
+                "Bad access token for {}, request refused using {}"
+                .format(
+                    identifier,
+                    kwargs.get('access_token', '++NO TOKEN SUPPLIED++'),
+                )
             )
     else:
 
