@@ -416,7 +416,8 @@ window.executeCCC = function() {
         cccFunctions.setStep(1.7);
         //store target_values and source_values to QC graph ???
         GetFixturePlates(scope.FixtureName)
-            .then(data => createFixturePlateSelection(data, scope));
+            .then(data => createFixturePlateSelection(data, scope))
+            .catch(alert);
     }
 
     function startGridding() {
