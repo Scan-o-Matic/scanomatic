@@ -90,10 +90,10 @@ describe('<CCCEditor />', () => {
                 .toEqual(props.pinFormat);
         });
 
-        it('should pass current image to <PlateEditorContainer />', () => {
+        it('should pass current imageId to <PlateEditorContainer />', () => {
             const wrapper = shallow(<CCCEditor {...props} />);
-            expect(wrapper.find('PlateEditorContainer').prop('image'))
-                .toEqual(props.images[1]);
+            expect(wrapper.find('PlateEditorContainer').prop('imageId'))
+                .toEqual(props.images[1].id);
         });
 
         it('should pass current plateId to <PlateEditorContainer />', () => {
