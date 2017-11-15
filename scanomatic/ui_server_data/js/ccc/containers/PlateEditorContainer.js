@@ -2,17 +2,24 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import PlateEditor from '../components/PlateEditor';
+import { SetGrayScaleTransform } from '../api';
 
 
 export default class PlateEditorContainer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            step: 'gridding',
+            step: 'transforming',
             selectedColony: null,
         };
         this.handleGriddingFinish = this.handleGriddingFinish.bind(this);
         this.handleColonyFinish = this.handleColonyFinish.bind(this);
+    }
+
+    componentDidMount() {
+        const { cccId, imageId, plateId, accessToken } = this.props;
+        SetGrayScaleTransform(cccId, imageId, plateId, accessToken)
+            .then(() => this.setState({ step: 'gridding' }));
     }
 
     handleGriddingFinish() {

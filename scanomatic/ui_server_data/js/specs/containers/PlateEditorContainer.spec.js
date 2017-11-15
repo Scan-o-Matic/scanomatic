@@ -3,6 +3,7 @@ import { shallow } from 'enzyme';
 
 import '../components/enzyme-setup';
 import PlateEditorContainer from '../../ccc/containers/PlateEditorContainer';
+import * as API from '../../ccc/api';
 
 describe('<PlateEditorContainer />', () => {
     const props = {
@@ -16,6 +17,7 @@ describe('<PlateEditorContainer />', () => {
 
     beforeEach(() => {
         props.onFinish.calls.reset();
+        spyOn(API, 'SetGrayScaleTransform').and.returnValue(Promise.resolve({}));
     });
 
     it('should render a <PlateEditor />', () => {
@@ -23,9 +25,26 @@ describe('<PlateEditorContainer />', () => {
         expect(wrapper.find('PlateEditor').exists()).toBeTruthy();
     });
 
-    it('should start with the gridding step', () => {
+    it('should start with the transforming step', () => {
         const wrapper = shallow(<PlateEditorContainer {...props} />);
-        expect(wrapper.prop('step')).toEqual('gridding');
+        expect(wrapper.prop('step')).toEqual('transforming');
+    });
+
+    it('should call SetGrayScaleTransform', () => {
+        shallow(<PlateEditorContainer {...props} />);
+        expect(API.SetGrayScaleTransform)
+            .toHaveBeenCalledWith(props.cccId, props.imageId, props.plateId, props.accessToken)
+    });
+
+    it('should switch to the gridding step when SetGrayScaleTransform finishes', (done) => {
+        const promise = Promise.resolve({});
+        API.SetGrayScaleTransform.and.returnValue(promise);
+        const wrapper = shallow(<PlateEditorContainer {...props} />);
+        promise.then(() => {
+            wrapper.update();
+            expect(wrapper.prop('step')).toEqual('gridding');
+            done();
+        });
     });
 
     it('should switch to the colony step when onGriddingFinish is called', () => {

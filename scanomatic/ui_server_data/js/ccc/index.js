@@ -15,6 +15,7 @@ import {
 } from './api';
 import { createScope, getCurrentScope, setCurrentScope } from './scope';
 import PlateEditorContainer from './containers/PlateEditorContainer';
+import CCCEditorContainer from './containers/CCCEditorContainer';
 
 
 
@@ -242,6 +243,16 @@ window.executeCCC = function() {
         setCccFixture(fixture);
         setCccPinningFormat(pinFormat);
         dialogCCCIni.dialog("close");
+        ReactDOM.render(
+            <CCCEditorContainer
+                cccId={id}
+                pinFormat={pinFormat.split(',').map((i) => parseInt(i))}
+                fixtureName={fixture}
+                accessToken={token}
+                onFinish={() => alert('Level completed!')}
+            />,
+            document.getElementById('react-root'),
+        );
     }
 
     cccFunctions.initiateCccSuccess = initiateCccSuccess;
@@ -465,17 +476,6 @@ window.executeCCC = function() {
     cccFunctions.setGrayScaleTransformError = setGrayScaleTransformError;
 
     function setGrayScaleTransformSuccess(data, scope) {
-        ReactDOM.render(
-            <PlateEditorContainer
-                cccId={scope.cccId}
-                imageId={scope.CurrentImageId}
-                plateId={scope.Plate}
-                pinFormat={scope.PinFormat.map((i) => parseInt(i))}
-                accessToken={scope.AccessToken}
-                onFinish={() => alert('Level completed!')}
-            />,
-            document.getElementById('react-root'),
-        );
     }
 
     cccFunctions.setGrayScaleTransformSuccess = setGrayScaleTransformSuccess;
