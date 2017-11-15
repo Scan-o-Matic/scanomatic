@@ -49,6 +49,7 @@ class CalibrationValidation(Enum):
     """:type : CalibrationValidation"""
     BadStatistics = 3
     """:type : CalibrationValidation"""
+    BadData = 4
 
 
 def _ccc_edit_validator(identifier, **kwargs):
@@ -674,7 +675,12 @@ def construct_polynomial(identifier, power):
 
     ccc = __CCC[identifier]
     data_store = _collect_all_included_data(ccc)
-    poly_coeffs = calculate_polynomial(data_store, power).tolist()
+    try:
+        poly_coeffs = calculate_polynomial(data_store, power).tolist()
+    except CCCConstructionError:
+        return {
+            'validation': CalibrationValidation.BadData
+        }
     poly = get_calibration_polynomial(poly_coeffs)
 
     validation = validate_polynomial(data_store, poly)
