@@ -1,67 +1,6 @@
 import * as cccAPI from '../ccc/api';
 import cccFunctions from '../ccc/index';
 
-describe('createSetGrayScaleTransformTask', () => {
-
-    beforeEach(() => {
-        spyOn(cccAPI, 'SetGrayScaleTransform')
-            .and.callFake(() => Promise.resolve({}));
-        spyOn(window, '$').and.returnValue({
-            hide: () => {},
-            show: () => {},
-            add: () => {return {add: () => {}};},
-            click: () => {},
-            change: () => {},
-            dialog: () => {return {find: () => {return {on: () => {}};}};},
-        });
-        executeCCC();
-    });
-
-    it('returns a function', () => {
-        const f = cccFunctions.createSetGrayScaleTransformTask();
-        expect(typeof f).toBe('function');
-    });
-
-    describe('invoking its returned function', () => {
-        it('it sets the step of the process', () => {
-            spyOn(cccFunctions, 'setStep');
-            const scope = {};
-            const f = cccFunctions.createSetGrayScaleTransformTask(
-                scope,
-                'whatever'
-            );
-            f('something');
-            expect(cccFunctions.setStep).toHaveBeenCalledWith(2);
-        });
-
-        it('it updates the scope', () => {
-            const scope = {};
-            const f = cccFunctions.createSetGrayScaleTransformTask(
-                scope,
-                'whatever'
-            );
-            f('something');
-            expect(scope.Plate).toBe('whatever');
-            expect(scope.PlateNextTaskInQueue).toBe('something');
-        });
-
-        it('it calls the API helper', () => {
-            const scope = {};
-            const f = cccFunctions.createSetGrayScaleTransformTask(
-                scope,'whatever'
-            );
-            f('something');
-            expect(cccAPI.SetGrayScaleTransform).toHaveBeenCalledWith(
-                undefined,
-                undefined,
-                'whatever',
-                undefined,
-            );
-
-        });
-    });
-});
-
 describe('checkName', () => {
 
     const validNameRegexp = /^[a-z]([0-9a-z_\s])+$/i;
