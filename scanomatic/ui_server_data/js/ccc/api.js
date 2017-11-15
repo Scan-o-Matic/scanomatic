@@ -263,3 +263,13 @@ export function GetTransposedMarkers(fixtureName, markers, successCallback, erro
         error: errorCallback
     });
 }
+
+export function SetNewCalibrationPolynomial(cccId, power, accessToken) {
+    return new Promise(
+        (resolve, reject) => $.ajax({
+            url: `/api/calibration/${cccId}/construct/${power}`,
+            type: 'POST',
+            data: JSON.stringify({access_token: accessToken}),
+            contentType: 'application/json',
+        }).then(resolve, jqXHR => reject(JSON.parse(jqXHR.responseText))));
+}

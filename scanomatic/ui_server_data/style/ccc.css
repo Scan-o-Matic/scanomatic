@@ -8,6 +8,22 @@ table {
 	font-size: 1em;
 }
 
+.math {
+		margin: 0px;
+		padding: 0px;
+		font-size: 110%;
+}
+
+.math span {
+		margin-right: 2px;
+		margin-left: 2px;
+}
+
+.math .variable {
+		font-style: italic;
+		margin: 0px;
+}
+
 .paddedTable td{
     padding-left: 5px;
 }
@@ -118,16 +134,16 @@ div#users-contain table td, div#users-contain table th {
     font-size:10px;
 }
 
-div.tooltip {	
-    position: absolute;			
+div.tooltip {
+    position: absolute;
     text-align: center;
-    padding: 2px;				
+    padding: 2px;
     font: 12px sans-serif;
     color: white;
-    background: black;	
-    border: 0px;		
-    border-radius: 3px;			
-    pointer-events: none;			
+    background: black;
+    border: 0px;
+    border-radius: 3px;
+    pointer-events: none;
 }
 
 rect.selection {
