@@ -73,19 +73,6 @@ def test_expanded_vector_sum():
     np.testing.assert_allclose(expanded.sum(), data_sum)
 
 
-def test_calibration_opt_func():
-
-    poly = calibration.get_calibration_optimization_function(2)
-    assert poly([2], 1, 1)[0] == 6
-    assert poly([2], 2, 0)[0] == 4
-    assert poly([2], 0, 2)[0] == 8
-    poly = calibration.get_calibration_optimization_function(4)
-    assert poly([1], 1, 1)[0] == 2
-    assert poly([1], 2, 0)[0] == 2
-    assert poly([1], 0, 2)[0] == 2
-    assert poly([2], 0, 1)[0] == 16
-
-
 def test_get_im_slice():
     """Test that _get_im_slice handles floats"""
     image = np.arange(0, 42).reshape((6, 7))
@@ -674,3 +661,55 @@ class TestSetColonyCompressedData:
 
     def test_cell_count(self, measurement):
         assert measurement[calibration.CCCMeasurement.cell_count] == 1234
+
+
+class TestConstructPolynomial:
+
+    @pytest.mark.parametrize("data_store,power", (
+        (calibration.CalibrationData([], [], []), 5),
+        (calibration.CalibrationData([1], [[1]], [[1]]), 5),
+        (calibration.CalibrationData([1], [[1]], [[6]]), 5),
+        (calibration.CalibrationData([1], [[1, 4]], [[6, 2]]), 5),
+    ))
+    def test_too_little_data_raises(self, data_store, power):
+
+        with pytest.raises(TypeError):
+            calibration.calculate_polynomial(data_store, power).tolist()
+
+    def test_calibration_curve_fit_polynomial_function(self):
+
+        poly = calibration.get_calibration_optimization_function(2)
+        assert poly([[2], [3]], 1, 1) == (6, 12)
+        assert poly([[2], np.array([2, 2])], 2, 0) == (4, 8)
+        assert poly([[2], [1]], 0, 2) == (8, 2)
+        poly = calibration.get_calibration_optimization_function(4)
+        assert poly([[1]], 1, 1) == (2,)
+        assert poly([[1]], 2, 0) == (2,)
+        assert poly([[1]], 0, 2) == (2,)
+        assert poly([[2]], 0, 1) == (16,)
+
+    @pytest.mark.parametrize('x, coeffs', (
+        (5, [1, 1, 0]),
+        (6, [42, 0, 0, 7, 0]),
+    ))
+    def test_calibration_functions_give_equal_results(self, x, coeffs):
+
+        poly_fitter = calibration.get_calibration_optimization_function(
+            len(coeffs) - 1)
+        poly = calibration.get_calibration_polynomial(coeffs)
+
+        assert poly(x) == pytest.approx(
+            poly_fitter([x], coeffs[-2], coeffs[0])[0])
+
+    def test__calculate_polynomial(self):
+
+        poly = calibration.get_calibration_optimization_function(2)
+        coeffs = calibration._calculate_polynomial(
+            fit_function=poly,
+            x=[[1, 1, 4, 5], [1, 4, 4, 4, 6, 7, 7]],
+            y=np.array([151, 615]),
+            degree=2
+        )
+        print coeffs
+        assert coeffs[0] == pytest.approx(3)
+        assert coeffs[-2] == pytest.approx(2)
