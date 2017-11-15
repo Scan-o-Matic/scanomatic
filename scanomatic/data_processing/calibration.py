@@ -702,7 +702,7 @@ def construct_polynomial(identifier, power):
         'ccc': identifier,
         'polynomial_coefficients': poly_coeffs,
         'polynomial_power': power,
-        'measured_sizes': data_store.target_value,
+        'measured_sizes': data_store.target_value.tolist(),
         'calculated_sizes': calculated_sizes,
         'validation': validation.name,
     }
