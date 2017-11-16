@@ -155,9 +155,9 @@ export function SetGrayScaleTransform(cccId, imageId, plate, accessToken) {
     return API.postFormData(path, formData);
 }
 
-export function SetGridding(cccId, imageId, plate, pinningFormat, offSet, accessToken, successCallback, errorCallback) {
+export function SetGridding(cccId, imageId, plate, pinningFormat, offSet, accessToken) {
     var path = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/grid/set`;
-    $.ajax({
+    return new Promise((resolve, reject) => $.ajax({
         url: path,
         type: "POST",
         dataType: 'json',
@@ -167,12 +167,9 @@ export function SetGridding(cccId, imageId, plate, pinningFormat, offSet, access
             gridding_correction: offSet,
             access_token: accessToken,
         }),
-    })
-        .done( function(data) { successCallback(data); } )
-        .fail( function(jqXHR) {
-            const data = JSON.parse(jqXHR.responseText);
-            errorCallback(data);
-        } );
+        success: resolve,
+        error: jqXHR => reject(JSON.parse(jqXHR.responseText)),
+    }));
 }
 
 export function SetColonyDetection(cccId, imageId, plate, accessToken, row, col, successCallback, errorCallback) {
