@@ -3,7 +3,7 @@ import React from 'react';
 
 import Polynomial from '../components/Polynomial';
 
-import { SetNewCalibrationPolynomial } from '../api';
+import * as API from '../api';
 
 
 export default class ResultsContainer extends React.Component {
@@ -17,15 +17,17 @@ export default class ResultsContainer extends React.Component {
         };
 
         this.handleConstruction = this.handleConstruction.bind(this);
-        this.handleConstructionResults = this.handleConstructionResults.bind(this);
-        this.handleConstructionResultsError = this.handleConstructionResultsError.bind(this);
+        this.handleConstructionResults = this.handleConstructionResults
+            .bind(this);
+        this.handleConstructionResultsError =
+            this.handleConstructionResultsError.bind(this);
         this.handleClearError = this.handleClearError.bind(this);
     }
 
     handleConstruction() {
         const { cccId, accessToken } = this.props;
         const { power } = this.state;
-        SetNewCalibrationPolynomial(cccId, power, accessToken)
+        return API.SetNewCalibrationPolynomial(cccId, power, accessToken)
         .then(this.handleConstructionResults)
         .catch(this.handleConstructionResultsError);
     }
@@ -47,20 +49,12 @@ export default class ResultsContainer extends React.Component {
         );
     }
 
-    handleConstructionResultsError(error) {
-        this.setState(
-            {
-                error: error.reason,
-            }
-        );
+    handleConstructionResultsError(reason) {
+        this.setState({ error: reason });
     }
 
     handleClearError() {
-        this.setState(
-            {
-                error: null,
-            }
-        );
+        this.setState({ error: null });
     }
 
     render() {
@@ -69,8 +63,8 @@ export default class ResultsContainer extends React.Component {
             polynomial={this.state.polynomial}
             data={this.state.resultsData}
             error={this.state.error}
-            handleClearError={this.handleClearError}
-            handleConstruction={this.handleConstruction}
+            onClearError={this.handleClearError}
+            onConstruction={this.handleConstruction}
         />;
     }
 }

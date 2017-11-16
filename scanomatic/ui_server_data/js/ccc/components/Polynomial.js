@@ -9,23 +9,23 @@ export default function Polynomial(props) {
     return (
         <div>
             <PolyConstuctionButton
-                handleConstruction={props.handleConstruction}
+                onConstruction={props.onConstruction}
                 power={props.power}
             />
             <PolyResults
                 polynomial={props.polynomial}
                 data={props.data}
                 error={props.error}
-                handleClearError={props.handleClearError}
+                onClearError={props.onClearError}
             />
         </div>
     );
 }
 
 Polynomial.propTypes = {
-    handleConstruction: PropTypes.func.isRequired,
+    onConstruction: PropTypes.func.isRequired,
     power: PropTypes.number.isRequired,
-    handleClearError: PropTypes.func.isRequired,
+    onClearError: PropTypes.func.isRequired,
     polynomial: PropTypes.shape({
         power: PropTypes.number.isRequired,
         coefficients: PropTypes.array.isRequired,
