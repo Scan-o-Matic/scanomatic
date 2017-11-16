@@ -3,7 +3,7 @@ import React from 'react';
 
 
 export default function PolyResults(
-    { handleClearError, polynomial, data, error }
+    { onClearError, polynomial, data, error }
 ) {
     if (error) {
         return (
@@ -12,7 +12,7 @@ export default function PolyResults(
                     type="button"
                     className="close"
                     aria-label="Close"
-                    onClick={handleClearError}
+                    onClick={onClearError}
                 >
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -28,16 +28,17 @@ export default function PolyResults(
     } else if (polynomial == null) {
         return null;
     }
-    const polynomialText = polynomialAsJSX(polynomial.coefficients);
     return (
-        <div>
+        <div className='results'>
             <h3>Cell Count Calibration Polynomial</h3>
             <ul className='list-group'>
                 <li className='list-group-item'>
                     <h4 className='list-group-item-heading'>
                     Polynomial
                     </h4>
-                    {polynomialText}
+                    <PolynomialEquation
+                        coefficients={polynomial.coefficients}
+                    />
                 </li>
                 <li className='list-group-item'>
                     <h4 className='list-group-item-heading'>
@@ -51,7 +52,7 @@ export default function PolyResults(
 }
 
 PolyResults.propTypes = {
-    handleClearError: PropTypes.func.isRequired,
+    onClearError: PropTypes.func.isRequired,
     polynomial: PropTypes.shape({
         power: PropTypes.number.isRequired,
         coefficients: PropTypes.array.isRequired,
@@ -63,7 +64,7 @@ PolyResults.propTypes = {
     error: PropTypes.string,
 };
 
-export function polynomialAsJSX(coefficients) {
+export function PolynomialEquation({ coefficients }) {
     let poly = [];
     const polyPower = coefficients.length - 1;
     coefficients.map((coeff, position) => {
@@ -73,7 +74,7 @@ export function polynomialAsJSX(coefficients) {
             const pwr = power == 0 || power == 1 ? null : <sup>{power}</sup>;
             poly.push(
                 <span key={`power-${power}`}>
-                {toScientificPrecision(coeff, 4)}
+                <ScientificNotation value={coeff} precision={4} />
                 {x}{pwr}
                 </span>
             );
@@ -84,6 +85,10 @@ export function polynomialAsJSX(coefficients) {
         poly.splice(i, 0, <span key={`plus-${i}`}> + </span>);
     }
 
+    if (poly.length == 0) {
+        poly = 0;
+    }
+
     return (
         <p className='math'>
             <span className='variable'>y</span> = {poly}
@@ -91,12 +96,15 @@ export function polynomialAsJSX(coefficients) {
     );
 }
 
-polynomialAsJSX.propTypes = {
+PolynomialEquation.propTypes = {
     coefficients: PropTypes.array.isRequired,
 };
 
 
-export function toScientificPrecision(value, precision) {
+export function ScientificNotation({ value, precision }) {
+    if (value == 0) {
+        return <span>{value.toPrecision(precision)}</span>;
+    }
     let absValue = Math.abs(value);
     let fraction = absValue < 1 ? absValue * 1000 : absValue / 1000;
     let power = Math.round(Math.log10(fraction))*3;
@@ -105,7 +113,7 @@ export function toScientificPrecision(value, precision) {
         (power > -3 && absValue < 1) ||
         absValue == 1
     ) {
-        return value.toPrecision(precision);
+        return <span>{value.toPrecision(precision)}</span>;
     } else {
         return (
             <span>
@@ -116,7 +124,7 @@ export function toScientificPrecision(value, precision) {
     }
 }
 
-toScientificPrecision.propTypes = {
+ScientificNotation.propTypes = {
     value: PropTypes.number.isRequired,
     precision: PropTypes.number.isRequired,
 };
