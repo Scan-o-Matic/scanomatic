@@ -1,14 +1,14 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import PolyConstuctionButton from './PolyConstructionButton';
+import PolyConstructionButton from './PolyConstructionButton';
 import PolyResults from './PolyResults';
 
 
 export default function Polynomial(props) {
     return (
         <div>
-            <PolyConstuctionButton
+            <PolyConstructionButton
                 onConstruction={props.onConstruction}
                 power={props.power}
             />
