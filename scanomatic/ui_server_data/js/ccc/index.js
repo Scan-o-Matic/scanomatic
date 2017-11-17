@@ -467,6 +467,7 @@ window.executeCCC = function() {
 
     function setGrayScaleTransformSuccess(data, scope) {
         ReactDOM.render((
+                <div>
                 <PlateEditorContainer
                     cccId={scope.cccId}
                     imageId={scope.CurrentImageId}
@@ -474,11 +475,12 @@ window.executeCCC = function() {
                     pinFormat={scope.PinFormat.map((i) => parseInt(i))}
                     accessToken={scope.AccessToken}
                     onFinish={() => alert('Level completed!')}
-                />
+                />,
                 <PolynomialConstructionContainer
                     cccId={scope.cccId}
                     accessToken={scope.AccessToken}
                 />
+                </div>
             ),
             document.getElementById('react-root'),
         );

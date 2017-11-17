@@ -23,7 +23,7 @@ export default function PolynomialConstructionError({ onClearError, error }) {
     );
 }
 
-PolynomialResultsInfo.propTypes = {
+PolynomialConstructionError.propTypes = {
     onClearError: PropTypes.func.isRequired,
     error: PropTypes.string.isRequired,
 };

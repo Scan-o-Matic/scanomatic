@@ -14,10 +14,6 @@ describe('<PolynomialResultsInfo />', () => {
         },
     };
 
-    beforeEach(() => {
-        props.onClearError.calls.reset();
-    });
-
     it('doesnt renders an alert', () => {
         const wrapper = shallow(<PolynomialResultsInfo {...props} />);
         expect(wrapper.find('div.alert').exists()).not.toBeTruthy();

@@ -27,7 +27,7 @@ describe('<PolynomialConstructionError />', () => {
 
     it('the alert displays the error', () => {
         const wrapper = shallow(<PolynomialConstructionError {...props} />);
-        expect(wrapper.find('div.alert').text()).toContain(err);
+        expect(wrapper.find('div.alert').text()).toContain(props.error);
     });
 
     it('the alert has a close button', () => {
@@ -41,3 +41,4 @@ describe('<PolynomialConstructionError />', () => {
         wrapper.find('div.alert').find('button').simulate('click');
         expect(props.onClearError).toHaveBeenCalled();
     });
+});

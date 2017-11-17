@@ -34,19 +34,18 @@ describe('<PolynomialConstruction />', () => {
         expect(wrapper.find('PolynomialResultsInfo').length).toEqual(1);
     });
 
-    it('should set the button onConstruction according to props', () => {
+    it('should render a PolynomialConstructionError', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('button.btn')
-            .prop('onConstruction'))
-            .toEqual(props.onConstruction);
+        expect(wrapper.find('PolynomialConstructionError').exists())
+            .toBeTruthy();
+        expect(wrapper.find('PolynomialConstructionError').length).toEqual(1);
     });
 
     it('should call onConstruction when clicked', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
         wrapper.find('button.btn').simulate('click');
         expect(props.onConstruction).toHaveBeenCalled();
-
-    })
+    });
 
     it('should set the results polynomial according to props', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
@@ -56,25 +55,33 @@ describe('<PolynomialConstruction />', () => {
 
     it('should set the results error according to props', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('PolynomialResultsInfo').prop('error'))
+        expect(wrapper.find('PolynomialConstructionError').prop('error'))
             .toEqual(props.error);
     });
 
     it('should set the results onClearError according to props', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('PolynomialResultsInfo').prop('onClearError'))
-            .toEqual(props.onClearError);
+        expect(wrapper.find('PolynomialConstructionError')
+            .prop('onClearError')).toEqual(props.onClearError);
     });
 
-    it(
-        'should not render an results if there are non and there is no error',
-        () => {
-            const wrapper = shallow(
-                <PolynomialConstruction
-                    {...props}
-                    error={null}
-                    polynomial={null}
-                />);
-        }
-    );
+    it('should not render any results if there are none', () => {
+        const wrapper = shallow(
+            <PolynomialConstruction {...props} polynomial={null} />
+        );
+        expect(wrapper.find('PolynomialResultsInfo').exists())
+            .not.toBeTruthy();
+        expect(wrapper.find('PolynomialConstructionError').exists())
+            .toBeTruthy();
+    });
+
+    it('should not render any error if there is none', () => {
+        const wrapper = shallow(
+            <PolynomialConstruction {...props} error={null} />
+        );
+        expect(wrapper.find('PolynomialResultsInfo').exists())
+            .toBeTruthy();
+        expect(wrapper.find('PolynomialConstructionError').exists())
+            .not.toBeTruthy();
+    });
 });
