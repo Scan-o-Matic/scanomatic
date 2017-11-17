@@ -636,7 +636,7 @@ def calculate_polynomial(data_store, degree=5):
         p0[1] = 3.379796310880545e-05
 
     try:
-        (c1, cn), pcov = leastsq(
+        (c1, cn), _ = leastsq(
             get_calibration_polynomial_residuals,
             p0,
             args=(fit_function, data_store)
@@ -649,8 +649,8 @@ def calculate_polynomial(data_store, degree=5):
     poly_vals[0] = cn
 
     _logger.info(
-        "Produced polynomial {} with 1 sigma per term (x^1, x^{}) {}".format(
-            poly_as_text(poly_vals), degree, pcov)
+        "Produced polynomial {} with 1 sigma per term (x^1, x^{})".format(
+            poly_as_text(poly_vals), degree)
     )
     return poly_vals
 
