@@ -12,14 +12,11 @@ describe('<PolynomialConstruction />', () => {
         polynomial: {
             power: -7,
             coefficients: [42, 42, 42],
-        },
-        data: {
-            calculated: [1, 2, 3],
-            independentMeasurements: [5, 4, 3],
+            colonies: 96,
         },
         error: 'No no no!'
     };
-    
+
     beforeEach(() => {
         props.onConstruction.calls.reset();
     });
@@ -27,19 +24,19 @@ describe('<PolynomialConstruction />', () => {
 
     it('should render a button', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('button').exists()).toBeTruthy();
-        expect(wrapper.find('button').length).toEqual(1);
+        expect(wrapper.find('button.btn').exists()).toBeTruthy();
+        expect(wrapper.find('button.btn').length).toEqual(1);
     });
 
-    it('should render a PolyResults', () => {
+    it('should render a PolynomialResultsInfo', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('PolyResults').exists()).toBeTruthy();
-        expect(wrapper.find('PolyResults').length).toEqual(1);
+        expect(wrapper.find('PolynomialResultsInfo').exists()).toBeTruthy();
+        expect(wrapper.find('PolynomialResultsInfo').length).toEqual(1);
     });
 
     it('should set the button onConstruction according to props', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('button')
+        expect(wrapper.find('button.btn')
             .prop('onConstruction'))
             .toEqual(props.onConstruction);
     });
@@ -53,25 +50,19 @@ describe('<PolynomialConstruction />', () => {
 
     it('should set the results polynomial according to props', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('PolyResults').prop('polynomial'))
+        expect(wrapper.find('PolynomialResultsInfo').prop('polynomial'))
             .toEqual(props.polynomial);
-    });
-
-    it('should set the results data according to props', () => {
-        const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('PolyResults').prop('data'))
-            .toEqual(props.data);
     });
 
     it('should set the results error according to props', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('PolyResults').prop('error'))
+        expect(wrapper.find('PolynomialResultsInfo').prop('error'))
             .toEqual(props.error);
     });
 
     it('should set the results onClearError according to props', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('PolyResults').prop('onClearError'))
+        expect(wrapper.find('PolynomialResultsInfo').prop('onClearError'))
             .toEqual(props.onClearError);
     });
 });

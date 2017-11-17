@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import PolyResults from './PolyResults';
+import PolynomialResultsInfo from './PolynomialResultsInfo';
 
 
 export default function PolynomialConstruction(props) {
@@ -11,9 +11,8 @@ export default function PolynomialConstruction(props) {
                 className="btn btn-default"
                 onClick={props.onConstruction}
             >Construct Cell Count Calibration Polynomial</button>
-            <PolyResults
+            <PolynomialResultsInfo
                 polynomial={props.polynomial}
-                data={props.data}
                 error={props.error}
                 onClearError={props.onClearError}
             />
@@ -27,10 +26,7 @@ PolynomialConstruction.propTypes = {
     polynomial: PropTypes.shape({
         power: PropTypes.number.isRequired,
         coefficients: PropTypes.array.isRequired,
-    }),
-    data: PropTypes.shape({
-        calculated: PropTypes.array.isRequired,
-        independentMeasurements: PropTypes.array.isRequired,
+        colonies: PropTypes.number.isRequired,
     }),
     error: PropTypes.string,
 };

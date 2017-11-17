@@ -32,13 +32,11 @@ describe('<PolynomialConstructionContainer />', () => {
         );
         const state = {
             polynomial: 'y = e ^ x',
-            resultsData: 'imaginenative',
             error: 'nope',
         };
         wrapper.setState(state);
         const poly = wrapper.find('PolynomialConstruction');
         expect(poly.prop('polynomial')).toEqual(state.polynomial);
-        expect(poly.prop('data')).toEqual(state.resultsData);
         expect(poly.prop('error')).toEqual(state.error);
     });
 
@@ -95,6 +93,7 @@ describe('<PolynomialConstructionContainer />', () => {
                 .toEqual({
                     power: results.polynomial_power,
                     coefficients: results.polynomial_coefficients,
+                    colonies: results.calculated_sizes.length,
                 });
             expect(wrapper.state('resultsData'))
                 .toEqual({

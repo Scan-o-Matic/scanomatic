@@ -39,12 +39,12 @@ export default class PolynomialConstructionContainer extends React.Component {
                 polynomial: {
                     power: results.polynomial_power,
                     coefficients: results.polynomial_coefficients,
+                    colonies: results.calculated_sizes.length,
                 },
                 resultsData: {
                     calculated: results.calculated_sizes,
                     independentMeasurements: results.measured_sizes
-                }
-
+                },
             }
         );
     }
@@ -60,7 +60,6 @@ export default class PolynomialConstructionContainer extends React.Component {
     render() {
         return <PolynomialConstruction
             polynomial={this.state.polynomial}
-            data={this.state.resultsData}
             error={this.state.error}
             onClearError={this.handleClearError}
             onConstruction={this.handleConstruction}

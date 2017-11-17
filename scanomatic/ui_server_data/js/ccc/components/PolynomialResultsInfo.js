@@ -2,8 +2,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 
-export default function PolyResults(
-    { onClearError, polynomial, data, error }
+export default function PolynomialResultsInfo(
+    { onClearError, polynomial, error }
 ) {
     if (error) {
         return (
@@ -44,22 +44,19 @@ export default function PolyResults(
                     <h4 className='list-group-item-heading'>
                     Colonies included
                     </h4>
-                    {data.independentMeasurements.length} colonies
+                    {polynomial.colonies} colonies
                 </li>
             </ul>
         </div>
     );
 }
 
-PolyResults.propTypes = {
+PolynomialResultsInfo.propTypes = {
     onClearError: PropTypes.func.isRequired,
     polynomial: PropTypes.shape({
         power: PropTypes.number.isRequired,
         coefficients: PropTypes.array.isRequired,
-    }),
-    data: PropTypes.shape({
-        calculated: PropTypes.array.isRequired,
-        independentMeasurements: PropTypes.array.isRequired,
+        colonies: PropTypes.number.isRequired,
     }),
     error: PropTypes.string,
 };
