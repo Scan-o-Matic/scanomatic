@@ -6,6 +6,10 @@ import PlateProgress from './PlateProgress';
 import PlateContainer from '../containers/PlateContainer';
 import Gridding from './Gridding';
 
+
+const STEPS = ['pre-processing', 'gridding', 'colony-detection', 'done'];
+
+
 export function PlateStatusLabel({ step, griddingError, now, max }) {
     let className = 'pull-right label'
     let text = '';
@@ -29,6 +33,13 @@ export function PlateStatusLabel({ step, griddingError, now, max }) {
     }
 
     return <span className={className}>{text}</span>
+}
+
+PlateStatusLabel.propTypes = {
+    griddingError: PropTypes.string,
+    now: PropTypes.number,
+    max: PropTypes.number,
+    step: PropTypes.oneOf(STEPS).isRequired,
 }
 
 export default function PlateEditor(props) {
@@ -127,9 +138,7 @@ PlateEditor.propTypes = {
     imageId: PropTypes.string.isRequired,
     imageName: PropTypes.string.isRequired,
     plateId: PropTypes.number.isRequired,
-    step: PropTypes.oneOf([
-        'pre-processing', 'gridding', 'colony-detection', 'done',
-    ]).isRequired,
+    step: PropTypes.oneOf(STEPS).isRequired,
     grid: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))),
     griddingLoading: PropTypes.bool,
     griddingError: PropTypes.string,
