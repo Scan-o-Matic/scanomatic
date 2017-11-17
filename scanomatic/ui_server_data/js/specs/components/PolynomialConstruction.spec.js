@@ -7,9 +7,8 @@ import PolynomialConstruction from
 
 describe('<PolynomialConstruction />', () => {
     const props = {
-        onConstruction: () => {},
+        onConstruction: jasmine.createSpy('onConstruction'),
         onClearError: () => {},
-        power: 1024,
         polynomial: {
             power: -7,
             coefficients: [42, 42, 42],
@@ -20,11 +19,16 @@ describe('<PolynomialConstruction />', () => {
         },
         error: 'No no no!'
     };
+    
+    beforeEach(() => {
+        props.onConstruction.calls.reset();
+    });
 
-    it('should render a PolyConstructionButton', () => {
+
+    it('should render a button', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('PolyConstructionButton').exists()).toBeTruthy();
-        expect(wrapper.find('PolyConstructionButton').length).toEqual(1);
+        expect(wrapper.find('button').exists()).toBeTruthy();
+        expect(wrapper.find('button').length).toEqual(1);
     });
 
     it('should render a PolyResults', () => {
@@ -33,18 +37,19 @@ describe('<PolynomialConstruction />', () => {
         expect(wrapper.find('PolyResults').length).toEqual(1);
     });
 
-    it('should set the button power according to props', () => {
-        const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('PolyConstructionButton').prop('power'))
-            .toEqual(props.power);
-    });
-
     it('should set the button onConstruction according to props', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('PolyConstructionButton')
+        expect(wrapper.find('button')
             .prop('onConstruction'))
             .toEqual(props.onConstruction);
     });
+
+    it('should call onConstruction when clicked', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} />);
+        wrapper.find('button.btn').simulate('click');
+        expect(props.onConstruction).toHaveBeenCalled();
+
+    })
 
     it('should set the results polynomial according to props', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);

@@ -59,7 +59,6 @@ export default class PolynomialConstructionContainer extends React.Component {
 
     render() {
         return <PolynomialConstruction
-            power={this.state.power}
             polynomial={this.state.polynomial}
             data={this.state.resultsData}
             error={this.state.error}
