@@ -60,70 +60,8 @@
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div id="divUploadedImages" class="ui-widget">
-                        <h4>Uploaded Images</h4>
-                        <table id="tblUploadedImages" class="ui-widget ui-widget-content paddedTable">
-                            <thead>
-                            <tr class="ui-widget-header ">
-                                <th>File</th>
-                                <th>Size</th>
-                                <th>Type</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <div>
-                        <button id="btnProcessNewImage" class="ui-button ui-corner-all ui-widget">Process new Image</button>
-                    </div>
-                </div>
-            </div>
-            <div class="row" id="divImageProcessing">
-                <div class="col-md-12">
-                    <div id="divProcessImageStep1" >
-                        <h3>Step 1: Image Processing</h3>
-                        <div>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div id="divImageSelect">
-                                        <input type="file" name="inImageUpload" id="inImageUpload" accept="image/tiff, .tiff" class="cccInputFile"/>
-                                        <label for="inImageUpload">Choose an Image <span class="glyphicon glyphicon-picture" aria-hidden="true"></span></label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row" id="divProsessImageProgress">
-                                <div class="col-md-12">
-                                    <ul id="listProgress_Stage1" style="width: 40%">
-                                        <li id="imProgress0" class="list-group-item"><span class="glyphicon glyphicon-refresh spinning rightPadding" aria-hidden="true"></span>Processing Image ...</li>
-                                        <li id="imProgress1" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Upload to client</li>
-                                        <li id="imProgress2" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Process markers</li>
-                                        <li id="imProgress3" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Upload to server</li>
-                                        <li id="imProgress4" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Set paramaters</li>
-                                        <li id="imProgress5" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Slice image</li>
-                                        <li id="imProgress6" class="list-group-item"><span class="glyphicon glyphicon-ok rightPadding" aria-hidden="true"></span>Analyze grayscale</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="row" id="divPlateSelection">
-                                <div class="col-md-12">
-                                    <div>
-                                        <h4>Select the plates to process</h4>
-                                    </div>
-                                    <div id="divImagePlatesSelection">
-                                        <form id="frmPlateSeclection"></form>
-                                        <br/>
-                                        <button id="btnUploadGridding" class="btn btn-default btn-xs">Next Step</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="react-root"></div>
-                </div>
-            </div>
         </div>
+        <div id="react-root"></div>
     </div>
 </div>
 </body>

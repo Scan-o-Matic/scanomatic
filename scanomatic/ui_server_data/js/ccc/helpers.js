@@ -1,3 +1,6 @@
+import * as API from './api';
+
+
 export function getDataUrlfromUrl(src, callback) {
     var img = new Image();
     img.crossOrigin = 'Anonymous';
@@ -165,5 +168,28 @@ export function loadImage(url) {
         image.onload = () => resolve(image);
         image.onerror = () => reject();
         image.src = url;
+    });
+}
+
+export function uploadImage(ccc, file, fixture, token) {
+    const markers = [];
+    let imageId;
+    return API.GetMarkers(fixture, file).then(data => {
+        markers[0] = data.markers.map(xy => xy[0]);
+        markers[1] = data.markers.map(xy => xy[1]);
+        return API.GetImageId(ccc, file, token);
+    }).then(data => {
+        imageId = data.image_identifier;
+        const imageData = [
+            { key: 'marker_x', value: markers[0] },
+            { key: 'marker_y', value: markers[1] },
+        ];
+        return API.SetCccImageData(ccc, imageId, token, imageData, fixture);
+    }).then(() => {
+        return API.SetCccImageSlice(ccc, imageId, token);
+    }).then(() => {
+        return API.SetGrayScaleImageAnalysis(ccc, imageId, token);
+    }).then(() => {
+        return imageId;
     });
 }
