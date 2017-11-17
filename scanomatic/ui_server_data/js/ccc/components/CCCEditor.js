@@ -3,9 +3,9 @@ import React from 'react';
 
 import PlateEditorContainer from '../containers/PlateEditorContainer';
 import ImageUploadContainer from '../containers/ImageUploadContainer';
-import PlateList from './PlateList';
 import PolynomialConstructionContainer from
-    './containers/PolynomialConstructionContainer';
+    '../containers/PolynomialConstructionContainer';
+import PlateList from './PlateList';
 
 export default function CCCEditor(props) {
     let view;
