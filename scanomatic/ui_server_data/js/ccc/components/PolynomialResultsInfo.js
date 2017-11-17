@@ -25,9 +25,6 @@ export default function PolynomialResultsInfo(
                 {error}
             </div>
         );
-    } else if (polynomial == null) {
-        return null;
-    }
     return (
         <div className='results'>
             <h3>Cell Count Calibration Polynomial</h3>

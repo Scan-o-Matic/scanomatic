@@ -65,4 +65,16 @@ describe('<PolynomialConstruction />', () => {
         expect(wrapper.find('PolynomialResultsInfo').prop('onClearError'))
             .toEqual(props.onClearError);
     });
+
+    it(
+        'should not render an results if there are non and there is no error',
+        () => {
+            const wrapper = shallow(
+                <PolynomialConstruction
+                    {...props}
+                    error={null}
+                    polynomial={null}
+                />);
+        }
+    );
 });

@@ -117,21 +117,6 @@ describe('<PolynomialResultsInfo />', () => {
                 .toContain(`${props.polynomial.colonies} colonies`);
         });
     });
-
-    describe('while having no polynomial and no error', () => {
-
-        it('doesnt renders an alert', () => {
-            const wrapper = shallow(
-                <PolynomialResultsInfo {...props} polynomial={null} />);
-            expect(wrapper.find('div.alert').exists()).not.toBeTruthy();
-        });
-
-        it('renders the results', () => {
-            const wrapper = shallow(
-                <PolynomialResultsInfo {...props} polynomial={null} />);
-            expect(wrapper.find('div.results').exists()).not.toBeTruthy();
-        });
-    });
 });
 
 describe('<PolynomialEquation />', () => {
