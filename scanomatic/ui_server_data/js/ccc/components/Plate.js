@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-const COLONY_OUTLINE_RADIUS = 20;
+const COLONY_OUTLINE_RADIUS = 30;
 const SELECTED_COLONY_MARKER_RADIUS = 40;
 const SCALE = .2;
 const FIRST_COLONY_FILL_COLOR = "#c82124";
