@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import Polynomial from '../components/Polynomial';
+import PolynomialConstruction from '../components/PolynomialConstruction';
 
 import * as API from '../api';
 
 
-export default class ResultsContainer extends React.Component {
+export default class PolynomialConstructionContainer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -58,7 +58,7 @@ export default class ResultsContainer extends React.Component {
     }
 
     render() {
-        return <Polynomial
+        return <PolynomialConstruction
             power={this.state.power}
             polynomial={this.state.polynomial}
             data={this.state.resultsData}
@@ -69,7 +69,7 @@ export default class ResultsContainer extends React.Component {
     }
 }
 
-ResultsContainer.propTypes = {
+PolynomialConstructionContainer.propTypes = {
     accessToken: PropTypes.string.isRequired,
     cccId: PropTypes.string.isRequired,
 };

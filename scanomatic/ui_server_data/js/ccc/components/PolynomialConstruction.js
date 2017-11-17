@@ -5,7 +5,7 @@ import PolyConstructionButton from './PolyConstructionButton';
 import PolyResults from './PolyResults';
 
 
-export default function Polynomial(props) {
+export default function PolynomialConstruction(props) {
     return (
         <div>
             <PolyConstructionButton
@@ -22,7 +22,7 @@ export default function Polynomial(props) {
     );
 }
 
-Polynomial.propTypes = {
+PolynomialConstruction.propTypes = {
     onConstruction: PropTypes.func.isRequired,
     power: PropTypes.number.isRequired,
     onClearError: PropTypes.func.isRequired,

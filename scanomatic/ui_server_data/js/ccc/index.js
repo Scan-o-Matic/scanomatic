@@ -15,7 +15,8 @@ import {
 } from './api';
 import { createScope, getCurrentScope, setCurrentScope } from './scope';
 import PlateEditorContainer from './containers/PlateEditorContainer';
-import ResultsContainer from './containers/ResultsContainer';
+import PolynomialConstructionContainer from
+    './containers/PolynomialConstructionContainer';
 
 
 window.cccFunctions = {
@@ -475,7 +476,7 @@ window.executeCCC = function() {
                     accessToken={scope.AccessToken}
                     onFinish={() => alert('Level completed!')}
                 />
-                <ResultsContainer
+                <PolynomialConstructionContainer
                     cccId={scope.cccId}
                     accessToken={scope.AccessToken}
                 />
