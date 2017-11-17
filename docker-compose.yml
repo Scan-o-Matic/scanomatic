@@ -2,6 +2,7 @@ version: '2'
 
 services:
   scanomatic:
+    image: phenomique/scanomatic-standalone:latest
     privileged: true
     build: .
     ports: ["5000"]

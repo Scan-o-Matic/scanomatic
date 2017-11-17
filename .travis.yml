@@ -1,6 +1,10 @@
 language: python
 python:
     - "2.7"
+
+services:
+  - docker
+
 addons:
   apt:
     packages:
@@ -29,6 +33,12 @@ before_script:
 script:
     - tox
     - npm test
+    - docker-compose build
+
 after_success:
     - coveralls-lcov -v -n scanomatic/ui_server_data/coverage/report-lcov/lcov.info > js-coverage.json
     - coveralls --merge=js-coverage.json
+    - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker-compose push;
+    fi
