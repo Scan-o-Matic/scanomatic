@@ -70,25 +70,24 @@ PolynomialEquation.propTypes = {
     coefficients: PropTypes.array.isRequired,
 };
 
+export function numberAsScientific(value) {
+    let exponent = Math.floor(Math.log10(Math.abs(value)));
+    let coefficient = value / Math.pow(10, exponent);
+    return {exponent, coefficient};
+}
 
 export function ScientificNotation({ value, precision }) {
     if (value == 0) {
         return <span>{value.toPrecision(precision)}</span>;
     }
-    let absValue = Math.abs(value);
-    let fraction = absValue < 1 ? absValue * 1000 : absValue / 1000;
-    let power = Math.round(Math.log10(fraction))*3;
-    if (
-        (absValue > 1 && power < 3) ||
-        (power > -3 && absValue < 1) ||
-        absValue == 1
-    ) {
+    const { exponent, coefficient } = numberAsScientific(value);
+    if ( exponent > -2 && exponent < 3) {
         return <span>{value.toPrecision(precision)}</span>;
     } else {
         return (
             <span>
-                {(value / Math.pow(10, power)).toPrecision(precision)}
-                &times;<span>10<sup>{power}</sup></span>
+                {coefficient.toPrecision(precision)}
+                &times;<span>10<sup>{exponent.toFixed(0)}</sup></span>
             </span>
         );
     }

@@ -2,8 +2,9 @@ import React from 'react';
 import { shallow } from 'enzyme';
 
 import './enzyme-setup';
-import PolynomialResultsInfo, { PolynomialEquation, ScientificNotation }
-    from '../../ccc/components/PolynomialResultsInfo';
+import PolynomialResultsInfo, {
+    PolynomialEquation, ScientificNotation, numberAsScientific
+} from '../../ccc/components/PolynomialResultsInfo';
 
 describe('<PolynomialResultsInfo />', () => {
     const props = {
@@ -145,6 +146,32 @@ describe('<PolynomialEquation />', () => {
 
 });
 
+describe('numberAsScientific', () => {
+    it('returns a coefficient and exponent', () => {
+        const sci = numberAsScientific(33)
+        expect(sci.coefficient).not.toBe(undefined);
+        expect(sci.exponent).not.toBe(undefined);
+    });
+
+    it('calculates 42 as expected', () => {
+        expect(numberAsScientific(42)).toEqual({
+            exponent: 1,
+            coefficient: 4.2
+        });
+    });
+
+    it('calculates 0.0034 as expected', () => {
+        expect(numberAsScientific(0.0034)).toEqual({
+            exponent: -3,
+            coefficient: 3.4
+        });
+    });
+
+    it('preserves the sign', () => {
+        expect(numberAsScientific(-42).coefficient).toEqual(-4.2);
+    });
+});
+
 describe('<ScientificNotation />', () => {
     it('renders a span', () => {
         const wrapper = shallow(
@@ -164,6 +191,12 @@ describe('<ScientificNotation />', () => {
         expect(wrapper.find('span').first().text()).toEqual('10.3');
     });
 
+    it('renders moderatly small numbers with precision', () => {
+        const wrapper = shallow(
+            <ScientificNotation value={0.32} precision={3} />);
+        expect(wrapper.find('span').first().text()).toEqual('0.320');
+    });
+
     it('renders larger numbers with precision', () => {
         const wrapper = shallow(
             <ScientificNotation value={9999} precision={2} />);
@@ -175,19 +208,14 @@ describe('<ScientificNotation />', () => {
         const wrapper = shallow(
             <ScientificNotation value={-123456} precision={3} />);
         expect(wrapper.html())
-            .toEqual('<span>-0.123×<span>10<sup>6</sup></span></span>');
+            .toEqual('<span>-1.23×<span>10<sup>5</sup></span></span>');
     });
 
     it('renders small numbers with precision', () => {
         const wrapper = shallow(
             <ScientificNotation value={-0.0001} precision={3} />);
         expect(wrapper.html())
-            .toEqual('<span>-0.100×<span>10<sup>-3</sup></span></span>');
+            .toEqual('<span>-1.00×<span>10<sup>-4</sup></span></span>');
     });
 
-    it('only does powers of 3', () => {
-        const wrapper = shallow(
-            <ScientificNotation value={12345} precision={3} />);
-        expect(wrapper.find('sup').text()).toEqual('3');
-    });
 });
