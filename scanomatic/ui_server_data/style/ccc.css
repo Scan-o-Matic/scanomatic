@@ -217,3 +217,8 @@ svg *::-webkit-selection {
     .cccInputFile + label {
         cursor: pointer; /* "hand" cursor */
     }
+
+.panel {
+    color: black;
+}
+
