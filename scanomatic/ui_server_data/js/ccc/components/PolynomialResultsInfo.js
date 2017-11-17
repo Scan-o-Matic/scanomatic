@@ -2,29 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 
-export default function PolynomialResultsInfo(
-    { onClearError, polynomial, error }
-) {
-    if (error) {
-        return (
-            <div className="alert alert-error alert-dismissible" role="alert">
-                <button
-                    type="button"
-                    className="close"
-                    aria-label="Close"
-                    onClick={onClearError}
-                >
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                <span
-                    className="glyphicon glyphicon-exclamation-sign"
-                    aria-hidden="true"
-                >
-                </span>
-                <strong>Error:</strong>
-                {error}
-            </div>
-        );
+export default function PolynomialResultsInfo({ polynomial }) {
     return (
         <div className='results'>
             <h3>Cell Count Calibration Polynomial</h3>
@@ -49,13 +27,11 @@ export default function PolynomialResultsInfo(
 }
 
 PolynomialResultsInfo.propTypes = {
-    onClearError: PropTypes.func.isRequired,
     polynomial: PropTypes.shape({
         power: PropTypes.number.isRequired,
         coefficients: PropTypes.array.isRequired,
         colonies: PropTypes.number.isRequired,
     }),
-    error: PropTypes.string,
 };
 
 export function PolynomialEquation({ coefficients }) {

@@ -467,7 +467,6 @@ window.executeCCC = function() {
 
     function setGrayScaleTransformSuccess(data, scope) {
         ReactDOM.render((
-            <div>
                 <PlateEditorContainer
                     cccId={scope.cccId}
                     imageId={scope.CurrentImageId}
@@ -480,7 +479,7 @@ window.executeCCC = function() {
                     cccId={scope.cccId}
                     accessToken={scope.AccessToken}
                 />
-            </div>),
+            ),
             document.getElementById('react-root'),
         );
     }

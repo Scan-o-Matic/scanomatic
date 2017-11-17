@@ -619,16 +619,16 @@ class TestSetColonyCompressedData:
 
 class TestConstructPolynomial:
 
-    @pytest.mark.parametrize("data_store,power", (
-        (calibration.CalibrationData([], [], []), 5),
-        (calibration.CalibrationData([1], [[1]], [[1]]), 5),
-        (calibration.CalibrationData([1], [[1]], [[6]]), 5),
-        (calibration.CalibrationData([1], [[1, 4]], [[6, 2]]), 5),
+    @pytest.mark.parametrize("data_store", (
+        calibration.CalibrationData([], [], []),
+        calibration.CalibrationData([1], [[1]], [[1]]),
+        calibration.CalibrationData([1], [[1]], [[6]]),
+        calibration.CalibrationData([1], [[1, 4]], [[6, 2]])
     ))
-    def test_too_little_data_raises(self, data_store, power):
+    def test_too_little_data_raises(self, data_store):
 
         with pytest.raises(calibration.CCCConstructionError):
-            calibration.calculate_polynomial(data_store, power).tolist()
+            calibration.calculate_polynomial(data_store, 5).tolist()
 
     def test_calibration_curve_fit_polynomial_function(self):
 

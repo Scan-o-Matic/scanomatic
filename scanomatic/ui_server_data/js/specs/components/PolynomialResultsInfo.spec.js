@@ -7,8 +7,6 @@ import PolynomialResultsInfo, { PolynomialEquation, ScientificNotation }
 
 describe('<PolynomialResultsInfo />', () => {
     const props = {
-        error: null,
-        onClearError: jasmine.createSpy('onClearError'),
         polynomial: {
             power: 4,
             coefficients: [1, 0, 0, 1, 0],
@@ -20,102 +18,56 @@ describe('<PolynomialResultsInfo />', () => {
         props.onClearError.calls.reset();
     });
 
-    describe('while having an error', () => {
-        it('renders an alert', () => {
-            const err = 'awesomesauce!';
-            const wrapper = shallow(
-                <PolynomialResultsInfo {...props} error={err} />
-            );
-            expect(wrapper.find('div.alert').exists()).toBeTruthy();
-        });
-
-        it('doesnt render any results', () => {
-            const err = 'awesomesauce!';
-            const wrapper = shallow(
-                <PolynomialResultsInfo {...props} error={err} />
-            );
-            expect(wrapper.find('div.results').exists()).not.toBeTruthy();
-        });
-
-        it('the alert displays the error', () => {
-            const err = 'awesomesauce!';
-            const wrapper = shallow(
-                <PolynomialResultsInfo {...props} error={err} />
-            );
-            expect(wrapper.find('div.alert').text()).toContain(err);
-        });
-
-        it('the alert has a close button', () => {
-            const err = 'awesomesauce!';
-            const wrapper = shallow(
-                <PolynomialResultsInfo {...props} error={err} />
-            );
-            expect(wrapper.find('div.alert').find('button').exists())
-                .toBeTruthy();
-        });
-
-        it('the alert has a close button invokes onClearError', () => {
-            const err = 'awesomesauce!';
-            const wrapper = shallow(
-                <PolynomialResultsInfo {...props} error={err} />
-            );
-            wrapper.find('div.alert').find('button').simulate('click');
-            expect(props.onClearError).toHaveBeenCalled();
-        });
+    it('doesnt renders an alert', () => {
+        const wrapper = shallow(<PolynomialResultsInfo {...props} />);
+        expect(wrapper.find('div.alert').exists()).not.toBeTruthy();
     });
 
-    describe('while not having an error', () => {
-        it('doesnt renders an alert', () => {
-            const wrapper = shallow(<PolynomialResultsInfo {...props} />);
-            expect(wrapper.find('div.alert').exists()).not.toBeTruthy();
-        });
+    it('renders the results', () => {
+        const wrapper = shallow(<PolynomialResultsInfo {...props} />);
+        expect(wrapper.find('div.results').exists()).toBeTruthy();
+    });
 
-        it('renders the results', () => {
-            const wrapper = shallow(<PolynomialResultsInfo {...props} />);
-            expect(wrapper.find('div.results').exists()).toBeTruthy();
-        });
+    it('sets the title', () => {
+        const wrapper = shallow(<PolynomialResultsInfo {...props} />);
+        expect(wrapper.find('div.results').find('h3').text())
+            .toEqual('Cell Count Calibration Polynomial');
 
-        it('sets the title', () => {
-            const wrapper = shallow(<PolynomialResultsInfo {...props} />);
-            expect(wrapper.find('div.results').find('h3').text())
-                .toEqual('Cell Count Calibration Polynomial');
+    });
 
-        });
+    it('renders a list-group with two items', () => {
+        const wrapper = shallow(<PolynomialResultsInfo {...props} />);
+        const lg = wrapper.find('div.results').find('ul.list-group')
+        expect(lg.exists()).toBeTruthy();
+        expect(lg.find('li.list-group-item').length).toBe(2);
+    });
 
-        it('renders a list-group with two items', () => {
-            const wrapper = shallow(<PolynomialResultsInfo {...props} />);
-            const lg = wrapper.find('div.results').find('ul.list-group')
-            expect(lg.exists()).toBeTruthy();
-            expect(lg.find('li.list-group-item').length).toBe(2);
-        });
+    it('renders the polynomial equation', () => {
+        const wrapper = shallow(<PolynomialResultsInfo {...props} />);
+        const item = wrapper.find('div.results').find('ul.list-group')
+            .find('li.list-group-item').at(0);
+        expect(item.find('h4.list-group-item-heading').text())
+            .toEqual('Polynomial');
+        expect(item.find('PolynomialEquation').exists()).toBeTruthy();
+    });
 
-        it('renders the polynomial equation', () => {
-            const wrapper = shallow(<PolynomialResultsInfo {...props} />);
-            const item = wrapper.find('div.results').find('ul.list-group')
-                .find('li.list-group-item').at(0);
-            expect(item.find('h4.list-group-item-heading').text())
-                .toEqual('Polynomial');
-            expect(item.find('PolynomialEquation').exists()).toBeTruthy();
-        });
+    it('calls passes the coefficients to the polynomial equation', () => {
+        const wrapper = shallow(<PolynomialResultsInfo {...props} />);
+        const polyEq = wrapper.find('div.results').find('ul.list-group')
+            .find('li.list-group-item').at(0)
+            .find('PolynomialEquation');
+        expect(polyEq.prop('coefficients'))
+            .toEqual(props.polynomial.coefficients);
+    });
 
-        it('calls passes the coefficients to the polynomial equation', () => {
-            const wrapper = shallow(<PolynomialResultsInfo {...props} />);
-            const polyEq = wrapper.find('div.results').find('ul.list-group')
-                .find('li.list-group-item').at(0)
-                .find('PolynomialEquation');
-            expect(polyEq.prop('coefficients'))
-                .toEqual(props.polynomial.coefficients);
-        });
-
-        it('renders how many colonies were used to create it', () => {
-            const wrapper = shallow(<PolynomialResultsInfo {...props} />);
-            const item = wrapper.find('div.results').find('ul.list-group')
-                .find('li.list-group-item').at(1);
-            expect(item.find('h4.list-group-item-heading').text())
-                .toEqual('Colonies included');
-            expect(item.text())
-                .toContain(`${props.polynomial.colonies} colonies`);
-        });
+    it('renders how many colonies were used to create it', () => {
+        const wrapper = shallow(<PolynomialResultsInfo {...props} />);
+        const item = wrapper.find('div.results').find('ul.list-group')
+            .find('li.list-group-item').at(1);
+        expect(item.find('h4.list-group-item-heading').text())
+            .toEqual('Colonies included');
+        expect(item.text())
+            .toContain(`${props.polynomial.colonies} colonies`);
     });
 });
 

@@ -71,7 +71,7 @@ def _ccc_edit_validator(identifier, **kwargs):
             else:
 
                 _logger.error(
-                    "Can not modify {0} sincet not under construction".format(
+                    "Can not modify {0} since not under construction".format(
                         identifier)
                 )
 
@@ -650,7 +650,7 @@ def calculate_polynomial(data_store, degree=5):
 
     _logger.info(
         "Produced polynomial {} with 1 sigma per term (x^1, x^{}) {}".format(
-            poly_as_text(poly_vals), degree, pcov)  # np.sqrt(np.diag(pcov)))
+            poly_as_text(poly_vals), degree, pcov)
     )
     return poly_vals
 
