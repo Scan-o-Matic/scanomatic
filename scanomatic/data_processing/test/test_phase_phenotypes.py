@@ -72,7 +72,7 @@ def test_no_growth_only_noise():
     assert np.isfinite(
         data[CurvePhasePhenotypes.LinearModelIntercept]), "Invalid intercept"
     assert np.allclose(
-        data[CurvePhasePhenotypes.LinearModelIntercept], 17, atol=0.5
+        data[CurvePhasePhenotypes.LinearModelIntercept], 17, atol=0.6
     ), "Unexpected intercept"
     assert np.allclose(
         data[CurvePhasePhenotypes.LinearModelSlope], 0, atol=0.05
