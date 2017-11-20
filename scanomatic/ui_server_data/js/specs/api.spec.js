@@ -536,4 +536,46 @@ describe('API', () => {
             });
         });
     });
+
+    describe('SetNewCalibrationPolynomial', () => {
+        const args = ['CCC0', '5' , 'T0K3N'];
+
+        it('should query the correct URL', () => {
+            API.SetNewCalibrationPolynomial(...args);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/calibration/CCC0/construct/5');
+        });
+
+        it('should send a POST request', () => {
+            API.SetNewCalibrationPolynomial(...args);
+            expect(mostRecentRequest().method)
+                .toEqual('POST');
+        });
+
+        it('should send the access_coken', () => {
+            API.SetNewCalibrationPolynomial(...args);
+            expect(JSON.parse(mostRecentRequest().params).access_token)
+                .toEqual('T0K3N');
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.SetNewCalibrationPolynomial(...args).then(value => {
+                expect(value).toEqual({ foo: 'bar' });
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify({ foo: 'bar' }),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.SetNewCalibrationPolynomial(...args).catch(reason => {
+                expect(reason).toEqual('(+_+)');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: '(+_+)' }),
+            });
+        });
+    });
 });
