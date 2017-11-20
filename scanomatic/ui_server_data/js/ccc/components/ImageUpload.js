@@ -13,10 +13,27 @@ export default class ImageUpload extends React.Component {
     }
 
     render() {
+        const progressWidth = this.props.progress
+            ? (this.props.progress.now / this.props.progress.max * 100)
+            : 0;
         return (
             <div className="ImageUpload">
                 <h3>Process new image</h3>
-                <input type="file" onChange={this.handleFileChange} />
+                {this.props.progress ?
+                    <div>
+                        <div className="progress">
+                            <div
+                                className="progress-bar"
+                                style={{ width: `${progressWidth}%` }} />
+                        </div>
+                        {this.props.progress.text}
+                    </div>
+                :
+                    <input
+                        type="file"
+                        onChange={this.handleFileChange}
+                    />
+                }
             </div>
         );
     }
@@ -25,4 +42,9 @@ export default class ImageUpload extends React.Component {
 ImageUpload.propTypes = {
     onImageChange: PropTypes.func.isRequired,
     image: PropTypes.instanceOf(File),
+    progress: PropTypes.shape({
+        now: PropTypes.number.isRequired,
+        max: PropTypes.number.isRequired,
+        text: PropTypes.string.isRequired,
+    }),
 };

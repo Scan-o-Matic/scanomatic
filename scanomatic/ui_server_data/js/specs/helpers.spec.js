@@ -19,10 +19,12 @@ describe('UploadImage', () => {
     const file = new File(['foo'], 'myimage.tiff');
     const token = 'T0K3N1';
     const markers = [[1, 2], [3, 4], [5, 6]];
+    const progress = jasmine.createSpy('progress');
 
-    const args = [cccId, file, fixture, token];
+    const args = [cccId, file, fixture, token, progress];
 
     beforeEach(() => {
+        progress.calls.reset();
         spyOn(API, 'GetMarkers')
             .and.callFake(() => Promise.resolve({ markers }));
         spyOn(API, 'GetImageId')
@@ -42,6 +44,13 @@ describe('UploadImage', () => {
         });
     });
 
+    it('should set progress to 0/5 "Getting markers"', (done) => {
+        uploadImage(...args).then(() => {
+            expect(progress).toHaveBeenCalledWith(0, 5, 'Getting markers');
+            done();
+        });
+    });
+
     it('should reject if GetMarkers rejects', (done) => {
         API.GetMarkers
             .and.callFake(() => Promise.reject('Whoopsie'));
@@ -55,6 +64,13 @@ describe('UploadImage', () => {
         uploadImage(...args).then(() => {
             expect(API.GetImageId).toHaveBeenCalledWith(cccId, file, token);
             done()
+        });
+    });
+
+    it('should set progress to 1/5 "Uploading image"', (done) => {
+        uploadImage(...args).then(() => {
+            expect(progress).toHaveBeenCalledWith(1, 5, 'Uploading image');
+            done();
         });
     });
 
@@ -79,6 +95,13 @@ describe('UploadImage', () => {
         });
     });
 
+    it('should set progress to 2/5 "Setting image CCC data"', (done) => {
+        uploadImage(...args).then(() => {
+            expect(progress).toHaveBeenCalledWith(2, 5, 'Setting image CCC data');
+            done();
+        });
+    });
+
     it('should reject if SetCccImageData rejects', (done) => {
         API.SetCccImageData
             .and.callFake(() => Promise.reject('Whoopsie'));
@@ -96,6 +119,13 @@ describe('UploadImage', () => {
         });
     });
 
+    it('should set progress to 3/5 "Slicing image"', (done) => {
+        uploadImage(...args).then(() => {
+            expect(progress).toHaveBeenCalledWith(3, 5, 'Slicing image');
+            done();
+        });
+    });
+
     it('should reject if SetCccImageSlice rejects', (done) => {
         API.SetCccImageSlice
             .and.callFake(() => Promise.reject('Whoopsie'));
@@ -109,6 +139,13 @@ describe('UploadImage', () => {
         uploadImage(...args).then(() => {
             expect(API.SetGrayScaleImageAnalysis)
                 .toHaveBeenCalledWith(cccId, imageId, token);
+            done();
+        });
+    });
+
+    it('should set progress to 4/5 "Setting grayscase"', (done) => {
+        uploadImage(...args).then(() => {
+            expect(progress).toHaveBeenCalledWith(4, 5, 'Setting grayscale');
             done();
         });
     });
