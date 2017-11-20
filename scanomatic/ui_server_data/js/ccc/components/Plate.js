@@ -3,10 +3,14 @@ import React from 'react';
 
 const COLONY_OUTLINE_RADIUS = 30;
 const SELECTED_COLONY_MARKER_RADIUS = 40;
+const SELECTED_COLONY_MARKER_COLOR = "#c82124";
+const SELECTED_COLONY_MARKER_STROKE_WIDTH = 5;
 const SCALE = .2;
 
-export function drawCircle(context, x, y, radius) {
+export function drawCircle(context, x, y, radius, lineWidth=1, strokeStyle='black') {
     context.beginPath();
+    context.strokeStyle = strokeStyle;
+    context.lineWidth = lineWidth;
     context.arc(x, y, radius, 0, 2 * Math.PI);
     context.stroke();
 }
@@ -47,7 +51,12 @@ export default class Plate extends React.Component {
                 const { row, col } = this.props.selectedColony;
                 const x = xs[row][col];
                 const y = ys[row][col];
-                drawCircle(context, x, y, SELECTED_COLONY_MARKER_RADIUS);
+                drawCircle(
+                    context, x, y,
+                    SELECTED_COLONY_MARKER_RADIUS,
+                    SELECTED_COLONY_MARKER_STROKE_WIDTH,
+                    SELECTED_COLONY_MARKER_COLOR,
+                );
             }
         }
         context.scale(1/SCALE, 1/SCALE);
