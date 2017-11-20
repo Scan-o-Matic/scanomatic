@@ -27,7 +27,8 @@ export default function CCCEditor(props) {
                 accessToken={props.accessToken}
                 cccId={props.cccId}
                 imageId={image.id}
-                plateId="1"
+                imageName={image.name}
+                plateId={1}
                 onFinish={props.onFinishImage}
             />
         );

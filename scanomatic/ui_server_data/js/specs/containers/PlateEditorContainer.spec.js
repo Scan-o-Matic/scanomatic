@@ -7,17 +7,21 @@ import * as API from '../../ccc/api';
 
 describe('<PlateEditorContainer />', () => {
     const props = {
-        pinFormat: [2, 3],
         accessToken: 'T0P53CR3T',
         cccId: 'CCC42',
         imageId: '1M4G3',
-        plateId: 'PL4T3',
+        imageName: 'myimage.tiff',
         onFinish: jasmine.createSpy('onFinish'),
+        pinFormat: [2, 3],
+        plateId: 1,
     };
 
     beforeEach(() => {
         props.onFinish.calls.reset();
-        spyOn(API, 'SetGrayScaleTransform').and.returnValue(Promise.resolve({}));
+        spyOn(API, 'SetGrayScaleTransform')
+            .and.returnValue(new Promise(() => {}));
+        spyOn(API, 'SetGridding')
+            .and.returnValue(new Promise(() => {}));
     });
 
     it('should render a <PlateEditor />', () => {
@@ -25,65 +29,169 @@ describe('<PlateEditorContainer />', () => {
         expect(wrapper.find('PlateEditor').exists()).toBeTruthy();
     });
 
-    it('should start with the transforming step', () => {
+    it('should start with the pre-processing step', () => {
         const wrapper = shallow(<PlateEditorContainer {...props} />);
-        expect(wrapper.prop('step')).toEqual('transforming');
+        expect(wrapper.prop('step')).toEqual('pre-processing');
     });
 
-    it('should call SetGrayScaleTransform', () => {
-        shallow(<PlateEditorContainer {...props} />);
-        expect(API.SetGrayScaleTransform)
-            .toHaveBeenCalledWith(props.cccId, props.imageId, props.plateId, props.accessToken)
-    });
+    describe('pre-processing', () => {
+        it('should call SetGrayScaleTransform', () => {
+            shallow(<PlateEditorContainer {...props} />);
+            expect(API.SetGrayScaleTransform)
+                .toHaveBeenCalledWith(props.cccId, props.imageId, props.plateId, props.accessToken)
+        });
 
-    it('should switch to the gridding step when SetGrayScaleTransform finishes', (done) => {
-        const promise = Promise.resolve({});
-        API.SetGrayScaleTransform.and.returnValue(promise);
-        const wrapper = shallow(<PlateEditorContainer {...props} />);
-        promise.then(() => {
-            wrapper.update();
-            expect(wrapper.prop('step')).toEqual('gridding');
-            done();
+        it('should switch to the gridding step when SetGrayScaleTransform finishes', (done) => {
+            const promise = Promise.resolve({});
+            API.SetGrayScaleTransform.and.returnValue(promise);
+            const wrapper = shallow(<PlateEditorContainer {...props} />);
+            promise.then(() => {
+                wrapper.update();
+                expect(wrapper.prop('step')).toEqual('gridding');
+                done();
+            });
         });
     });
 
-    it('should switch to the colony step when onGriddingFinish is called', () => {
-        const wrapper = shallow(<PlateEditorContainer {...props} />);
-        wrapper.prop('onGriddingFinish')();
-        wrapper.update();
-        expect(wrapper.prop('step')).toEqual('colony');
+    describe('gridding', () => {
+        beforeEach(() => {
+            API.SetGrayScaleTransform.and.returnValue({ then: f => f() });
+        });
+
+        it('should call SetGridding with offset 0,0', () => {
+            shallow(<PlateEditorContainer {...props} />);
+            expect(API.SetGridding).toHaveBeenCalledWith(
+                props.cccId, props.imageId, props.plateId, props.pinFormat,
+                [0, 0], props.accessToken
+            );
+        });
+
+        it('should set griddingLoading to true', () => {
+            const wrapper = shallow(<PlateEditorContainer {...props} />);
+            wrapper.update();
+            expect(wrapper.prop('griddingLoading')).toBeTruthy();
+        });
+
+        it('should get a new grid using the offsets when onRegrid is called', () => {
+            const wrapper = shallow(<PlateEditorContainer {...props} />);
+            API.SetGridding.calls.reset();
+            wrapper.setState( { rowOffset: 2, colOffset: 3 });
+            wrapper.prop('onRegrid')();
+            expect(API.SetGridding).toHaveBeenCalledWith(
+                props.cccId, props.imageId, props.plateId,
+                props.pinFormat, [2, 3], props.accessToken,
+            );
+        });
+
+        it('should update rowOffset when onRowOffsetChange is called', () => {
+            const wrapper = shallow(<PlateEditorContainer {...props} />);
+            wrapper.prop('onRowOffsetChange')(4);
+            wrapper.update();
+            expect(wrapper.prop('rowOffset')).toEqual(4);
+        });
+
+        it('should update colOffset when onRowOffsetChange is called', () => {
+            const wrapper = shallow(<PlateEditorContainer {...props} />);
+            wrapper.prop('onColOffsetChange')(5);
+            wrapper.update();
+            expect(wrapper.prop('colOffset')).toEqual(5);
+        });
+
+        describe('on gridding error', () => {
+            const errorData = { reason: 'bad', grid: [[[0]], [[0]]] };
+            beforeEach(() => {
+                API.SetGridding.and.returnValue({ then: (f, g) => g(errorData) });
+            });
+
+            it('should set griddingLoading to false', () => {
+                const wrapper = shallow(<PlateEditorContainer {...props} />);
+                wrapper.update();
+                expect(wrapper.prop('griddingLoading')).toBeFalsy();
+            });
+
+            it('should pass the gridding error', () => {
+                const wrapper = shallow(<PlateEditorContainer {...props} />);
+                wrapper.update();
+                expect(wrapper.prop('griddingError')).toEqual('bad');
+            });
+
+            it('sholud pass the grid to the component', () => {
+                const wrapper = shallow(<PlateEditorContainer {...props} />);
+                expect(wrapper.prop('grid')).toEqual(errorData.grid);
+
+            });
+
+        });
+
+        describe('on gridding success', () => {
+            const grid = [[[0]], [[0]]];
+
+            beforeEach(() => {
+                API.SetGridding.and.returnValue({ then: (f) => f({ grid }) });
+            });
+
+
+            it('should set griddingLoading to false', () => {
+                const wrapper = shallow(<PlateEditorContainer {...props} />);
+                wrapper.update();
+                expect(wrapper.prop('griddingLoading')).toBeFalsy();
+            });
+
+            it('sholud pass the grid to the component', () => {
+                const wrapper = shallow(<PlateEditorContainer {...props} />);
+                expect(wrapper.prop('grid')).toEqual(grid);
+
+            });
+
+            it('should switch to the colony-detection step when onClickNext is called', () => {
+                const wrapper = shallow(<PlateEditorContainer {...props} />);
+                wrapper.prop('onClickNext')();
+                wrapper.update();
+                expect(wrapper.prop('step')).toEqual('colony-detection');
+            });
+        });
     });
 
-    it('should start the colony step with colony at position 0 0', () => {
-        const wrapper = shallow(<PlateEditorContainer {...props} />);
-        wrapper.prop('onGriddingFinish')();
-        wrapper.update();
-        expect(wrapper.prop('selectedColony')).toEqual({ row: 0, col: 0 });
+    describe('colony detection', () => {
+        it('should start the colony step with colony at position 0 0', () => {
+            const wrapper = shallow(<PlateEditorContainer {...props} />);
+            wrapper.setState({ step: 'colony-detection' });
+            wrapper.update();
+            expect(wrapper.prop('selectedColony')).toEqual({ row: 0, col: 0 });
+        });
+
+        it('should move to the next colony when onColonyFinish is called', () => {
+            const wrapper = shallow(<PlateEditorContainer {...props} />);
+            wrapper.setState({ step: 'colony-detection' });
+            wrapper.prop('onColonyFinish')();
+            wrapper.update();
+            expect(wrapper.prop('selectedColony')).toEqual({ row: 0, col: 1 });
+        });
+
+        it('should move to the next row when necessary', () => {
+            const wrapper = shallow(<PlateEditorContainer {...props} />);
+            wrapper.setState({ step: 'colony-detection' });
+            wrapper.prop('onColonyFinish')();
+            wrapper.prop('onColonyFinish')();
+            wrapper.update();
+            expect(wrapper.prop('selectedColony')).toEqual({ row: 1, col: 0 });
+        });
+
+        it('should call the onFinish callback when onClickNext is called', () => {
+            const wrapper = shallow(<PlateEditorContainer {...props} />);
+            wrapper.setState({ step: 'colony-detection' });
+            wrapper.prop('onClickNext')();
+            expect(props.onFinish).toHaveBeenCalled();
+        });
+
+        it('should call the onFinish callback after the last colony', () => {
+            const wrapper = shallow(<PlateEditorContainer {...props} />);
+            wrapper.setState({ step: 'colony-detection' });
+            wrapper.setState({ selectedColony: { row: 2, col: 1 } });
+            wrapper.prop('onColonyFinish')();
+            wrapper.update();
+            expect(props.onFinish).toHaveBeenCalled();
+        });
     });
 
-    it('should move to the next colony when onColonyFinish is called', () => {
-        const wrapper = shallow(<PlateEditorContainer {...props} />);
-        wrapper.prop('onGriddingFinish')();
-        wrapper.prop('onColonyFinish')();
-        wrapper.update();
-        expect(wrapper.prop('selectedColony')).toEqual({ row: 0, col: 1 });
-    });
-
-    it('should move to the next row when necessary', () => {
-        const wrapper = shallow(<PlateEditorContainer {...props} />);
-        wrapper.prop('onGriddingFinish')();
-        wrapper.prop('onColonyFinish')();
-        wrapper.prop('onColonyFinish')();
-        wrapper.update();
-        expect(wrapper.prop('selectedColony')).toEqual({ row: 1, col: 0 });
-    });
-
-    it('should call the onFinish callback after the last colony', () => {
-        const wrapper = shallow(<PlateEditorContainer {...props} />);
-        wrapper.prop('onGriddingFinish')();
-        wrapper.setState({ selectedColony: { row: 2, col: 1 } });
-        wrapper.prop('onColonyFinish')();
-        wrapper.update();
-        expect(props.onFinish).toHaveBeenCalled();
-    });
 });

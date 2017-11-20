@@ -35,7 +35,7 @@ export default class PlateContainer extends React.Component {
 PlateContainer.propTypes = {
     cccId: PropTypes.string.isRequired,
     imageId: PropTypes.string.isRequired,
-    plateId: PropTypes.string.isRequired,
+    plateId: PropTypes.number.isRequired,
     grid: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))),
     selectedColony: PropTypes.shape({ row: PropTypes.number, col: PropTypes.number }),
 };

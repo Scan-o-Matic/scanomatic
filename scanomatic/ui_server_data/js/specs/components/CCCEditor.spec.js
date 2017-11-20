@@ -116,7 +116,7 @@ describe('<CCCEditor />', () => {
 
         it('should pass current plateId to <PlateEditorContainer />', () => {
             const wrapper = shallow(<CCCEditor {...props} />);
-            expect(wrapper.find('PlateEditorContainer').prop('plateId')).toEqual("1");
+            expect(wrapper.find('PlateEditorContainer').prop('plateId')).toEqual(1);
         });
 
         it('should call onFinishPlate when <PlateEditorContainer /> calls onFinish', () => {
