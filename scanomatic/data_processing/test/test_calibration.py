@@ -27,65 +27,6 @@ def ccc():
     calibration.reload_cccs()
 
 
-def test_expand_data_lenghts(ccc):
-    data = calibration._collect_all_included_data(ccc)
-    counts = data.source_value_counts
-    exp_vals, _, _, _ = calibration._get_expanded_data(data)
-    assert all(np.sum(c) == len(v) for c, v in zip(counts, exp_vals))
-
-
-def test_expand_data_sums(ccc):
-
-    data = calibration._collect_all_included_data(ccc)
-    counts = data.source_value_counts
-    values = data.source_values
-    data_sums = np.array(
-        tuple(np.sum(np.array(c) * np.array(v))
-              for c, v in zip(counts, values)))
-
-    exp_vals, _, _, _ = calibration._get_expanded_data(data)
-    expanded_sums = np.array(tuple(v.sum() for v in exp_vals), dtype=np.float)
-    np.testing.assert_allclose(expanded_sums, data_sums)
-
-
-def test_expand_data_targets(ccc):
-
-    data = calibration._collect_all_included_data(ccc)
-    _, targets, _, _ = calibration._get_expanded_data(data)
-    np.testing.assert_allclose(
-        targets.astype(np.float),
-        data.target_value)
-
-
-def test_expand_vector_length():
-
-    counts = [20, 3, 5, 77, 2, 35]
-    values = [20, 21, 23, 24, 26, 27]
-    expanded = calibration._expand_compressed_vector(values, counts, np.float)
-    assert sum(counts) == expanded.size
-
-
-def test_expanded_vector_sum():
-    counts = [20, 3, 5, 77, 2, 35]
-    values = [20, 21, 23, 24, 26, 27]
-    data_sum = np.sum(np.array(counts) * np.array(values))
-    expanded = calibration._expand_compressed_vector(values, counts, np.float)
-    np.testing.assert_allclose(expanded.sum(), data_sum)
-
-
-def test_calibration_opt_func():
-
-    poly = calibration.get_calibration_optimization_function(2)
-    assert poly([2], 1, 1)[0] == 6
-    assert poly([2], 2, 0)[0] == 4
-    assert poly([2], 0, 2)[0] == 8
-    poly = calibration.get_calibration_optimization_function(4)
-    assert poly([1], 1, 1)[0] == 2
-    assert poly([1], 2, 0)[0] == 2
-    assert poly([1], 0, 2)[0] == 2
-    assert poly([2], 0, 1)[0] == 16
-
-
 def test_get_im_slice():
     """Test that _get_im_slice handles floats"""
     image = np.arange(0, 42).reshape((6, 7))
@@ -674,3 +615,66 @@ class TestSetColonyCompressedData:
 
     def test_cell_count(self, measurement):
         assert measurement[calibration.CCCMeasurement.cell_count] == 1234
+
+
+class TestConstructPolynomial:
+
+    @pytest.mark.parametrize("data_store", (
+        calibration.CalibrationData([], [], []),
+        calibration.CalibrationData([1], [[1]], [[1]]),
+        calibration.CalibrationData([1], [[1]], [[6]]),
+        calibration.CalibrationData([1], [[1, 4]], [[6, 2]])
+    ))
+    def test_too_little_data_raises(self, data_store):
+
+        with pytest.raises(calibration.CCCConstructionError):
+            calibration.calculate_polynomial(data_store, 5).tolist()
+
+    def test_calibration_curve_fit_polynomial_function(self):
+
+        poly = calibration.get_calibration_optimization_function(2)
+        assert poly(calibration.CalibrationData(
+            [[2], [3]], [[1], [1]], []), 1, 1) == (6, 12)
+        assert poly(calibration.CalibrationData(
+            [[2], [2]], [[1], [2]], []), 2, 0) == (4, 8)
+        assert poly(calibration.CalibrationData(
+            [[2], [1]], [[1], [1]], []), 0, 2) == (8, 2)
+
+        poly = calibration.get_calibration_optimization_function(4)
+        assert poly(calibration.CalibrationData(
+            [[1]], [[1]], []), 1, 1) == (2,)
+        assert poly(calibration.CalibrationData(
+            [[1]], [[1]], []), 2, 0) == (2,)
+        assert poly(calibration.CalibrationData(
+            [[1]], [[1]], []), 0, 2) == (2,)
+        assert poly(calibration.CalibrationData(
+            [[2]], [[1]], []), 0, 1) == (16,)
+
+    @pytest.mark.parametrize('x, coeffs', (
+        (5, [1, 1, 0]),
+        (6, [42, 0, 0, 7, 0]),
+    ))
+    def test_calibration_functions_give_equal_results(self, x, coeffs):
+
+        poly_fitter = calibration.get_calibration_optimization_function(
+            len(coeffs) - 1)
+        poly = calibration.get_calibration_polynomial(coeffs)
+
+        assert poly(x) == pytest.approx(
+            poly_fitter(
+                calibration.CalibrationData([x], [1], [0]),
+                coeffs[-2], coeffs[0])[0])
+
+    def test_calculate_polynomial(self):
+        data_store = calibration.CalibrationData(
+            source_values=[[1, 4, 5], [1, 4, 6, 7]],
+            source_value_counts=[[2, 1, 1], [1, 3, 1, 2]],
+            target_value=np.array([151, 615]),
+        )
+        coeffs = calibration.calculate_polynomial(
+            data_store,
+            degree=2
+        )
+        print coeffs
+        assert coeffs[0] == pytest.approx(3)
+        assert coeffs[-2] == pytest.approx(2)

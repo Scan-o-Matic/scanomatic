@@ -3,6 +3,8 @@ import React from 'react';
 
 import PlateEditorContainer from '../containers/PlateEditorContainer';
 import ImageUploadContainer from '../containers/ImageUploadContainer';
+import PolynomialConstructionContainer from
+    '../containers/PolynomialConstructionContainer';
 import PlateList from './PlateList';
 
 export default function CCCEditor(props) {
@@ -35,6 +37,10 @@ export default function CCCEditor(props) {
         <div>
             <PlateList plates={props.images} />
             {view}
+            <PolynomialConstructionContainer
+                cccId={props.cccId}
+                accessToken={props.accessToken}
+            />
         </div>
     );
 }

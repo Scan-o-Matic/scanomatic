@@ -1,12 +1,9 @@
-//var baseUrl = "http://localhost:5000";
-var baseUrl = "";
-var GetSliceImagePath = baseUrl + "/api/calibration/#0#/image/#1#/slice/get/#2#";
-var InitiateCCCPath = baseUrl + "/api/calibration/initiate_new";
-var GetFixtruesPath = baseUrl + "/api/data/fixture/names";
-var GetFixtruesDataPath = baseUrl + "/api/data/fixture/get/";
-var GetPinningFormatsPath = baseUrl + "/api/analysis/pinning/formats";
-var GetTranposedMarkerPath = baseUrl + "/api/data/fixture/calculate/";
-var GetGrayScaleAnalysisPath = baseUrl + "/api/data/grayscale/image/";
+const GetSliceImagePath = "/api/calibration/#0#/image/#1#/slice/get/#2#";
+const InitiateCCCPath = "/api/calibration/initiate_new";
+const GetFixtruesPath = "/api/data/fixture/names";
+const GetPinningFormatsPath = "/api/analysis/pinning/formats";
+const GetTranposedMarkerPath = "/api/data/fixture/calculate/";
+const GetGrayScaleAnalysisPath = "/api/data/grayscale/image/";
 
 
 class API {
@@ -30,6 +27,20 @@ class API {
             success: resolve,
             error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
         }));
+    }
+
+    static postJSON(url, json) {
+
+        return new Promise(
+            (resolve, reject) => $.ajax({
+                url,
+                type: 'POST',
+                data: JSON.stringify(json),
+                contentType: 'application/json',
+            })
+            .then(
+                resolve,
+                jqXHR => reject(JSON.parse(jqXHR.responseText).reason)));
     }
 }
 
@@ -262,4 +273,11 @@ export function GetTransposedMarkers(fixtureName, markers, successCallback, erro
         success: successCallback,
         error: errorCallback
     });
+}
+
+export function SetNewCalibrationPolynomial(cccId, power, accessToken) {
+    return API.postJSON(
+        `/api/calibration/${cccId}/construct/${power}`,
+        {access_token: accessToken},
+    );
 }
