@@ -649,7 +649,7 @@ def calculate_polynomial(data_store, degree=5):
     poly_vals[0] = cn
 
     _logger.info(
-        "Produced polynomial {} with 1 sigma per term (x^1, x^{})".format(
+        "Produced polynomial {} (x^1, x^{})".format(
             poly_as_text(poly_vals), degree)
     )
     return poly_vals
