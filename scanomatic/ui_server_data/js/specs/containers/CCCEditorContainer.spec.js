@@ -3,7 +3,22 @@ import { shallow } from 'enzyme';
 
 import '../components/enzyme-setup';
 import CCCEditorContainer from '../../ccc/containers/CCCEditorContainer';
+import * as API from '../../ccc/api';
 
+class FakePromise {
+    then(success) {
+        if ('value' in this) {
+            success(this.value);
+        }
+        return this;
+    }
+
+    static resolve(value) {
+        const fake = new FakePromise();
+        fake.value = value;
+        return fake;
+    }
+}
 
 describe('<CCCEditorContainer />', () => {
     const props = {
@@ -17,6 +32,10 @@ describe('<CCCEditorContainer />', () => {
         name: 'new-image.tiff',
         id: 'NewImg0',
     };
+
+    beforeEach(() => {
+        spyOn(API, 'GetFixturePlates').and.returnValue(new FakePromise());
+    });
 
     it('should render a <CCCEditor />', () => {
         const wrapper = shallow(<CCCEditorContainer {...props} />);
@@ -43,34 +62,94 @@ describe('<CCCEditorContainer />', () => {
         expect(wrapper.find('CCCEditor').prop('fixtureName')).toEqual(props.fixtureName);
     });
 
-    it('should pass an empty image list to <CCCEditor />', () => {
+    it('should pass an empty plate list to <CCCEditor />', () => {
         const wrapper = shallow(<CCCEditorContainer {...props} />);
-        expect(wrapper.find('CCCEditor').prop('images')).toEqual([]);
+        expect(wrapper.find('CCCEditor').prop('plates')).toEqual([]);
+    });
+
+    it('should initialy pass ready=false to <CCCEditor />', () => {
+        const wrapper = shallow(<CCCEditorContainer {...props} />);
+        expect(wrapper.find('CCCEditor').prop('ready')).toBeFalsy();
+    });
+
+    it('should load the number of plates from the API', () => {
+        shallow(<CCCEditorContainer {...props} />);
+        expect(API.GetFixturePlates).toHaveBeenCalledWith('MyFixture');
+    });
+
+    it('should pass ready=true to <CCCEditor /> when GetFixturePlates resolves', () => {
+        API.GetFixturePlates.and.returnValue(FakePromise.resolve([{}, {}, {}]));
+        const wrapper = shallow(<CCCEditorContainer {...props} />);
+        wrapper.update();
+        expect(wrapper.find('CCCEditor').prop('ready')).toBeTruthy();
     });
 
     describe('when CCCEditor calls onFinishUpload', () => {
-        it('should add the new image to the list', () => {
-            const wrapper = shallow(<CCCEditorContainer {...props} />);
-            wrapper.find('CCCEditor').prop('onFinishUpload')(image);
-            wrapper.update();
-            expect(wrapper.find('CCCEditor').prop('images')).toEqual([image]);
+        const oldPlate = {imageId: 'OldImg0', imageName: 'foo.tiff', plateId: 1 };
+
+        beforeEach(() => {
+            API.GetFixturePlates.and.returnValue(FakePromise.resolve([{}, {}, {}]));
         });
 
-        it('should set the current image', () => {
+        it('should add new plates to the list', () => {
             const wrapper = shallow(<CCCEditorContainer {...props} />);
+            wrapper.setState({ plates: [oldPlate] });
             wrapper.find('CCCEditor').prop('onFinishUpload')(image);
             wrapper.update();
-            expect(wrapper.find('CCCEditor').prop('currentImage')).toEqual(0);
+            expect(wrapper.find('CCCEditor').prop('plates')).toEqual([
+                oldPlate,
+                {imageId: image.id, imageName: image.name, plateId: 1},
+                {imageId: image.id, imageName: image.name, plateId: 2},
+                {imageId: image.id, imageName: image.name, plateId: 3},
+            ]);
+        });
+
+        it('should set the current plate if null', () => {
+            const wrapper = shallow(<CCCEditorContainer {...props} />);
+            wrapper.setState({ plates: [oldPlate], currentPlate: null });
+            wrapper.find('CCCEditor').prop('onFinishUpload')(image);
+            wrapper.update();
+            expect(wrapper.find('CCCEditor').prop('currentPlate')).toEqual(1);
+        });
+
+        it('should not change the current plate if set', () => {
+            const wrapper = shallow(<CCCEditorContainer {...props} />);
+            wrapper.setState({ plates: [oldPlate], currentPlate: 0 });
+            wrapper.find('CCCEditor').prop('onFinishUpload')(image);
+            wrapper.update();
+            expect(wrapper.find('CCCEditor').prop('currentPlate')).toEqual(0);
         });
     });
 
-    describe('when <CCCEditor /> calls onFinishImage', () => {
-        it('should clear the current image', () => {
+    describe('when <CCCEditor /> calls onFinishPlate', () => {
+        it('should move to the next plate if any', () => {
             const wrapper = shallow(<CCCEditorContainer {...props} />);
-            wrapper.setState({ currentImage: 123 });
-            wrapper.find('CCCEditor').prop('onFinishImage')();
+            wrapper.setState({
+                currentPlate: 1,
+                plates: [
+                    {imageId: image.id, imageName: image.name, plateId: 1},
+                    {imageId: image.id, imageName: image.name, plateId: 2},
+                    {imageId: image.id, imageName: image.name, plateId: 3},
+                ],
+            });
+            wrapper.find('CCCEditor').prop('onFinishPlate')();
             wrapper.update();
-            expect(wrapper.find('CCCEditor').prop('currentImage')).toBe(null);
+            expect(wrapper.find('CCCEditor').prop('currentPlate')).toEqual(2);
+        });
+
+        it('should clear the current plate if last', () => {
+            const wrapper = shallow(<CCCEditorContainer {...props} />);
+            wrapper.setState({
+                currentPlate: 2,
+                plates: [
+                    {imageId: image.id, imageName: image.name, plateId: 1},
+                    {imageId: image.id, imageName: image.name, plateId: 2},
+                    {imageId: image.id, imageName: image.name, plateId: 3},
+                ],
+            });
+            wrapper.find('CCCEditor').prop('onFinishPlate')();
+            wrapper.update();
+            expect(wrapper.find('CCCEditor').prop('currentPlate')).toEqual(null);
         });
     });
 });

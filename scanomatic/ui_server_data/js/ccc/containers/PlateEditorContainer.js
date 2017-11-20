@@ -118,6 +118,7 @@ export default class PlateEditorContainer extends React.Component {
 PlateEditorContainer.propTypes = {
     accessToken: PropTypes.string.isRequired,
     cccId: PropTypes.string.isRequired,
+    collapse: PropTypes.bool,
     imageId: PropTypes.string.isRequired,
     imageName: PropTypes.string.isRequired,
     onFinish: PropTypes.func,
