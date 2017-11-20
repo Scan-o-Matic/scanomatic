@@ -1,4 +1,3 @@
-from string import letters
 from itertools import product
 from types import StringTypes
 import re
@@ -22,8 +21,6 @@ from .general import (
     serve_numpy_as_image, get_grayscale_is_valid, valid_array_dimensions,
     json_abort
 )
-
-_VALID_CHARACTERS = letters + "-._1234567890"
 
 
 def get_bounding_box_for_colony(grid, x, y, width, height):
@@ -65,6 +62,7 @@ def get_active_calibrations():
 
     return jsonify(cccs=cccs)
 
+
 @blueprint.route("/under_construction", methods=['GET'])
 def get_under_construction_calibrations():
 
@@ -85,6 +83,7 @@ def get_under_construction_calibrations():
             400,
             reason="No CCCs are under constructions"
         )
+
 
 @blueprint.route("/initiate_new", methods=['POST'])
 def initiate_new_ccc():
@@ -117,6 +116,7 @@ def initiate_new_ccc():
             calibration.CellCountCalibration.edit_access_token]
     )
 
+
 @blueprint.route("/<ccc_identifier>/add_image", methods=['POST'])
 def upload_ccc_image(ccc_identifier):
 
@@ -143,6 +143,7 @@ def upload_ccc_image(ccc_identifier):
 
     return jsonify(image_identifier=image_identifier)
 
+
 @blueprint.route("/<ccc_identifier>/image_list", methods=['GET'])
 def list_ccc_images(ccc_identifier):
 
@@ -155,6 +156,7 @@ def list_ccc_images(ccc_identifier):
 
     return jsonify(image_identifiers=image_list)
 
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/get",
     methods=['GET'])
@@ -163,6 +165,7 @@ def download_ccc_image(ccc_identifier, image_identifier):
     im_path = Paths().ccc_image_pattern.format(
         ccc_identifier, image_identifier)
     return send_file(im_path, mimetype='Image/Tiff')
+
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/data/set",
@@ -251,6 +254,7 @@ def get_ccc_image_data(ccc_identifier, image_identifier):
             if k is not calibration.CCCImage.plates
     })
 
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/slice/set",
     methods=['POST'])
@@ -283,6 +287,7 @@ def slice_ccc_image(ccc_identifier, image_identifier):
 
     return jsonify()
 
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/slice/get/<slice>",
     methods=['GET'])
@@ -307,6 +312,7 @@ def get_ccc_image_slice(ccc_identifier, image_identifier, slice):
             reason="No such image slice exists, has it been sliced?"
         )
     return serve_numpy_as_image(image)
+
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/grayscale/analyse",
@@ -361,6 +367,7 @@ def analyse_ccc_image_grayscale(ccc_identifier, image_identifier):
             "access token"
         )
 
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/transform",
     methods=['POST'])
@@ -384,6 +391,7 @@ def transform_ccc_image_plate(ccc_identifier, image_identifier, plate):
         )
 
     return jsonify()
+
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/plate/<int:plate>/grid/set",
@@ -490,6 +498,7 @@ def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
         xy2=xy2
     )
 
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>" +
     "/plate/<int:plate>/detect/colony/<int:x>/<int:y>", methods=["POST"])
@@ -574,6 +583,7 @@ def detect_colony(ccc_identifier, image_identifier, plate, x, y):
         background_reasonable=int(background_reasonable),
         grid_position=box['center'],
     )
+
 
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>/" +
@@ -693,45 +703,6 @@ def compress_calibration(ccc_identifier, image_identifier, plate, x, y):
             reason="Probably invalid access token"
         )
 
-@blueprint.route('/<ccc_identifier>/external_data/upload', methods=['POST'])
-def upload_external_data(ccc_identifier):
-
-    data_object = request.get_json(silent=True, force=True)
-    if not data_object:
-        data_object = request.values
-
-    population_size_data = request.files.get(
-        'population_size_data', default=None)
-
-    if population_size_data is None:
-        return json_abort(
-            400,
-            reason="Didn't get any data"
-        )
-
-    if not calibration.is_valid_edit_request(
-            ccc_identifier,
-            access_token=data_object.get("access_token")):
-
-        return json_abort(
-            401,
-            reason="Invalid access token or CCC not under construction"
-        )
-
-    report = {}
-    if calibration.add_external_data_to_ccc(
-            ccc_identifier,
-            population_size_data,
-            access_token=data_object.get("access_token"),
-            report=report):
-
-        return jsonify(report=report)
-
-    else:
-
-        return json_abort(
-            400,
-            report=report)
 
 @blueprint.route('/<ccc_identifier>/delete', methods=['POST'])
 def delete_non_deployed_calibration(ccc_identifier):
@@ -761,11 +732,9 @@ def delete_non_deployed_calibration(ccc_identifier):
             reason='Unexpected error removing CCC'
         )
 
-@blueprint.route('/<ccc_identifier>/construct/<poly_name>',
-           defaults={'power': 5}, methods=['POST'])
-@blueprint.route('/<ccc_identifier>/construct/<poly_name>/<int:power>',
-               methods=['POST'])
-def construct_calibration(ccc_identifier, poly_name, power):
+
+@blueprint.route('/<ccc_identifier>/construct/<int:power>', methods=['POST'])
+def construct_calibration(ccc_identifier, power):
 
     data_object = request.get_json(silent=True, force=True)
     if not data_object:
@@ -780,28 +749,20 @@ def construct_calibration(ccc_identifier, poly_name, power):
             reason="Invalid access token or CCC not under construction"
         )
 
-    poly_name = re.sub(r'[ .,]]', '_', poly_name)
-    checked_name = "".join(c for c in poly_name if c in _VALID_CHARACTERS)
-
-    if poly_name != checked_name:
-        return json_abort(
-            400,
-            reason="Name is containing invalid characters"
-        )
-
     response = calibration.construct_polynomial(
         ccc_identifier,
-        poly_name,
         power,
         access_token=data_object.get("access_token")
     )
 
-    if response["validation"] is calibration.CalibrationValidation.OK:
-        return jsonify(**response)
+    if response["validation"] == "OK":
+        return jsonify(
+            **response
+        )
     elif response is False:
         return json_abort(
             400,
-            reason="Failed to save ccc")
+            reason="Failed to save ccc.")
 
     return json_abort(
         400,
@@ -809,6 +770,7 @@ def construct_calibration(ccc_identifier, poly_name, power):
         "Validation of polynomial says: {}".format(
             response["validation"].name
         ))
+
 
 @blueprint.route('/<ccc_identifier>/finalize', methods=['POST'])
 def finalize_calibration(ccc_identifier):

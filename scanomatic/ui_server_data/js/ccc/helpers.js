@@ -1,6 +1,26 @@
 import * as API from './api';
 
 
+export class RGBColor {
+    constructor(r, g, b) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+    }
+
+    toCSSString() {
+        return `rgb(${this.r}, ${this.g}, ${this.b})`;
+    }
+}
+
+
+export const featureColors = {
+    blob: new RGBColor(253, 231, 35),
+    background: new RGBColor(32, 144, 140),
+    neither: new RGBColor(68, 1, 84),
+};
+
+
 export function getDataUrlfromUrl(src, callback) {
     var img = new Image();
     img.crossOrigin = 'Anonymous';
@@ -73,11 +93,11 @@ export function createCanvasMarker(data, canvas) {
         }
         var rgb;
         if (data.blob[imageRow][imageCol] === true) {
-            rgb = { r: 255, g: 0, b: 0 }
+            rgb = featureColors.blob;
         } else if (data.background[imageRow][imageCol] === true) {
-            rgb = { r: 0, g: 128, b: 0 }
+            rgb = featureColors.background;
         } else {
-            rgb = { r: 0, g: 0, b: 0 };
+            rgb = featureColors.neither;
         }
 
         imgdata.data[i + 0] = rgb.r;    // RED (0-255)

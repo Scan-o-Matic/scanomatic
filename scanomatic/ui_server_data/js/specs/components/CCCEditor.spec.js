@@ -22,6 +22,24 @@ describe('<CCCEditor />', () => {
         onFinishUpload,
     };
 
+    it('should render an <PolynomialConstructionContainer/>', () => {
+        const wrapper = shallow(<CCCEditor {...props} />);
+        expect(wrapper.find('PolynomialConstructionContainer').exists())
+            .toBeTruthy();
+    });
+
+    it('should pass cccId to <PolynomialConstructionContainer />', () => {
+        const wrapper = shallow(<CCCEditor {...props} />);
+        expect(wrapper.find('PolynomialConstructionContainer').prop('cccId'))
+            .toEqual(props.cccId);
+    });
+
+    it('should pass accessToken to <PolynomialConstructionContainer />', () => {
+        const wrapper = shallow(<CCCEditor {...props} />);
+        expect(wrapper.find('PolynomialConstructionContainer')
+            .prop('accessToken')).toEqual(props.accessToken);
+    });
+
     describe('when currentImage is null', () => {
         it('should render an <ImageUploadContainer />', () => {
             const wrapper = shallow(<CCCEditor {...props} />);

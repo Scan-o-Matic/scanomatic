@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import { createCanvasMarker } from '../helpers';
+import { createCanvasMarker, featureColors } from '../helpers';
 
 export default class ColonyFeatures extends React.Component {
     componentDidMount() {
@@ -18,9 +18,9 @@ export default class ColonyFeatures extends React.Component {
 
     render() {
         const legend = [
-            { color: "red", text: "Blob" },
-            { color: "#7FFFD4", text: "Background" },
-            { color: "black", text: "Neither" },
+            { color: featureColors.blob.toCSSString(), text: "Blob" },
+            { color: featureColors.background.toCSSString(), text: "Background" },
+            { color: featureColors.neither.toCSSString(), text: "Neither" },
         ];
 
         const style = {
@@ -32,7 +32,7 @@ export default class ColonyFeatures extends React.Component {
 
         return (
             <div style={style} >
-                <canvas ref={canvas => this.canvas = canvas} />;
+                <canvas ref={canvas => this.canvas = canvas} />
                 <ul className="colonyPlot" style={ { color: 'black' } }>
                     {legend.map( ({ color, text }) => {
                         const style = { backgroundColor: color };

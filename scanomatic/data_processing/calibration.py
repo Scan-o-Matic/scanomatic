@@ -1,7 +1,7 @@
 import numpy as np
 from enum import Enum
 from itertools import izip
-from scipy.optimize import curve_fit
+from scipy.optimize import leastsq
 from scipy.stats import linregress
 import re
 from uuid import uuid1
@@ -27,14 +27,18 @@ _logger = Logger("CCC")
 
 CalibrationData = namedtuple(
     "CalibrationData", [
-        'target_value',
         'source_values',
-        'source_value_counts'
+        'source_value_counts',
+        'target_value',
     ]
 )
 
 
 class ActivationError(Exception):
+    pass
+
+
+class CCCConstructionError(Exception):
     pass
 
 
@@ -45,6 +49,7 @@ class CalibrationValidation(Enum):
     """:type : CalibrationValidation"""
     BadStatistics = 3
     """:type : CalibrationValidation"""
+    BadData = 4
 
 
 def _ccc_edit_validator(identifier, **kwargs):
@@ -66,14 +71,18 @@ def _ccc_edit_validator(identifier, **kwargs):
             else:
 
                 _logger.error(
-                    "Can not modify the CCC {0} because it is not under construction".format(
+                    "Can not modify {0} since not under construction".format(
                         identifier)
                 )
 
         else:
 
             _logger.error(
-                "You don't have the correct access token for {0}, request refused".format(identifier)
+                "Bad access token for {}, request refused using {}"
+                .format(
+                    identifier,
+                    kwargs.get('access_token', '++NO TOKEN SUPPLIED++'),
+                )
             )
     else:
 
@@ -525,11 +534,25 @@ def set_colony_compressed_data(
     return save_ccc_to_disk(ccc)
 
 
+def calculate_sizes(data, poly):
+    """Get summed population size using a CCC.
+
+    Use pixel darkening -> Cell Count Per pixel (CCC polynomial)
+    Then multiply by number of such pixels in colony
+    Then Sum cell counts per colony
+    """
+    return [
+        (poly(values) * counts).sum()
+        for values, counts in
+        zip(data.source_values, data.source_value_counts)
+    ]
+
+
 def validate_polynomial(data, poly):
 
-    expanded, targets, _, _ = _get_expanded_data(data)
-    expanded_sums = np.array(tuple(v.sum() for v in poly(expanded)))
-    slope, intercept, _, p_value, stderr = linregress(expanded_sums, targets)
+    calculated = calculate_sizes(data, poly)
+    slope, intercept, _, p_value, stderr = linregress(
+        calculated, data.target_value)
 
     if abs(1.0 - slope) > 0.005:
         _logger.error("Bad slope for polynomial: {0}".format(slope))
@@ -558,69 +581,36 @@ def _collect_all_included_data(ccc):
                 target_value.append(colony_data[CCCMeasurement.cell_count])
 
     return CalibrationData(
-        target_value=target_value,
         source_values=source_values,
-        source_value_counts=source_value_counts)
+        source_value_counts=source_value_counts,
+        target_value=np.array(target_value),
+    )
 
 
-def get_calibration_optimization_function(degree=5, include_intercept=False):
+def get_calibration_optimization_function(degree=5):
 
     arr = np.zeros((degree + 1,), np.float)
 
-    def poly(x, c1, cn):
+    def poly(data_store, c1, cn):
         arr[-2] = c1
         arr[0] = cn
-        return tuple(v.sum() for v in np.polyval(arr, x))
+        return tuple(
+            (np.polyval(arr, values) * counts).sum()
+            for values, counts in
+            zip(data_store.source_values, data_store.source_value_counts))
 
-    def poly_with_intercept(x, m, c1, cn):
-        arr[-1] = m
-        arr[-2] = c1
-        arr[0] = cn
-        return tuple(v.sum() for v in np.polyval(arr, x))
+    return poly
 
-    return poly_with_intercept if include_intercept else poly
+
+def get_calibration_polynomial_residuals(
+        guess, colony_sum_function, data_store):
+
+    return data_store.target_value - colony_sum_function(data_store, *guess)
 
 
 def get_calibration_polynomial(coefficients_array):
 
     return np.poly1d(coefficients_array)
-
-
-def _get_expanded_data(data_store):
-
-    measures = min(len(getattr(data_store, k)) for k in
-                   ('target_value', 'source_values', 'source_value_counts'))
-
-    x = np.empty((measures,), dtype=object)
-    y = np.zeros((measures,), dtype=np.float64)
-    x_min = None
-    x_max = None
-
-    values = data_store.source_values
-    counts = data_store.source_value_counts
-    targets = data_store.target_value
-
-    for pos in range(measures):
-
-        x[pos] = _expand_compressed_vector(
-            values[pos], counts[pos], dtype=np.float64)
-        y[pos] = targets[pos]
-
-        if x_min is None or x_min > x[pos].min():
-
-            x_min = x[pos].min()
-
-        if x_max is None or x_max < x[pos].max():
-
-            x_max = x[pos].max()
-
-    return x, y, x_min, x_max
-
-
-def _expand_compressed_vector(values, counts, dtype):
-
-    return np.hstack((np.repeat(value, count)
-                      for value, count in izip(values, counts))).astype(dtype)
 
 
 def poly_as_text(poly):
@@ -634,9 +624,10 @@ def poly_as_text(poly):
 
 def calculate_polynomial(data_store, degree=5):
 
-    x, y, _, _ = _get_expanded_data(data_store)
-    poly = get_calibration_optimization_function(degree)
+    n_colonies = len(data_store.target_value)
+    fit_function = get_calibration_optimization_function(degree)
 
+    x = np.empty(n_colonies,)
     p0 = np.zeros((2,), np.float)
     if degree == 5:
         # This is a known solution for a specific set of Sc data
@@ -644,17 +635,23 @@ def calculate_polynomial(data_store, degree=5):
         p0[0] = 48.99061427688507
         p0[1] = 3.379796310880545e-05
 
-    (c1, cn), pcov = curve_fit(poly, x, y, p0=p0, bounds=[0, np.inf])
+    try:
+        (c1, cn), _ = leastsq(
+            get_calibration_polynomial_residuals,
+            p0,
+            args=(fit_function, data_store)
+        )
+    except TypeError:
+        raise CCCConstructionError("Invalid data (probably too little)")
 
     poly_vals = np.zeros((degree + 1))
     poly_vals[-2] = c1
     poly_vals[0] = cn
 
     _logger.info(
-        "Data produced polynomial {0} with 1 sigma per term (x^1, x^{2}) {1}".format(
-            poly_as_text(poly_vals), np.sqrt(np.diag(pcov)), degree)
+        "Produced polynomial {} (x^1, x^{})".format(
+            poly_as_text(poly_vals), degree)
     )
-
     return poly_vals
 
 
@@ -678,7 +675,12 @@ def construct_polynomial(identifier, power):
 
     ccc = __CCC[identifier]
     data_store = _collect_all_included_data(ccc)
-    poly_coeffs = calculate_polynomial(data_store, power).tolist()
+    try:
+        poly_coeffs = calculate_polynomial(data_store, power).tolist()
+    except CCCConstructionError:
+        return {
+            'validation': CalibrationValidation.BadData
+        }
     poly = get_calibration_polynomial(poly_coeffs)
 
     validation = validate_polynomial(data_store, poly)
@@ -694,23 +696,15 @@ def construct_polynomial(identifier, power):
     if not save_ccc_to_disk(ccc):
         return False
 
-    # Darkening -> Cell Count Per pixel
-    # Then multiply by number of such pixels in colony
-    # Then Sum cell counts per colony
-    calc_sizes = [
-        (poly(intensities) * counts).sum()
-        for intensities, counts in
-        zip(
-            data_store.source_values,
-            data_store.source_value_counts)]
+    calculated_sizes = calculate_sizes(data_store, poly)
 
     return {
         'ccc': identifier,
         'polynomial_coefficients': poly_coeffs,
-        'polynomial_degree': power,
-        'measured_sizes': data_store.target_value,
-        'calculated_sizes': calc_sizes,
-        'validation': validation,
+        'polynomial_power': power,
+        'measured_sizes': data_store.target_value.tolist(),
+        'calculated_sizes': calculated_sizes,
+        'validation': validation.name,
     }
 
 

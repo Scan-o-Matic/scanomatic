@@ -190,11 +190,15 @@ class TestFinalizeEndpoint:
             calibration.CellCountCalibration.identifier]
         token = 'password'
 
-        response = test_app.post(
-            self.route.format(identifier=identifier),
-            data={"access_token": token},
-            follow_redirects=True
-        )
+        with mock.patch(
+                'scanomatic.data_processing.calibration.save_ccc') as save_ccc:
+            response = test_app.post(
+                self.route.format(identifier=identifier),
+                data={"access_token": token},
+                follow_redirects=True
+            )
+            save_ccc.assert_called()
+
         assert (
             response.status_code == 200
         ), "POST gave unexpected response {} (expected 200)".format(
@@ -306,11 +310,14 @@ class TestDeleteEndpoint:
             calibration.CellCountCalibration.identifier]
         token = 'password'
 
-        response = test_app.post(
-            self.route.format(identifier=identifier),
-            data={"access_token": token},
-            follow_redirects=True
-        )
+        with mock.patch(
+                'scanomatic.data_processing.calibration.save_ccc') as save_ccc:
+            response = test_app.post(
+                self.route.format(identifier=identifier),
+                data={"access_token": token},
+                follow_redirects=True
+            )
+            save_ccc.assert_called()
         assert (
             response.status_code == 200
         ), "POST gave unexpected response {} (expected 200)".format(
@@ -429,3 +436,48 @@ class TestCompressCalibration:
             == 'cell_count should be greater or equal than zero'
         )
         set_colony_compressed_data.assert_not_called()
+
+
+class TestConstructCalibration:
+
+    url = '/{ccc}/construct/{power}'
+
+    @pytest.mark.parametrize(
+        'ccc_identifier,power,access_token,expected_status',
+        (
+            ('XXX', 5, 'heelo', 401),  # Unknown ccc
+            ('testgoodedit', 5, 'heelo', 401),  # Bad access_token
+            ('testgoodedit', -1,  'password', 404),  # Bad power
+        )
+    )
+    def test_fails_with_bad_parameters(
+        self, test_app, ccc_identifier, power, access_token, expected_status,
+        finalizable_ccc
+    ):
+        # finalizable_ccc is needed for enpoint to have that ccc loaded
+        response = test_app.post(
+            self.url.format(ccc=ccc_identifier, power=power),
+            data=json.dumps({'acccess_token': access_token}))
+        assert response.status_code == expected_status
+
+    def test_returns_a_polynomial(self, test_app, finalizable_ccc):
+        with mock.patch(
+                'scanomatic.data_processing.calibration.save_ccc') as save_ccc:
+            ccc_identifier = 'testgoodedit'
+            power = 5
+            access_token = 'password'
+            response = test_app.post(
+                self.url.format(ccc=ccc_identifier, power=power),
+                data=json.dumps({'access_token': access_token}))
+
+            assert response.status_code == 200
+            save_ccc.assert_called()
+
+            data = json.loads(response.data)
+            assert data['polynomial_power'] == power
+            assert data['ccc'] == ccc_identifier
+            assert len(data['polynomial_coefficients']) == power + 1
+            assert data['validation'] == 'OK'
+            assert (
+                len(data['measured_sizes']) == len(data['calculated_sizes'])
+            )

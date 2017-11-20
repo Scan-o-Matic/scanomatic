@@ -3,6 +3,9 @@ import React from 'react';
 
 import PlateEditorContainer from '../containers/PlateEditorContainer';
 import ImageUploadContainer from '../containers/ImageUploadContainer';
+import PolynomialConstructionContainer from
+    '../containers/PolynomialConstructionContainer';
+
 
 export default function CCCEditor(props) {
     return (
@@ -22,6 +25,10 @@ export default function CCCEditor(props) {
                 token={props.accessToken}
                 fixture={props.fixtureName}
                 onFinish={props.onFinishUpload}
+            />
+            <PolynomialConstructionContainer
+                cccId={props.cccId}
+                accessToken={props.accessToken}
             />
         </div>
     );

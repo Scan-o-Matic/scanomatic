@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import PlateContainer from '../containers/PlateContainer';
 
 export default class Gridding extends React.Component {
     constructor(props) {
@@ -19,90 +18,66 @@ export default class Gridding extends React.Component {
     }
 
     render() {
-        const success = this.props.status === 'success';
-        const loading = this.props.status === 'loading';
         return (
             <div>
-                <div className="row">
-                    <div className="col-md-12">
-                        <div>
-                            <div className="alert">{this.props.alert}</div>
-                            <div>
-                                <PlateContainer
-                                    accessToken={this.props.accessToken}
-                                    cccId={this.props.cccId}
-                                    imageId={this.props.imageId}
-                                    plateId={this.props.plateId}
-                                    grid={this.props.grid}
-                                    selectedColony={this.props.selectedColony}
-                                />
-                            </div>
-                            <div>
-                                <label>Input an offset and try again</label>
-                                    <table>
-                                        <tbody>
-                                        <tr>
-                                            <td>Rows:</td>
-                                            <td>
-                                                <input
-                                                    className='row-offset'
-                                                    type="number"
-                                                    value={this.props.rowOffset}
-                                                    onChange={this.handleRowOffsetChange}
-                                                />
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Cols</td>
-                                            <td>
-                                                <input
-                                                    className='col-offset'
-                                                    type="number"
-                                                    value={this.props.colOffset}
-                                                    onChange={this.handleColOffsetChange}
-                                                />
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                <button
-                                    className="btn btn-default btn-xs btn-regrid"
-                                    onClick={this.props.onRegrid}
-                                    disabled={loading}
-                                >Re-grid</button>
-                            </div>
-                            {success &&
-                                <div>
-                                    <button
-                                        className="btn btn-default btn-xs btn-next"
-                                        onClick={this.props.onNext}
-                                    >Next Step</button>
-                                </div>
-                            }
+                <h4>Gridding</h4>
+                {this.props.loading &&
+                    <div className="progress">
+                        <div
+                            className="progress-bar progress-bar-striped active"
+                            style={{ width: '100%' }}>
                         </div>
                     </div>
-                </div>
+                }
+                {!this.props.loading &&
+                    <form>
+                        {this.props.error &&
+                            <div className="alert alert-danger" >
+                                {this.props.error}
+                            </div>
+                        }
+                        {!this.props.error &&
+                            <div className="alert alert-success" >
+                                Gridding was succesful!
+                            </div>
+                        }
+                        <div className="form-group">
+                            <label>Rows</label>
+                            <input
+                                className='row-offset form-control'
+                                type="number"
+                                value={this.props.rowOffset}
+                                onChange={this.handleRowOffsetChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Columns</label>
+                            <input
+                                className='col-offset form-control'
+                                type="number"
+                                value={this.props.colOffset}
+                                onChange={this.handleColOffsetChange}
+                            />
+                        </div>
+                        <div className="text-right">
+                            <button
+                                className="btn btn-default btn-regrid"
+                                onClick={this.props.onRegrid}
+                            >Re-grid</button>
+                        </div>
+                    </form>
+                }
             </div>
         );
     }
 }
 
 Gridding.propTypes = {
-    alert: PropTypes.string,
+    error: PropTypes.string,
+    loading: PropTypes.bool,
+    rowOffset: PropTypes.number.isRequired,
     colOffset: PropTypes.number.isRequired,
-    onColOffsetChange: PropTypes.func,
-    onNext: PropTypes.func,
     onRegrid: PropTypes.func,
     onRowOffsetChange: PropTypes.func,
-    rowOffset: PropTypes.number.isRequired,
-    status: PropTypes.oneOf(['success', 'error', 'loading']).isRequired,
-    cccId: PropTypes.string,
-    imageId: PropTypes.string,
-    plateId: PropTypes.string,
-    accessToken: PropTypes.string,
-    grid: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))),
-    selectedColony: PropTypes.shape({
-        row: PropTypes.number,
-        col: PropTypes.number,
-    }),
+    onColOffsetChange: PropTypes.func,
 };

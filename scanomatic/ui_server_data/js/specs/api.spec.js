@@ -31,16 +31,16 @@ describe('API', () => {
     });
 
     describe('SetGridding', () => {
-        const cccId = 'hello';
-        const imageId = 'my-plate';
+        const cccId = 'CCC42';
+        const imageId = '1M4G3';
         const plate = 0;
         const pinningFormat = [42, 18];
-        const offSet = [6, 7];
+        const offset = [6, 7];
         const accessToken = 'open for me';
         const successCallback = jasmine.createSpy('success');
         const errorCallback = jasmine.createSpy('error');
         const args = [
-            cccId, imageId, plate, pinningFormat, offSet, accessToken,
+            cccId, imageId, plate, pinningFormat, offset, accessToken,
             successCallback, errorCallback,
         ];
 
@@ -49,41 +49,54 @@ describe('API', () => {
             errorCallback.calls.reset();
         });
 
-        it('Posts to the expected URI', () => {
-
+        it('should query the correct url', () => {
             SetGridding(...args);
-
-            const uri = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/grid/set`;
-            expect(jasmine.Ajax.requests.mostRecent().url).toBe(uri);
+            expect(mostRecentRequest().url)
+                .toBe('/api/calibration/CCC42/image/1M4G3/plate/0/grid/set');
         });
 
-        it('calls successCallback with expected arguments', ()=>{
-            const responseJSON = {hello: 'world'};
-            const responseText = JSON.stringify(responseJSON);
-
+        it('should send a POST request', () => {
             SetGridding(...args);
-
-            jasmine.Ajax.requests.mostRecent().respondWith({
-                status: 200,
-                responseText
-            });
-            expect(successCallback).toHaveBeenCalledWith(responseJSON);
-            expect(errorCallback).not.toHaveBeenCalled();
+            expect(mostRecentRequest()).toHaveMethod('POST');
         });
 
-        it('calls errorCallback with expected arguments', ()=>{
-            const responseJSON = {hello: 'world'};
-            const responseText = JSON.stringify(responseJSON);
-
+        it('should send the pinning format', ()=>{
             SetGridding(...args);
+            const params = JSON.parse(mostRecentRequest().params);
+            expect(params.pinning_format).toEqual(pinningFormat);
+        });
 
-            jasmine.Ajax.requests.mostRecent().respondWith({
-                status: 400,
-                responseText
+        it('should send the offset', ()=>{
+            SetGridding(...args);
+            const params = JSON.parse(mostRecentRequest().params);
+            expect(params.gridding_correction).toEqual(offset);
+        });
+
+        it('should send the access token', ()=>{
+            SetGridding(...args);
+            const params = JSON.parse(mostRecentRequest().params);
+            expect(params.access_token).toEqual(accessToken);
+        });
+
+        it('Should return a promise that resolves on success', (done) => {
+            API.SetGridding(...args).then(value => {
+                expect(value).toEqual({ foo: 'bar' });
+                done();
             });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify({ foo: 'bar' }),
+            });
+        });
 
-            expect(errorCallback).toHaveBeenCalledWith(responseJSON);
-            expect(successCallback).not.toHaveBeenCalled();
+        it('should return a promise that rejects on error', (done) => {
+            const errorData = { reason: '(+_+)', grid: [] };
+            API.SetGridding(...args).catch(data => {
+                expect(data).toEqual(errorData);
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify(errorData),
+            });
         });
     });
 
@@ -520,6 +533,48 @@ describe('API', () => {
             });
             mostRecentRequest().respondWith({
                 status: 400, responseText: JSON.stringify({ foo: 'bar' }),
+            });
+        });
+    });
+
+    describe('SetNewCalibrationPolynomial', () => {
+        const args = ['CCC0', '5' , 'T0K3N'];
+
+        it('should query the correct URL', () => {
+            API.SetNewCalibrationPolynomial(...args);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/calibration/CCC0/construct/5');
+        });
+
+        it('should send a POST request', () => {
+            API.SetNewCalibrationPolynomial(...args);
+            expect(mostRecentRequest().method)
+                .toEqual('POST');
+        });
+
+        it('should send the access_coken', () => {
+            API.SetNewCalibrationPolynomial(...args);
+            expect(JSON.parse(mostRecentRequest().params).access_token)
+                .toEqual('T0K3N');
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.SetNewCalibrationPolynomial(...args).then(value => {
+                expect(value).toEqual({ foo: 'bar' });
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify({ foo: 'bar' }),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.SetNewCalibrationPolynomial(...args).catch(reason => {
+                expect(reason).toEqual('(+_+)');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: '(+_+)' }),
             });
         });
     });
