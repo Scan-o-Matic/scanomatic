@@ -13,13 +13,11 @@ export default class ImageUpload extends React.Component {
     }
 
     render() {
-        const progressWidth = this.props.progress
-            ? (this.props.progress.now / this.props.progress.max * 100)
-            : 0;
-        return (
-            <div className="ImageUpload">
-                <h3>Process new image</h3>
-                {this.props.progress ?
+        let inputOrProgress;
+        if (this.props.progress) {
+            const progressWidth =
+                (this.props.progress.now / this.props.progress.max * 100);
+            inputOrProgress = (
                     <div>
                         <div className="progress">
                             <div
@@ -28,12 +26,16 @@ export default class ImageUpload extends React.Component {
                         </div>
                         {this.props.progress.text}
                     </div>
-                :
-                    <input
-                        type="file"
-                        onChange={this.handleFileChange}
-                    />
-                }
+            );
+        } else {
+            inputOrProgress = (
+                <input type="file" onChange={this.handleFileChange} />
+            );
+        }
+        return (
+            <div className="ImageUpload">
+                <h3>Process new image</h3>
+                {inputOrProgress}
             </div>
         );
     }

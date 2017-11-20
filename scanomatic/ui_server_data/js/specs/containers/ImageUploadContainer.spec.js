@@ -97,7 +97,7 @@ describe('<ImageUploadContainer />', () => {
             .toEqual({ now: 3, max: 4, text: 'You are here' });
     });
 
-    it('should clearr the progress on upload success', () => {
+    it('should clear the progress on upload success', () => {
         const image = new File(['foo'], 'myimage.tiff');
         const wrapper = mount(<ImageUploadContainer {...props} />);
         wrapper.find('ImageUpload').prop('onImageChange')(image);
@@ -106,7 +106,7 @@ describe('<ImageUploadContainer />', () => {
     });
 
 
-    it('should clearr the progress on upload fails', () => {
+    it('should clear the progress on upload fails', () => {
         helpers.uploadImage.and
             .returnValue({ then: () => ({ catch: f => f('XxX') }) });
         const image = new File(['foo'], 'myimage.tiff');
