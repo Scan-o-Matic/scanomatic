@@ -33,10 +33,12 @@ describe('<PolynomialConstructionContainer />', () => {
         const state = {
             polynomial: 'y = e ^ x',
             error: 'nope',
+            resultsData: 'it should look differently',
         };
         wrapper.setState(state);
         const poly = wrapper.find('PolynomialConstruction');
         expect(poly.prop('polynomial')).toEqual(state.polynomial);
+        expect(poly.prop('resultsData')).toEqual(state.resultsData);
         expect(poly.prop('error')).toEqual(state.error);
     });
 
