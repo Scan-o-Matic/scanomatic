@@ -63,6 +63,7 @@ export default class PolynomialConstructionContainer extends React.Component {
             error={this.state.error}
             onClearError={this.handleClearError}
             onConstruction={this.handleConstruction}
+            resultsData={this.state.resultsData}
         />;
     }
 }
