@@ -31,7 +31,11 @@ describe('<PolynomialConstructionContainer />', () => {
             <PolynomialConstructionContainer {...props} />
         );
         const state = {
-            polynomial: 'y = e ^ x',
+            polynomial: {
+                power: 5,
+                coefficients: [1, 2, 3, 4, 5],
+                colonies: 42,
+            },
             error: 'nope',
         };
         wrapper.setState(state);
