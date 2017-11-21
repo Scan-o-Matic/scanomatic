@@ -4,21 +4,8 @@ import { shallow } from 'enzyme';
 import '../components/enzyme-setup';
 import CCCEditorContainer from '../../ccc/containers/CCCEditorContainer';
 import * as API from '../../ccc/api';
+import FakePromise from '../helpers/FakePromise';
 
-class FakePromise {
-    then(success) {
-        if ('value' in this) {
-            success(this.value);
-        }
-        return this;
-    }
-
-    static resolve(value) {
-        const fake = new FakePromise();
-        fake.value = value;
-        return fake;
-    }
-}
 
 describe('<CCCEditorContainer />', () => {
     const props = {

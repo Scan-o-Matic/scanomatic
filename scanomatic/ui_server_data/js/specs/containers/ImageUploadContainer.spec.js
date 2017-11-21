@@ -4,6 +4,7 @@ import React from 'react';
 import '../components/enzyme-setup';
 import ImageUploadContainer from '../../ccc/containers/ImageUploadContainer';
 import * as helpers from '../../ccc/helpers';
+import FakePromise from '../helpers/FakePromise';
 
 
 describe('<ImageUploadContainer />', () => {
@@ -13,13 +14,15 @@ describe('<ImageUploadContainer />', () => {
     const imageId = 'IMG0';
     const onFinish = jasmine.createSpy('onFinish');
     const props = { cccId, fixture, token, onFinish };
+    let uploadPromise;
 
     beforeEach(() => {
         onFinish.calls.reset();
-        spyOn(helpers, 'uploadImage').and.returnValue({ then: f => {
-            f(imageId);
-            return { catch: () => {} };
-        }});
+        uploadPromise = new FakePromise();
+        spyOn(helpers, 'uploadImage').and.callFake((_1, _2, _3, _4, progress) => {
+            if (progress) progress(1, 2, 'Fake uploading image');
+            return uploadPromise;
+        });
         spyOn(window, 'alert');
     });
 
@@ -50,42 +53,6 @@ describe('<ImageUploadContainer />', () => {
             .toHaveBeenCalledWith('CCC0', image, fixture, token, jasmine.any(Function));
     });
 
-    it('should clear the image when upload succeed', () => {
-        const image = new File(['foo'], 'myimage.tiff');
-        const wrapper = mount(<ImageUploadContainer {...props} />);
-        wrapper.find('ImageUpload').prop('onImageChange')(image);
-        wrapper.update();
-        expect(wrapper.children().prop('image')).toBe(null);
-    });
-
-    it('should call onFinish with the image name and id when upload succeed', () => {
-        const image = new File(['foo'], 'myimage.tiff');
-        const wrapper = mount(<ImageUploadContainer {...props} />);
-        wrapper.find('ImageUpload').prop('onImageChange')(image);
-        expect(onFinish)
-            .toHaveBeenCalledWith({ name: 'myimage.tiff', id: imageId });
-    });
-
-    it('should show an alert if the upload fails', () => {
-        helpers.uploadImage.and
-            .returnValue({ then: () => ({ catch: f => f('XxX') }) });
-        const image = new File(['foo'], 'myimage.tiff');
-        const wrapper = mount(<ImageUploadContainer {...props} />);
-        wrapper.find('ImageUpload').prop('onImageChange')(image);
-        expect(window.alert)
-            .toHaveBeenCalledWith('An error occured while uploading the image: XxX');
-    });
-
-    it('should clear the image when upload fails', () => {
-        helpers.uploadImage.and
-            .returnValue({ then: () => ({ catch: f => f('XxX') }) });
-        const image = new File(['foo'], 'myimage.tiff');
-        const wrapper = mount(<ImageUploadContainer {...props} />);
-        wrapper.find('ImageUpload').prop('onImageChange')(image);
-        wrapper.update();
-        expect(wrapper.children().prop('image')).toBe(null);
-    });
-
     it('should pass the progress to the children', () => {
         const image = new File(['foo'], 'myimage.tiff');
         const wrapper = mount(<ImageUploadContainer {...props} />);
@@ -97,22 +64,61 @@ describe('<ImageUploadContainer />', () => {
             .toEqual({ now: 3, max: 4, text: 'You are here' });
     });
 
-    it('should clear the progress on upload success', () => {
+    describe('when upload succeed', () => {
         const image = new File(['foo'], 'myimage.tiff');
-        const wrapper = mount(<ImageUploadContainer {...props} />);
-        wrapper.find('ImageUpload').prop('onImageChange')(image);
-        wrapper.update();
-        expect(wrapper.children().prop('progress')).toBeFalsy();
+
+        beforeEach(() => {
+            uploadPromise.value = imageId;
+        });
+
+        it('should clear the image', () => {
+            const wrapper = mount(<ImageUploadContainer {...props} />);
+            wrapper.find('ImageUpload').prop('onImageChange')(image);
+            wrapper.update();
+            expect(wrapper.children().prop('image')).toBe(null);
+        });
+
+        it('should call onFinish with the image name and id', () => {
+            const wrapper = mount(<ImageUploadContainer {...props} />);
+            wrapper.find('ImageUpload').prop('onImageChange')(image);
+            expect(onFinish)
+                .toHaveBeenCalledWith({ name: 'myimage.tiff', id: imageId });
+        });
+
+        it('should clear the progress on upload success', () => {
+            const wrapper = mount(<ImageUploadContainer {...props} />);
+            wrapper.find('ImageUpload').prop('onImageChange')(image);
+            wrapper.update();
+            expect(wrapper.children().prop('progress')).toBeFalsy();
+        });
     });
 
-
-    it('should clear the progress on upload fails', () => {
-        helpers.uploadImage.and
-            .returnValue({ then: () => ({ catch: f => f('XxX') }) });
+    describe('when upload fails', () => {
         const image = new File(['foo'], 'myimage.tiff');
-        const wrapper = mount(<ImageUploadContainer {...props} />);
-        wrapper.find('ImageUpload').prop('onImageChange')(image);
-        wrapper.update();
-        expect(wrapper.children().prop('progress')).toBeFalsy();
+
+        beforeEach(() => {
+            uploadPromise.error = 'XxX';
+        });
+
+        it('should show an alert', () => {
+            const wrapper = mount(<ImageUploadContainer {...props} />);
+            wrapper.find('ImageUpload').prop('onImageChange')(image);
+            expect(window.alert)
+                .toHaveBeenCalledWith('An error occured while uploading the image: XxX');
+        });
+
+        it('should clear the image', () => {
+            const wrapper = mount(<ImageUploadContainer {...props} />);
+            wrapper.find('ImageUpload').prop('onImageChange')(image);
+            wrapper.update();
+            expect(wrapper.children().prop('image')).toBe(null);
+        });
+
+        it('should clear the progress', () => {
+            const wrapper = mount(<ImageUploadContainer {...props} />);
+            wrapper.find('ImageUpload').prop('onImageChange')(image);
+            wrapper.update();
+            expect(wrapper.children().prop('progress')).toBeFalsy();
+        });
     });
 });
