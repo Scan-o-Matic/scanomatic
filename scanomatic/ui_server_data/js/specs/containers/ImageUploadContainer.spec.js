@@ -4,6 +4,7 @@ import React from 'react';
 import '../components/enzyme-setup';
 import ImageUploadContainer from '../../ccc/containers/ImageUploadContainer';
 import * as helpers from '../../ccc/helpers';
+import { cccMetadata } from '../fixtures';
 import FakePromise from '../helpers/FakePromise';
 
 
@@ -13,7 +14,7 @@ describe('<ImageUploadContainer />', () => {
     const token = 'T0K3N';
     const imageId = 'IMG0';
     const onFinish = jasmine.createSpy('onFinish');
-    const props = { cccId, fixture, token, onFinish };
+    const props = { cccMetadata, onFinish };
     let uploadPromise;
 
     beforeEach(() => {
@@ -49,8 +50,46 @@ describe('<ImageUploadContainer />', () => {
         const image = new File(['foo'], 'myimage.tiff');
         const wrapper = mount(<ImageUploadContainer {...props} />);
         wrapper.find('ImageUpload').prop('onImageChange')(image);
-        expect(helpers.uploadImage)
-            .toHaveBeenCalledWith('CCC0', image, fixture, token, jasmine.any(Function));
+        expect(helpers.uploadImage).toHaveBeenCalledWith(
+            cccMetadata.id, image, cccMetadata.fixtureName,
+            cccMetadata.accessToken, jasmine.any(Function),
+        );
+    });
+
+    it('should clear the image when upload succeed', () => {
+        const image = new File(['foo'], 'myimage.tiff');
+        const wrapper = mount(<ImageUploadContainer {...props} />);
+        wrapper.find('ImageUpload').prop('onImageChange')(image);
+        wrapper.update();
+        expect(wrapper.children().prop('image')).toBe(null);
+    });
+
+    it('should call onFinish with the image name and id when upload succeed', () => {
+        const image = new File(['foo'], 'myimage.tiff');
+        const wrapper = mount(<ImageUploadContainer {...props} />);
+        wrapper.find('ImageUpload').prop('onImageChange')(image);
+        expect(onFinish)
+            .toHaveBeenCalledWith({ name: 'myimage.tiff', id: imageId });
+    });
+
+    it('should show an alert if the upload fails', () => {
+        helpers.uploadImage.and
+            .returnValue({ then: () => ({ catch: f => f('XxX') }) });
+        const image = new File(['foo'], 'myimage.tiff');
+        const wrapper = mount(<ImageUploadContainer {...props} />);
+        wrapper.find('ImageUpload').prop('onImageChange')(image);
+        expect(window.alert)
+            .toHaveBeenCalledWith('An error occured while uploading the image: XxX');
+    });
+
+    it('should clear the image when upload fails', () => {
+        helpers.uploadImage.and
+            .returnValue({ then: () => ({ catch: f => f('XxX') }) });
+        const image = new File(['foo'], 'myimage.tiff');
+        const wrapper = mount(<ImageUploadContainer {...props} />);
+        wrapper.find('ImageUpload').prop('onImageChange')(image);
+        wrapper.update();
+        expect(wrapper.children().prop('image')).toBe(null);
     });
 
     it('should pass the progress to the children', () => {

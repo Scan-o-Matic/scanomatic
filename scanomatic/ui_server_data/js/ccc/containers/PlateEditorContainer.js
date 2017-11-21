@@ -3,6 +3,7 @@ import React from 'react';
 
 import PlateEditor from '../components/PlateEditor';
 import { SetGrayScaleTransform, SetGridding } from '../api';
+import CCCPropTypes from '../prop-types';
 
 
 export default class PlateEditorContainer extends React.Component {
@@ -22,16 +23,20 @@ export default class PlateEditorContainer extends React.Component {
     }
 
     componentDidMount() {
-        const { cccId, imageId, plateId, accessToken } = this.props;
+        const { cccMetadata: { id: cccId, accessToken }, imageId, plateId } = this.props;
         SetGrayScaleTransform(cccId, imageId, plateId, accessToken)
             .then(this.handleSetGrayScaleTransformSuccess.bind(this));
     }
 
     handleSetGrayScaleTransformSuccess() {
         this.setState({ step: 'gridding', griddingLoading: true });
+        const pinFormat = [
+            this.props.cccMetadata.pinningFormat.nCols,
+            this.props.cccMetadata.pinningFormat.nRows,
+        ];
         SetGridding(
-            this.props.cccId, this.props.imageId, this.props.plateId,
-            this.props.pinFormat, [0, 0], this.props.accessToken,
+            this.props.cccMetadata.id, this.props.imageId, this.props.plateId,
+            pinFormat, [0, 0], this.props.cccMetadata.accessToken,
         ).then(
             this.handleSetGriddingSuccess.bind(this),
             this.handleSetGriddingError.bind(this),
@@ -48,10 +53,14 @@ export default class PlateEditorContainer extends React.Component {
 
     handleRegrid() {
         this.setState({ step: 'gridding', griddingLoading: true, griddingError: null });
+        const pinFormat = [
+            this.props.cccMetadata.pinningFormat.nCols,
+            this.props.cccMetadata.pinningFormat.nRows,
+        ];
         SetGridding(
-            this.props.cccId, this.props.imageId, this.props.plateId,
-            this.props.pinFormat, [this.state.rowOffset, this.state.colOffset],
-            this.props.accessToken,
+            this.props.cccMetadata.id, this.props.imageId, this.props.plateId,
+            pinFormat, [this.state.rowOffset, this.state.colOffset],
+            this.props.cccMetadata.accessToken,
         ).then(
             this.handleSetGriddingSuccess.bind(this),
             this.handleSetGriddingError.bind(this),
@@ -77,10 +86,10 @@ export default class PlateEditorContainer extends React.Component {
 
     handleColonyFinish() {
         const { row, col } = this.state.selectedColony;
-        const [nCol, nRow] = this.props.pinFormat;
-        if (col < nCol - 1) {
+        const { nCols, nRows } = this.props.cccMetadata.pinningFormat;
+        if (col < nCols - 1) {
             this.setState({ selectedColony: { row, col: col + 1 } });
-        } else if (row < nRow - 1) {
+        } else if (row < nRows - 1) {
             this.setState({ selectedColony: { row: row + 1, col: 0 } });
         } else {
             this.props.onFinish && this.props.onFinish()
@@ -90,8 +99,7 @@ export default class PlateEditorContainer extends React.Component {
     render() {
         return (
             <PlateEditor
-                accessToken={this.props.accessToken}
-                cccId={this.props.cccId}
+                cccMetadata={this.props.cccMetadata}
                 colOffset={this.state.colOffset}
                 grid={this.state.grid}
                 griddingError={this.state.griddingError}
@@ -103,7 +111,6 @@ export default class PlateEditorContainer extends React.Component {
                 onClickNext={this.handleClickNext}
                 onRegrid={this.handleRegrid}
                 onRowOffsetChange={this.handleRowOffsetChange}
-                pinFormat={this.props.pinFormat}
                 plateId={this.props.plateId}
                 rowOffset={this.state.rowOffset}
                 selectedColony={this.state.selectedColony}
@@ -116,12 +123,10 @@ export default class PlateEditorContainer extends React.Component {
 }
 
 PlateEditorContainer.propTypes = {
-    accessToken: PropTypes.string.isRequired,
-    cccId: PropTypes.string.isRequired,
+    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
     collapse: PropTypes.bool,
     imageId: PropTypes.string.isRequired,
     imageName: PropTypes.string.isRequired,
     onFinish: PropTypes.func,
-    pinFormat: PropTypes.arrayOf(PropTypes.number).isRequired,
     plateId: PropTypes.number.isRequired,
 };

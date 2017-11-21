@@ -5,6 +5,7 @@ import ColonyEditorContainer from '../containers/ColonyEditorContainer';
 import PlateProgress from './PlateProgress';
 import PlateContainer from '../containers/PlateContainer';
 import Gridding from './Gridding';
+import CCCPropTypes from '../prop-types';
 
 
 const STEPS = ['pre-processing', 'gridding', 'colony-detection', 'done'];
@@ -47,7 +48,7 @@ export default function PlateEditor(props) {
     if (props.step === 'colony-detection') {
         title = 'Step 3: Colony Detection'
     }
-    const [nCols, nRows] = props.pinFormat;
+    const { nCols, nRows } = props.cccMetadata.pinningFormat;
     const now = nCols * props.selectedColony.row + props.selectedColony.col;
     const max = nCols * nRows;
     return (
@@ -68,7 +69,7 @@ export default function PlateEditor(props) {
                 <div className="row">
                     <div className="col-md-6 text-center">
                         <PlateContainer
-                            cccId={props.cccId}
+                            cccId={props.cccMetadata.id}
                             imageId={props.imageId}
                             plateId={props.plateId}
                             selectedColony={props.selectedColony}
@@ -91,8 +92,8 @@ export default function PlateEditor(props) {
                         }
                         {props.step === 'colony-detection' &&
                             <ColonyEditorContainer
-                                accessToken={props.accessToken}
-                                ccc={props.cccId}
+                                accessToken={props.cccMetadata.accessToken}
+                                ccc={props.cccMetadata.id}
                                 image={props.imageId}
                                 plateId={props.plateId}
                                 onFinish={props.onColonyFinish}
@@ -132,9 +133,7 @@ export default function PlateEditor(props) {
 }
 
 PlateEditor.propTypes = {
-    pinFormat: PropTypes.arrayOf(PropTypes.number).isRequired,
-    accessToken: PropTypes.string.isRequired,
-    cccId: PropTypes.string.isRequired,
+    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
     imageId: PropTypes.string.isRequired,
     imageName: PropTypes.string.isRequired,
     plateId: PropTypes.number.isRequired,
