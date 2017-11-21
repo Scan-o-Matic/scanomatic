@@ -11,7 +11,8 @@ export default function CCCEditor(props) {
     return (
         <div>
             {props.plates.map((plate, i) =>
-                <PlateEditorContainer key={i}
+                <PlateEditorContainer
+                    key={`${plate.imageId}:${plate.plateId}`}
                     {...plate}
                     pinFormat={props.pinFormat}
                     accessToken={props.accessToken}
