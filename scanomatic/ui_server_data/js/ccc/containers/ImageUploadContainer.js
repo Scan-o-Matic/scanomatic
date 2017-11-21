@@ -25,11 +25,11 @@ export default class ImageUploadContainer extends React.Component {
 
     handleUploadSuccess(id) {
         this.props.onFinish({ id, name: this.state.image.name });
-        this.setState({ image: null });
+        this.setState({ image: null, progress: null });
     }
 
     handleUploadError(reason) {
-        this.setState({ image: null });
+        this.setState({ image: null, progress: null });
         alert(`An error occured while uploading the image: ${reason}`);
     }
 
