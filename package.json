@@ -1,7 +1,8 @@
 {
   "scripts": {
     "test": "BABEL_ENV=test karma start --single-run",
-    "build": "webpack"
+    "build": "webpack",
+    "lint": "eslint scanomatic/ui_server_data/js/ccc scanomatic/ui_server_data/js/spec"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
@@ -24,6 +25,12 @@
     "webpack": "^3.8.1"
   },
   "dependencies": {
+    "babel-eslint": "^8.0.2",
+    "eslint": "^4.11.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.2",
+    "eslint-plugin-react": "^7.5.1",
     "prop-types": "^15.6.0",
     "react": "^16.0.0",
     "react-dom": "^16.0.0"
