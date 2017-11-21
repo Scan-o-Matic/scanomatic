@@ -20,6 +20,16 @@ describe('<CCCEditor />', () => {
         onFinishUpload,
     };
 
+    it('should render a <CCCInfoBox />', () => {
+        const wrapper = shallow(<CCCEditor {...props} />);
+        expect(wrapper.find('CCCInfoBox').exists()).toBeTruthy();
+    });
+
+    it('should pass cccMetadata to <CCCInfoBox />', () => {
+        const wrapper = shallow(<CCCEditor {...props} />);
+        expect(wrapper.find('CCCInfoBox').prop('cccMetadata')).toEqual(cccMetadata);
+    });
+
     it('should render an <PolynomialConstructionContainer/>', () => {
         const wrapper = shallow(<CCCEditor {...props} />);
         expect(wrapper.find('PolynomialConstructionContainer').exists())

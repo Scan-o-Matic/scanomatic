@@ -151,32 +151,16 @@ window.executeCCC = function() {
 
     function initiateCccSuccess(data) {
         $("#btnIniCCC").hide();
-        $("#divIniCCC").show();
-        var id = data.identifier;
-        var token = data.access_token;
-        var sp = species.val();
-        var ref = reference.val();
-        var fixture = getSelectedFixtureName();
-        var pinFormat = getSelectedPinningFormat();
-        var outputFormat = getSelectedPinningFormatName();
-        $("#tblCurrentCCC tbody").append(
-            "<tr><td>Id</td><td>" + id + "</td></tr>" +
-            "<tr><td>Token</td><td>" + token + "</td></tr>" +
-            "<tr><td>Species</td><td>" + sp + "</td></tr>" +
-            "<tr><td>Reference</td><td>" + ref + "</td></tr>" +
-            "<tr><td>Pinning Format</td><td>" + outputFormat + "</td></tr>" +
-            "<tr><td>Fixture</td><td>" + fixture + "</td></tr>" +
-            "<tr><td>Uploaded Images</td><td></td></tr>"
-        );
         dialogCCCIni.dialog("close");
+        const pinFormat = getSelectedPinningFormat();
         const [nCols, nRows] = pinFormat.split(',').map(i => parseInt(i, 10));
         const cccMetadata = {
-            id,
-            accessToken: token,
-            species: sp,
-            reference: ref,
-            fixtureName: fixture,
-            pinningFormat: { name: outputFormat, nCols, nRows },
+            id: data.identifier,
+            accessToken: data.access_token,
+            species: species.val(),
+            reference: reference.val(),
+            fixtureName: getSelectedFixtureName(),
+            pinningFormat: { name: getSelectedPinningFormatName(), nCols, nRows },
         };
         ReactDOM.render(
             <CCCEditorContainer
