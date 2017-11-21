@@ -10,7 +10,7 @@ import PolynomialConstructionContainer from
 export default function CCCEditor(props) {
     return (
         <div>
-            {props.plates.map((plate, i) =>
+            {props.plates.map((plate, i) => (
                 <PlateEditorContainer
                     key={`${plate.imageId}:${plate.plateId}`}
                     {...plate}
@@ -18,9 +18,9 @@ export default function CCCEditor(props) {
                     accessToken={props.accessToken}
                     cccId={props.cccId}
                     onFinish={props.onFinishPlate}
-                    collapse={props.currentPlate != i}
+                    collapse={props.currentPlate !== i}
                 />
-            )}
+            ))}
             <ImageUploadContainer
                 cccId={props.cccId}
                 token={props.accessToken}
