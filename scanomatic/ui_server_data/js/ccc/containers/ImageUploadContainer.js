@@ -3,6 +3,7 @@ import React from 'react';
 
 import ImageUpload from '../components/ImageUpload';
 import { uploadImage } from '../helpers';
+import CCCPropTypes from '../prop-types';
 
 export default class ImageUploadContainer extends React.Component {
     constructor(props) {
@@ -16,8 +17,8 @@ export default class ImageUploadContainer extends React.Component {
     handleImageChange(image) {
         this.setState({ image });
         if (image) {
-            const { cccId, fixture, token } = this.props;
-            uploadImage(cccId, image, fixture, token, this.setProgress.bind(this))
+            const { id: cccId, fixtureName, accessToken } = this.props.cccMetadata;
+            uploadImage(cccId, image, fixtureName, accessToken, this.setProgress.bind(this))
                 .then(this.handleUploadSuccess)
                 .catch(this.handleUploadError);
         }
@@ -49,8 +50,6 @@ export default class ImageUploadContainer extends React.Component {
 }
 
 ImageUploadContainer.propTypes = {
-    cccId: PropTypes.string.isRequired,
-    fixture: PropTypes.string.isRequired,
-    token: PropTypes.string.isRequired,
+    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
     onFinish: PropTypes.func.isRequired,
 };

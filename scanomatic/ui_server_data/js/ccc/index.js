@@ -169,12 +169,18 @@ window.executeCCC = function() {
             "<tr><td>Uploaded Images</td><td></td></tr>"
         );
         dialogCCCIni.dialog("close");
+        const [nCols, nRows] = pinFormat.split(',').map(i => parseInt(i, 10));
+        const cccMetadata = {
+            id,
+            accessToken: token,
+            species: sp,
+            reference: ref,
+            fixtureName: fixture,
+            pinningFormat: { name: outputFormat, nCols, nRows },
+        };
         ReactDOM.render(
             <CCCEditorContainer
-                cccId={id}
-                pinFormat={pinFormat.split(',').map((i) => parseInt(i))}
-                fixtureName={fixture}
-                accessToken={token}
+                cccMetadata={cccMetadata}
                 onFinish={() => alert('Level completed!')}
             />,
             document.getElementById('react-root'),

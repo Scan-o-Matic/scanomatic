@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import { GetFixturePlates } from '../api';
+import CCCPropTypes from '../prop-types';
 import CCCEditor from '../components/CCCEditor';
 
 
@@ -18,7 +19,7 @@ export default class CCCEditorContainer extends React.Component {
     }
 
     componentDidMount() {
-        GetFixturePlates(this.props.fixtureName)
+        GetFixturePlates(this.props.cccMetadata.fixtureName)
             .then(plates => {
                 this.setState({ ready: true, platesPerImage: plates.length });
             });
@@ -55,10 +56,7 @@ export default class CCCEditorContainer extends React.Component {
     render() {
         return (
             <CCCEditor
-                cccId={this.props.cccId}
-                accessToken={this.props.accessToken}
-                pinFormat={this.props.pinFormat}
-                fixtureName={this.props.fixtureName}
+                cccMetadata={this.props.cccMetadata}
                 plates={this.state.plates}
                 currentPlate={this.state.currentPlate}
                 onFinishUpload={this.handleFinishUpload}
@@ -70,8 +68,5 @@ export default class CCCEditorContainer extends React.Component {
 }
 
 CCCEditorContainer.propTypes = {
-    pinFormat: PropTypes.arrayOf(PropTypes.number).isRequired,
-    fixtureName: PropTypes.string.isRequired,
-    accessToken: PropTypes.string.isRequired,
-    cccId: PropTypes.string.isRequired,
+    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
 };
