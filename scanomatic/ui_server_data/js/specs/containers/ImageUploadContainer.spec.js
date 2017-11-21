@@ -4,6 +4,7 @@ import React from 'react';
 import '../components/enzyme-setup';
 import ImageUploadContainer from '../../ccc/containers/ImageUploadContainer';
 import * as helpers from '../../ccc/helpers';
+import { cccMetadata } from '../fixtures';
 import FakePromise from '../helpers/FakePromise';
 
 
@@ -13,7 +14,7 @@ describe('<ImageUploadContainer />', () => {
     const token = 'T0K3N';
     const imageId = 'IMG0';
     const onFinish = jasmine.createSpy('onFinish');
-    const props = { cccId, fixture, token, onFinish };
+    const props = { cccMetadata, onFinish };
     let uploadPromise;
 
     beforeEach(() => {
@@ -49,8 +50,10 @@ describe('<ImageUploadContainer />', () => {
         const image = new File(['foo'], 'myimage.tiff');
         const wrapper = mount(<ImageUploadContainer {...props} />);
         wrapper.find('ImageUpload').prop('onImageChange')(image);
-        expect(helpers.uploadImage)
-            .toHaveBeenCalledWith('CCC0', image, fixture, token, jasmine.any(Function));
+        expect(helpers.uploadImage).toHaveBeenCalledWith(
+            cccMetadata.id, image, cccMetadata.fixtureName,
+            cccMetadata.accessToken, jasmine.any(Function),
+        );
     });
 
     it('should pass the progress to the children', () => {

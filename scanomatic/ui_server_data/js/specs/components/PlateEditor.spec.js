@@ -2,20 +2,18 @@ import { shallow } from 'enzyme';
 import React  from 'react';
 
 import './enzyme-setup';
-
 import PlateEditor, { PlateStatusLabel } from '../../ccc/components/PlateEditor';
+import { cccMetadata } from '../fixtures';
 
 describe('<PlateEditor />', () => {
     let props;
 
     beforeEach(() => {
        props = {
-           accessToken: 'T0P53CR3T',
-           cccId: 'CCC42',
+           cccMetadata,
            imageId: '1M4G3',
            imageName: 'myimage.tiff',
            plateId: 1,
-           pinFormat: [8, 12],
            onClickNext: jasmine.createSpy('onClickNext'),
            onColonyFinish: jasmine.createSpy('onColonyFinish'),
            rowOffset: 1,
@@ -168,12 +166,12 @@ describe('<PlateEditor />', () => {
 
         it('should pass the total number of colony to the <PlateProgress />', () => {
             const wrapper = shallow(<PlateEditor {...props} step="colony-detection" />);
-            expect(wrapper.find('PlateProgress').prop('max')).toEqual(8 * 12);
+            expect(wrapper.find('PlateProgress').prop('max')).toEqual(6);
         });
 
         it('should pass the position of the current colony to the <PlateProgress />', () => {
             const wrapper = shallow(<PlateEditor {...props} step="colony-detection" />);
-            expect(wrapper.find('PlateProgress').prop('now')).toEqual(10);
+            expect(wrapper.find('PlateProgress').prop('now')).toEqual(4);
         });
     });
 });

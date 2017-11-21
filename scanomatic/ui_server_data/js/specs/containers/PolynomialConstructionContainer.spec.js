@@ -5,12 +5,10 @@ import '../components/enzyme-setup';
 import PolynomialConstructionContainer from
     '../../ccc/containers/PolynomialConstructionContainer';
 import * as API from '../../ccc/api';
+import { cccMetadata } from '../fixtures';
 
 describe('<PolynomialConstructionContainer />', () => {
-    const props = {
-        accessToken: 'T0P53CR3T',
-        cccId: 'CCC42',
-    };
+    const props = { cccMetadata };
 
     const results = {
         polynomial_power: 5,
@@ -59,7 +57,7 @@ describe('<PolynomialConstructionContainer />', () => {
             .and.returnValue(promise);
         poly.prop('onConstruction')();
         expect(API.SetNewCalibrationPolynomial).toHaveBeenCalledWith(
-            props.cccId, 5, props.accessToken
+            props.cccMetadata.id, 5, props.cccMetadata.accessToken,
         );
     });
 
