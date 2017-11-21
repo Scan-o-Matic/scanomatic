@@ -16,7 +16,7 @@ module.exports = function(config) {
         "js/jquery.modal.js",
         "js/jquery.treetable.js",
         "js/jquery-ui.js",
-        { pattern: 'js/specs/**/*.spec.js', watched: false },
+        { pattern: 'js/specs/**/*.spec.@(js|jsx)', watched: false },
     ],
 
     // list of files to exclude
@@ -29,7 +29,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-        'js/specs/**/*.spec.js': ['webpack'],
+        'js/specs/**/*.spec.@(js|jsx)': ['webpack'],
     },
 
     // test results reporter to use
