@@ -4,15 +4,14 @@ import { shallow } from 'enzyme';
 import '../components/enzyme-setup';
 import PlateEditorContainer from '../../ccc/containers/PlateEditorContainer';
 import * as API from '../../ccc/api';
+import { cccMetadata } from '../fixtures';
 
 describe('<PlateEditorContainer />', () => {
     const props = {
-        accessToken: 'T0P53CR3T',
-        cccId: 'CCC42',
+        cccMetadata,
         imageId: '1M4G3',
         imageName: 'myimage.tiff',
         onFinish: jasmine.createSpy('onFinish'),
-        pinFormat: [2, 3],
         plateId: 1,
     };
 
@@ -29,6 +28,11 @@ describe('<PlateEditorContainer />', () => {
         expect(wrapper.find('PlateEditor').exists()).toBeTruthy();
     });
 
+    it('should pass cccMetadata to <PlateEditor />', () => {
+        const wrapper = shallow(<PlateEditorContainer {...props} />);
+        expect(wrapper.find('PlateEditor').prop('cccMetadata')).toEqual(cccMetadata);
+    });
+
     it('should start with the pre-processing step', () => {
         const wrapper = shallow(<PlateEditorContainer {...props} />);
         expect(wrapper.prop('step')).toEqual('pre-processing');
@@ -38,7 +42,10 @@ describe('<PlateEditorContainer />', () => {
         it('should call SetGrayScaleTransform', () => {
             shallow(<PlateEditorContainer {...props} />);
             expect(API.SetGrayScaleTransform)
-                .toHaveBeenCalledWith(props.cccId, props.imageId, props.plateId, props.accessToken)
+                .toHaveBeenCalledWith(
+                    props.cccMetadata.id, props.imageId, props.plateId,
+                    props.cccMetadata.accessToken,
+                );
         });
 
         it('should switch to the gridding step when SetGrayScaleTransform finishes', (done) => {
@@ -61,8 +68,9 @@ describe('<PlateEditorContainer />', () => {
         it('should call SetGridding with offset 0,0', () => {
             shallow(<PlateEditorContainer {...props} />);
             expect(API.SetGridding).toHaveBeenCalledWith(
-                props.cccId, props.imageId, props.plateId, props.pinFormat,
-                [0, 0], props.accessToken
+                props.cccMetadata.id, props.imageId, props.plateId,
+                [props.cccMetadata.pinningFormat.nCols, props.cccMetadata.pinningFormat.nRows],
+                [0, 0], props.cccMetadata.accessToken,
             );
         });
 
@@ -78,8 +86,9 @@ describe('<PlateEditorContainer />', () => {
             wrapper.setState( { rowOffset: 2, colOffset: 3 });
             wrapper.prop('onRegrid')();
             expect(API.SetGridding).toHaveBeenCalledWith(
-                props.cccId, props.imageId, props.plateId,
-                props.pinFormat, [2, 3], props.accessToken,
+                props.cccMetadata.id, props.imageId, props.plateId,
+                [props.cccMetadata.pinningFormat.nCols, props.cccMetadata.pinningFormat.nRows],
+                [2, 3], props.cccMetadata.accessToken,
             );
         });
 

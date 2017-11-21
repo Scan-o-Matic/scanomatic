@@ -4,6 +4,7 @@ import React from 'react';
 import PolynomialConstruction from '../components/PolynomialConstruction';
 
 import * as API from '../api';
+import CCCPropTypes from '../prop-types';
 
 
 export default class PolynomialConstructionContainer extends React.Component {
@@ -25,9 +26,9 @@ export default class PolynomialConstructionContainer extends React.Component {
     }
 
     handleConstruction() {
-        const { cccId, accessToken } = this.props;
+        const { id, accessToken } = this.props.cccMetadata;
         const { power } = this.state;
-        return API.SetNewCalibrationPolynomial(cccId, power, accessToken)
+        return API.SetNewCalibrationPolynomial(id, power, accessToken)
         .then(this.handleConstructionResults)
         .catch(this.handleConstructionResultsError);
     }
@@ -68,6 +69,5 @@ export default class PolynomialConstructionContainer extends React.Component {
 }
 
 PolynomialConstructionContainer.propTypes = {
-    accessToken: PropTypes.string.isRequired,
-    cccId: PropTypes.string.isRequired,
+    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
 };

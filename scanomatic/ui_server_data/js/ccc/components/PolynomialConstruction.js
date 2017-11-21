@@ -14,7 +14,6 @@ export default function PolynomialConstruction(props) {
                 onClearError={props.onClearError}
             />
         );
-
     }
 
     let results = null;

@@ -3,15 +3,13 @@ import React from 'react';
 
 import '../components/enzyme-setup';
 import CCCEditor from '../../ccc/components/CCCEditor';
+import { cccMetadata } from '../fixtures';
 
 describe('<CCCEditor />', () => {
     const onFinishPlate = jasmine.createSpy('onFinishPlate');
     const onFinishUpload = jasmine.createSpy('onFinishUpload');
     const props = {
-        pinFormat: [2, 3],
-        accessToken: 'T0P53CR3T',
-        cccId: 'CCC42',
-        fixtureName: 'MyFixture',
+        cccMetadata,
         plates: [
             { imageName: 'my-image.tiff', imageId: '1M4G3', plateId: 1 },
             { imageName: 'my-image.tiff', imageId: '1M4G3', plateId: 2 },
@@ -28,16 +26,10 @@ describe('<CCCEditor />', () => {
             .toBeTruthy();
     });
 
-    it('should pass cccId to <PolynomialConstructionContainer />', () => {
+    it('should pass cccMetadata to <PolynomialConstructionContainer />', () => {
         const wrapper = shallow(<CCCEditor {...props} />);
-        expect(wrapper.find('PolynomialConstructionContainer').prop('cccId'))
-            .toEqual(props.cccId);
-    });
-
-    it('should pass accessToken to <PolynomialConstructionContainer />', () => {
-        const wrapper = shallow(<CCCEditor {...props} />);
-        expect(wrapper.find('PolynomialConstructionContainer')
-            .prop('accessToken')).toEqual(props.accessToken);
+        expect(wrapper.find('PolynomialConstructionContainer').prop('cccMetadata'))
+            .toEqual(cccMetadata);
     });
 
     describe('when currentImage is null', () => {
@@ -46,22 +38,10 @@ describe('<CCCEditor />', () => {
             expect(wrapper.find('ImageUploadContainer').exists()).toBeTruthy();
         });
 
-        it('should pass cccId to <ImageUploadContainer />', () => {
+        it('should pass cccMetadata to <ImageUploadContainer />', () => {
             const wrapper = shallow(<CCCEditor {...props} />);
-            expect(wrapper.find('ImageUploadContainer').prop('cccId'))
-                .toEqual(props.cccId);
-        });
-
-        it('should pass accessToken to <ImageUploadContainer />', () => {
-            const wrapper = shallow(<CCCEditor {...props} />);
-            expect(wrapper.find('ImageUploadContainer').prop('token'))
-                .toEqual(props.accessToken);
-        });
-
-        it('should pass fixtureName to <ImageUploadContainer />', () => {
-            const wrapper = shallow(<CCCEditor {...props} />);
-            expect(wrapper.find('ImageUploadContainer').prop('fixture'))
-                .toEqual(props.fixtureName);
+            expect(wrapper.find('ImageUploadContainer').prop('cccMetadata'))
+                .toEqual(cccMetadata);
         });
 
         it('should call onFinishUpload when <ImageUploadContainer /> calls onFinish', () => {
@@ -76,22 +56,10 @@ describe('<CCCEditor />', () => {
         expect(wrapper.find('PlateEditorContainer').length).toEqual(3);
     });
 
-    it('should pass cccId to <PlateEditorContainer />', () => {
+    it('should pass cccMetadata to <PlateEditorContainer />', () => {
         const wrapper = shallow(<CCCEditor {...props} />);
-        expect(wrapper.find('PlateEditorContainer').at(0).prop('cccId'))
-            .toEqual(props.cccId);
-    });
-
-    it('should pass accessToken to <PlateEditorContainer />', () => {
-        const wrapper = shallow(<CCCEditor {...props} />);
-        expect(wrapper.find('PlateEditorContainer').at(0).prop('accessToken'))
-            .toEqual(props.accessToken);
-    });
-
-    it('should pass pinFormat to <PlateEditorContainer />', () => {
-        const wrapper = shallow(<CCCEditor {...props} />);
-        expect(wrapper.find('PlateEditorContainer').at(0).prop('pinFormat'))
-            .toEqual(props.pinFormat);
+        expect(wrapper.find('PlateEditorContainer').at(0).prop('cccMetadata'))
+            .toEqual(cccMetadata);
     });
 
     it('should pass the plate imageId to <PlateEditorContainer />', () => {
