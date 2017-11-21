@@ -1,0 +1,19 @@
+---
+extends:
+  - 'airbnb'
+  - "plugin:import/errors"
+  - "plugin:import/warnings"
+parser: "babel-eslint"
+env:
+  browser: true
+  jasmine: true
+  jquery: true
+globals:
+  cccFunctions: true
+  d3: true
+  Promise: true
+rules:
+  indent: ["error", 4]
+  import/extensions: "off"
+  import/no-unresolved: "off"
+  import/no-extraneous-dependencies: "off"

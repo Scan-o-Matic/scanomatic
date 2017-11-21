@@ -1,0 +1,8 @@
+linters:
+  flake8: {  }
+  pep8: {  }
+  py3k: {  }
+  eslint: {  }
+files:
+  ignore:
+    - 'node_modules/*'
