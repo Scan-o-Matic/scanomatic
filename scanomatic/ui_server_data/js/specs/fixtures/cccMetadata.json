@@ -1,0 +1,13 @@
+{
+    "id": "CCC42",
+    "accessToken": "T0P53CR3T",
+    "species": "S. Kombuchae",
+    "reference": "Professor X",
+    "fixtureName": "MyFixture",
+    "pinningFormat": {
+        "name": "2x3",
+        "nRows": 3,
+        "nCols": 2
+    }
+}
+

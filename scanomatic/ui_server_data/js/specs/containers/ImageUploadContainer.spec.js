@@ -4,7 +4,7 @@ import React from 'react';
 import '../components/enzyme-setup';
 import ImageUploadContainer from '../../ccc/containers/ImageUploadContainer';
 import * as helpers from '../../ccc/helpers';
-import { cccMetadata } from '../fixtures';
+import cccMetadata from '../fixtures/cccMetadata';
 import FakePromise from '../helpers/FakePromise';
 
 

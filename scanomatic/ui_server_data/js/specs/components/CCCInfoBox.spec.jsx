@@ -3,7 +3,7 @@ import React from 'react';
 
 import './enzyme-setup';
 import CCCInfoBox from '../../ccc/components/CCCInfoBox';
-import { cccMetadata } from '../fixtures';
+import cccMetadata from '../fixtures/cccMetadata';
 
 describe('<CCCInfoBox />', () => {
     const props = { cccMetadata };
