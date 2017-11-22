@@ -6,11 +6,18 @@ import ImageUploadContainer from '../containers/ImageUploadContainer';
 import PolynomialConstructionContainer from
     '../containers/PolynomialConstructionContainer';
 import CCCPropTypes from '../prop-types';
+import CCCInfoBox from './CCCInfoBox';
 
 
 export default function CCCEditor(props) {
     return (
         <div>
+            <div className="row">
+                <div className="col-md-6">
+                    <h1>Initiated CCC</h1>
+                    <CCCInfoBox cccMetadata={props.cccMetadata} />
+                </div>
+            </div>
             {props.plates.map((plate, i) => (
                 <PlateEditorContainer
                     key={`${plate.imageId}:${plate.plateId}`}
