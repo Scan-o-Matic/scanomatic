@@ -686,34 +686,18 @@ def construct_polynomial(identifier, power):
 
     validation = validate_polynomial(slope, p_value, stderr)
 
-    if validation is not CalibrationValidation.OK:
-        return {
-            'validation': validation.name,
-            'polynomial_coefficients': poly_coeffs,
-            'measured_sizes': data_store.target_value.tolist(),
-            'calculated_sizes': calculated_sizes,
-            'polynomial_as_text': poly_as_text(poly_coeffs),
-            'correlation': {
-                'slope': slope,
-                'intercept': intercept,
-                'p_value': p_value,
-                'stderr': stderr,
-            },
-        }
-    ccc[CellCountCalibration.polynomial] = get_polynomal_entry(
-        power, poly_coeffs,
-    )
+    if validation is CalibrationValidation.OK:
+        ccc[CellCountCalibration.polynomial] = get_polynomal_entry(
+            power, poly_coeffs,
+        )
 
-    if not save_ccc_to_disk(ccc):
-        return False
+        if not save_ccc_to_disk(ccc):
+            return False
 
     calculated_sizes = calculate_sizes(data_store, poly)
 
     return {
-        'ccc': identifier,
         'polynomial_coefficients': poly_coeffs,
-        'polynomial_as_text': poly_as_text(poly_coeffs),
-        'polynomial_power': power,
         'measured_sizes': data_store.target_value.tolist(),
         'calculated_sizes': calculated_sizes,
         'validation': validation.name,

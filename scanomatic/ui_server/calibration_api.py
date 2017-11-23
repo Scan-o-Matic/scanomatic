@@ -765,8 +765,9 @@ def construct_calibration(ccc_identifier, power):
             reason="Failed to save ccc.")
 
     extra_info = ''
-    if 'polynomial_as_text' in response:
-        extra_info = ' ({})'.format(response['polynomial_as_text'])
+    if 'polynomial_coefficients' in response:
+        extra_info = ' ({})'.format(
+            calibration.poly_as_text(response['polynomial_coefficients']))
     if 'correlation' in response:
         extra_info += ' correlation: {}'.format(response['correlation'])
 

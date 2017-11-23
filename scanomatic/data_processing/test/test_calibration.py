@@ -173,13 +173,16 @@ class TestEditCCC:
         response = calibration.construct_polynomial(
             identifier, power, access_token=token)
 
-        assert (
-            response['validation'] is not
-            calibration.CalibrationValidation.OK)
+        assert response['validation'] != 'OK'
 
-        assert 'correlation' in response
-        assert 'measured_sizes' in response
-        assert 'calculated_sizes' in response
+        assert len(response['calculated_sizes']) == 30
+        assert len(response['measured_sizes']) == 30
+
+        assert response['correlation']['slope'] == pytest.approx(0)
+        assert response['correlation']['intercept'] == pytest.approx(
+            320000, rel=.1)
+        assert response['correlation']['stderr'] == pytest.approx(0)
+        assert response['correlation']['p_value'] == pytest.approx(1)
 
     @pytest.mark.skip("Unreliable with current data")
     def test_construct_good_polynomial(self, edit_ccc):
@@ -195,9 +198,7 @@ class TestEditCCC:
         assert 'correlation' in response
         assert response['correlation']['slope'] == pytest.approx(1, abs=0.02)
 
-        assert (
-            response['validation'] is
-            calibration.CalibrationValidation.OK)
+        assert response['validation'] == 'OK'
 
         assert response['polynomial_degree'] == power
         assert response['ccc'] == identifier
@@ -206,7 +207,10 @@ class TestEditCCC:
         assert len(response['measured_sizes']) == 16
 
         assert 'calculated_sizes' in response
-        assert response['calculated_sizes']['slope'] == pytest.approx(1)
+        assert response['correlation']['slope'] == pytest.approx(1)
+        assert response['correlation']['intercept'] == pytest.approx(0)
+        assert response['correlation']['stderr'] == pytest.approx(0)
+        assert response['correlation']['p_value'] == pytest.approx(0)
 
 
 class TestActivateCCC:

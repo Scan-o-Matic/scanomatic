@@ -474,10 +474,47 @@ class TestConstructCalibration:
             save_ccc.assert_called()
 
             data = json.loads(response.data)
-            assert data['polynomial_power'] == power
-            assert data['ccc'] == ccc_identifier
             assert len(data['polynomial_coefficients']) == power + 1
             assert data['validation'] == 'OK'
             assert (
                 len(data['measured_sizes']) == len(data['calculated_sizes'])
             )
+
+    def test_returns_fail_reason(self, test_app, finalizable_ccc):
+        with mock.patch(
+            'scanomatic.data_processing.calibration.construct_polynomial',
+            return_value={
+                'polynomial_coefficients': [2, 1, 0],
+                'measured_sizes': [0],
+                'calculated_sizes': [0],
+                'validation': 'BadSlope',
+                'correlation': {
+                    'slope': 5,
+                    'intercept': 3,
+                    'p_value': 0.01,
+                    'stderr': 0.5,
+                },
+            }
+        ) as construct_polynomial:
+
+            ccc_identifier = 'testgoodedit'
+            power = 2
+            access_token = 'password'
+            response = test_app.post(
+                self.url.format(ccc=ccc_identifier, power=power),
+                data=json.dumps({'access_token': access_token}))
+
+            assert response.status_code == 400
+            construct_polynomial.assert_called()
+
+            data = json.loads(response.data)
+            assert data['reason'].startswith(
+                u"Construction refused. "
+                "Validation of polynomial says: BadSlope "
+                "(y = 0.00E+00 x^0 + 1.00E+00 x^1 + 2.00E+00 x^2) "
+                "correlation: {"
+            )
+            assert "'stderr': 0.5" in data['reason']
+            assert "'p_value': 0.01" in data['reason']
+            assert "'intercept': 3" in data['reason']
+            assert "'slope': 5" in data['reason']
