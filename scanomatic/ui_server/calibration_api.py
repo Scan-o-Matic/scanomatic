@@ -502,7 +502,7 @@ def get_bounding_box_for_colony(grid, x, y, width, height):
 def get_colony_detection(colony_im):
 
     # first plate, upper left colony (just need something):
-    identifier = ["unknown_image", 0, [0, 0]]
+    identifier = ["unknown_image!", 0, [0, 0]]
 
     grid_cell = GridCell(identifier, None, save_extra_data=False)
     grid_cell.source = colony_im.astype(np.float64) * -1
