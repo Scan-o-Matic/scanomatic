@@ -764,11 +764,18 @@ def construct_calibration(ccc_identifier, power):
             400,
             reason="Failed to save ccc.")
 
+    extra_info = ''
+    if 'polynomial_as_text' in response:
+        extra_info = ' ({})'.format(response['polynomial_as_text'])
+    if 'correlation' in response:
+        extra_info += ' correlation: {}'.format(response['correlation'])
+
     return json_abort(
         400,
         reason="Construction refused. " +
-        "Validation of polynomial says: {}".format(
-            response["validation"].name
+        "Validation of polynomial says: {}{}".format(
+            response["validation"],
+            extra_info
         ))
 
 
