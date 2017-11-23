@@ -17,5 +17,11 @@ export default class FakePromise {
         fake.value = value;
         return fake;
     }
+
+    static reject(error) {
+        const fake = new FakePromise();
+        fake.error = error;
+        return fake;
+    }
 }
 
