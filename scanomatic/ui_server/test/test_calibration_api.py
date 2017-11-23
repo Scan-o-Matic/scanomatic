@@ -531,7 +531,7 @@ class TestGetColonyDetection:
     def test_blob_is_of_expected_size(self, colony_image):
         grid_cell = get_colony_detection(colony_image)
         blob = grid_cell.get_item(COMPARTMENTS.Blob).filter_array
-        assert blob.sum() == pytest.approx(58, abs=5)
+        assert blob.sum() == pytest.approx(60, abs=10)
 
     def test_blob_has_expected_center(self, colony_image):
         grid_cell = get_colony_detection(colony_image)
