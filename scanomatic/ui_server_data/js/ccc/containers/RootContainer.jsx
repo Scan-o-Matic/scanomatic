@@ -10,21 +10,9 @@ export default class RootContainer extends React.Component {
         this.state = {
             cccMetadata: null,
             error: null,
-            finalized: false,
         };
         this.handleError = this.handleError.bind(this);
-        this.handleFinalizeCCC = this.handleFinalizeCCC.bind(this);
         this.handleInitializeCCC = this.handleInitializeCCC.bind(this);
-    }
-
-    handleFinalizeCCC() {
-        const { id, accessToken } = this.state.cccMetadata;
-        finalizeCalibration(id, accessToken).then(
-            () => this.setState({ error: null, finalized: true }),
-            reason => this.setState({
-                error: `Finalization error: ${reason}`,
-            }),
-        );
     }
 
     handleInitializeCCC(species, reference, fixtureName, pinningFormat) {
@@ -50,9 +38,7 @@ export default class RootContainer extends React.Component {
             <Root
                 cccMetadata={this.state.cccMetadata}
                 error={this.state.error}
-                finalized={this.state.finalized}
                 onInitializeCCC={this.handleInitializeCCC}
-                onFinalizeCCC={this.handleFinalizeCCC}
                 onError={this.handleError}
             />
         );

@@ -1,7 +1,4 @@
 const GetSliceImagePath = "/api/calibration/#0#/image/#1#/slice/get/#2#";
-const InitiateCCCPath = "/api/calibration/initiate_new";
-const GetFixtruesPath = "/api/data/fixture/names";
-const GetPinningFormatsPath = "/api/analysis/pinning/formats";
 const GetTranposedMarkerPath = "/api/data/fixture/calculate/";
 const GetGrayScaleAnalysisPath = "/api/data/grayscale/image/";
 
@@ -71,9 +68,9 @@ export function GetFixturePlates(fixtureName) {
 
 export function GetPinningFormats() {
     return API.get('/api/analysis/pinning/formats')
-        .then(data => data.pinning_formats.map(({ name, value }) => {
-            return { name, nCols: value[0], nRows: value[1] };
-        }));
+        .then(data => data.pinning_formats.map(({ name, value }) => (
+            { name, nCols: value[0], nRows: value[1] }
+        )));
 }
 
 export function GetPinningFormatsv2(successCallback, errorCallback) {
