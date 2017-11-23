@@ -3,6 +3,7 @@ import React from 'react';
 
 import PolynomialResultsInfo from './PolynomialResultsInfo';
 import PolynomialConstructionError from './PolynomialConstructionError';
+import PolynomialResultsPlotScatter from './PolynomialResultsPlotScatter';
 
 
 export default function PolynomialConstruction(props) {
@@ -14,13 +15,23 @@ export default function PolynomialConstruction(props) {
                 onClearError={props.onClearError}
             />
         );
+
     }
 
-    let results = null;
+    let resultsInfo = null;
     if (props.polynomial) {
-        results = (
+        resultsInfo = (
             <PolynomialResultsInfo
                 polynomial={props.polynomial}
+            />
+        );
+    }
+
+    let resultsScatter = null;
+    if (props.resultsData) {
+        resultsScatter = (
+            <PolynomialResultsPlotScatter
+                resultsData={props.resultsData}
             />
         );
     }
@@ -32,7 +43,8 @@ export default function PolynomialConstruction(props) {
                 onClick={props.onConstruction}
             >Construct Cell Count Calibration Polynomial</button>
             {error}
-            {results}
+            {resultsInfo}
+            {resultsScatter}
         </div>
     );
 }
@@ -44,6 +56,10 @@ PolynomialConstruction.propTypes = {
         power: PropTypes.number.isRequired,
         coefficients: PropTypes.array.isRequired,
         colonies: PropTypes.number.isRequired,
+    }),
+    resultsData: PropTypes.shape({
+        calculated: PropTypes.array.isRequired,
+        independentMeasurements: PropTypes.array.isRequired,
     }),
     error: PropTypes.string,
 };
