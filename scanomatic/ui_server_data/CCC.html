@@ -16,53 +16,9 @@
 </head>
 <body>
 
-<div class="container">
-    <div id="dialogFormIniCCC" title="Initiate new CCC">
-        <p class="validateTips">All form fields are required.</p>
-        <form>
-            <fieldset>
-                <label for="inSpecies">Species</label>
-                <input type="text" name="inSpecies" id="inSpecies" value="" class="text ui-widget-content ui-corner-all">
-                <label for="inReference">Reference/Contact</label>
-                <input type="text" name="inReference" id="inReference" value="" class="text ui-widget-content ui-corner-all">
-                <div  id="divFixtureSelector"><label>Fixture</label></div>
-                <div  id="divPinningFormatsSelector"><label>Format</label></div>
-                <!-- Allow form submission with keyboard without duplicating the dialog button -->
-                <input type="submit" tabindex="-1" style="position: absolute; top: -1000px">
-            </fieldset>
-        </form>
-    </div>
-</div>
-
-<div id="cont" class="container QCCont">
-    <h1>Cell Count Calibration</h1>
-    <div class="section-frame">
-        <div class="row">
-            <div class="col-md-12">
-                <button id="btnIniCCC" class="ui-button ui-corner-all ui-widget">Initiate new CCC</button>
-            </div>
-        </div>
-        <div id="divIniCCC">
-            <div class="row">
-                <div class="col-md-12">
-                    <div id="ccc-contain" class="ui-widget">
-                        <h1>Initiated CCC</h1>
-                        <input type="hidden" id="inData"/>
-                        <table id="tblCurrentCCC" class="ui-widget ui-widget-content paddedTable">
-                            <thead>
-                            <tr class="ui-widget-header ">
-                                <th>Parameters</th>
-                                <th>Values</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div id="react-root"></div>
-    </div>
+<div id="cont" class="container">
+  <h1>Cell Count Calibration</h1>
+  <div id="react-root"></div>
 </div>
 </body>
 </html>
