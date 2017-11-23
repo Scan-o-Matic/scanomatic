@@ -131,7 +131,6 @@ describe('API', () => {
 
         it('should send the cell count', () => {
             SetColonyCompression(...args);
-            console.log(mostRecentRequest().params);
             const params = JSON.parse(mostRecentRequest().params);
             expect(params.cell_count).toEqual(cellCount);
         });
@@ -595,7 +594,7 @@ describe('API', () => {
         });
 
         it('should return a promise that resolves on success', (done) => {
-            API.GetFixtures(...args).then(value => {
+            API.GetFixtures(...args).then((value) => {
                 expect(value).toEqual(['abc', 'xyz']);
                 done();
             });
@@ -605,7 +604,7 @@ describe('API', () => {
         });
 
         it('should return a promise that rejects on error', (done) => {
-            API.GetFixtures(...args).catch(reason => {
+            API.GetFixtures(...args).catch((reason) => {
                 expect(reason).toEqual('bar');
                 done();
             });

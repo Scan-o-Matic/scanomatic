@@ -75,7 +75,3 @@ CCCInitialization.propTypes = {
     onPinningFormatNameChange: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
 };
-
-CCCInitialization.defaultProps = {
-    error: null,
-};

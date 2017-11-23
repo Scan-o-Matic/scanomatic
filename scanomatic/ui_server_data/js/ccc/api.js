@@ -72,7 +72,6 @@ export function GetFixturePlates(fixtureName) {
 export function GetPinningFormats() {
     return API.get('/api/analysis/pinning/formats')
         .then(data => data.pinning_formats.map(({ name, value }) => {
-            console.log('format', name, value);
             return { name, nCols: value[0], nRows: value[1] };
         }));
 }

@@ -59,7 +59,7 @@ describe('<CCCInitializationContainer />', () => {
 
     it('should set the error prop if getting fixtures fails', () => {
         API.GetFixtures.and.returnValue(FakePromise.reject('Wibbly'));
-        const wrapper = shallow(<CCCInitializationContainer {...props} />);
+        shallow(<CCCInitializationContainer {...props} />);
         expect(onError).toHaveBeenCalledWith('Error getting fixtures: Wibbly');
     });
 
@@ -71,7 +71,7 @@ describe('<CCCInitializationContainer />', () => {
 
     it('should set the error prop if getting pinning formats fails', () => {
         API.GetPinningFormats.and.returnValue(FakePromise.reject('Wobbly'));
-        const wrapper = shallow(<CCCInitializationContainer {...props} />);
+        shallow(<CCCInitializationContainer {...props} />);
         expect(onError)
             .toHaveBeenCalledWith('Error getting pinning formats: Wobbly');
     });

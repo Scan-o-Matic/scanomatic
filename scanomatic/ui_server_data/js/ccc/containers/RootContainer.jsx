@@ -1,7 +1,7 @@
 import React from 'react';
 
 import Root from '../components/Root';
-import { InitiateCCC, finalizeCalibration } from '../api';
+import { InitiateCCC } from '../api';
 
 
 export default class RootContainer extends React.Component {

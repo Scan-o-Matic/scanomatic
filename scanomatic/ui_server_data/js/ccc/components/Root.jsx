@@ -12,7 +12,6 @@ export default function Root(props) {
         view = (
             <CCCEditorContainer
                 cccMetadata={props.cccMetadata}
-                onFinalizeCCC={props.onFinalizeCCC}
             />
         );
     } else {
