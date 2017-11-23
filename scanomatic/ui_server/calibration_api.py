@@ -1,4 +1,5 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division
+
 from itertools import product
 from types import StringTypes
 
@@ -490,10 +491,10 @@ def get_bounding_box_for_colony(grid, x, y, width, height):
     px_y = max(px_y, 0)
     px_x = max(px_x, 0)
     return {
-        'ylow': int(max(np.round(px_y - height / 2.), 0)),
-        'yhigh': int(np.round(px_y + height / 2.) + 1),
-        'xlow': int(max(np.round(px_x - width / 2.), 0)),
-        'xhigh': int(np.round(px_x + width / 2.) + 1),
+        'ylow': int(max(np.round(px_y - height / 2), 0)),
+        'yhigh': int(np.round(px_y + height / 2) + 1),
+        'xlow': int(max(np.round(px_x - width / 2), 0)),
+        'xhigh': int(np.round(px_x + width / 2) + 1),
         'center': (px_y, px_x),
     }
 
