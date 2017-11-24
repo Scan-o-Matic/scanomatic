@@ -13,6 +13,8 @@ describe('<CCCInitializationContainer />', () => {
     const props = { onError, onInitialize };
 
     beforeEach(() => {
+        onError.calls.reset();
+        onInitialize.calls.reset();
         spyOn(API, 'GetFixtures').and.returnValue(new FakePromise());
         spyOn(API, 'GetPinningFormats').and.returnValue(new FakePromise());
     });
@@ -63,6 +65,12 @@ describe('<CCCInitializationContainer />', () => {
         expect(onError).toHaveBeenCalledWith('Error getting fixtures: Wibbly');
     });
 
+    it('should set the error prop if there is no fixtures', () => {
+        API.GetFixtures.and.returnValue(FakePromise.resolve([]));
+        shallow(<CCCInitializationContainer {...props} />);
+        expect(onError)
+            .toHaveBeenCalledWith('You need to setup a fixture first.');
+    });
 
     it('should request the list of pinning formats', () => {
         shallow(<CCCInitializationContainer {...props} />);
@@ -75,6 +83,7 @@ describe('<CCCInitializationContainer />', () => {
         expect(onError)
             .toHaveBeenCalledWith('Error getting pinning formats: Wobbly');
     });
+
     describe('with pinning formats and fixture names', () => {
         const fixtureNames = ['MyFix1', 'MyFix2'];
         const pinningFormats = [

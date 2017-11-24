@@ -48,7 +48,11 @@ export default class CCCInitializationContainer extends React.Component {
     }
 
     handleGetFixturesSuccess(fixtureNames) {
-        this.setState({ fixtureNames, fixtureName: fixtureNames[0] });
+        if (fixtureNames.length > 0) {
+            this.setState({ fixtureNames, fixtureName: fixtureNames[0] });
+        } else {
+            this.props.onError('You need to setup a fixture first.');
+        }
     }
 
     handleGetPinningFormatsSuccess(pinningFormats) {
