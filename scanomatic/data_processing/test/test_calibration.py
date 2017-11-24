@@ -117,13 +117,16 @@ def data_store_bad_ccc(edit_bad_slope_ccc):
 
 class TestEditCCC:
 
-    def test_validate_bad_correlation(self, data_store_bad_ccc):
+    @pytest.mark.parametrize('slope,p_value,stderr,expected', (
+        (0.99, 0.01, 0.001, calibration.CalibrationValidation.OK),
+        (0.89, 0.01, 0.001, calibration.CalibrationValidation.BadSlope),
+        (0.99, 0.5, 0.001, calibration.CalibrationValidation.BadStatistics),
+        (0.99, 0.01, 0.06, calibration.CalibrationValidation.BadStatistics),
+    ))
+    def test_validate_bad_correlation(self, slope, p_value, stderr, expected):
 
-        poly = np.poly1d([2, 1])
-        assert (
-            calibration.validate_polynomial(data_store_bad_ccc, poly) is
-            calibration.CalibrationValidation.BadSlope
-        )
+        assert calibration.validate_polynomial(
+            slope, p_value, stderr) == expected
 
     def test_ccc_is_in_edit_mode(self, edit_ccc):
 
@@ -170,9 +173,16 @@ class TestEditCCC:
         response = calibration.construct_polynomial(
             identifier, power, access_token=token)
 
-        assert (
-            response['validation'] is not
-            calibration.CalibrationValidation.OK)
+        assert response['validation'] != 'OK'
+
+        assert len(response['calculated_sizes']) == 30
+        assert len(response['measured_sizes']) == 30
+
+        assert response['correlation']['slope'] == pytest.approx(0)
+        assert response['correlation']['intercept'] == pytest.approx(
+            320000, rel=.1)
+        assert response['correlation']['stderr'] == pytest.approx(0)
+        assert response['correlation']['p_value'] == pytest.approx(1)
 
     @pytest.mark.skip("Unreliable with current data")
     def test_construct_good_polynomial(self, edit_ccc):
@@ -185,15 +195,22 @@ class TestEditCCC:
         response = calibration.construct_polynomial(
             identifier, power, access_token=token)
 
-        assert (
-            response['validation'] is
-            calibration.CalibrationValidation.OK)
+        assert 'correlation' in response
+        assert response['correlation']['slope'] == pytest.approx(1, abs=0.02)
+
+        assert response['validation'] == 'OK'
 
         assert response['polynomial_degree'] == power
         assert response['ccc'] == identifier
 
         assert len(response['calculated_sizes']) == 16
         assert len(response['measured_sizes']) == 16
+
+        assert 'calculated_sizes' in response
+        assert response['correlation']['slope'] == pytest.approx(1)
+        assert response['correlation']['intercept'] == pytest.approx(0)
+        assert response['correlation']['stderr'] == pytest.approx(0)
+        assert response['correlation']['p_value'] == pytest.approx(0)
 
 
 class TestActivateCCC:

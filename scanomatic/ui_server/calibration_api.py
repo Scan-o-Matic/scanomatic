@@ -1,6 +1,7 @@
+from __future__ import absolute_import, division
+
 from itertools import product
 from types import StringTypes
-import re
 
 from flask import jsonify, request, send_file, Blueprint, current_app
 import numpy as np
@@ -12,7 +13,6 @@ from scanomatic.image_analysis.grid_array import GridArray
 from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.image_analysis.image_grayscale import (
     get_grayscale_image_analysis)
-from scanomatic.image_analysis import image_basics
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
 from scanomatic.data_processing import calibration
@@ -21,20 +21,6 @@ from .general import (
     serve_numpy_as_image, get_grayscale_is_valid, valid_array_dimensions,
     json_abort
 )
-
-
-def get_bounding_box_for_colony(grid, x, y, width, height):
-
-    px_y, px_x = grid[:, y, x]
-    px_y = max(px_y, 0)
-    px_x = max(px_x, 0)
-    return {
-        'ylow': int(max(round(px_y - height / 2), 0)),
-        'yhigh': int(round(px_y + height / 2) + 1),
-        'xlow': int(max(round(px_x - width / 2), 0)),
-        'xhigh': int(round(px_x + width / 2) + 1),
-        'center': (px_y, px_x),
-    }
 
 
 def get_int_tuple(data):
@@ -499,6 +485,36 @@ def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
     )
 
 
+def get_bounding_box_for_colony(grid, x, y, width, height):
+
+    px_y, px_x = grid[:, y, x]
+    px_y = max(px_y, 0)
+    px_x = max(px_x, 0)
+    return {
+        'ylow': int(max(np.round(px_y - height / 2), 0)),
+        'yhigh': int(np.round(px_y + height / 2) + 1),
+        'xlow': int(max(np.round(px_x - width / 2), 0)),
+        'xhigh': int(np.round(px_x + width / 2) + 1),
+        'center': (px_y, px_x),
+    }
+
+
+def get_colony_detection(colony_im):
+
+    # first plate, upper left colony (just need something):
+    identifier = ["unknown_image!", 0, [0, 0]]
+
+    grid_cell = GridCell(identifier, None, save_extra_data=False)
+    grid_cell.source = colony_im.astype(np.float64) * -1
+
+    grid_cell.attach_analysis(
+        blob=True, background=True, cell=True,
+        run_detect=False)
+
+    grid_cell.detect(remember_filter=False)
+    return grid_cell
+
+
 @blueprint.route(
     "/<ccc_identifier>/image/<image_identifier>" +
     "/plate/<int:plate>/detect/colony/<int:x>/<int:y>", methods=["POST"])
@@ -536,33 +552,13 @@ def detect_colony(ccc_identifier, image_identifier, plate, x, y):
 
     plate_json = image_json[calibration.CCCImage.plates][plate]
     h, w = plate_json[calibration.CCCPlate.grid_cell_size]
-
     box = get_bounding_box_for_colony(grid, x, y, w, h)
     colony_im = image[
         box['ylow']: box['yhigh'],
         box['xlow']: box['xhigh'],
     ]
 
-    # first plate, upper left colony (just need something):
-    identifier = ["unknown_image", 0, [0, 0]]
-
-    grid_cell = GridCell(identifier, None, save_extra_data=False)
-    grid_cell.source = colony_im.astype(np.float64)
-
-    transpose_polynomial = image_basics.Image_Transpose(
-        sourceValues=image_json[
-            calibration.CCCImage.grayscale_source_values],
-        targetValues=image_json[
-            calibration.CCCImage.grayscale_target_values]
-    )
-
-    grid_cell.source[...] = transpose_polynomial(grid_cell.source)
-
-    grid_cell.attach_analysis(
-        blob=True, background=True, cell=True,
-        run_detect=False)
-
-    grid_cell.detect(remember_filter=False)
+    grid_cell = get_colony_detection(colony_im, grid, x, y, w, h)
     blob = grid_cell.get_item(COMPARTMENTS.Blob).filter_array
     background = grid_cell.get_item(COMPARTMENTS.Background).filter_array
     blob_exists = blob.any()
@@ -764,11 +760,19 @@ def construct_calibration(ccc_identifier, power):
             400,
             reason="Failed to save ccc.")
 
+    extra_info = ''
+    if 'polynomial_coefficients' in response:
+        extra_info = ' ({})'.format(
+            calibration.poly_as_text(response['polynomial_coefficients']))
+    if 'correlation' in response:
+        extra_info += ' correlation: {}'.format(response['correlation'])
+
     return json_abort(
         400,
         reason="Construction refused. " +
-        "Validation of polynomial says: {}".format(
-            response["validation"].name
+        "Validation of polynomial says: {}{}".format(
+            response["validation"],
+            extra_info
         ))
 
 

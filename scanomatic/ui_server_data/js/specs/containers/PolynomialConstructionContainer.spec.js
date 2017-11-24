@@ -11,7 +11,6 @@ describe('<PolynomialConstructionContainer />', () => {
     const props = { cccMetadata };
 
     const results = {
-        polynomial_power: 5,
         polynomial_coefficients: [1, 1, 2, 0.4],
         calculated_sizes: [15, 20],
         measured_sizes: [2, 3],
@@ -30,9 +29,13 @@ describe('<PolynomialConstructionContainer />', () => {
         );
         const state = {
             polynomial: {
-                power: 5,
+                power: 4,
                 coefficients: [1, 2, 3, 4, 5],
                 colonies: 42,
+            },
+            resultsData: {
+                calculated: [1, 2, 3],
+                independentMeasurements: [3, 4, 5],
             },
             error: 'nope',
             resultsData: 'it should look differently',
@@ -76,11 +79,11 @@ describe('<PolynomialConstructionContainer />', () => {
         spyOn(API, 'SetNewCalibrationPolynomial')
             .and.returnValue(promise);
         wrapper.setState({error: 'test'});
-        poly.prop('onConstruction')();
-        promise.then(() => {
-            expect(wrapper.state('error')).toBe(null);
-            done();
-        });
+        poly.prop('onConstruction')()
+            .then(() => {
+                expect(wrapper.state('error')).toBe(null);
+                done();
+            });
     });
 
     it('should set new results', (done) => {
@@ -95,7 +98,7 @@ describe('<PolynomialConstructionContainer />', () => {
         promise.then(() => {
             expect(wrapper.state('polynomial'))
                 .toEqual({
-                    power: results.polynomial_power,
+                    power: results.polynomial_coefficients.length - 1,
                     coefficients: results.polynomial_coefficients,
                     colonies: results.calculated_sizes.length,
                 });

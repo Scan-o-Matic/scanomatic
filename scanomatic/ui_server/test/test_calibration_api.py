@@ -1,16 +1,23 @@
+from __future__ import absolute_import
 import os
 import json
 
 import pytest
 import mock
 import numpy as np
+from scipy.stats import norm
+from scipy.ndimage import center_of_mass
 from flask import Flask
 from itertools import product
 
+from scanomatic.models.analysis_model import COMPARTMENTS
 from scanomatic.ui_server import calibration_api
 from scanomatic.io.paths import Paths
 from scanomatic.io.ccc_data import parse_ccc
 from scanomatic.data_processing import calibration
+from scanomatic.ui_server.calibration_api import (
+    get_bounding_box_for_colony, get_colony_detection
+)
 
 
 def _fixture_load_ccc(rel_path):
@@ -474,10 +481,97 @@ class TestConstructCalibration:
             save_ccc.assert_called()
 
             data = json.loads(response.data)
-            assert data['polynomial_power'] == power
-            assert data['ccc'] == ccc_identifier
             assert len(data['polynomial_coefficients']) == power + 1
             assert data['validation'] == 'OK'
             assert (
                 len(data['measured_sizes']) == len(data['calculated_sizes'])
             )
+
+    def test_returns_fail_reason(self, test_app, finalizable_ccc):
+        with mock.patch(
+            'scanomatic.data_processing.calibration.construct_polynomial',
+            return_value={
+                'polynomial_coefficients': [2, 1, 0],
+                'measured_sizes': [0],
+                'calculated_sizes': [0],
+                'validation': 'BadSlope',
+                'correlation': {
+                    'slope': 5,
+                    'intercept': 3,
+                    'p_value': 0.01,
+                    'stderr': 0.5,
+                },
+            }
+        ) as construct_polynomial:
+
+            ccc_identifier = 'testgoodedit'
+            power = 2
+            access_token = 'password'
+            response = test_app.post(
+                self.url.format(ccc=ccc_identifier, power=power),
+                data=json.dumps({'access_token': access_token}))
+
+            assert response.status_code == 400
+            construct_polynomial.assert_called()
+
+            data = json.loads(response.data)
+            assert data['reason'].startswith(
+                u"Construction refused. "
+                "Validation of polynomial says: BadSlope "
+                "(y = 0.00E+00 x^0 + 1.00E+00 x^1 + 2.00E+00 x^2) "
+                "correlation: {"
+            )
+            assert "'stderr': 0.5" in data['reason']
+            assert "'p_value': 0.01" in data['reason']
+            assert "'intercept': 3" in data['reason']
+            assert "'slope': 5" in data['reason']
+
+
+@pytest.mark.parametrize('grid,x,y,w,h,expected', (
+    (np.array([[[10]], [[10]]]), 0, 0, 5, 6,
+     {'ylow': 7, 'yhigh': 14, 'xlow': 8, 'xhigh': 13, 'center': (10, 10)}),
+    (np.array([[[10, 20]], [[10, 10]]]), 1, 0, 5, 6,
+     {'ylow': 17, 'yhigh': 24, 'xlow': 8, 'xhigh': 13, 'center': (20, 10)}),
+    (np.array([[[5]], [[10]]]), 0, 0, 10, 20,
+     {'ylow': 0, 'yhigh': 16, 'xlow': 5, 'xhigh': 16, 'center': (5, 10)}),
+))
+def test_bounding_box_for_colony(grid, x, y, w, h, expected):
+    result = get_bounding_box_for_colony(grid, x, y, w, h)
+    assert result == expected
+
+
+@pytest.fixture(scope='function')
+def colony_image():
+    im = np.random.normal(loc=80, scale=0.2, size=(25, 25))
+    cell_vector = norm.pdf(np.arange(-5, 6)/2.)
+    colony = np.multiply.outer(cell_vector, cell_vector) * 20
+    im[6:17, 5:16] -= colony
+    return im
+
+
+class TestGetColonyDetection:
+
+    def test_colony_is_darker(self, colony_image):
+        grid_cell = get_colony_detection(colony_image)
+        blob = grid_cell.get_item(COMPARTMENTS.Blob).filter_array
+        background = grid_cell.get_item(COMPARTMENTS.Background).filter_array
+        assert (
+            grid_cell.source[blob].mean() >
+            grid_cell.source[background].mean()
+        )
+
+    def test_blob_and_background_dont_overlap(self, colony_image):
+        grid_cell = get_colony_detection(colony_image)
+        blob = grid_cell.get_item(COMPARTMENTS.Blob).filter_array
+        background = grid_cell.get_item(COMPARTMENTS.Background).filter_array
+        assert (blob & background).sum() == 0
+
+    def test_blob_is_of_expected_size(self, colony_image):
+        grid_cell = get_colony_detection(colony_image)
+        blob = grid_cell.get_item(COMPARTMENTS.Blob).filter_array
+        assert blob.sum() == pytest.approx(60, abs=10)
+
+    def test_blob_has_expected_center(self, colony_image):
+        grid_cell = get_colony_detection(colony_image)
+        blob = grid_cell.get_item(COMPARTMENTS.Blob).filter_array
+        assert center_of_mass(blob) == pytest.approx((11, 10), abs=1)
