@@ -44,53 +44,63 @@ export default class PolynomialResultsPlotScatter extends React.Component {
 
     drawSVG2() {
 
-        const yMax = Math.max(...this.props.resultsData.calculated);
-        const xMax = Math
-            .max(...this.props.resultsData.independentMeasurements);
-        const rangeMax = Math.max(xMax, yMax) * 1.1;
         const { calculated, independentMeasurements } = this.props.resultsData;
-        const plot = c3.generate({
+        const { slope, intercept, stderr } = this.props.correlation;
+        const corr = x => (slope * x) + intercept;
+        const yMax = Math.max(...calculated);
+        const xMax = Math.max(...independentMeasurements);
+        const rangeMax = Math.ceil(Math.max(xMax, yMax) * 1.1);
+        c3.generate({
             bindto: this.divRef,
             data: {
                 xs: {
                     calculated: 'independentMeasurements',
-                    identityLine: 'identityLine_x',
+                    'Identity Line': 'identityLine_x',
+                    Correlation: 'correlation_x',
                 },
                 columns: [
                     ['calculated'].concat(calculated),
                     ['independentMeasurements']
                         .concat(independentMeasurements),
-                    ['identityLine', 0, rangeMax],
+                    ['Identity Line', 0, rangeMax],
                     ['identityLine_x', 0, rangeMax],
+                    ['Correlation', corr(0), corr(rangeMax)],
+                    ['correlation_x', 0, rangeMax],
                 ],
                 types: {
                     calculated: 'scatter',
-                    identityLine: 'line',
-                }
+                    'Identity Line': 'line',
+                    Correlation: 'line',
+                },
             },
             axis: {
                 x: {
                     label: 'Independent Measurements',
-                    min: 0,
-                    max: rangeMax,
-                    extent: [0, rangeMax],
+                    tick: {
+                        fit: false,
+                        values: [0, rangeMax],
+                    },
                 },
                 y: {
                     label: 'Calculated',
-                    min: 0,
-                    max: rangeMax,
-                    extent: [0, rangeMax],
-                }
+                    tick: {
+                        fit: false,
+                        values: [0, rangeMax],
+                    },
+                },
             },
             size: {
                 width: 500,
                 height: 500,
             },
+            padding: {
+                right: 6,
+            },
             point: {
                 r: 4,
             },
             legend: {
-                show: false,
+                hide: ['calculated'],
             },
         });
     }
@@ -100,5 +110,11 @@ PolynomialResultsPlotScatter.propTypes = {
     resultsData: PropTypes.shape({
         calculated: PropTypes.array.isRequired,
         independentMeasurements: PropTypes.array.isRequired,
+    }).isRequired,
+    correlation: PropTypes.shape({
+        slope: PropTypes.number.isRequired,
+        intercept: PropTypes.number.isRequired,
+        stderr: PropTypes.number.isRequired,
+        p_value: PropTypes.number.isRequired,
     }).isRequired,
 };

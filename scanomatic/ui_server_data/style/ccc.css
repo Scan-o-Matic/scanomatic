@@ -31,8 +31,12 @@ table {
 .poly-corr-chart svg {
 	background: #fff;
 }
-.poly-corr-chart .c3-shapes-identityLine .c3-circle {
-	opacity: 0;
+.poly-corr-chart .c3-shapes-Identity-Line .c3-circle {
+	opacity: 0 !important;
+}
+
+.poly-corr-chart .c3-shapes-Correlation .c3-circle {
+	opacity: 0 !important;
 }
 
 .paddedTable td{
