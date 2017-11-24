@@ -477,6 +477,7 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
 
     if not grayscale_targets or not grayscale_values:
         _logger.error("The gray-scale values have not been setup")
+        return False
 
     transpose_polynomial = Image_Transpose(
         sourceValues=grayscale_values,
@@ -548,17 +549,13 @@ def calculate_sizes(data, poly):
     ]
 
 
-def validate_polynomial(data, poly):
+def validate_polynomial(slope, p_value, stderr):
 
-    calculated = calculate_sizes(data, poly)
-    slope, intercept, _, p_value, stderr = linregress(
-        calculated, data.target_value)
-
-    if abs(1.0 - slope) > 0.005:
+    if abs(1.0 - slope) > 0.1:
         _logger.error("Bad slope for polynomial: {0}".format(slope))
         return CalibrationValidation.BadSlope
 
-    if stderr > 0.05 or p_value > 0.1:
+    if p_value > 0.01 or stderr > 0.05:
         return CalibrationValidation.BadStatistics
 
     return CalibrationValidation.OK
@@ -683,28 +680,33 @@ def construct_polynomial(identifier, power):
         }
     poly = get_calibration_polynomial(poly_coeffs)
 
-    validation = validate_polynomial(data_store, poly)
+    calculated_sizes = calculate_sizes(data_store, poly)
+    slope, intercept, _, p_value, stderr = linregress(
+        data_store.target_value, calculated_sizes)
 
-    if validation is not CalibrationValidation.OK:
-        return {
-            'validation': validation
-        }
-    ccc[CellCountCalibration.polynomial] = get_polynomal_entry(
-        power, poly_coeffs,
-    )
+    validation = validate_polynomial(slope, p_value, stderr)
 
-    if not save_ccc_to_disk(ccc):
-        return False
+    if validation is CalibrationValidation.OK:
+        ccc[CellCountCalibration.polynomial] = get_polynomal_entry(
+            power, poly_coeffs,
+        )
+
+        if not save_ccc_to_disk(ccc):
+            return False
 
     calculated_sizes = calculate_sizes(data_store, poly)
 
     return {
-        'ccc': identifier,
         'polynomial_coefficients': poly_coeffs,
-        'polynomial_power': power,
         'measured_sizes': data_store.target_value.tolist(),
         'calculated_sizes': calculated_sizes,
         'validation': validation.name,
+        'correlation': {
+            'slope': slope,
+            'intercept': intercept,
+            'p_value': p_value,
+            'stderr': stderr,
+        },
     }
 
 
