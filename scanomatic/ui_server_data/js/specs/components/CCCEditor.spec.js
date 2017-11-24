@@ -3,7 +3,7 @@ import React from 'react';
 
 import '../components/enzyme-setup';
 import CCCEditor from '../../ccc/components/CCCEditor';
-import { cccMetadata } from '../fixtures';
+import cccMetadata from '../fixtures/cccMetadata';
 
 describe('<CCCEditor />', () => {
     const onFinishPlate = jasmine.createSpy('onFinishPlate');
