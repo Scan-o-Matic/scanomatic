@@ -25,12 +25,29 @@ export default function PolynomialConstruction(props) {
         );
     }
 
+    const degrees = ['1', '2', '3', '4', '5'];
     return (
         <div>
-            <button
-                className="btn btn-default"
-                onClick={props.onConstruction}
-            >Construct Cell Count Calibration Polynomial</button>
+            <h3>Cell Count Calibration Polynomial</h3>
+            <div className="form-inline">
+                <div className="form-group">
+                    <label>Degree of polynomial</label>
+                    <select
+                        className="degree form-control"
+                        onChange={props.onDegreeOfPolynomialChange}
+                        value={props.degreeOfPolynomial}
+                    >
+                        {degrees.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                </div>
+                {' '}
+                <button
+                    className="btn btn-default"
+                    onClick={props.onConstruction}
+                >
+                    Construct Polynomial
+                </button>
+            </div>
             {error}
             {results}
         </div>
@@ -38,8 +55,10 @@ export default function PolynomialConstruction(props) {
 }
 
 PolynomialConstruction.propTypes = {
+    degreeOfPolynomial: PropTypes.number.isRequired,
     onConstruction: PropTypes.func.isRequired,
     onClearError: PropTypes.func.isRequired,
+    onDegreeOfPolynomialChange: PropTypes.func.isRequired,
     polynomial: PropTypes.shape({
         power: PropTypes.number.isRequired,
         coefficients: PropTypes.array.isRequired,

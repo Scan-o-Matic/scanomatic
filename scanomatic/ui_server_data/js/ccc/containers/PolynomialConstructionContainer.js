@@ -11,7 +11,7 @@ export default class PolynomialConstructionContainer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            power: 5,
+            degreeOfPolynomial: 5,
             error: null,
             polynomial: null,
             resultsData: null,
@@ -23,14 +23,15 @@ export default class PolynomialConstructionContainer extends React.Component {
         this.handleConstructionResultsError =
             this.handleConstructionResultsError.bind(this);
         this.handleClearError = this.handleClearError.bind(this);
+        this.handleDegreeOfPolynomialChange = this.handleDegreeOfPolynomialChange.bind(this);
     }
 
     handleConstruction() {
         const { id, accessToken } = this.props.cccMetadata;
-        const { power } = this.state;
-        return API.SetNewCalibrationPolynomial(id, power, accessToken)
-        .then(this.handleConstructionResults)
-        .catch(this.handleConstructionResultsError);
+        const { degreeOfPolynomial } = this.state;
+        return API.SetNewCalibrationPolynomial(id, degreeOfPolynomial, accessToken)
+            .then(this.handleConstructionResults)
+            .catch(this.handleConstructionResultsError);
     }
 
     handleConstructionResults(results) {
@@ -58,12 +59,18 @@ export default class PolynomialConstructionContainer extends React.Component {
         this.setState({ error: null });
     }
 
+    handleDegreeOfPolynomialChange({ target: { value } }) {
+        this.setState({ degreeOfPolynomial: parseInt(value, 10) });
+    }
+
     render() {
         return <PolynomialConstruction
+            degreeOfPolynomial={this.state.degreeOfPolynomial}
             polynomial={this.state.polynomial}
             error={this.state.error}
             onClearError={this.handleClearError}
             onConstruction={this.handleConstruction}
+            onDegreeOfPolynomialChange={this.handleDegreeOfPolynomialChange}
         />;
     }
 }

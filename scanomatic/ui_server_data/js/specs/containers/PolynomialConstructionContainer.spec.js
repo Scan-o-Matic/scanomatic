@@ -16,11 +16,28 @@ describe('<PolynomialConstructionContainer />', () => {
         measured_sizes: [2, 3],
     };
 
+    beforeEach(() => {
+        spyOn(API, 'SetNewCalibrationPolynomial')
+            .and.returnValue(new Promise(() => {}));
+    });
+
     it('should render a <PolynomialConstruction />', () => {
         const wrapper = shallow(
             <PolynomialConstructionContainer {...props} />
         );
         expect(wrapper.find('PolynomialConstruction').exists()).toBeTruthy();
+    });
+
+    it('should set 5 as the default polynomial degree', () => {
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
+        expect(wrapper.prop('degreeOfPolynomial')).toEqual(5);
+    });
+
+    it('should update the polynomial degree on onDegreeOfPolynomialChange', () => {
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
+        wrapper.prop('onDegreeOfPolynomialChange')({ target: { value: '42' } });
+        wrapper.update();
+        expect(wrapper.prop('degreeOfPolynomial')).toEqual(42);
     });
 
     it('should set properties of PolynomialConstruction from state', () => {
@@ -59,13 +76,18 @@ describe('<PolynomialConstructionContainer />', () => {
             <PolynomialConstructionContainer {...props} />
         );
         const poly = wrapper.find('PolynomialConstruction');
-        const promise = new Promise(() => {});
-        spyOn(API, 'SetNewCalibrationPolynomial')
-            .and.returnValue(promise);
         poly.prop('onConstruction')();
         expect(API.SetNewCalibrationPolynomial).toHaveBeenCalledWith(
             props.cccMetadata.id, 5, props.cccMetadata.accessToken,
         );
+    });
+
+    it('should build the polynomial with the updated degree', () => {
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
+        wrapper.prop('onDegreeOfPolynomialChange')({ target: { value: '42' } });
+        wrapper.prop('onConstruction')();
+        expect(API.SetNewCalibrationPolynomial)
+            .toHaveBeenCalledWith(props.cccMetadata.id, 42, props.cccMetadata.accessToken);
     });
 
     it('should clear error on new results', (done) => {
@@ -74,8 +96,7 @@ describe('<PolynomialConstructionContainer />', () => {
         );
         const poly = wrapper.find('PolynomialConstruction');
         const promise = Promise.resolve(results);
-        spyOn(API, 'SetNewCalibrationPolynomial')
-            .and.returnValue(promise);
+        API.SetNewCalibrationPolynomial.and.returnValue(promise);
         wrapper.setState({error: 'test'});
         poly.prop('onConstruction')()
             .then(() => {
@@ -90,8 +111,7 @@ describe('<PolynomialConstructionContainer />', () => {
         );
         const poly = wrapper.find('PolynomialConstruction');
         const promise = Promise.resolve(results);
-        spyOn(API, 'SetNewCalibrationPolynomial')
-            .and.returnValue(promise);
+        API.SetNewCalibrationPolynomial.and.returnValue(promise);
         poly.prop('onConstruction')();
         promise.then(() => {
             expect(wrapper.state('polynomial'))
@@ -116,8 +136,7 @@ describe('<PolynomialConstructionContainer />', () => {
         );
         const poly = wrapper.find('PolynomialConstruction');
         const promise = Promise.reject('foo');
-        spyOn(API, 'SetNewCalibrationPolynomial')
-            .and.returnValue(promise);
+        API.SetNewCalibrationPolynomial.and.returnValue(promise);
         poly.prop('onConstruction')()
             .then(() => {
                 expect(wrapper.state('error')).toEqual('foo');
