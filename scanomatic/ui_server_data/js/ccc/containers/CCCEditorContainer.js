@@ -59,6 +59,7 @@ export default class CCCEditorContainer extends React.Component {
                 cccMetadata={this.props.cccMetadata}
                 plates={this.state.plates}
                 currentPlate={this.state.currentPlate}
+                onFinalizeCCC={this.props.onFinalizeCCC}
                 onFinishUpload={this.handleFinishUpload}
                 onFinishPlate={this.handleFinishPlate}
                 ready={this.state.ready}
@@ -69,4 +70,5 @@ export default class CCCEditorContainer extends React.Component {
 
 CCCEditorContainer.propTypes = {
     cccMetadata: CCCPropTypes.cccMetadata.isRequired,
+    onFinalizeCCC: PropTypes.func.isRequired,
 };

@@ -707,7 +707,7 @@ describe('API', () => {
         });
     });
 
-   describe('finalizeCalibration', () => {
+    describe('finalizeCalibration', () => {
         const args = ['CCC0', 'T0K3N'];
 
         it('should query the correct URL', () => {
