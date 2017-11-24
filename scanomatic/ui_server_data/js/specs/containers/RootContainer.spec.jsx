@@ -13,6 +13,7 @@ describe('<RootContainer />', () => {
         spyOn(API, 'InitiateCCC').and.returnValue(new FakePromise());
         spyOn(API, 'GetFixtures').and.returnValue(new FakePromise());
         spyOn(API, 'GetPinningFormats').and.returnValue(new FakePromise());
+        spyOn(API, 'finalizeCalibration').and.returnValue(new FakePromise());
     });
 
     it('should render <Root />', () => {
@@ -78,6 +79,32 @@ describe('<RootContainer />', () => {
             initializeCCC(wrapper);
             wrapper.update();
             expect(wrapper.prop('error')).toBeFalsy();
+        });
+
+        it('should finalize the CCC on onFinalizeCCC', () => {
+            const wrapper = shallow(<RootContainer />);
+            initializeCCC(wrapper);
+            wrapper.prop('onFinalizeCCC')();
+            expect(API.finalizeCalibration)
+                .toHaveBeenCalledWith(cccMetadata.id, cccMetadata.accessToken);
+        });
+
+        it('should set the error if finalization fails', () => {
+            API.finalizeCalibration.and.returnValue(FakePromise.reject('Wobbly'));
+            const wrapper = shallow(<RootContainer />);
+            initializeCCC(wrapper);
+            wrapper.prop('onFinalizeCCC')();
+            wrapper.update();
+            expect(wrapper.prop('error')).toEqual('Finalization error: Wobbly');
+        });
+
+        it('should set finalized to true if finalization succeeds', () => {
+            API.finalizeCalibration.and.returnValue(FakePromise.resolve());
+            const wrapper = shallow(<RootContainer />);
+            initializeCCC(wrapper);
+            wrapper.prop('onFinalizeCCC')();
+            wrapper.update();
+            expect(wrapper.prop('finalized')).toBeTruthy();
         });
     });
 });
