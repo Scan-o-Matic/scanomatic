@@ -30,6 +30,6 @@ def quantiles_stable(data):
         data = np.ma.masked_invalid(data)
 
     data = data[data.mask == False]
-    threshold = np.floor(data.size * 0.25)
+    threshold = int(np.floor(data.size * 0.25))
     data.sort()
     return data[threshold], data[-threshold]
