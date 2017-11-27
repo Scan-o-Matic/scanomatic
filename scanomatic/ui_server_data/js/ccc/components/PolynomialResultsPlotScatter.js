@@ -7,50 +7,37 @@ import 'c3/c3.min.css';
 
 export default class PolynomialResultsPlotScatter extends React.Component {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            d3Settings: {
-                width: 600,
-                height: 400,
-                margins: {
-                    left: 20,
-                    right: 20,
-                    top: 20,
-                    bottom: 30,
-                    axisLabel: 6,
-                },
-                markers: {
-                    type: 'dot',
-                    fill: 'rgba(120, 40, 40)',
-                }
-            }
-        }
-    }
-
     render() {
-        return <div className="poly-corr-chart"
-            ref={ref => {this.divRef = ref;} }
-        />;
+        const { slope, intercept, stderr } = this.props.correlation;
+        return (
+            <div className='poly-corr'>
+                <h4>Population Size Correlation</h4>
+                <div className="poly-corr-chart"
+                    ref={ref => {this.divRef = ref;} }
+                />
+                <p>Correlation:
+                    y = {slope.toFixed(2)}x + {intercept.toFixed(0)} (standard error {stderr.toFixed(2)})
+                </p>
+            </div>
+        );
     }
 
     componentDidMount() {
-        this.drawSVG2();
+        this.drawSVG();
     }
 
     componentDidUpdate() {
-        this.drawSVG2();
+        this.drawSVG();
     }
 
-    drawSVG2() {
-
+    drawSVG() {
         const { calculated, independentMeasurements } = this.props.resultsData;
-        const { slope, intercept, stderr } = this.props.correlation;
+        const { slope, intercept } = this.props.correlation;
         const corr = x => (slope * x) + intercept;
         const yMax = Math.max(...calculated);
         const xMax = Math.max(...independentMeasurements);
         const rangeMax = Math.ceil(Math.max(xMax, yMax) * 1.1);
-        c3.generate({
+        return c3.generate({
             bindto: this.divRef,
             data: {
                 xs: {
@@ -115,6 +102,5 @@ PolynomialResultsPlotScatter.propTypes = {
         slope: PropTypes.number.isRequired,
         intercept: PropTypes.number.isRequired,
         stderr: PropTypes.number.isRequired,
-        p_value: PropTypes.number.isRequired,
     }).isRequired,
 };

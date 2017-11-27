@@ -15,6 +15,7 @@ export default class PolynomialConstructionContainer extends React.Component {
             error: null,
             polynomial: null,
             resultsData: null,
+            correlation: null,
         };
 
         this.handleConstruction = this.handleConstruction.bind(this);
@@ -29,25 +30,28 @@ export default class PolynomialConstructionContainer extends React.Component {
         const { id, accessToken } = this.props.cccMetadata;
         const { power } = this.state;
         return API.SetNewCalibrationPolynomial(id, power, accessToken)
-        .then(this.handleConstructionResults)
-        .catch(this.handleConstructionResultsError);
+            .then(this.handleConstructionResults)
+            .catch(this.handleConstructionResultsError);
     }
 
     handleConstructionResults(results) {
-        this.setState(
-            {
-                error: null,
-                polynomial: {
-                    power: results.polynomial_coefficients.length - 1,
-                    coefficients: results.polynomial_coefficients,
-                    colonies: results.calculated_sizes.length,
-                },
-                resultsData: {
-                    calculated: results.calculated_sizes,
-                    independentMeasurements: results.measured_sizes
-                },
-            }
-        );
+        this.setState({
+            error: null,
+            polynomial: {
+                power: results.polynomial_coefficients.length - 1,
+                coefficients: results.polynomial_coefficients,
+                colonies: results.calculated_sizes.length,
+            },
+            resultsData: {
+                calculated: results.calculated_sizes,
+                independentMeasurements: results.measured_sizes,
+            },
+            correlation: {
+                slope: results.correlation.slope,
+                intercept: results.correlation.intercept,
+                stderr: results.correlation.stderr,
+            },
+        });
     }
 
     handleConstructionResultsError(reason) {
@@ -59,12 +63,14 @@ export default class PolynomialConstructionContainer extends React.Component {
     }
 
     render() {
-        return <PolynomialConstruction
+        return (<PolynomialConstruction
             polynomial={this.state.polynomial}
+            resultsData={this.state.resultsData}
+            correlation={this.state.correlation}
             error={this.state.error}
             onClearError={this.handleClearError}
             onConstruction={this.handleConstruction}
-        />;
+        />);
     }
 }
 

@@ -18,6 +18,11 @@ describe('<PolynomialConstruction />', () => {
             calculated: [1, 2, 3],
             independentMeasurements: [4, 5, 6],
         },
+        correlation: {
+            slope: 55,
+            intercept: -444,
+            stderr: 0.01,
+        },
         error: 'No no no!'
     };
 
@@ -63,6 +68,13 @@ describe('<PolynomialConstruction />', () => {
         expect(wrapper.find('PolynomialResultsPlotScatter')
             .prop('resultsData'))
             .toEqual(props.resultsData);
+    });
+
+    it('should set correlation according to props', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} />);
+        expect(wrapper.find('PolynomialResultsPlotScatter')
+            .prop('correlation'))
+            .toEqual(props.correlation);
     });
 
     it('should set the results polynomial according to props', () => {

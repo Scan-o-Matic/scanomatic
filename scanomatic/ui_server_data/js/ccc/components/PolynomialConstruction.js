@@ -15,7 +15,6 @@ export default function PolynomialConstruction(props) {
                 onClearError={props.onClearError}
             />
         );
-
     }
 
     let resultsInfo = null;
@@ -32,6 +31,7 @@ export default function PolynomialConstruction(props) {
         resultsScatter = (
             <PolynomialResultsPlotScatter
                 resultsData={props.resultsData}
+                correlation={props.correlation}
             />
         );
     }
@@ -60,6 +60,11 @@ PolynomialConstruction.propTypes = {
     resultsData: PropTypes.shape({
         calculated: PropTypes.array.isRequired,
         independentMeasurements: PropTypes.array.isRequired,
+    }),
+    correlation: PropTypes.shape({
+        slope: PropTypes.number.isRequired,
+        intercept: PropTypes.number.isRequired,
+        stderr: PropTypes.number.isRequired,
     }),
     error: PropTypes.string,
 };
