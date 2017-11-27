@@ -28,7 +28,6 @@ export default function PolynomialResultsInfo({ polynomial }) {
 
 PolynomialResultsInfo.propTypes = {
     polynomial: PropTypes.shape({
-        power: PropTypes.number.isRequired,
         coefficients: PropTypes.array.isRequired,
         colonies: PropTypes.number.isRequired,
     }),
