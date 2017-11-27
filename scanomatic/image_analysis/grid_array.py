@@ -96,10 +96,9 @@ def _get_image_slice(im, grid_cell):
     xy1 = grid_cell.xy1
     xy2 = grid_cell.xy2
 
-    if xy1 and len(xy1) == 2 and xy2 and len(xy2) == 2:
+    if xy1 is not None and len(xy1) == 2 and xy2 is not None and len(xy2) == 2:
         return im[xy1[0]: xy2[0], xy1[1]: xy2[1]].copy()
-    else:
-        return None
+    return None
 
 
 def _create_grid_array_identifier(identifier):
