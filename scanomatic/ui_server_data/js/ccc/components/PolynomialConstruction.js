@@ -25,7 +25,7 @@ export default function PolynomialConstruction(props) {
         );
     }
 
-    const degrees = ['1', '2', '3', '4', '5'];
+    const degrees = ['2', '3', '4', '5'];
     return (
         <div>
             <h3>Cell Count Calibration Polynomial</h3>
