@@ -1,0 +1,84 @@
+[PayamMartin19Oct16Scanner2]
+project_tag = 
+project_name = PayamMartin19Oct16Scanner2
+description = If with science, you let your life deteriorate,
+	at least do it right.
+	Do it with plight
+	and fill out this field before it's too late
+time_between_scans = 20.0
+start_time = 0.0
+version = v1.4
+fixture = Delta 2
+id = 8dbe2a08400f2992e057d845f90d7bfa
+auxillary_info = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'Auxillary Information'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.scanning_factory
+	ScanningAuxInfoFactory
+	p9
+	sb.
+number_of_scans = 217
+computer = Delta
+mode = TPU
+pinning_formats = (S"(S'32'\np1\nS'48'\np2\ntp3\n."
+	S"(S'32'\np1\nS'48'\np2\ntp3\n."
+	S"(S'32'\np1\nS'48'\np2\ntp3\n."
+	S"(S'32'\np1\nS'48'\np2\ntp3\n."
+	tp1
+	.
+scanner_tag = 
+scanner_hardware = EPSON V700
+directory_containing_project = /home/jw20/DATA/PayamMartin/19Oct2016
+plate_descriptions = (S'S"ccopy_reg\\n_reconstructor\\np1\\n(cscanomatic.generics.abstract_model_factory\\n_SectionsLink\\np2\\nc__builtin__\\nobject\\np3\\nNtRp4\\n(dp5\\nS\'_section_name\'\\np6\\nS\'Plate 1\'\\np7\\nsS\'_subfactory\'\\np8\\ncscanomatic.models.factories.scanning_factory\\nPlateDescriptionFactory\\np9\\nsb."\np1\n.'
+	S'S"ccopy_reg\\n_reconstructor\\np1\\n(cscanomatic.generics.abstract_model_factory\\n_SectionsLink\\np2\\nc__builtin__\\nobject\\np3\\nNtRp4\\n(dp5\\nS\'_section_name\'\\np6\\nS\'Plate 2\'\\np7\\nsS\'_subfactory\'\\np8\\ncscanomatic.models.factories.scanning_factory\\nPlateDescriptionFactory\\np9\\nsb."\np1\n.'
+	S'S"ccopy_reg\\n_reconstructor\\np1\\n(cscanomatic.generics.abstract_model_factory\\n_SectionsLink\\np2\\nc__builtin__\\nobject\\np3\\nNtRp4\\n(dp5\\nS\'_section_name\'\\np6\\nS\'Plate 3\'\\np7\\nsS\'_subfactory\'\\np8\\ncscanomatic.models.factories.scanning_factory\\nPlateDescriptionFactory\\np9\\nsb."\np1\n.'
+	S'S"ccopy_reg\\n_reconstructor\\np1\\n(cscanomatic.generics.abstract_model_factory\\n_SectionsLink\\np2\\nc__builtin__\\nobject\\np3\\nNtRp4\\n(dp5\\nS\'_section_name\'\\np6\\nS\'Plate 4\'\\np7\\nsS\'_subfactory\'\\np8\\ncscanomatic.models.factories.scanning_factory\\nPlateDescriptionFactory\\np9\\nsb."\np1\n.'
+	tp1
+	.
+email = S''
+	.
+scanner = 2
+
+[Auxillary Information]
+plate_age = -1.0
+culture_freshness = -1
+stress_level = -1
+plate_storage = Fresh
+precultures = -1
+pinning_project_start_delay = -1.0
+culture_source = Freezer80
+
+[Plate 1]
+index = 0
+name = Plate 1
+description = Gal
+
+[Plate 2]
+index = 1
+name = Plate 2
+description = G + NaCl
+
+[Plate 3]
+index = 2
+name = Plate 3
+description = CuCl2
+
+[Plate 4]
+index = 3
+name = Plate 4
+description = Pq
+
