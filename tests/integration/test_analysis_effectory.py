@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import numpy
 import pytest
 
@@ -36,6 +38,12 @@ def test_colony_sizes(proj1, tmpdir):
     for _ in analysis_effector:
         pass
 
-    expected_colony_sizes = numpy.load(str(proj1.join('analysis/image_0_data.npy')))
-    actual_colony_sizes = numpy.load(str(workdir.join('analysis/image_0_data.npy')))
-    numpy.testing.assert_allclose(expected_colony_sizes, actual_colony_sizes, rtol=.005)
+    expected_colony_sizes = numpy.load(
+        str(proj1.join('analysis/image_0_data.npy'))
+    )
+    actual_colony_sizes = numpy.load(
+        str(workdir.join('analysis/image_0_data.npy'))
+    )
+    numpy.testing.assert_allclose(
+        expected_colony_sizes, actual_colony_sizes, rtol=.005
+    )

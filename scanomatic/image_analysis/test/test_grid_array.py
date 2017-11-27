@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from itertools import product
 import pytest
 from collections import namedtuple
@@ -54,7 +56,11 @@ def test_get_im_slicei_no_im(grid_cell, expected_type):
     (MockedGridCell(xy1=(1,), xy2=(1, 1)), NoneType, None),
     (MockedGridCell(xy1=(1, 1), xy2=(1, 1)), ndarray, (0, 0)),
     (MockedGridCell(xy1=(0, 1), xy2=(10, 20)), ndarray, (10, 19)),
-    (MockedGridCell(xy1=np.array((0, 1)), xy2=np.array((10, 20))), ndarray, (10, 19)),
+    (
+        MockedGridCell(xy1=np.array((0, 1)), xy2=np.array((10, 20))),
+        ndarray,
+        (10, 19)
+    ),
 ))
 def test_get_im_slice(easy_plate, grid_cell, expected_type, expected_shape):
 
