@@ -4,11 +4,13 @@ import { shallow } from 'enzyme';
 import '../components/enzyme-setup';
 import CCCEditorContainer from '../../ccc/containers/CCCEditorContainer';
 import * as API from '../../ccc/api';
-import { cccMetadata } from '../fixtures';
+import cccMetadata from '../fixtures/cccMetadata';
 import FakePromise from '../helpers/FakePromise';
 
 describe('<CCCEditorContainer />', () => {
-    const props = { cccMetadata };
+    const props = {
+        cccMetadata, onFinalizeCCC: jasmine.createSpy('onFinalizeCCC'),
+    };
 
     const image = {
         name: 'new-image.tiff',
@@ -27,6 +29,12 @@ describe('<CCCEditorContainer />', () => {
     it('should pass cccMetadata to <CCCEditor />', () => {
         const wrapper = shallow(<CCCEditorContainer {...props} />);
         expect(wrapper.find('CCCEditor').prop('cccMetadata')).toEqual(props.cccMetadata);
+    });
+
+    it('should pass onFinalizeCCC to <CCCEditor />', () => {
+        const wrapper = shallow(<CCCEditorContainer {...props} />);
+        expect(wrapper.find('CCCEditor').prop('onFinalizeCCC'))
+            .toBe(props.onFinalizeCCC);
     });
 
     it('should pass accessToken to <CCCEditor />', () => {

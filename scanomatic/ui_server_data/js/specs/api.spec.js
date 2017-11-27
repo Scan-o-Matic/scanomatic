@@ -131,7 +131,7 @@ describe('API', () => {
 
         it('should send the cell count', () => {
             SetColonyCompression(...args);
-            const params = JSON.parse(jasmine.Ajax.requests.mostRecent().params);
+            const params = JSON.parse(mostRecentRequest().params);
             expect(params.cell_count).toEqual(cellCount);
         });
 
@@ -528,11 +528,11 @@ describe('API', () => {
 
         it('should return a promise that rejects on error', (done) => {
             API.GetFixturePlates(...args).catch(reason => {
-                expect(reason).toEqual({ foo: 'bar' });
+                expect(reason).toEqual('bar');
                 done();
             });
             mostRecentRequest().respondWith({
-                status: 400, responseText: JSON.stringify({ foo: 'bar' }),
+                status: 400, responseText: JSON.stringify({ reason: 'bar' }),
             });
         });
     });
@@ -570,6 +570,175 @@ describe('API', () => {
 
         it('should return a promise that rejects on error', (done) => {
             API.SetNewCalibrationPolynomial(...args).catch(reason => {
+                expect(reason).toEqual('(+_+)');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: '(+_+)' }),
+            });
+        });
+    });
+
+    describe('GetFixture', () => {
+        const args = [];
+
+        it('should query the correct URL', () => {
+            API.GetFixtures(...args);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/data/fixture/names');
+        });
+
+        it('should send a GET request', () => {
+            API.GetFixtures(...args);
+            expect(mostRecentRequest()).toHaveMethod('get');
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.GetFixtures(...args).then((value) => {
+                expect(value).toEqual(['abc', 'xyz']);
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify({ fixtures: ['abc', 'xyz'] }),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.GetFixtures(...args).catch((reason) => {
+                expect(reason).toEqual('bar');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: 'bar' }),
+            });
+        });
+    });
+
+    describe('GetPinningFormats', () => {
+        const args = [];
+
+        it('should query the correct URL', () => {
+            API.GetPinningFormats(...args);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/analysis/pinning/formats');
+        });
+
+        it('should send a GET request', () => {
+            API.GetPinningFormats(...args);
+            expect(mostRecentRequest()).toHaveMethod('get');
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            const apiData = {
+                pinning_formats: [
+                    { name: '1x1', value: [1, 1] },
+                    { name: '2x4', value: [2, 4] },
+                ],
+            };
+            const pinningFormats = [
+                { name: '1x1', nCols: 1, nRows: 1 },
+                { name: '2x4', nCols: 2, nRows: 4 },
+            ];
+            API.GetPinningFormats(...args).then((value) => {
+                expect(value).toEqual(pinningFormats);
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify(apiData),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.GetPinningFormats(...args).catch((reason) => {
+                expect(reason).toEqual('bar');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: 'bar' }),
+            });
+        });
+    });
+
+    describe('InitiateCCC', () => {
+        const species = 'S. Kombuchae';
+        const reference = 'Professor X';
+        const args = [species, reference];
+
+        it('should query the correct URL', () => {
+            API.InitiateCCC(...args);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/calibration/initiate_new');
+        });
+
+        it('should send a POST request', () => {
+            API.InitiateCCC(...args);
+            expect(mostRecentRequest()).toHaveMethod('post');
+        });
+
+        it('should send the species', () => {
+            API.InitiateCCC(...args);
+            expect(mostRecentRequest().params.get('species')).toEqual(species);
+        });
+
+        it('should send the reference', () => {
+            API.InitiateCCC(...args);
+            expect(mostRecentRequest().params.get('reference')).toEqual(reference);
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            const data = { id: 'CCC0', access_token: 'T0K3N' };
+            API.InitiateCCC(...args).then((value) => {
+                expect(value).toEqual(data);
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify(data),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.InitiateCCC(...args).catch((reason) => {
+                expect(reason).toEqual('bar');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: 'bar' }),
+            });
+        });
+    });
+
+    describe('finalizeCalibration', () => {
+        const args = ['CCC0', 'T0K3N'];
+
+        it('should query the correct URL', () => {
+            API.finalizeCalibration(...args);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/calibration/CCC0/finalize');
+        });
+
+        it('should send a POST request', () => {
+            API.finalizeCalibration(...args);
+            expect(mostRecentRequest().method).toEqual('POST');
+        });
+
+        it('should send the access_coken', () => {
+            API.finalizeCalibration(...args);
+            expect(JSON.parse(mostRecentRequest().params).access_token)
+                .toEqual('T0K3N');
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.finalizeCalibration(...args).then((value) => {
+                expect(value).toEqual({});
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify({}),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.finalizeCalibration(...args).catch((reason) => {
                 expect(reason).toEqual('(+_+)');
                 done();
             });

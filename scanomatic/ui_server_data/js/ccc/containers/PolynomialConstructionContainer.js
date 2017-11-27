@@ -70,10 +70,12 @@ export default class PolynomialConstructionContainer extends React.Component {
             error={this.state.error}
             onClearError={this.handleClearError}
             onConstruction={this.handleConstruction}
+            onFinalizeCCC={this.props.onFinalizeCCC}
         />);
     }
 }
 
 PolynomialConstructionContainer.propTypes = {
     cccMetadata: CCCPropTypes.cccMetadata.isRequired,
+    onFinalizeCCC: PropTypes.func.isRequired,
 };

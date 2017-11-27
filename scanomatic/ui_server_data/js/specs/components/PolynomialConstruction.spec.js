@@ -6,9 +6,11 @@ import PolynomialConstruction from
     '../../ccc/components/PolynomialConstruction';
 
 describe('<PolynomialConstruction />', () => {
+    const onFinalizeCCC = jasmine.createSpy('onFinalizeCCC');
     const props = {
         onConstruction: jasmine.createSpy('onConstruction'),
         onClearError: () => {},
+        onFinalizeCCC,
         polynomial: {
             power: -7,
             coefficients: [42, 42, 42],
@@ -31,10 +33,31 @@ describe('<PolynomialConstruction />', () => {
     });
 
 
-    it('should render a button', () => {
+    it('should render a button to construct the polynomial', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        expect(wrapper.find('button.btn').exists()).toBeTruthy();
-        expect(wrapper.find('button.btn').length).toEqual(1);
+        expect(wrapper.find('button.btn-construct').exists()).toBeTruthy();
+        expect(wrapper.find('button.btn-construct').length).toEqual(1);
+    });
+
+    it('should render a finalize button', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} />);
+        expect(wrapper.find('button.btn-finalize').exists()).toBeTruthy();
+    });
+
+    it('should enable the finalize button if there is a polynomial', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} />);
+        expect(wrapper.find('button.btn-finalize').prop('disabled')).toBeFalsy();
+    });
+
+    it('should disable the finalize button if there is no polynomial', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} polynomial={null} />);
+        expect(wrapper.find('button.btn-finalize').prop('disabled')).toBeTruthy();
+    });
+
+    it('should call onFinalizeCCC when the finalize button is clicked', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} polynomial={null} />);
+        wrapper.find('button.btn-finalize').simulate('click');
+        expect(onFinalizeCCC).toHaveBeenCalled();
     });
 
     it('should render a PolynomialResultsInfo', () => {
@@ -59,7 +82,7 @@ describe('<PolynomialConstruction />', () => {
 
     it('should call onConstruction when clicked', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
-        wrapper.find('button.btn').simulate('click');
+        wrapper.find('button.btn-construct').simulate('click');
         expect(props.onConstruction).toHaveBeenCalled();
     });
 

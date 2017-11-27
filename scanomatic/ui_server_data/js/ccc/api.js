@@ -1,7 +1,4 @@
 const GetSliceImagePath = "/api/calibration/#0#/image/#1#/slice/get/#2#";
-const InitiateCCCPath = "/api/calibration/initiate_new";
-const GetFixtruesPath = "/api/data/fixture/names";
-const GetPinningFormatsPath = "/api/analysis/pinning/formats";
 const GetTranposedMarkerPath = "/api/data/fixture/calculate/";
 const GetGrayScaleAnalysisPath = "/api/data/grayscale/image/";
 
@@ -12,7 +9,7 @@ class API {
             url,
             type: 'GET',
             success: resolve,
-            error: jqXHR => reject(JSON.parse(jqXHR.responseText)),
+            error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
         }));
     }
 
@@ -56,17 +53,9 @@ export function GetSliceImage(cccId, imageId, slice, successCallback, errorCallb
 }
 
 
-export function GetFixtures(callback) {
-    var path = GetFixtruesPath;
-
-    d3.json(path, function(error, json) {
-        if (error) console.warn(error);
-        else {
-            var fixtrues = json.fixtures;
-            callback(fixtrues);
-        }
-    });
-};
+export function GetFixtures() {
+    return API.get('/api/data/fixture/names').then(data => data.fixtures);
+}
 
 function GetFixtureData(fixtureName) {
     var path = `/api/data/fixture/get/${fixtureName}`;
@@ -77,17 +66,12 @@ export function GetFixturePlates(fixtureName) {
     return GetFixtureData(fixtureName).then(data => data.plates);
 }
 
-export function GetPinningFormats(callback) {
-    var path = GetPinningFormatsPath;
-
-    d3.json(path, function (error, json) {
-        if (error) console.warn(error);
-        else {
-            var fixtrues = json.pinning_formats;
-            callback(fixtrues);
-        }
-    });
-};
+export function GetPinningFormats() {
+    return API.get('/api/analysis/pinning/formats')
+        .then(data => data.pinning_formats.map(({ name, value }) => (
+            { name, nCols: value[0], nRows: value[1] }
+        )));
+}
 
 export function GetPinningFormatsv2(successCallback, errorCallback) {
     var path = GetPinningFormatsPath;
@@ -101,20 +85,10 @@ export function GetPinningFormatsv2(successCallback, errorCallback) {
 };
 
 export function InitiateCCC(species, reference, successCallback, errorCallback) {
-    var path = InitiateCCCPath;
-    var formData = new FormData();
-    formData.append("species", species);
-    formData.append("reference", reference);
-    $.ajax({
-        url: path,
-        type: "POST",
-        contentType: false,
-        enctype: 'multipart/form-data',
-        data: formData,
-        processData: false,
-        success: successCallback,
-        error: errorCallback
-    });
+    const formData = new FormData();
+    formData.append('species', species);
+    formData.append('reference', reference);
+    return API.postFormData('/api/calibration/initiate_new', formData);
 }
 
 export function SetCccImageData(cccId, imageId, accessToken, dataArray, fixture) {
@@ -276,5 +250,12 @@ export function SetNewCalibrationPolynomial(cccId, power, accessToken) {
     return API.postJSON(
         `/api/calibration/${cccId}/construct/${power}`,
         {access_token: accessToken},
+    );
+}
+
+export function finalizeCalibration(cccId, accessToken) {
+    return API.postJSON(
+        `/api/calibration/${cccId}/finalize`,
+        { access_token: accessToken },
     );
 }

@@ -3,7 +3,7 @@ import React  from 'react';
 
 import './enzyme-setup';
 import PlateEditor, { PlateStatusLabel } from '../../ccc/components/PlateEditor';
-import { cccMetadata } from '../fixtures';
+import cccMetadata from '../fixtures/cccMetadata';
 
 describe('<PlateEditor />', () => {
     let props;
