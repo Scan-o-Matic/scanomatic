@@ -60,7 +60,6 @@ PolynomialConstruction.propTypes = {
     onClearError: PropTypes.func.isRequired,
     onDegreeOfPolynomialChange: PropTypes.func.isRequired,
     polynomial: PropTypes.shape({
-        power: PropTypes.number.isRequired,
         coefficients: PropTypes.array.isRequired,
         colonies: PropTypes.number.isRequired,
     }),

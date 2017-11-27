@@ -46,7 +46,6 @@ describe('<PolynomialConstructionContainer />', () => {
         );
         const state = {
             polynomial: {
-                power: 4,
                 coefficients: [1, 2, 3, 4, 5],
                 colonies: 42,
             },
@@ -116,7 +115,6 @@ describe('<PolynomialConstructionContainer />', () => {
         promise.then(() => {
             expect(wrapper.state('polynomial'))
                 .toEqual({
-                    power: results.polynomial_coefficients.length - 1,
                     coefficients: results.polynomial_coefficients,
                     colonies: results.calculated_sizes.length,
                 });

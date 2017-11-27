@@ -13,7 +13,6 @@ describe('<PolynomialConstruction />', () => {
         onClearError: () => {},
         onDegreeOfPolynomialChange,
         polynomial: {
-            power: -7,
             coefficients: [42, 42, 42],
             colonies: 96,
         },
