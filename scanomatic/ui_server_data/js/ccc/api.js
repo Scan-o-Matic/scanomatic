@@ -252,3 +252,10 @@ export function SetNewCalibrationPolynomial(cccId, power, accessToken) {
         {access_token: accessToken},
     );
 }
+
+export function finalizeCalibration(cccId, accessToken) {
+    return API.postJSON(
+        `/api/calibration/${cccId}/finalize`,
+        { access_token: accessToken },
+    );
+}

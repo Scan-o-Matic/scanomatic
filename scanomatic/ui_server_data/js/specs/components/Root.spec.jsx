@@ -8,8 +8,9 @@ import cccMetadata from '../fixtures/cccMetadata';
 
 describe('<Root />', () => {
     const onInitializeCCC = jasmine.createSpy('onInitialzeCCC');
+    const onFinalizeCCC = jasmine.createSpy('onFinalizeCCC');
     const onError = jasmine.createSpy('onError');
-    const props = { onError, onInitializeCCC };
+    const props = { onError, onInitializeCCC, onFinalizeCCC };
 
     it('should render the error', () => {
         const error = 'Bad! Wrong! Boooh!';
@@ -47,6 +48,24 @@ describe('<Root />', () => {
             const wrapper = shallow(<Root {...props} cccMetadata={cccMetadata} />);
             expect(wrapper.find('CCCEditorContainer').prop('cccMetadata'))
                 .toEqual(cccMetadata);
+        });
+
+        it('should pass onFinalizeCCC to <CCCEditorContainer />', () => {
+            const wrapper = shallow(<Root {...props} cccMetadata={cccMetadata} />);
+            expect(wrapper.find('CCCEditorContainer').prop('onFinalizeCCC'))
+                .toEqual(onFinalizeCCC);
+        });
+    });
+
+    describe('finalized', () => {
+        it('should render a <FinalizedCCC />', () => {
+            const wrapper = shallow(<Root {...props} cccMetadata={cccMetadata} finalized />);
+            expect(wrapper.find('FinalizedCCC').exists()).toBeTruthy();
+        });
+
+        it('should pass cccMetadata to <FinalizedCCC />', () => {
+            const wrapper = shallow(<Root {...props} cccMetadata={cccMetadata} finalized />);
+            expect(wrapper.find('FinalizedCCC').prop('cccMetadata')).toEqual(cccMetadata);
         });
     });
 });

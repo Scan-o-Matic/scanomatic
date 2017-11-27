@@ -28,9 +28,16 @@ export default function PolynomialConstruction(props) {
     return (
         <div>
             <button
-                className="btn btn-default"
+                className="btn btn-default btn-construct"
                 onClick={props.onConstruction}
             >Construct Cell Count Calibration Polynomial</button>
+            <button
+                className="btn btn-success btn-finalize"
+                disabled={!props.polynomial}
+                onClick={props.onFinalizeCCC}
+            >
+                Finalize and publish calibration
+            </button>
             {error}
             {results}
         </div>
@@ -40,6 +47,7 @@ export default function PolynomialConstruction(props) {
 PolynomialConstruction.propTypes = {
     onConstruction: PropTypes.func.isRequired,
     onClearError: PropTypes.func.isRequired,
+    onFinalizeCCC: PropTypes.func.isRequired,
     polynomial: PropTypes.shape({
         power: PropTypes.number.isRequired,
         coefficients: PropTypes.array.isRequired,
