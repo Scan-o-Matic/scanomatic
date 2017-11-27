@@ -48,6 +48,13 @@ export default function PolynomialConstruction(props) {
                     Construct Polynomial
                 </button>
             </div>
+            <button
+                className="btn btn-success btn-finalize"
+                disabled={!props.polynomial}
+                onClick={props.onFinalizeCCC}
+            >
+                Finalize and publish calibration
+            </button>
             {error}
             {results}
         </div>
@@ -59,6 +66,7 @@ PolynomialConstruction.propTypes = {
     onConstruction: PropTypes.func.isRequired,
     onClearError: PropTypes.func.isRequired,
     onDegreeOfPolynomialChange: PropTypes.func.isRequired,
+    onFinalizeCCC: PropTypes.func.isRequired,
     polynomial: PropTypes.shape({
         coefficients: PropTypes.array.isRequired,
         colonies: PropTypes.number.isRequired,

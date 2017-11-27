@@ -31,7 +31,10 @@ export default function CCCEditor(props) {
                 cccMetadata={props.cccMetadata}
                 onFinish={props.onFinishUpload}
             />
-            <PolynomialConstructionContainer cccMetadata={props.cccMetadata} />
+            <PolynomialConstructionContainer
+                cccMetadata={props.cccMetadata}
+                onFinalizeCCC={props.onFinalizeCCC}
+            />
         </div>
     );
 }
@@ -44,6 +47,7 @@ CCCEditor.propTypes = {
         plateId: PropTypes.number.isRequired,
     })).isRequired,
     currentPlate: PropTypes.number,
+    onFinalizeCCC: PropTypes.func.isRequired,
     onFinishPlate: PropTypes.func.isRequired,
     onFinishUpload: PropTypes.func.isRequired,
 };

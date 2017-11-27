@@ -8,7 +8,8 @@ import * as API from '../../ccc/api';
 import cccMetadata from '../fixtures/cccMetadata';
 
 describe('<PolynomialConstructionContainer />', () => {
-    const props = { cccMetadata };
+    const onFinalizeCCC = jasmine.createSpy('onFinalizeCCC');
+    const props = { cccMetadata, onFinalizeCCC };
 
     const results = {
         polynomial_coefficients: [1, 1, 2, 0.4],
@@ -38,6 +39,12 @@ describe('<PolynomialConstructionContainer />', () => {
         wrapper.prop('onDegreeOfPolynomialChange')({ target: { value: '42' } });
         wrapper.update();
         expect(wrapper.prop('degreeOfPolynomial')).toEqual(42);
+    });
+
+    it('should pass onFinalizeCCC to <PolynomialContruction />', () => {
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
+        expect(wrapper.find('PolynomialConstruction').prop('onFinalizeCCC'))
+            .toBe(onFinalizeCCC);
     });
 
     it('should set properties of PolynomialConstruction from state', () => {

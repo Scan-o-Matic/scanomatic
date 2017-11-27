@@ -6,6 +6,7 @@ import CCCEditor from '../../ccc/components/CCCEditor';
 import cccMetadata from '../fixtures/cccMetadata';
 
 describe('<CCCEditor />', () => {
+    const onFinalizeCCC = jasmine.createSpy('onFinalizeCCC');
     const onFinishPlate = jasmine.createSpy('onFinishPlate');
     const onFinishUpload = jasmine.createSpy('onFinishUpload');
     const props = {
@@ -16,6 +17,7 @@ describe('<CCCEditor />', () => {
             { imageName: 'other-image.tiff', imageId: '1M4G32', plateId: 2 },
         ],
         currentPlate: 1,
+        onFinalizeCCC,
         onFinishPlate,
         onFinishUpload,
     };
@@ -40,6 +42,12 @@ describe('<CCCEditor />', () => {
         const wrapper = shallow(<CCCEditor {...props} />);
         expect(wrapper.find('PolynomialConstructionContainer').prop('cccMetadata'))
             .toEqual(cccMetadata);
+    });
+
+    it('should pass onFinalizeCCC to <PolynomialConstructionContainer />', () => {
+        const wrapper = shallow(<CCCEditor {...props} />);
+        expect(wrapper.find('PolynomialConstructionContainer').prop('onFinalizeCCC'))
+            .toBe(onFinalizeCCC);
     });
 
     describe('when currentImage is null', () => {
