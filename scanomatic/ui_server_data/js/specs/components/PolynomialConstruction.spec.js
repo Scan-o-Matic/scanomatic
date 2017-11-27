@@ -116,10 +116,10 @@ describe('<PolynomialConstruction />', () => {
         expect(wrapper.find('select.degree').prop('value')).toEqual(3);
     });
 
-    it('should render options for degree 1 to 5', () => {
+    it('should render options for degree 2 to 5', () => {
         const wrapper = shallow(<PolynomialConstruction {...props} />);
         const options = wrapper.find('select.degree').find('option');
-        const degrees = ['1', '2', '3', '4', '5'];
+        const degrees = ['2', '3', '4', '5'];
         expect(options.map(x => x.prop('value'))).toEqual(degrees);
         expect(options.map(x => x.text())).toEqual(degrees);
     });

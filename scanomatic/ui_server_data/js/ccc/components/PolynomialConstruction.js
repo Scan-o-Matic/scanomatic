@@ -42,7 +42,7 @@ export default function PolynomialConstruction(props) {
                 </div>
                 {' '}
                 <button
-                    className="btn btn-default"
+                    className="btn btn-default btn-construct"
                     onClick={props.onConstruction}
                 >
                     Construct Polynomial
