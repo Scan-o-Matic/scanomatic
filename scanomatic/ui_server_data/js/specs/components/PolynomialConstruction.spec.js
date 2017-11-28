@@ -6,13 +6,15 @@ import PolynomialConstruction from
     '../../ccc/components/PolynomialConstruction';
 
 describe('<PolynomialConstruction />', () => {
+    const onDegreeOfPolynomialChange = jasmine.createSpy('onDegreeOfPolynomialChange');
     const onFinalizeCCC = jasmine.createSpy('onFinalizeCCC');
     const props = {
+        degreeOfPolynomial: 3,
         onConstruction: jasmine.createSpy('onConstruction'),
         onClearError: () => {},
+        onDegreeOfPolynomialChange,
         onFinalizeCCC,
         polynomial: {
-            power: -7,
             coefficients: [42, 42, 42],
             colonies: 96,
         },
@@ -152,5 +154,26 @@ describe('<PolynomialConstruction />', () => {
             .not.toBeTruthy();
         expect(wrapper.find('PolynomialResultsPlotScatter').exists())
             .toBeTruthy();
+    });
+
+    it('should render a <select /> for the degree of the polynomial', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} />);
+        expect(wrapper.find('select.degree').exists()).toBeTruthy();
+        expect(wrapper.find('select.degree').prop('value')).toEqual(3);
+    });
+
+    it('should render options for degree 2 to 5', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} />);
+        const options = wrapper.find('select.degree').find('option');
+        const degrees = ['2', '3', '4', '5'];
+        expect(options.map(x => x.prop('value'))).toEqual(degrees);
+        expect(options.map(x => x.text())).toEqual(degrees);
+    });
+
+    it('should call onDegreeOfPolynomialChange when the selected degree changes', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} />);
+        const event = { target: { value: '4' } };
+        wrapper.find('select.degree').simulate('change', event);
+        expect(onDegreeOfPolynomialChange).toHaveBeenCalledWith(event);
     });
 });

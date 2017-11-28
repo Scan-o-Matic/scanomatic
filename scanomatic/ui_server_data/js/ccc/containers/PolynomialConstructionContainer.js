@@ -11,7 +11,7 @@ export default class PolynomialConstructionContainer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            power: 5,
+            degreeOfPolynomial: 5,
             error: null,
             polynomial: null,
             resultsData: null,
@@ -24,12 +24,13 @@ export default class PolynomialConstructionContainer extends React.Component {
         this.handleConstructionResultsError =
             this.handleConstructionResultsError.bind(this);
         this.handleClearError = this.handleClearError.bind(this);
+        this.handleDegreeOfPolynomialChange = this.handleDegreeOfPolynomialChange.bind(this);
     }
 
     handleConstruction() {
         const { id, accessToken } = this.props.cccMetadata;
-        const { power } = this.state;
-        return API.SetNewCalibrationPolynomial(id, power, accessToken)
+        const { degreeOfPolynomial } = this.state;
+        return API.SetNewCalibrationPolynomial(id, degreeOfPolynomial, accessToken)
             .then(this.handleConstructionResults)
             .catch(this.handleConstructionResultsError);
     }
@@ -38,7 +39,6 @@ export default class PolynomialConstructionContainer extends React.Component {
         this.setState({
             error: null,
             polynomial: {
-                power: results.polynomial_coefficients.length - 1,
                 coefficients: results.polynomial_coefficients,
                 colonies: results.calculated_sizes.length,
             },
@@ -62,14 +62,20 @@ export default class PolynomialConstructionContainer extends React.Component {
         this.setState({ error: null });
     }
 
+    handleDegreeOfPolynomialChange({ target: { value } }) {
+        this.setState({ degreeOfPolynomial: parseInt(value, 10) });
+    }
+
     render() {
-        return (<PolynomialConstruction
+        return <PolynomialConstruction
+            degreeOfPolynomial={this.state.degreeOfPolynomial}
             polynomial={this.state.polynomial}
             resultsData={this.state.resultsData}
             correlation={this.state.correlation}
             error={this.state.error}
             onClearError={this.handleClearError}
             onConstruction={this.handleConstruction}
+            onDegreeOfPolynomialChange={this.handleDegreeOfPolynomialChange}
             onFinalizeCCC={this.props.onFinalizeCCC}
         />);
     }

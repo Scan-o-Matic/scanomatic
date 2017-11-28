@@ -1,0 +1,20 @@
+[/somprojects/proj2]
+start_condition = 
+compile_action = Initiate
+cell_count_calibration_id = default
+fixture_name = Proj2
+images = (S'S"ccopy_reg\\n_reconstructor\\np1\\n(cscanomatic.generics.abstract_model_factory\\n_SectionsLink\\np2\\nc__builtin__\\nobject\\np3\\nNtRp4\\n(dp5\\nS\'_section_name\'\\np6\\nS\'0\'\\nsS\'_subfactory\'\\np7\\ncscanomatic.models.factories.compile_project_factory\\nCompileImageFactory\\np8\\nsb."\np1\n.'
+	tp1
+	.
+path = /somprojects/proj2
+start_time = 0.0
+email = S''
+	.
+overwrite_pinning_matrices
+fixture_type = Global
+
+[0]
+index = 0
+path = /somprojects/proj2/proj2_0215_258418.2895.tiff
+time_stamp = 258418.2895
+
