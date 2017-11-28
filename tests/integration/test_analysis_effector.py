@@ -58,7 +58,6 @@ def test_grid_plate(proj1, proj1_analysis):
     expected = numpy.load(str(proj1.join('analysis/grid_plate___1.npy')))
     actual = numpy.load(
         str(proj1_analysis.workdir.join('analysis/grid_plate___1.npy')))
-    print(numpy.abs(expected - actual).max())
     numpy.testing.assert_allclose(expected, actual, atol=3)
 
 
