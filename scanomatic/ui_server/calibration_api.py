@@ -558,7 +558,7 @@ def detect_colony(ccc_identifier, image_identifier, plate, x, y):
         box['xlow']: box['xhigh'],
     ]
 
-    grid_cell = get_colony_detection(colony_im, grid, x, y, w, h)
+    grid_cell = get_colony_detection(colony_im)
     blob = grid_cell.get_item(COMPARTMENTS.Blob).filter_array
     background = grid_cell.get_item(COMPARTMENTS.Background).filter_array
     blob_exists = blob.any()
