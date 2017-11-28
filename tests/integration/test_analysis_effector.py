@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from collections import namedtuple
 
 import numpy
 import pytest
@@ -13,7 +14,8 @@ def proj1(pytestconfig):
     return pytestconfig.rootdir.join('tests/integration/fixtures/proj1')
 
 
-def test_colony_sizes(proj1, tmpdir):
+@pytest.fixture
+def proj1_analysis(proj1, tmpdir):
     workdir = tmpdir.mkdir('proj1')
     files = [
         'fixture.config',
@@ -32,18 +34,41 @@ def test_colony_sizes(proj1, tmpdir):
     assert AnalysisModelFactory.validate(analysis_model)
     job = RPC_Job_Model_Factory.create(id='135', content_model=analysis_model)
     assert RPC_Job_Model_Factory.validate(job)
+    return namedtuple('proj1_analysis', 'job, workdir')(job, workdir)
 
-    analysis_effector = AnalysisEffector(job)
-    analysis_effector.setup(job, False)
+
+def test_colony_sizes(proj1, proj1_analysis):
+    analysis_effector = AnalysisEffector(proj1_analysis.job)
+    analysis_effector.setup(proj1_analysis.job, False)
     for _ in analysis_effector:
         pass
 
-    expected_colony_sizes = numpy.load(
-        str(proj1.join('analysis/image_0_data.npy'))
-    )
-    actual_colony_sizes = numpy.load(
-        str(workdir.join('analysis/image_0_data.npy'))
-    )
-    numpy.testing.assert_allclose(
-        expected_colony_sizes, actual_colony_sizes, rtol=.005
-    )
+    expected = numpy.load(str(proj1.join('analysis/image_0_data.npy')))
+    actual = numpy.load(
+        str(proj1_analysis.workdir.join('analysis/image_0_data.npy')))
+    numpy.testing.assert_allclose(expected, actual, rtol=.005)
+
+
+def test_grid_plate(proj1, proj1_analysis):
+    analysis_effector = AnalysisEffector(proj1_analysis.job)
+    analysis_effector.setup(proj1_analysis.job, False)
+    for _ in analysis_effector:
+        pass
+
+    expected = numpy.load(str(proj1.join('analysis/grid_plate___1.npy')))
+    actual = numpy.load(
+        str(proj1_analysis.workdir.join('analysis/grid_plate___1.npy')))
+    print(numpy.abs(expected - actual).max())
+    numpy.testing.assert_allclose(expected, actual, atol=3)
+
+
+def test_grid_size(proj1, proj1_analysis):
+    analysis_effector = AnalysisEffector(proj1_analysis.job)
+    analysis_effector.setup(proj1_analysis.job, False)
+    for _ in analysis_effector:
+        pass
+
+    expected = numpy.load(str(proj1.join('analysis/grid_size___1.npy')))
+    actual = numpy.load(
+        str(proj1_analysis.workdir.join('analysis/grid_size___1.npy')))
+    assert (expected == actual).all()
