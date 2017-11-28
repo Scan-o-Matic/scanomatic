@@ -5,6 +5,16 @@ import c3 from 'c3';
 import 'c3/c3.min.css';
 
 
+export const labelFormatter = (value, fixed = 0) => {
+    if (value === 0) {
+        return value.toFixed(0);
+    }
+    const exponent = Math.floor(Math.log10(value));
+    const number = (value / (10 ** exponent)).toFixed(fixed);
+    return `${number} x 10^${exponent.toFixed(0)}`;
+};
+
+
 export default class PolynomialResultsPlotScatter extends React.Component {
 
     render() {
@@ -66,28 +76,40 @@ export default class PolynomialResultsPlotScatter extends React.Component {
                     tick: {
                         fit: false,
                         values: [0, rangeMax],
+                        format: labelFormatter,
                     },
+                    padding: { left: 0, right: 0 },
                 },
                 y: {
                     label: 'Calculated',
                     tick: {
                         fit: false,
                         values: [0, rangeMax],
+                        format: labelFormatter,
                     },
+                    padding: { top: 0, bottom: 0 },
                 },
             },
             size: {
-                width: 500,
+                width: 520,
                 height: 500,
             },
             padding: {
-                right: 6,
+                right: 30,
+                top: 10,
             },
             point: {
                 r: 4,
             },
             legend: {
                 hide: ['calculated'],
+            },
+            tooltip: {
+                format: {
+                    title: d => `Measured ${labelFormatter(d, 1)}`,
+                    value: value => labelFormatter(value, 1),
+                    name: () => 'Calculated',
+                },
             },
         });
     }
