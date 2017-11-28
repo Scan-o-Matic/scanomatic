@@ -94,3 +94,10 @@ PolynomialConstruction.propTypes = {
     }),
     error: PropTypes.string,
 };
+
+PolynomialConstruction.defaultProps = {
+    polynomial: null,
+    resultsData: null,
+    correlation: null,
+    error: null,
+};

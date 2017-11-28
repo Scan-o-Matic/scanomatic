@@ -30,7 +30,7 @@ describe('<PolynomialResultsPlotScatter />', () => {
             slope: 4,
             intercept: 10,
             stderr: 0.11,
-        }
+        },
     };
 
     beforeEach(() => {

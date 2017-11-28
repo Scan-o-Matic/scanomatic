@@ -16,22 +16,6 @@ export const labelFormatter = (value, fixed = 0) => {
 
 
 export default class PolynomialResultsPlotScatter extends React.Component {
-
-    render() {
-        const { slope, intercept, stderr } = this.props.correlation;
-        return (
-            <div className='poly-corr'>
-                <h4>Population Size Correlation</h4>
-                <div className="poly-corr-chart"
-                    ref={ref => {this.divRef = ref;} }
-                />
-                <p>Correlation:
-                    y = {slope.toFixed(2)}x + {intercept.toFixed(0)} (standard error {stderr.toFixed(2)})
-                </p>
-            </div>
-        );
-    }
-
     componentDidMount() {
         this.drawSVG();
     }
@@ -112,6 +96,24 @@ export default class PolynomialResultsPlotScatter extends React.Component {
                 },
             },
         });
+    }
+
+    render() {
+        const { slope, intercept, stderr } = this.props.correlation;
+        return (
+            <div className="poly-corr">
+                <h4>Population Size Correlation</h4>
+                <div
+                    className="poly-corr-chart"
+                    ref={(ref) => { this.divRef = ref; }}
+                />
+                <p>Correlation:
+                    y = {slope.toFixed(2)}x + {intercept.toFixed(0)}
+                    {' '}
+                    (standard error {stderr.toFixed(2)})
+                </p>
+            </div>
+        );
     }
 }
 

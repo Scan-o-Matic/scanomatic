@@ -121,9 +121,7 @@ describe('<PolynomialConstruction />', () => {
     });
 
     it('should not render any results info if there are none', () => {
-        const wrapper = shallow(
-            <PolynomialConstruction {...props} polynomial={null} />
-        );
+        const wrapper = shallow(<PolynomialConstruction {...props} polynomial={null} />);
         expect(wrapper.find('PolynomialResultsInfo').exists())
             .not.toBeTruthy();
         expect(wrapper.find('PolynomialResultsPlotScatter').exists())
@@ -133,9 +131,7 @@ describe('<PolynomialConstruction />', () => {
     });
 
     it('should not render any results scatter if there are none', () => {
-        const wrapper = shallow(
-            <PolynomialConstruction {...props} resultsData={null} />
-        );
+        const wrapper = shallow(<PolynomialConstruction {...props} resultsData={null} />);
         expect(wrapper.find('PolynomialResultsInfo').exists())
             .toBeTruthy();
         expect(wrapper.find('PolynomialResultsPlotScatter').exists())
@@ -145,9 +141,7 @@ describe('<PolynomialConstruction />', () => {
     });
 
     it('should not render any error if there is none', () => {
-        const wrapper = shallow(
-            <PolynomialConstruction {...props} error={null} />
-        );
+        const wrapper = shallow(<PolynomialConstruction {...props} error={null} />);
         expect(wrapper.find('PolynomialResultsInfo').exists())
             .toBeTruthy();
         expect(wrapper.find('PolynomialConstructionError').exists())
