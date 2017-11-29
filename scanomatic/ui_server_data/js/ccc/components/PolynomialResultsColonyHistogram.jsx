@@ -4,18 +4,9 @@ import React from 'react';
 import c3 from 'c3';
 import 'c3/c3.min.css';
 
+import { valueFormatter } from '../helpers.js';
 
-export const labelFormatter = value => value.toFixed(0);
-
-
-export const labelFormatter2 = (value, fixed = 0) => {
-    if (value === 0) {
-        return value.toFixed(0);
-    }
-    const exponent = Math.floor(Math.log10(Math.abs(value)));
-    const number = (value / (10 ** exponent)).toFixed(fixed);
-    return `${number} x 10^${exponent.toFixed(0)}`;
-};
+const labelFormatter = value => value.toFixed(0);
 
 
 export default class PolynomialResultsColonyHistogram extends React.Component {
@@ -115,7 +106,7 @@ export default class PolynomialResultsColonyHistogram extends React.Component {
                     ref={this.refBinder}
                     id={`poly-colony-chart-${colonyIdx}`}
                 />
-                <span className="poly-colony-txt">{labelFormatter2(independentMeasurements, 2)} cells</span>
+                <span className="poly-colony-txt">{valueFormatter(independentMeasurements, 2)} cells</span>
             </div>
         );
     }
