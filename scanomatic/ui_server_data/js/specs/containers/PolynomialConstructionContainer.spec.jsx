@@ -20,6 +20,14 @@ describe('<PolynomialConstructionContainer />', () => {
             intercept: 44,
             stderr: -3,
         },
+        colonies: {
+                source_values: [[1, 2], [5.5]],
+                source_value_counts: [[100, 1], [44]],
+                target_values: [123, 441],
+                max_source_counts: 100,
+                min_source_values: 1,
+                max_source_values: 5.5,
+        },
     };
 
     beforeEach(() => {
@@ -66,6 +74,14 @@ describe('<PolynomialConstructionContainer />', () => {
                 intercept: 44,
                 stderr: -3,
             },
+            colonies: {
+                pixelValues: [[1, 2], [5.5]],
+                pixelCounts: [[100, 1], [44]],
+                targetValues: [123, 441],
+                minPixelValue: 1,
+                maxPixelValue: 5.5,
+                maxCount: 100,
+            },
             error: 'nope',
         };
         wrapper.setState(state);
@@ -73,6 +89,7 @@ describe('<PolynomialConstructionContainer />', () => {
         expect(poly.prop('polynomial')).toEqual(state.polynomial);
         expect(poly.prop('resultsData')).toEqual(state.resultsData);
         expect(poly.prop('correlation')).toEqual(state.correlation);
+        expect(poly.prop('colonies')).toEqual(state.colonies);
         expect(poly.prop('error')).toEqual(state.error);
     });
 
