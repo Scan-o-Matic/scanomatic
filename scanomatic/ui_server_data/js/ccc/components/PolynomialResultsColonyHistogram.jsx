@@ -114,8 +114,8 @@ export default class PolynomialResultsColonyHistogram extends React.Component {
 
 PolynomialResultsColonyHistogram.propTypes = {
     colonyIdx: PropTypes.number.isRequired,
-    pixelValues: PropTypes.array.isRequired,
-    pixelCounts: PropTypes.array.isRequired,
+    pixelValues: PropTypes.arrayOf(PropTypes.number).isRequired,
+    pixelCounts: PropTypes.arrayOf(PropTypes.number).isRequired,
     independentMeasurements: PropTypes.number.isRequired,
     maxCount: PropTypes.number.isRequired,
     maxPixelValue: PropTypes.number.isRequired,
