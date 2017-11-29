@@ -24,6 +24,22 @@ table {
 		margin: 0px;
 }
 
+.poly-corr-chart {
+	margin-top: 6px;
+	color: #000;
+}
+
+.poly-corr-chart svg {
+	background: #fff;
+}
+.poly-corr-chart .c3-shapes-Identity-Line .c3-circle {
+	opacity: 0 !important;
+}
+
+.poly-corr-chart .c3-shapes-Correlation .c3-circle {
+	opacity: 0 !important;
+}
+
 .paddedTable td{
     padding-left: 5px;
 }
@@ -236,4 +252,5 @@ svg *::-webkit-selection {
 
 .panel {
     color: black;
+		margin-top: 6px;
 }

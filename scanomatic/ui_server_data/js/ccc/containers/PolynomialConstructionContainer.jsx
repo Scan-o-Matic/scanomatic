@@ -15,6 +15,7 @@ export default class PolynomialConstructionContainer extends React.Component {
             error: null,
             polynomial: null,
             resultsData: null,
+            correlation: null,
         };
 
         this.handleConstruction = this.handleConstruction.bind(this);
@@ -35,19 +36,22 @@ export default class PolynomialConstructionContainer extends React.Component {
     }
 
     handleConstructionResults(results) {
-        this.setState(
-            {
-                error: null,
-                polynomial: {
-                    coefficients: results.polynomial_coefficients,
-                    colonies: results.calculated_sizes.length,
-                },
-                resultsData: {
-                    calculated: results.calculated_sizes,
-                    independentMeasurements: results.measured_sizes
-                },
-            }
-        );
+        this.setState({
+            error: null,
+            polynomial: {
+                coefficients: results.polynomial_coefficients,
+                colonies: results.calculated_sizes.length,
+            },
+            resultsData: {
+                calculated: results.calculated_sizes,
+                independentMeasurements: results.measured_sizes,
+            },
+            correlation: {
+                slope: results.correlation.slope,
+                intercept: results.correlation.intercept,
+                stderr: results.correlation.stderr,
+            },
+        });
     }
 
     handleConstructionResultsError(reason) {
@@ -63,15 +67,17 @@ export default class PolynomialConstructionContainer extends React.Component {
     }
 
     render() {
-        return <PolynomialConstruction
+        return (<PolynomialConstruction
             degreeOfPolynomial={this.state.degreeOfPolynomial}
             polynomial={this.state.polynomial}
+            resultsData={this.state.resultsData}
+            correlation={this.state.correlation}
             error={this.state.error}
             onClearError={this.handleClearError}
             onConstruction={this.handleConstruction}
             onDegreeOfPolynomialChange={this.handleDegreeOfPolynomialChange}
             onFinalizeCCC={this.props.onFinalizeCCC}
-        />;
+        />);
     }
 }
 

@@ -10,6 +10,7 @@
     "babel-plugin-istanbul": "^4.1.5",
     "babel-preset-env": "^1.6.1",
     "babel-preset-react": "^6.24.1",
+    "css-loader": "^0.28.7",
     "enzyme": "^3.1.0",
     "enzyme-adapter-react-16": "^1.0.2",
     "file-loader": "^1.1.5",
@@ -22,10 +23,12 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-webpack": "^2.0.5",
     "react-test-renderer": "^16.0.0",
+    "style-loader": "^0.19.0",
     "webpack": "^3.8.1"
   },
   "dependencies": {
     "babel-eslint": "^8.0.2",
+    "c3": "^0.4.18",
     "eslint": "^4.11.0",
     "eslint-config-airbnb": "^16.1.0",
     "eslint-plugin-import": "^2.8.0",

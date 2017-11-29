@@ -3,6 +3,7 @@ import React from 'react';
 
 import PolynomialResultsInfo from './PolynomialResultsInfo';
 import PolynomialConstructionError from './PolynomialConstructionError';
+import PolynomialResultsPlotScatter from './PolynomialResultsPlotScatter';
 
 
 export default function PolynomialConstruction(props) {
@@ -16,11 +17,21 @@ export default function PolynomialConstruction(props) {
         );
     }
 
-    let results = null;
+    let resultsInfo = null;
     if (props.polynomial) {
-        results = (
+        resultsInfo = (
             <PolynomialResultsInfo
                 polynomial={props.polynomial}
+            />
+        );
+    }
+
+    let resultsScatter = null;
+    if (props.resultsData) {
+        resultsScatter = (
+            <PolynomialResultsPlotScatter
+                resultsData={props.resultsData}
+                correlation={props.correlation}
             />
         );
     }
@@ -56,7 +67,8 @@ export default function PolynomialConstruction(props) {
                 Finalize and publish calibration
             </button>
             {error}
-            {results}
+            {resultsInfo}
+            {resultsScatter}
         </div>
     );
 }
@@ -71,5 +83,21 @@ PolynomialConstruction.propTypes = {
         coefficients: PropTypes.array.isRequired,
         colonies: PropTypes.number.isRequired,
     }),
+    resultsData: PropTypes.shape({
+        calculated: PropTypes.array.isRequired,
+        independentMeasurements: PropTypes.array.isRequired,
+    }),
+    correlation: PropTypes.shape({
+        slope: PropTypes.number.isRequired,
+        intercept: PropTypes.number.isRequired,
+        stderr: PropTypes.number.isRequired,
+    }),
     error: PropTypes.string,
+};
+
+PolynomialConstruction.defaultProps = {
+    polynomial: null,
+    resultsData: null,
+    correlation: null,
+    error: null,
 };
