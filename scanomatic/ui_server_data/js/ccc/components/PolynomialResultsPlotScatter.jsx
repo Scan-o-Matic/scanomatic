@@ -9,7 +9,7 @@ export const labelFormatter = (value, fixed = 0) => {
     if (value === 0) {
         return value.toFixed(0);
     }
-    const exponent = Math.floor(Math.log10(value));
+    const exponent = Math.floor(Math.log10(Math.abs(value)));
     const number = (value / (10 ** exponent)).toFixed(fixed);
     return `${number} x 10^${exponent.toFixed(0)}`;
 };

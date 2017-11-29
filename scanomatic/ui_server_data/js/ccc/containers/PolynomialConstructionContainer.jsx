@@ -16,6 +16,7 @@ export default class PolynomialConstructionContainer extends React.Component {
             polynomial: null,
             resultsData: null,
             correlation: null,
+            colonies: null,
         };
 
         this.handleConstruction = this.handleConstruction.bind(this);
@@ -51,6 +52,14 @@ export default class PolynomialConstructionContainer extends React.Component {
                 intercept: results.correlation.intercept,
                 stderr: results.correlation.stderr,
             },
+            colonies: {
+                pixelValues: results.colonies.source_values,
+                pixelCounts: results.colonies.source_value_counts,
+                independentMeasurements: results.colonies.target_values,
+                maxCount: results.colonies.max_source_counts,
+                maxPixelValue: results.colonies.max_source_values,
+                minPixelValue: results.colonies.min_source_values,
+            },
         });
     }
 
@@ -72,6 +81,7 @@ export default class PolynomialConstructionContainer extends React.Component {
             polynomial={this.state.polynomial}
             resultsData={this.state.resultsData}
             correlation={this.state.correlation}
+            colonies={this.state.colonies}
             error={this.state.error}
             onClearError={this.handleClearError}
             onConstruction={this.handleConstruction}

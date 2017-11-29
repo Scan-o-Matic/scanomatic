@@ -4,6 +4,7 @@ import React from 'react';
 import PolynomialResultsInfo from './PolynomialResultsInfo';
 import PolynomialConstructionError from './PolynomialConstructionError';
 import PolynomialResultsPlotScatter from './PolynomialResultsPlotScatter';
+import PolynomialResultsColonyHistograms from './PolynomialResultsColonyHistograms';
 
 
 export default function PolynomialConstruction(props) {
@@ -32,6 +33,15 @@ export default function PolynomialConstruction(props) {
             <PolynomialResultsPlotScatter
                 resultsData={props.resultsData}
                 correlation={props.correlation}
+            />
+        );
+    }
+
+    let resultsHistorgram = null;
+    if (props.colonies) {
+        resultsHistorgram = (
+            <PolynomialResultsColonyHistograms
+                colonies={props.colonies}
             />
         );
     }
@@ -69,6 +79,7 @@ export default function PolynomialConstruction(props) {
             {error}
             {resultsInfo}
             {resultsScatter}
+            {resultsHistorgram}
         </div>
     );
 }
@@ -92,6 +103,14 @@ PolynomialConstruction.propTypes = {
         intercept: PropTypes.number.isRequired,
         stderr: PropTypes.number.isRequired,
     }),
+    colonies: PropTypes.shape({
+        pixelValues: PropTypes.array.isRequired,
+        pixelCounts: PropTypes.array.isRequired,
+        independentMeasurements: PropTypes.array.isRequired,
+        maxCount: PropTypes.number.isRequired,
+        maxPixelValue: PropTypes.number.isRequired,
+        minPixelValue: PropTypes.number.isRequired,
+    }),
     error: PropTypes.string,
 };
 
@@ -99,5 +118,6 @@ PolynomialConstruction.defaultProps = {
     polynomial: null,
     resultsData: null,
     correlation: null,
+    colonies: null,
     error: null,
 };
