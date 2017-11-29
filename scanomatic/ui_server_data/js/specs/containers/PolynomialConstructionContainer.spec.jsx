@@ -21,12 +21,12 @@ describe('<PolynomialConstructionContainer />', () => {
             stderr: -3,
         },
         colonies: {
-                source_values: [[1, 2], [5.5]],
-                source_value_counts: [[100, 1], [44]],
-                target_values: [123, 441],
-                max_source_counts: 100,
-                min_source_values: 1,
-                max_source_values: 5.5,
+            source_values: [[1, 2], [5.5]],
+            source_value_counts: [[100, 1], [44]],
+            target_values: [123, 441],
+            max_source_counts: 100,
+            min_source_values: 1,
+            max_source_values: 5.5,
         },
     };
 
@@ -77,7 +77,7 @@ describe('<PolynomialConstructionContainer />', () => {
             colonies: {
                 pixelValues: [[1, 2], [5.5]],
                 pixelCounts: [[100, 1], [44]],
-                targetValues: [123, 441],
+                independentMeasurements: [123, 441],
                 minPixelValue: 1,
                 maxPixelValue: 5.5,
                 maxCount: 100,
