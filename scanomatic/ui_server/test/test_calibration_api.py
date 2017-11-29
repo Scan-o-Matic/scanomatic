@@ -518,7 +518,7 @@ class TestConstructCalibration:
             assert data['reason'].startswith(
                 u"Construction refused. "
                 "Validation of polynomial says: BadSlope "
-                "(y = 0.00E+00 x^0 + 1.00E+00 x^1 + 2.00E+00 x^2) "
+                "(y = 1.00E+00 x^1 + 2.00E+00 x^2) "
                 "correlation: {"
             )
             assert "'stderr': 0.5" in data['reason']

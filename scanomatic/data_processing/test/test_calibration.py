@@ -80,10 +80,10 @@ class TestGetCalibrationOptimizationFunction:
         data = calibration.CalibrationData(
             source_value_counts=[[10, 2], [3]],
             source_values=[[1, 2], [3]],
-            target_value=[0, 0]
+            target_value=[100, 126]
         )
-        c1 = -1
-        c2 = -44
+        c1 = -2
+        c2 = -4
         sums = colony_summer(data, c1, c2)
         assert all(
             calc == target for calc, target in zip(sums, data.target_value)
