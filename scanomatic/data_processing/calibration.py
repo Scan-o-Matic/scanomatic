@@ -589,8 +589,8 @@ def get_calibration_optimization_function(degree=5):
     arr = np.zeros((degree + 1,), np.float)
 
     def poly(data_store, c1, cn):
-        arr[-2] = c1
-        arr[0] = cn
+        arr[-2] = abs(c1)
+        arr[0] = abs(cn)
         return tuple(
             (np.polyval(arr, values) * counts).sum()
             for values, counts in
@@ -614,7 +614,8 @@ def poly_as_text(poly):
 
     def coeffs():
         for i, coeff in enumerate(poly[::-1]):
-            yield "{0:.2E} x^{1}".format(coeff, i)
+            if (coeff != 0):
+                yield "{0:.2E} x^{1}".format(coeff, i)
 
     return "y = {0}".format(" + ".join(coeffs()))
 
@@ -642,8 +643,8 @@ def calculate_polynomial(data_store, degree=5):
         raise CCCConstructionError("Invalid data (probably too little)")
 
     poly_vals = np.zeros((degree + 1))
-    poly_vals[-2] = c1
-    poly_vals[0] = cn
+    poly_vals[-2] = abs(c1)
+    poly_vals[0] = abs(cn)
 
     _logger.info(
         "Produced polynomial {} (x^1, x^{})".format(
