@@ -15,6 +15,11 @@ describe('<PolynomialConstructionContainer />', () => {
         polynomial_coefficients: [1, 1, 2, 0.4],
         calculated_sizes: [15, 20],
         measured_sizes: [2, 3],
+        correlation: {
+            slope: 3,
+            intercept: 44,
+            stderr: -3,
+        },
     };
 
     beforeEach(() => {
@@ -60,11 +65,18 @@ describe('<PolynomialConstructionContainer />', () => {
                 calculated: [1, 2, 3],
                 independentMeasurements: [3, 4, 5],
             },
+            correlation: {
+                slope: 3,
+                intercept: 44,
+                stderr: -3,
+            },
             error: 'nope',
         };
         wrapper.setState(state);
         const poly = wrapper.find('PolynomialConstruction');
         expect(poly.prop('polynomial')).toEqual(state.polynomial);
+        expect(poly.prop('resultsData')).toEqual(state.resultsData);
+        expect(poly.prop('correlation')).toEqual(state.correlation);
         expect(poly.prop('error')).toEqual(state.error);
     });
 
@@ -75,6 +87,7 @@ describe('<PolynomialConstructionContainer />', () => {
         expect(wrapper.state('error')).toBe(null);
         expect(wrapper.state('polynomial')).toBe(null);
         expect(wrapper.state('resultsData')).toBe(null);
+        expect(wrapper.state('correlation')).toBe(null);
     });
 
     it('should dispatch api call', () => {
@@ -130,6 +143,8 @@ describe('<PolynomialConstructionContainer />', () => {
                     calculated: results.calculated_sizes,
                     independentMeasurements: results.measured_sizes,
                 });
+            expect(wrapper.state('correlation'))
+                .toEqual(results.correlation);
             done();
         });
 

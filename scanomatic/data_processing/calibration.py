@@ -710,5 +710,34 @@ def construct_polynomial(identifier, power):
     }
 
 
+def get_all_colony_data(identifier):
+    ccc = __CCC[identifier]
+    data_store = _collect_all_included_data(ccc)
+    modes = [
+        values[np.argmax(counts)] for values, counts in
+        zip(data_store.source_values, data_store.source_value_counts)
+    ]
+    sort_order = np.argsort(modes)
+    values = [data_store.source_values[colony] for colony in sort_order]
+    counts = [data_store.source_value_counts[colony] for colony in sort_order]
+    value_sorts = [np.argsort(vector) for vector in values]
+    return {
+        'source_values': [
+            np.array(vector)[sort].tolist() for vector, sort in
+            zip(values, value_sorts)
+        ],
+        'source_value_counts': [
+            np.array(vector)[sort].tolist() for vector, sort in
+            zip(counts, value_sorts)
+        ],
+        'target_values': [
+            data_store.target_value[sort] for sort in sort_order
+        ],
+        'min_source_values': min(np.min(vector) for vector in values),
+        'max_source_values': max(np.max(vector) for vector in values),
+        'max_source_counts': max(np.max(vector) for vector in counts),
+    }
+
+
 if not __CCC:
     reload_cccs()

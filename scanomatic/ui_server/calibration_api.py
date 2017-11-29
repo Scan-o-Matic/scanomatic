@@ -751,6 +751,8 @@ def construct_calibration(ccc_identifier, power):
         access_token=data_object.get("access_token")
     )
 
+    response["colonies"] = calibration.get_all_colony_data(ccc_identifier)
+
     if response["validation"] == "OK":
         return jsonify(
             **response
