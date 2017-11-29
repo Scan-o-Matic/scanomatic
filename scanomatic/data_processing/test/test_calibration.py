@@ -35,6 +35,61 @@ def test_get_im_slice():
     assert calibration._get_im_slice(image, model).sum() == 207
 
 
+def test_poly_as_text():
+    assert (
+        calibration.poly_as_text([2, 0, -1, 0]) ==
+        "y = -1.00E+00 x^1 + 2.00E+00 x^3"
+    )
+
+
+def test_get_calibration_polynomial_residuals():
+        colony_summer = calibration.get_calibration_optimization_function(2)
+        data = calibration.CalibrationData(
+            source_value_counts=[[10, 2], [3]],
+            source_values=[[1, 2], [3]],
+            target_value=np.array([100, 126])
+        )
+        c1 = 1
+        c2 = 0
+        residuals = calibration.get_calibration_polynomial_residuals(
+            [c1, c2],
+            colony_summer,
+            data,
+        )
+        assert (residuals == (100.0 - 14.0, 126.0 - 9.0)).all()
+
+
+class TestGetCalibrationOptimizationFunction:
+
+    def test_returns_expected_values(self):
+        colony_summer = calibration.get_calibration_optimization_function(2)
+        data = calibration.CalibrationData(
+            source_value_counts=[[10, 2], [3]],
+            source_values=[[1, 2], [3]],
+            target_value=[100, 126]
+        )
+        c1 = 2
+        c2 = 4
+        sums = colony_summer(data, c1, c2)
+        assert all(
+            calc == target for calc, target in zip(sums, data.target_value)
+        )
+
+    def test_doesnt_allow_negative_coeffs(self):
+        colony_summer = calibration.get_calibration_optimization_function(2)
+        data = calibration.CalibrationData(
+            source_value_counts=[[10, 2], [3]],
+            source_values=[[1, 2], [3]],
+            target_value=[0, 0]
+        )
+        c1 = -1
+        c2 = -44
+        sums = colony_summer(data, c1, c2)
+        assert all(
+            calc == target for calc, target in zip(sums, data.target_value)
+        )
+
+
 class TestAccessToken:
 
     def test_invalid_token(self, ccc):
@@ -158,8 +213,8 @@ class TestEditCCC:
 
         poly_coeffs = calibration.calculate_polynomial(data_store_bad_ccc, 5)
         assert len(poly_coeffs) == 6
-        assert poly_coeffs[0] != 0
-        assert poly_coeffs[-2] != 0
+        assert poly_coeffs[0] >= 0
+        assert poly_coeffs[-2] >= 0
         assert poly_coeffs[-1] == 0
         assert all(v == 0 for v in poly_coeffs[1:4])
 
@@ -174,6 +229,7 @@ class TestEditCCC:
             identifier, power, access_token=token)
 
         assert response['validation'] != 'OK'
+        assert all(coeff >= 0 for coeff in response['polynomial_coefficients'])
 
         assert len(response['calculated_sizes']) == 30
         assert len(response['measured_sizes']) == 30
@@ -199,7 +255,7 @@ class TestEditCCC:
         assert response['correlation']['slope'] == pytest.approx(1, abs=0.02)
 
         assert response['validation'] == 'OK'
-
+        assert all(coeff >= 0 for coeff in response['polynomial_coefficients'])
         assert response['polynomial_degree'] == power
         assert response['ccc'] == identifier
 
