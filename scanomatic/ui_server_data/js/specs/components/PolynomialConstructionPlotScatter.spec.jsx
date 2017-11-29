@@ -2,7 +2,7 @@ import React from 'react';
 import { shallow, mount } from 'enzyme';
 
 import './enzyme-setup';
-import PolynomialResultsPlotScatter, { labelFormatter } from '../../ccc/components/PolynomialResultsPlotScatter';
+import PolynomialResultsPlotScatter from '../../ccc/components/PolynomialResultsPlotScatter';
 
 const toLookLikeSVG = (util, customEqualityTesters) => ({
     compare: (actual, expected) => {
@@ -65,19 +65,5 @@ describe('<PolynomialResultsPlotScatter />', () => {
         const result = wrapper.find('div.poly-corr-chart').html();
         expect(result).toContain(expected);
         jasmine.clock().uninstall();
-    });
-});
-
-describe('labelFormatter', () => {
-    it('returns zero', () => {
-        expect(labelFormatter(0)).toEqual('0');
-    });
-
-    it('returns the expected output for value', () => {
-        expect(labelFormatter(320)).toEqual('3 x 10^2');
-    });
-
-    it('respects fixed positions', () => {
-        expect(labelFormatter(320, 1)).toEqual('3.2 x 10^2');
     });
 });

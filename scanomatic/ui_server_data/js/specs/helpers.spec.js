@@ -1,4 +1,4 @@
-import { RGBColor, loadImage, uploadImage } from '../ccc/helpers';
+import { RGBColor, loadImage, uploadImage, valueFormatter } from '../ccc/helpers';
 import testPlateImageURL from './fixtures/testPlate.png';
 import * as API from '../ccc/api';
 
@@ -178,5 +178,23 @@ describe('RGBColor', () => {
     it('should be able to generate a CSS string representation of the color', () => {
         const color = new RGBColor(0, 128, 255);
         expect(color.toCSSString()).toEqual('rgb(0, 128, 255)');
+    });
+});
+
+describe('labelFormatter', () => {
+    it('returns zero', () => {
+        expect(valueFormatter(0)).toEqual('0');
+    });
+
+    it('returns the expected output for value', () => {
+        expect(valueFormatter(320)).toEqual('3 x 10^2');
+    });
+
+    it('respects fixed positions', () => {
+        expect(valueFormatter(320, 1)).toEqual('3.2 x 10^2');
+    });
+
+    it('works with negative numbers', () => {
+        expect(valueFormatter(-320, 1)).toEqual('-3.2 x 10^2');
     });
 });
