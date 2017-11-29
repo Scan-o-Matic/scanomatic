@@ -733,9 +733,12 @@ def get_all_colony_data(identifier):
         'target_values': [
             data_store.target_value[sort] for sort in sort_order
         ],
-        'min_source_values': min(np.min(vector) for vector in values),
-        'max_source_values': max(np.max(vector) for vector in values),
-        'max_source_counts': max(np.max(vector) for vector in counts),
+        'min_source_values':
+        min(np.min(vector) for vector in values) if values else 0,
+        'max_source_values':
+        max(np.max(vector) for vector in values) if values else 0,
+        'max_source_counts':
+        max(np.max(vector) for vector in counts) if counts else 0,
     }
 
 

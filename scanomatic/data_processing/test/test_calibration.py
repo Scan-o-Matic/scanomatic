@@ -695,3 +695,54 @@ class TestConstructPolynomial:
         print coeffs
         assert coeffs[0] == pytest.approx(3)
         assert coeffs[-2] == pytest.approx(2)
+
+
+class TestGetAllColonyData:
+
+    def test_gets_all_included_colonies_in_empty_ccc(self, ccc):
+        ccc_id = ccc[calibration.CellCountCalibration.identifier]
+        colonies = calibration.get_all_colony_data(ccc_id)
+        assert colonies['source_values'] == []
+        assert colonies['source_value_counts'] == []
+        assert colonies['target_values'] == []
+        assert colonies['min_source_values'] == 0
+        assert colonies['max_source_values'] == 0
+        assert colonies['max_source_counts'] == 0
+
+    def test_gets_all_included_colonies_in_ccc(self, edit_ccc):
+        ccc_id = edit_ccc[calibration.CellCountCalibration.identifier]
+        colonies = calibration.get_all_colony_data(ccc_id)
+        assert len(colonies['source_values']) == 16
+        assert len(colonies['source_value_counts']) == 16
+        assert len(colonies['target_values']) == 16
+        assert colonies['min_source_values'] == 0.21744831955999988
+        assert colonies['max_source_values'] == 30.68582517095
+        assert colonies['max_source_counts'] == 21562
+
+    def test_doesnt_scramble_data_while_sorting(self, edit_ccc):
+        ccc_id = edit_ccc[calibration.CellCountCalibration.identifier]
+        colonies = calibration.get_all_colony_data(ccc_id)
+        assert colonies['source_values'][0] == [
+            0.21744831955999988, 1.2174483195599999, 2.2174483195599999,
+            3.2174483195599999, 4.2174483195599999, 5.2174483195599999,
+            7.2174483195599999, 9.217448319559999, 13.217448319559999,
+        ]
+        assert colonies['source_value_counts'][0] == [
+            11620, 10491, 10, 4, 1, 1, 1, 1, 2,
+        ]
+        assert colonies['target_values'][0] == 210000.0
+        assert colonies['source_values'][-1] == [
+            4.6858251709500003, 5.6858251709500003, 6.6858251709500003,
+            7.6858251709500003, 8.6858251709500003, 9.6858251709500003,
+            10.68582517095, 11.68582517095, 12.68582517095, 13.68582517095,
+            14.68582517095, 15.68582517095, 16.68582517095, 17.68582517095,
+            18.68582517095, 19.68582517095, 20.68582517095, 21.68582517095,
+            22.68582517095, 23.68582517095, 24.68582517095, 25.68582517095,
+            26.68582517095, 27.68582517095, 28.68582517095, 29.68582517095,
+            30.68582517095,
+        ]
+        assert colonies['source_value_counts'][-1] == [
+            1, 7, 50, 96, 81, 54, 74, 78, 56, 67, 82, 70, 94, 61, 82, 95, 94,
+            116, 348, 1265, 2900, 4655, 9718, 1982, 2171, 770, 1,
+        ]
+        assert colonies['target_values'][-1] == 42000000.0

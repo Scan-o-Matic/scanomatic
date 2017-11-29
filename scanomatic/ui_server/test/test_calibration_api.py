@@ -486,6 +486,14 @@ class TestConstructCalibration:
             assert (
                 len(data['measured_sizes']) == len(data['calculated_sizes'])
             )
+            assert all(
+                key in data['colonies'] for key in
+                (
+                    'source_values', 'source_value_counts', 'target_values',
+                    'min_source_values', 'max_source_values',
+                    'max_source_counts',
+                )
+            )
 
     def test_returns_fail_reason(self, test_app, finalizable_ccc):
         with mock.patch(
