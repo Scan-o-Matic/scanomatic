@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.ndimage import (
     binary_erosion, binary_dilation, gaussian_filter, median_filter)
@@ -87,10 +89,10 @@ class AnalysisThresholdOtsu(AnalysisRecipeAbstraction):
         self._thresholdUnitAdjust = threshold_unit_adjust
 
     def _do(self, im, filter_array):
-
         try:
-            filter_array[...] = im > ski_filter.threshold_otsu(im) + self._thresholdUnitAdjust
-        except (ValueError, TypeError):
+            filter_array[...] = im < ski_filter.threshold_otsu(im) + self._thresholdUnitAdjust
+        except (ValueError, TypeError) as error:
+            warnings.warn('Otsu method failed. Error was {}'.format(str(error)))
             filter_array[...] = False
 
 
