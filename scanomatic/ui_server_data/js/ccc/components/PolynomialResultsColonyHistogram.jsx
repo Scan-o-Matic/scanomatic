@@ -97,7 +97,7 @@ export default class PolynomialResultsColonyHistogram extends React.Component {
     }
 
     render() {
-        const { independentMeasurements, colonyIdx } = this.props;
+        const { independentMeasurement, colonyIdx } = this.props;
 
         return (
             <div className="poly-colony-container">
@@ -106,7 +106,7 @@ export default class PolynomialResultsColonyHistogram extends React.Component {
                     ref={this.refBinder}
                     id={`poly-colony-chart-${colonyIdx}`}
                 />
-                <span className="poly-colony-txt">{valueFormatter(independentMeasurements, 2)} cells</span>
+                <span className="poly-colony-txt">{valueFormatter(independentMeasurement, 2)} cells</span>
             </div>
         );
     }
@@ -116,7 +116,7 @@ PolynomialResultsColonyHistogram.propTypes = {
     colonyIdx: PropTypes.number.isRequired,
     pixelValues: PropTypes.arrayOf(PropTypes.number).isRequired,
     pixelCounts: PropTypes.arrayOf(PropTypes.number).isRequired,
-    independentMeasurements: PropTypes.number.isRequired,
+    independentMeasurement: PropTypes.number.isRequired,
     maxCount: PropTypes.number.isRequired,
     maxPixelValue: PropTypes.number.isRequired,
     minPixelValue: PropTypes.number.isRequired,

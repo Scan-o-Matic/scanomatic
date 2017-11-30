@@ -35,7 +35,7 @@ describe('<PolynomialResultsColonyHistograms />', () => {
             const hist = histograms.get(i);
             expect(hist.props.pixelValues).toEqual(props.colonies.pixelValues[i]);
             expect(hist.props.pixelCounts).toEqual(props.colonies.pixelCounts[i]);
-            expect(hist.props.independentMeasurements)
+            expect(hist.props.independentMeasurement)
                 .toEqual(props.colonies.independentMeasurements[i]);
             expect(hist.props.maxCount).toEqual(props.colonies.maxCount);
             expect(hist.props.maxPixelValue).toEqual(props.colonies.maxPixelValue);
