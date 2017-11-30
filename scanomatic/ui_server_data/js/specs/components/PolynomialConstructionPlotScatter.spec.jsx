@@ -4,22 +4,6 @@ import { shallow, mount } from 'enzyme';
 import './enzyme-setup';
 import PolynomialResultsPlotScatter from '../../ccc/components/PolynomialResultsPlotScatter';
 
-const toLookLikeSVG = (util, customEqualityTesters) => ({
-    compare: (actual, expected) => {
-        const expectedData = expected.match(/<svg.*<\/svg>/)[0];
-        const expectedDataURL = `data://text/svg,${expectedData}`;
-        const actualData = actual.match(/<svg.*<\/svg>/)[0];
-        const actualDataURL = `data://text/svg,${actualData}`;
-        const result = {
-            pass: util.equals(actual, expected, customEqualityTesters),
-        };
-        result.message = result.pass ? 'Expected SVGs to look different' : 'Expected SVGs to look the same';
-        result.message += `\n\texpected: ${expectedDataURL}`;
-        result.message += `\n\tactual: " ${actualDataURL}`;
-        return result;
-    },
-});
-
 describe('<PolynomialResultsPlotScatter />', () => {
     const props = {
         resultsData: {
@@ -32,10 +16,6 @@ describe('<PolynomialResultsPlotScatter />', () => {
             stderr: 0.11,
         },
     };
-
-    beforeEach(() => {
-        jasmine.addMatchers({ toLookLikeSVG });
-    });
 
     it('renders a div to place the plot in', () => {
         const wrapper = shallow(<PolynomialResultsPlotScatter {...props} />);
@@ -58,12 +38,9 @@ describe('<PolynomialResultsPlotScatter />', () => {
     });
 
     it('plots the data', () => {
-        const clock = jasmine.clock().install();
-        clock.mockDate(new Date(42));
         const wrapper = mount(<PolynomialResultsPlotScatter {...props} />);
         const expected = '<svg width="520" height="500" style="overflow: hidden;">';
         const result = wrapper.find('div.poly-corr-chart').html();
         expect(result).toContain(expected);
-        jasmine.clock().uninstall();
     });
 });
