@@ -505,7 +505,7 @@ def get_colony_detection(colony_im):
     identifier = ["unknown_image!", 0, [0, 0]]
 
     grid_cell = GridCell(identifier, None, save_extra_data=False)
-    grid_cell.source = colony_im.astype(np.float64) * -1
+    grid_cell.source = colony_im.astype(np.float64)
 
     grid_cell.attach_analysis(
         blob=True, background=True, cell=True,

@@ -187,7 +187,6 @@ Scan-o-Matic""", self._analysis_job)
                 image_model.image.path))
             return True
 
-        image_model.fixture.grayscale.values = image_model.fixture.grayscale.values[::-1]
 
         # Overwrite grayscale with previous if has been requested
         if self._analysis_job.one_time_grayscale:
