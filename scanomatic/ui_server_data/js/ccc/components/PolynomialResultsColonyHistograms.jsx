@@ -25,7 +25,7 @@ const PolynomialResultsColonyHistograms = (props) => {
         ));
     }
     return (
-        <div className="poly-corr">
+        <div className="poly-histograms">
             <h4>Colony Histograms</h4>
             {colonies}
         </div>
