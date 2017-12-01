@@ -107,7 +107,7 @@ class GridCell(object):
                         "{0} caused background mean ({1}) due to inf".format(
                             self._identifier, bg_sub))
 
-                self.source -= bg_sub
+                self.source = bg_sub - self.source
 
             self.source[self.source < self.MIN_THRESHOLD] = self.MIN_THRESHOLD
 
