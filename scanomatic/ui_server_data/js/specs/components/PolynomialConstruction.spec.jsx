@@ -27,7 +27,15 @@ describe('<PolynomialConstruction />', () => {
             intercept: -444,
             stderr: 0.01,
         },
-        error: 'No no no!'
+        colonies: {
+            pixelValues: [[1, 2], [5.5]],
+            pixelCounts: [[100, 1], [44]],
+            targetValues: [123, 441],
+            minPixelValue: 1,
+            maxPixelValue: 5.5,
+            maxCount: 100,
+        },
+        error: 'No no no!',
     };
 
     beforeEach(() => {
@@ -73,6 +81,13 @@ describe('<PolynomialConstruction />', () => {
         expect(wrapper.find('PolynomialResultsPlotScatter').exists())
             .toBeTruthy();
         expect(wrapper.find('PolynomialResultsPlotScatter').length).toEqual(1);
+    });
+
+    it('should render a PolynomialResultsColonyHistograms', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} />);
+        expect(wrapper.find('PolynomialResultsColonyHistograms').exists())
+            .toBeTruthy();
+        expect(wrapper.find('PolynomialResultsColonyHistograms').length).toEqual(1);
     });
 
     it('should render a PolynomialConstructionError', () => {
@@ -128,6 +143,8 @@ describe('<PolynomialConstruction />', () => {
             .toBeTruthy();
         expect(wrapper.find('PolynomialConstructionError').exists())
             .toBeTruthy();
+        expect(wrapper.find('PolynomialResultsColonyHistograms').exists())
+            .toBeTruthy();
     });
 
     it('should not render any results scatter if there are none', () => {
@@ -135,6 +152,20 @@ describe('<PolynomialConstruction />', () => {
         expect(wrapper.find('PolynomialResultsInfo').exists())
             .toBeTruthy();
         expect(wrapper.find('PolynomialResultsPlotScatter').exists())
+            .not.toBeTruthy();
+        expect(wrapper.find('PolynomialConstructionError').exists())
+            .toBeTruthy();
+        expect(wrapper.find('PolynomialResultsColonyHistograms').exists())
+            .toBeTruthy();
+    });
+
+    it('should not render any results histograms if there are none', () => {
+        const wrapper = shallow(<PolynomialConstruction {...props} colonies={null} />);
+        expect(wrapper.find('PolynomialResultsInfo').exists())
+            .toBeTruthy();
+        expect(wrapper.find('PolynomialResultsPlotScatter').exists())
+            .toBeTruthy();
+        expect(wrapper.find('PolynomialResultsColonyHistograms').exists())
             .not.toBeTruthy();
         expect(wrapper.find('PolynomialConstructionError').exists())
             .toBeTruthy();
@@ -147,6 +178,8 @@ describe('<PolynomialConstruction />', () => {
         expect(wrapper.find('PolynomialConstructionError').exists())
             .not.toBeTruthy();
         expect(wrapper.find('PolynomialResultsPlotScatter').exists())
+            .toBeTruthy();
+        expect(wrapper.find('PolynomialResultsColonyHistograms').exists())
             .toBeTruthy();
     });
 

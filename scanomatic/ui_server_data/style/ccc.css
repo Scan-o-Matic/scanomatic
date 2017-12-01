@@ -40,6 +40,28 @@ table {
 	opacity: 0 !important;
 }
 
+.poly-colony-container {
+	margin: 0px;
+	display: block;
+	width: 520px;
+	position: relative;
+}
+
+.poly-colony-chart {
+	color: #000;
+	background: #fff;
+	display: inline-block;
+}
+
+.poly-colony-txt {
+	color: #000;
+	position: absolute;
+	right: 30px;
+	bottom: 4px;
+	font-size: 90%;
+	font-style: italic;
+}
+
 .paddedTable td{
     padding-left: 5px;
 }

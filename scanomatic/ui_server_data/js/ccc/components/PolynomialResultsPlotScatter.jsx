@@ -3,16 +3,7 @@ import React from 'react';
 
 import c3 from 'c3';
 import 'c3/c3.min.css';
-
-
-export const labelFormatter = (value, fixed = 0) => {
-    if (value === 0) {
-        return value.toFixed(0);
-    }
-    const exponent = Math.floor(Math.log10(value));
-    const number = (value / (10 ** exponent)).toFixed(fixed);
-    return `${number} x 10^${exponent.toFixed(0)}`;
-};
+import { valueFormatter } from '../helpers.js';
 
 
 export default class PolynomialResultsPlotScatter extends React.Component {
@@ -60,7 +51,7 @@ export default class PolynomialResultsPlotScatter extends React.Component {
                     tick: {
                         fit: false,
                         values: [0, rangeMax],
-                        format: labelFormatter,
+                        format: valueFormatter,
                     },
                     padding: { left: 0, right: 0 },
                 },
@@ -69,7 +60,7 @@ export default class PolynomialResultsPlotScatter extends React.Component {
                     tick: {
                         fit: false,
                         values: [0, rangeMax],
-                        format: labelFormatter,
+                        format: valueFormatter,
                     },
                     padding: { top: 0, bottom: 0 },
                 },
@@ -90,8 +81,8 @@ export default class PolynomialResultsPlotScatter extends React.Component {
             },
             tooltip: {
                 format: {
-                    title: d => `Measured ${labelFormatter(d, 1)}`,
-                    value: value => labelFormatter(value, 1),
+                    title: d => `Measured ${valueFormatter(d, 2)}`,
+                    value: value => valueFormatter(value, 2),
                     name: () => 'Calculated',
                 },
             },

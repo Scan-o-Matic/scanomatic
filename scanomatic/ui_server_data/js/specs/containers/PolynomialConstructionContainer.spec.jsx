@@ -20,6 +20,14 @@ describe('<PolynomialConstructionContainer />', () => {
             intercept: 44,
             stderr: -3,
         },
+        colonies: {
+            source_values: [[1, 2], [5.5]],
+            source_value_counts: [[100, 1], [44]],
+            target_values: [123, 441],
+            max_source_counts: 100,
+            min_source_values: 1,
+            max_source_values: 5.5,
+        },
     };
 
     beforeEach(() => {
@@ -28,9 +36,7 @@ describe('<PolynomialConstructionContainer />', () => {
     });
 
     it('should render a <PolynomialConstruction />', () => {
-        const wrapper = shallow(
-            <PolynomialConstructionContainer {...props} />
-        );
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
         expect(wrapper.find('PolynomialConstruction').exists()).toBeTruthy();
     });
 
@@ -53,9 +59,7 @@ describe('<PolynomialConstructionContainer />', () => {
     });
 
     it('should set properties of PolynomialConstruction from state', () => {
-        const wrapper = shallow(
-            <PolynomialConstructionContainer {...props} />
-        );
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
         const state = {
             polynomial: {
                 coefficients: [1, 2, 3, 4, 5],
@@ -70,6 +74,14 @@ describe('<PolynomialConstructionContainer />', () => {
                 intercept: 44,
                 stderr: -3,
             },
+            colonies: {
+                pixelValues: [[1, 2], [5.5]],
+                pixelCounts: [[100, 1], [44]],
+                independentMeasurements: [123, 441],
+                minPixelValue: 1,
+                maxPixelValue: 5.5,
+                maxCount: 100,
+            },
             error: 'nope',
         };
         wrapper.setState(state);
@@ -77,13 +89,12 @@ describe('<PolynomialConstructionContainer />', () => {
         expect(poly.prop('polynomial')).toEqual(state.polynomial);
         expect(poly.prop('resultsData')).toEqual(state.resultsData);
         expect(poly.prop('correlation')).toEqual(state.correlation);
+        expect(poly.prop('colonies')).toEqual(state.colonies);
         expect(poly.prop('error')).toEqual(state.error);
     });
 
     it('should start without results or error', () => {
-        const wrapper = shallow(
-            <PolynomialConstructionContainer {...props} />
-        );
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
         expect(wrapper.state('error')).toBe(null);
         expect(wrapper.state('polynomial')).toBe(null);
         expect(wrapper.state('resultsData')).toBe(null);
@@ -91,13 +102,13 @@ describe('<PolynomialConstructionContainer />', () => {
     });
 
     it('should dispatch api call', () => {
-        const wrapper = shallow(
-            <PolynomialConstructionContainer {...props} />
-        );
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
         const poly = wrapper.find('PolynomialConstruction');
         poly.prop('onConstruction')();
         expect(API.SetNewCalibrationPolynomial).toHaveBeenCalledWith(
-            props.cccMetadata.id, 5, props.cccMetadata.accessToken,
+            props.cccMetadata.id,
+            5,
+            props.cccMetadata.accessToken,
         );
     });
 
@@ -110,13 +121,11 @@ describe('<PolynomialConstructionContainer />', () => {
     });
 
     it('should clear error on new results', (done) => {
-        const wrapper = shallow(
-            <PolynomialConstructionContainer {...props} />
-        );
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
         const poly = wrapper.find('PolynomialConstruction');
         const promise = Promise.resolve(results);
         API.SetNewCalibrationPolynomial.and.returnValue(promise);
-        wrapper.setState({error: 'test'});
+        wrapper.setState({ error: 'test' });
         poly.prop('onConstruction')()
             .then(() => {
                 expect(wrapper.state('error')).toBe(null);
@@ -125,9 +134,7 @@ describe('<PolynomialConstructionContainer />', () => {
     });
 
     it('should set new results', (done) => {
-        const wrapper = shallow(
-            <PolynomialConstructionContainer {...props} />
-        );
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
         const poly = wrapper.find('PolynomialConstruction');
         const promise = Promise.resolve(results);
         API.SetNewCalibrationPolynomial.and.returnValue(promise);
@@ -147,13 +154,10 @@ describe('<PolynomialConstructionContainer />', () => {
                 .toEqual(results.correlation);
             done();
         });
-
     });
 
     it('should set error', (done) => {
-        const wrapper = shallow(
-            <PolynomialConstructionContainer {...props} />
-        );
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
         const poly = wrapper.find('PolynomialConstruction');
         const promise = Promise.reject('foo');
         API.SetNewCalibrationPolynomial.and.returnValue(promise);
@@ -161,15 +165,13 @@ describe('<PolynomialConstructionContainer />', () => {
             .then(() => {
                 expect(wrapper.state('error')).toEqual('foo');
                 done();
-        });
+            });
     });
 
     it('should clear error', () => {
-        const wrapper = shallow(
-            <PolynomialConstructionContainer {...props} />
-        );
+        const wrapper = shallow(<PolynomialConstructionContainer {...props} />);
         const poly = wrapper.find('PolynomialConstruction');
-        wrapper.setState({error: 'SOS'});
+        wrapper.setState({ error: 'SOS' });
         expect(wrapper.state('error')).toEqual('SOS');
         poly.prop('onClearError')();
         expect(wrapper.state('error')).toBe(null);
