@@ -3,26 +3,29 @@ export default function CanvasState(canvas) {
     this.width = canvas.width;
     this.height = canvas.height;
     this.ctx = canvas.getContext('2d');
-    var stylePaddingLeft, stylePaddingTop, styleBorderLeft, styleBorderTop;
+    let stylePaddingLeft,
+        stylePaddingTop,
+        styleBorderLeft,
+        styleBorderTop;
     if (document.defaultView && document.defaultView.getComputedStyle) {
         this.stylePaddingLeft = parseInt(
-            document.defaultView.getComputedStyle(
-                canvas, null)['paddingLeft'],
-            10) || 0;
+            document.defaultView.getComputedStyle(canvas, null).paddingLeft,
+            10,
+        ) || 0;
         this.stylePaddingTop = parseInt(
-            document.defaultView.getComputedStyle(
-                canvas, null)['paddingTop'],
-            10) || 0;
+            document.defaultView.getComputedStyle(canvas, null).paddingTop,
+            10,
+        ) || 0;
         this.styleBorderLeft = parseInt(
-            document.defaultView.getComputedStyle(
-                canvas, null)['borderLeftWidth'],
-            10) || 0;
+            document.defaultView.getComputedStyle(canvas, null).borderLeftWidth,
+            10,
+        ) || 0;
         this.styleBorderTop = parseInt(
-            document.defaultView.getComputedStyle(
-                canvas, null)['borderTopWidth'],
-            10) || 0;
+            document.defaultView.getComputedStyle(canvas, null).borderTopWidth,
+            10,
+        ) || 0;
     }
-    var html = document.body.parentNode;
+    const html = document.body.parentNode;
     this.htmlTop = html.offsetTop;
     this.htmlLeft = html.offsetLeft;
 
@@ -35,17 +38,18 @@ export default function CanvasState(canvas) {
 
     canvas.addEventListener(
         'selectstart',
-        function(e) { e.preventDefault(); return false; }, false);
+        (e) => { e.preventDefault(); return false; }, false,
+    );
 
-    canvas.addEventListener('mousedown', function (e) {
-        var mouse = this.getMouse(e);
-        var mx = mouse.x;
-        var my = mouse.y;
-        var shapes = this.shapes;
-        var l = shapes.length;
-        for (var i = l-1; i >= 0; i--) {
+    canvas.addEventListener('mousedown', (e) => {
+        const mouse = this.getMouse(e);
+        const mx = mouse.x;
+        const my = mouse.y;
+        const shapes = this.shapes;
+        const l = shapes.length;
+        for (let i = l - 1; i >= 0; i--) {
             if (shapes[i].contains(mx, my)) {
-                var mySel = shapes[i];
+                const mySel = shapes[i];
                 this.dragoffx = mx - mySel.x;
                 this.dragoffy = my - mySel.y;
                 this.dragging = true;
@@ -60,43 +64,43 @@ export default function CanvasState(canvas) {
             this.selection = null;
             this.needsRender = true; // Need to clear the old selection border
         }
-    }.bind(this), true);
-    canvas.addEventListener('mousemove', function(e) {
-        if (this.dragging){
-            var mouse = this.getMouse(e);
+    }, true);
+    canvas.addEventListener('mousemove', (e) => {
+        if (this.dragging) {
+            const mouse = this.getMouse(e);
             this.selection.x = mouse.x - this.dragoffx;
             this.selection.y = mouse.y - this.dragoffy;
             this.needsRender = true; // Something's dragging so we must redraw
         }
-    }.bind(this), true);
-    canvas.addEventListener('mouseup', function(e) {
+    }, true);
+    canvas.addEventListener('mouseup', (e) => {
         this.dragging = false;
-    }.bind(this), true);
+    }, true);
 
     this.selectionColor = '#CC0000';
     this.selectionWidth = 2;
     this.interval = 30;
-    setInterval(function() { this.draw(); }.bind(this), this.interval);
+    setInterval(() => { this.draw(); }, this.interval);
 }
 
-CanvasState.prototype.addShape = function(Blob) {
+CanvasState.prototype.addShape = function (Blob) {
     this.shapes.push(Blob);
     this.needsRender = true;
-}
+};
 
-CanvasState.prototype.clear = function() {
+CanvasState.prototype.clear = function () {
     this.ctx.clearRect(0, 0, this.width, this.height);
-}
+};
 
-CanvasState.prototype.draw = function() {
+CanvasState.prototype.draw = function () {
     if (this.needsRender) {
-        var ctx = this.ctx;
-        var shapes = this.shapes;
+        const ctx = this.ctx;
+        const shapes = this.shapes;
         this.clear();
 
-        var l = shapes.length;
-        for (var i = 0; i < l; i++) {
-            var Blob = shapes[i];
+        const l = shapes.length;
+        for (let i = 0; i < l; i++) {
+            const Blob = shapes[i];
             if (Blob.x > this.width || Blob.y > this.height ||
                 Blob.x + Blob.w < 0 || Blob.y + Blob.h < 0) continue;
             shapes[i].draw(ctx);
@@ -105,16 +109,20 @@ CanvasState.prototype.draw = function() {
         if (this.selection != null) {
             ctx.strokeStyle = this.selectionColor;
             ctx.lineWidth = this.selectionWidth;
-            var mySel = this.selection;
-            ctx.strokeRect(mySel.x,mySel.y,mySel.w,mySel.h);
+            const mySel = this.selection;
+            ctx.strokeRect(mySel.x, mySel.y, mySel.w, mySel.h);
         }
 
         this.needsRender = false;
     }
-}
+};
 
-CanvasState.prototype.getMouse = function(e) {
-    var element = this.canvas, offsetX = 0, offsetY = 0, mx, my;
+CanvasState.prototype.getMouse = function (e) {
+    let element = this.canvas,
+        offsetX = 0,
+        offsetY = 0,
+        mx,
+        my;
 
     if (element.offsetParent !== undefined) {
         do {
@@ -129,5 +137,5 @@ CanvasState.prototype.getMouse = function(e) {
     mx = e.pageX - offsetX;
     my = e.pageY - offsetY;
 
-    return {x: mx, y: my};
-}
+    return { x: mx, y: my };
+};

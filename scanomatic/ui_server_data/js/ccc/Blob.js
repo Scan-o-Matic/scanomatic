@@ -5,14 +5,14 @@ export default function Blob(x, y, r, fill) {
     this.fill = fill || '#AAAAAA';
 }
 
-Blob.prototype.draw = function(ctx) {
+Blob.prototype.draw = function (ctx) {
     ctx.fillStyle = this.fill;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
     ctx.fill();
-}
+};
 
-Blob.prototype.contains = function(mx, my) {
-    var distancesquared = (mx - this.x) * (mx - this.x) + (my - this.y) * (my - this.y);
+Blob.prototype.contains = function (mx, my) {
+    const distancesquared = (mx - this.x) * (mx - this.x) + (my - this.y) * (my - this.y);
     return distancesquared <= this.r * this.r;
-}
+};
