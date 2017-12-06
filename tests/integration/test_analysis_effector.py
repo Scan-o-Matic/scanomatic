@@ -46,7 +46,7 @@ def test_colony_sizes(proj1, proj1_analysis):
     expected = numpy.load(str(proj1.join('analysis/image_0_data.npy')))
     actual = numpy.load(
         str(proj1_analysis.workdir.join('analysis/image_0_data.npy')))
-    numpy.testing.assert_allclose(expected, actual, rtol=.005)
+    numpy.testing.assert_allclose(expected, actual, rtol=.01)
 
 
 def test_grid_plate(proj1, proj1_analysis):
