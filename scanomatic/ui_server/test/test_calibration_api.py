@@ -550,7 +550,7 @@ def test_bounding_box_for_colony(grid, x, y, w, h, expected):
 
 @pytest.fixture(scope='function')
 def colony_image():
-    im = np.random.normal(loc=80, scale=0.2, size=(25, 25))
+    im = np.ones((25, 25)) * 80
     cell_vector = norm.pdf(np.arange(-5, 6)/2.)
     colony = np.multiply.outer(cell_vector, cell_vector) * 20
     im[6:17, 5:16] -= colony
@@ -577,7 +577,7 @@ class TestGetColonyDetection:
     def test_blob_is_of_expected_size(self, colony_image):
         grid_cell = get_colony_detection(colony_image)
         blob = grid_cell.get_item(COMPARTMENTS.Blob).filter_array
-        assert blob.sum() == pytest.approx(120, abs=10)
+        assert blob.sum() == pytest.approx(100, abs=10)
 
     def test_blob_has_expected_center(self, colony_image):
         grid_cell = get_colony_detection(colony_image)
