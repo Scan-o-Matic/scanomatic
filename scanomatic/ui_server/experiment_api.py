@@ -32,7 +32,7 @@ def add_routes(app, rpc_client, logger):
                 path = os.path.abspath(path.replace(
                     'root', Config().paths.projects_root))
                 try_keep_qc = bool(
-                    data_object.get("keep_qc", default=1, type=int));
+                    data_object.get("keep_qc", default=1, type=int))
                 logger.info(
                     "Attempting to extract features in '{0}'".format(path))
                 model = FeaturesFactory.create(

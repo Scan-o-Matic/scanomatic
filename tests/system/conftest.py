@@ -1,6 +1,5 @@
 import pytest
 import requests
-import os
 from selenium import webdriver
 
 
