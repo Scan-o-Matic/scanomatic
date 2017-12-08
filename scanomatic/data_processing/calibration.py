@@ -588,9 +588,9 @@ def get_calibration_optimization_function(degree=5):
 
     arr = np.zeros((degree + 1,), np.float)
 
-    def poly(data_store, c1, cn):
-        arr[-2] = abs(c1)
-        arr[0] = abs(cn)
+    def poly(data_store, *arr):
+        arr = np.abs(arr)
+        arr[-1] = 0
         return tuple(
             (np.polyval(arr, values) * counts).sum()
             for values, counts in
@@ -622,19 +622,17 @@ def poly_as_text(poly):
 
 def calculate_polynomial(data_store, degree=5):
 
-    n_colonies = len(data_store.target_value)
     fit_function = get_calibration_optimization_function(degree)
 
-    x = np.empty(n_colonies,)
-    p0 = np.zeros((2,), np.float)
+    p0 = np.zeros((degree + 1,), np.float)
     if degree == 5:
         # This is a known solution for a specific set of Sc data
         # it is hopefully a good startingpoint
-        p0[0] = 48.99061427688507
+        p0[-2] = 48.99061427688507
         p0[1] = 3.379796310880545e-05
 
     try:
-        (c1, cn), _ = leastsq(
+        poly_vals, _ = leastsq(
             get_calibration_polynomial_residuals,
             p0,
             args=(fit_function, data_store)
@@ -642,13 +640,12 @@ def calculate_polynomial(data_store, degree=5):
     except TypeError:
         raise CCCConstructionError("Invalid data (probably too little)")
 
-    poly_vals = np.zeros((degree + 1))
-    poly_vals[-2] = abs(c1)
-    poly_vals[0] = abs(cn)
+    poly_vals = np.abs(poly_vals)
 
     _logger.info(
-        "Produced polynomial {} (x^1, x^{})".format(
-            poly_as_text(poly_vals), degree)
+        "Produced {} degree polynomial {}".format(
+            degree, poly_as_text(poly_vals)
+        )
     )
     return poly_vals
 
