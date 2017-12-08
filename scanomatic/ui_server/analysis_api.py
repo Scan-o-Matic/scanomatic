@@ -106,6 +106,7 @@ def add_routes(app):
                 instructions={
                     'grayscale': "one-time" if model.one_time_grayscale else "dynamic",
                     'positioning': "one-time" if model.one_time_positioning else "dynamic",
+                    'ccc': model.cell_count_calibration_id,
                     'compilation': model.compilation,
                     'compile_instructions': model.compile_instructions,
                     'email': model.email,
