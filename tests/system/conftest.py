@@ -1,11 +1,18 @@
 import pytest
 import requests
+import os
 from selenium import webdriver
 
 
 @pytest.fixture(scope='session')
 def docker_compose_file(pytestconfig):
-    return pytestconfig.rootdir.join('docker-compose.yml')
+    return [
+        pytestconfig.rootdir.join('docker-compose.yml'),
+        pytestconfig.rootdir.join(
+            'tests', 'system', 'data',
+            'docker-compose.testing-environment.yml'
+        ),
+    ]
 
 
 @pytest.fixture(scope='session')
