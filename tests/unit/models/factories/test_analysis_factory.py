@@ -1,6 +1,7 @@
 import pytest
 import mock
 import numpy as np
+import os
 
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import AnalysisModel
@@ -20,6 +21,11 @@ def analysis_serialized_object(analysis_model):
     return AnalysisModelFactory.serializer.serialize(analysis_model)
 
 
+@pytest.fixture(scope='session')
+def data_path():
+    return os.path.join(os.path.dirname(__file__), 'data')
+
+
 class TestAnalysisModels:
 
     def test_model_has_ccc(self, analysis_model):
@@ -33,7 +39,7 @@ class TestAnalysisModels:
     def test_model_can_serialize(self, analysis_model):
 
         serial = AnalysisModelFactory.serializer.serialize(analysis_model)
-        assert len(serial) == 3
+        assert len(serial) == 2
 
     def test_model_can_deserialize(self, analysis_serialized_object):
 
@@ -72,3 +78,42 @@ class TestAnalysisModels:
 
         with pytest.raises(KeyError):
             AnalysisModelFactory.create(cell_count_calibration_id='BadCCC')
+
+    @pytest.mark.parametrize('basename', (
+        'analysis.current.model',
+        'analysis.previous.model',
+        'analysis.previous.previous.model',
+    ))
+    def test_can_load_serialized_files_from_disk(self, basename, data_path):
+        model = AnalysisModelFactory.serializer.load_first(
+            os.path.join(data_path, basename)
+        )
+        assert isinstance(model, AnalysisModel)
+
+    @pytest.mark.parametrize('basename', (
+        'test.project.compilation',
+    ))
+    def test_cant_load_other_serialized_files_from_disk(
+        self, basename, data_path
+    ):
+        model = AnalysisModelFactory.serializer.load_first(
+            os.path.join(data_path, basename)
+        )
+        assert model is None
+
+    @pytest.mark.parametrize('keys', (
+        [],
+        [1, 2, 3, 4],
+        [
+            'email',
+            'use_local_fixture',
+        ],
+    ))
+    def test_bad_keys_dont_match(self, keys):
+
+        assert AnalysisModelFactory.matching_key_set(keys) is False
+
+    def test_right_keys_match(self):
+
+        assert AnalysisModelFactory.matching_key_set(
+            tuple(AnalysisModelFactory.default_model.keys()))

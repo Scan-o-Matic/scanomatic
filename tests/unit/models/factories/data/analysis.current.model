@@ -1,0 +1,173 @@
+[XML]
+slim_compartment = Blob
+slim_measure = Sum
+make_short_tag_version = True
+exclude_measures = (t.
+exclude_compartments = (t.
+
+[GRIDDING]
+use_utso = True
+median_coefficient = 0.99
+grid
+reference_grid_folder
+manual_threshold = 0.05
+gridding_offsets
+
+[XML #2]
+slim_compartment = Blob
+slim_measure = Sum
+make_short_tag_version = True
+exclude_measures = (t.
+exclude_compartments = (t.
+
+[GRIDDING #2]
+use_utso = True
+median_coefficient = 0.99
+grid
+reference_grid_folder
+manual_threshold = 0.05
+gridding_offsets
+
+[XML #3]
+slim_compartment = Blob
+slim_measure = Sum
+make_short_tag_version = True
+exclude_measures = (t.
+exclude_compartments = (t.
+
+[GRIDDING #3]
+use_utso = True
+median_coefficient = 0.99
+grid
+reference_grid_folder
+manual_threshold = 0.05
+gridding_offsets
+
+[XML #4]
+slim_compartment = Blob
+slim_measure = Sum
+make_short_tag_version = True
+exclude_measures = (t.
+exclude_compartments = (t.
+
+[GRIDDING #4]
+use_utso = True
+median_coefficient = 0.99
+grid
+reference_grid_folder
+manual_threshold = 0.05
+gridding_offsets
+
+[XML #5]
+slim_compartment = Blob
+slim_measure = Sum
+make_short_tag_version = True
+exclude_measures = (t.
+exclude_compartments = (t.
+
+[GRIDDING #5]
+use_utso = True
+median_coefficient = 0.99
+grid
+reference_grid_folder
+manual_threshold = 0.05
+gridding_offsets
+
+[XML #6]
+slim_compartment = Blob
+slim_measure = Sum
+make_short_tag_version = True
+exclude_measures = (t.
+exclude_compartments = (t.
+
+[GRIDDING #6]
+use_utso = True
+median_coefficient = 0.99
+grid
+reference_grid_folder
+manual_threshold = 0.05
+gridding_offsets
+
+[XML #7]
+slim_compartment = Blob
+slim_measure = Sum
+make_short_tag_version = True
+exclude_measures = (t.
+exclude_compartments = (t.
+
+[GRIDDING #7]
+use_utso = True
+median_coefficient = 0.99
+grid
+reference_grid_folder
+manual_threshold = 0.05
+gridding_offsets
+
+[GENERAL]
+focus_position
+cell_count_calibration_id = default
+one_time_grayscale = False
+stop_at_image = -1
+compile_instructions = /somprojects/bb/bb.project.compilation.instructions
+chain = True
+suppress_non_focal = False
+compilation = /somprojects/bb/bb.project.compilation
+image_data_output_item = Blob
+grid_images
+email = S''
+	.
+use_local_fixture = False
+image_data_output_measure = Sum
+cell_count_calibration = (S'3.37979631088e-05'
+	p1
+	S'0.0'
+	p2
+	S'0.0'
+	p3
+	S'0.0'
+	p4
+	S'48.9906142769'
+	p5
+	S'0.0'
+	p6
+	tp7
+	.
+plate_image_inclusion
+one_time_positioning = True
+output_directory = analysis
+grid_model = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'GRIDDING #8'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.analysis_factories
+	GridModelFactory
+	p9
+	sb.
+pinning_matrices = (lp1
+	(lp2
+	I32
+	aI48
+	aa.
+animate_focal = False
+
+[GRIDDING #8]
+use_utso = True
+median_coefficient = 0.99
+grid
+reference_grid_folder
+manual_threshold = 0.05
+gridding_offsets
+

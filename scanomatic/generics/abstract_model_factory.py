@@ -199,9 +199,14 @@ class AbstractModelFactory(object):
     def matching_key_set(cls, keys):
 
         expected = set(tuple(cls.default_model.keys()))
-        return (
-            expected.issuperset(keys) or
-            expected.intersection(keys) == expected
+        common = len(expected.intersection(keys))
+        diff = len(expected.difference(keys))
+        n_expected = len(expected)
+        n_keys = len(keys)
+        return common > diff and (
+            common == n_expected or
+            common == n_keys or
+            common / float(n_expected) > .75 and common / float(n_keys) > .75
         )
 
     @classmethod
