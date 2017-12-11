@@ -586,13 +586,13 @@ def _collect_all_included_data(ccc):
 
 def get_calibration_optimization_function(degree=5):
 
-    arr = np.zeros((degree + 1,), np.float)
+    coeffs = np.zeros((degree + 1,), np.float)
 
-    def poly(data_store, *arr):
-        arr = np.abs(arr)
-        arr[-1] = 0
+    def poly(data_store, *guess):
+        coeffs[:] = np.abs(guess)
+        coeffs[-1] = 0
         return tuple(
-            (np.polyval(arr, values) * counts).sum()
+            (np.polyval(coeffs, values) * counts).sum()
             for values, counts in
             zip(data_store.source_values, data_store.source_value_counts))
 
@@ -628,9 +628,14 @@ def calculate_polynomial(data_store, degree=5):
     if degree == 5:
         # This is a known solution for a specific set of Sc data
         # it is hopefully a good startingpoint
-        p0[-2] = 48.99061427688507
-        p0[1] = 3.379796310880545e-05
-
+        p0[:] = [
+            5.263*10**-5,
+            4.012*10**-3,
+            3.962*10**-2,
+            0.9684,
+            2.008*10**-6,
+            0,
+        ]
     try:
         poly_vals, _ = leastsq(
             get_calibration_polynomial_residuals,

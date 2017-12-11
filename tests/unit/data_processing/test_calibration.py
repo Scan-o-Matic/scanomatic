@@ -52,7 +52,7 @@ def test_get_calibration_polynomial_residuals():
         c1 = 1
         c2 = 0
         residuals = calibration.get_calibration_polynomial_residuals(
-            [c1, c2],
+            [c2, c1, 0],
             colony_summer,
             data,
         )
@@ -70,7 +70,7 @@ class TestGetCalibrationOptimizationFunction:
         )
         c1 = 2
         c2 = 4
-        sums = colony_summer(data, c1, c2)
+        sums = colony_summer(data, c2, c1, 0)
         assert all(
             calc == target for calc, target in zip(sums, data.target_value)
         )
@@ -84,7 +84,21 @@ class TestGetCalibrationOptimizationFunction:
         )
         c1 = -2
         c2 = -4
-        sums = colony_summer(data, c1, c2)
+        sums = colony_summer(data, c2, c1, 0)
+        assert all(
+            calc == target for calc, target in zip(sums, data.target_value)
+        )
+
+    def test_doesnt_care_about_intercept(self):
+        colony_summer = calibration.get_calibration_optimization_function(2)
+        data = calibration.CalibrationData(
+            source_value_counts=[[10, 2], [3]],
+            source_values=[[1, 2], [3]],
+            target_value=[100, 126]
+        )
+        c1 = 2
+        c2 = 4
+        sums = colony_summer(data, c2, c1, -100)
         assert all(
             calc == target for calc, target in zip(sums, data.target_value)
         )
@@ -209,15 +223,6 @@ class TestEditCCC:
         counts = data_store_bad_ccc.source_value_counts
         assert all(len(v) == len(c) for v, c in zip(values, counts))
 
-    def test_ccc_calculate_polynomial(self, data_store_bad_ccc):
-
-        poly_coeffs = calibration.calculate_polynomial(data_store_bad_ccc, 5)
-        assert len(poly_coeffs) == 6
-        assert poly_coeffs[0] >= 0
-        assert poly_coeffs[-2] >= 0
-        assert poly_coeffs[-1] == 0
-        assert all(v == 0 for v in poly_coeffs[1:4])
-
     def test_construct_bad_polynomial(self, edit_bad_slope_ccc):
         # The fixture needs to be included, otherwise test is not correct
         identifier = edit_bad_slope_ccc[
@@ -234,10 +239,6 @@ class TestEditCCC:
         assert len(response['calculated_sizes']) == 30
         assert len(response['measured_sizes']) == 30
 
-        assert response['correlation']['slope'] == pytest.approx(0)
-        assert response['correlation']['intercept'] == pytest.approx(
-            320000, rel=.1)
-        assert response['correlation']['stderr'] == pytest.approx(0)
         assert response['correlation']['p_value'] == pytest.approx(1)
 
     @pytest.mark.skip("Unreliable with current data")
@@ -692,6 +693,14 @@ class TestSetColonyCompressedData:
 
 class TestConstructPolynomial:
 
+    @pytest.fixture(scope='session')
+    def poly2(self):
+        return calibration.get_calibration_optimization_function(2)
+
+    @pytest.fixture(scope='session')
+    def poly4(self):
+        return calibration.get_calibration_optimization_function(4)
+
     @pytest.mark.parametrize("data_store", (
         calibration.CalibrationData([], [], []),
         calibration.CalibrationData([1], [[1]], [[1]]),
@@ -703,25 +712,74 @@ class TestConstructPolynomial:
         with pytest.raises(calibration.CCCConstructionError):
             calibration.calculate_polynomial(data_store, 5).tolist()
 
-    def test_calibration_curve_fit_polynomial_function(self):
+    @pytest.mark.parametrize("calibration_data,coeffs,expected", (
+        (
+            calibration.CalibrationData([[2], [3]], [[1], [1]], []),
+            (1, 1, 0),
+            (6, 12),
+        ),
+        (
+            calibration.CalibrationData([[2], [2]], [[1], [2]], []),
+            (2, 0, 0),
+            (8, 16),
+        ),
+        (
+            calibration.CalibrationData([[2], [1]], [[1], [1]], []),
+            (0, 2, 0),
+            (4, 2),
+        ),
+    ))
+    def test_calibration_curve_fit_polynomial_function_many_colonies(
+        self, calibration_data, coeffs, expected, poly2
+    ):
+        assert poly2(calibration_data, *coeffs) == expected
 
-        poly = calibration.get_calibration_optimization_function(2)
-        assert poly(calibration.CalibrationData(
-            [[2], [3]], [[1], [1]], []), 1, 1) == (6, 12)
-        assert poly(calibration.CalibrationData(
-            [[2], [2]], [[1], [2]], []), 2, 0) == (4, 8)
-        assert poly(calibration.CalibrationData(
-            [[2], [1]], [[1], [1]], []), 0, 2) == (8, 2)
-
-        poly = calibration.get_calibration_optimization_function(4)
-        assert poly(calibration.CalibrationData(
-            [[1]], [[1]], []), 1, 1) == (2,)
-        assert poly(calibration.CalibrationData(
-            [[1]], [[1]], []), 2, 0) == (2,)
-        assert poly(calibration.CalibrationData(
-            [[1]], [[1]], []), 0, 2) == (2,)
-        assert poly(calibration.CalibrationData(
-            [[2]], [[1]], []), 0, 1) == (16,)
+    @pytest.mark.parametrize("calibration_data,coeffs,expected", (
+        (
+            calibration.CalibrationData([[1]], [[1]], []),
+            (2, 0, 0, 0, 0),
+            (2,),
+        ),
+        (
+            calibration.CalibrationData([[1]], [[1]], []),
+            (0, 2, 0, 0, 0),
+            (2,),
+        ),
+        (
+            calibration.CalibrationData([[1]], [[1]], []),
+            (0, 0, 2, 0, 0),
+            (2,),
+        ),
+        (
+            calibration.CalibrationData([[1]], [[1]], []),
+            (0, 0, 0, 2, 0),
+            (2,),
+        ),
+        (
+            calibration.CalibrationData([[2]], [[1]], []),
+            (1, 0, 0, 0, 0),
+            (16,),
+        ),
+        (
+            calibration.CalibrationData([[2]], [[1]], []),
+            (0, 1, 0, 0, 0),
+            (8,),
+        ),
+        (
+            calibration.CalibrationData([[2]], [[1]], []),
+            (0, 0, 1, 0, 0),
+            (4,),
+        ),
+        (
+            calibration.CalibrationData([[2]], [[1]], []),
+            (0, 0, 0, 1, 0),
+            (2,),
+        ),
+    ))
+    def test_calibration_curve_fit_polynomial_function_each_coeff(
+        self, calibration_data, coeffs, expected, poly4
+    ):
+        assert poly4(calibration_data, *coeffs) == expected
 
     @pytest.mark.parametrize('x, coeffs', (
         (5, [1, 1, 0]),
@@ -736,21 +794,35 @@ class TestConstructPolynomial:
         assert poly(x) == pytest.approx(
             poly_fitter(
                 calibration.CalibrationData([x], [1], [0]),
-                coeffs[-2], coeffs[0])[0])
+                *coeffs)[0])
 
     def test_calculate_polynomial(self):
         data_store = calibration.CalibrationData(
-            source_values=[[1, 4, 5], [1, 4, 6, 7]],
-            source_value_counts=[[2, 1, 1], [1, 3, 1, 2]],
-            target_value=np.array([151, 615]),
+            source_values=[
+                [1, 4, 5],
+                [1, 4, 6, 7],
+                [3, 8, 11],
+                [15, 16],
+                [1, 1.5],
+                [1.05, 1.9],
+            ],
+            source_value_counts=[
+                [2, 1, 1],
+                [1, 3, 1, 2],
+                [10, 11, 15],
+                [5, 5],
+                [103, 121],
+                [103, 121],
+            ],
+            target_value=np.array(
+                [151, 615, 8393, 7525, 1694.75, 2327.2024999999994]
+            ),
         )
         coeffs = calibration.calculate_polynomial(
             data_store,
             degree=2
         )
-        print coeffs
-        assert coeffs[0] == pytest.approx(3)
-        assert coeffs[-2] == pytest.approx(2)
+        np.testing.assert_allclose(coeffs, [3, 2, 0], rtol=0.001)
 
 
 class TestGetAllColonyData:
