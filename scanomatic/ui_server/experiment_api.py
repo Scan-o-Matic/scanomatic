@@ -210,8 +210,9 @@ def add_routes(app, rpc_client, logger):
 
                     model.plate_image_inclusion = plate_image_inclusion
 
-                logger.info("RPC server status `rpc_client.online`{} `rpc_client.local`{}".format(
-                    rpc_client.online, rpc_client.local
+                logger.info(
+                    "Status `rpc_client.online`{} `rpc_client.local`{}".format(
+                        rpc_client.online, rpc_client.local
                 ))
                 logger.info("Validate model {}".format(
                     AnalysisModelFactory.validate(model)

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import requests
 from time import sleep
 from selenium.webdriver.support.ui import Select
@@ -48,6 +50,6 @@ def test_post_analysis_job_request(scanomatic, browser):
         else:
             tries += 1
             sleep(0.5)
-    assert False, "Time out waiting for {} to show analysis started with expected ccc".format(
+    assert False, "Time out waiting for results at '{}'".format(
         uri
     )
