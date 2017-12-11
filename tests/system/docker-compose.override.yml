@@ -1,0 +1,8 @@
+version: '2'
+services:
+  scanomatic:
+    volumes:
+      - my-project:/somprojects/my/project
+
+volumes:
+  my-project: {}
