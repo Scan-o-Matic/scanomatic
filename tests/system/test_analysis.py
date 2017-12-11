@@ -49,7 +49,7 @@ def test_post_analysis_job_request(scanomatic, browser):
             return
         else:
             tries += 1
-            sleep(0.5)
+            sleep(min(0.5 * tries, 10))
     assert False, "Time out waiting for results at '{}'".format(
         uri
     )
