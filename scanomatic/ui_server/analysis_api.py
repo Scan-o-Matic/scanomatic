@@ -106,14 +106,16 @@ def add_routes(app):
                     analysis_logs=analysis_logs,
                     **get_search_results(path, base_url))))
 
+        def onetime_or_dynamic(value):
+            return 'one-time' if value else 'dynamic'
+
         return jsonify(**json_response(
             ["urls", "compile_instructions", "analysis_logs"],
             dict(
                 instructions={
-                    'grayscale':
-                    "one-time" if model.one_time_grayscale else "dynamic",
+                    'grayscale': onetime_or_dynamic(model.one_time_grayscale),
                     'positioning':
-                    "one-time" if model.one_time_positioning else "dynamic",
+                        onetime_or_dynamic(model.one_time_positioning),
                     'ccc': model.cell_count_calibration_id,
                     'compilation': model.compilation,
                     'compile_instructions': model.compile_instructions,
