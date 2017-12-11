@@ -32,12 +32,12 @@ export const valueFormatter = (value, fixed = 0) => {
 
 
 export function getDataUrlfromUrl(src, callback) {
-    var img = new Image();
+    const img = new Image();
     img.crossOrigin = 'Anonymous';
     img.onload = function () {
-        var canvas = document.createElement('CANVAS');
-        var ctx = canvas.getContext('2d');
-        var dataURL;
+        const canvas = document.createElement('CANVAS');
+        const ctx = canvas.getContext('2d');
+        let dataURL;
         canvas.height = this.height;
         canvas.width = this.width;
         ctx.drawImage(this, 0, 0);
@@ -46,56 +46,55 @@ export function getDataUrlfromUrl(src, callback) {
     };
     img.src = src;
     if (img.complete || img.complete === undefined) {
-        img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
         img.src = src;
     }
 }
 
 
 export function createCanvasImage(data, canvas) {
-    var cs = getLinearMapping(data);
-    var rows = data.image.length;
-    var cols = data.image[0].length;
-    var cvPlot = canvas;
+    const cs = getLinearMapping(data);
+    const rows = data.image.length;
+    const cols = data.image[0].length;
+    const cvPlot = canvas;
     cvPlot.width = cols;
     cvPlot.height = rows;
-    var ctx = cvPlot.getContext('2d');
-    var imgdata = ctx.getImageData(0, 0, cols, rows);
-    var imgdatalen = imgdata.data.length;
-    var imageCol = -1;
-    var imageRow = 0;
-    for (var i = 0; i < imgdatalen; i += 4) {  //iterate over every pixel in the canvas
+    const ctx = cvPlot.getContext('2d');
+    const imgdata = ctx.getImageData(0, 0, cols, rows);
+    const imgdatalen = imgdata.data.length;
+    let imageCol = -1;
+    let imageRow = 0;
+    for (let i = 0; i < imgdatalen; i += 4) { // iterate over every pixel in the canvas
         imageCol += 1;
         if (imageCol >= cols) {
             imageCol = 0;
             imageRow += 1;
         }
-        var color = data.image[imageRow][imageCol];
-        var mappedColor = cs(color);
+        const color = data.image[imageRow][imageCol];
+        const mappedColor = cs(color);
 
-        var rgb = hexToRgb(mappedColor);
+        const rgb = hexToRgb(mappedColor);
 
-        imgdata.data[i + 0] = rgb.r;    // RED (0-255)
-        imgdata.data[i + 1] = rgb.g;    // GREEN (0-255)
-        imgdata.data[i + 2] = rgb.b;    // BLUE (0-255)
-        imgdata.data[i + 3] = 255;  // APLHA (0-255)
-
+        imgdata.data[i + 0] = rgb.r; // RED (0-255)
+        imgdata.data[i + 1] = rgb.g; // GREEN (0-255)
+        imgdata.data[i + 2] = rgb.b; // BLUE (0-255)
+        imgdata.data[i + 3] = 255; // APLHA (0-255)
     }
     ctx.putImageData(imgdata, 0, 0);
 }
 
 export function createCanvasMarker(data, canvas) {
-    var rows = data.image.length;
-    var cols = data.image[0].length;
-    var cvPlot = canvas;
+    const rows = data.image.length;
+    const cols = data.image[0].length;
+    const cvPlot = canvas;
     cvPlot.width = cols;
     cvPlot.height = rows;
-    var ctx = cvPlot.getContext('2d');
-    var imgdata = ctx.getImageData(0, 0, cols, rows);
-    var imgdatalen = imgdata.data.length;
-    var imageCol = -1;
-    var imageRow = 0;
-    for (var i = 0; i < imgdatalen; i += 4) {  //iterate over every pixel in the canvas
+    const ctx = cvPlot.getContext('2d');
+    const imgdata = ctx.getImageData(0, 0, cols, rows);
+    const imgdatalen = imgdata.data.length;
+    let imageCol = -1;
+    let imageRow = 0;
+    for (let i = 0; i < imgdatalen; i += 4) { // iterate over every pixel in the canvas
         imageCol += 1;
         if (imageCol >= cols) {
             imageCol = 0;
@@ -110,82 +109,78 @@ export function createCanvasMarker(data, canvas) {
             rgb = featureColors.neither;
         }
 
-        imgdata.data[i + 0] = rgb.r;    // RED (0-255)
-        imgdata.data[i + 1] = rgb.g;    // GREEN (0-255)
-        imgdata.data[i + 2] = rgb.b;    // BLUE (0-255)
-        imgdata.data[i + 3] = 255;  // APLHA (0-255)
+        imgdata.data[i + 0] = rgb.r; // RED (0-255)
+        imgdata.data[i + 1] = rgb.g; // GREEN (0-255)
+        imgdata.data[i + 2] = rgb.b; // BLUE (0-255)
+        imgdata.data[i + 3] = 255; // APLHA (0-255)
     }
     ctx.putImageData(imgdata, 0, 0);
 }
 
 export function getMarkerData(cvPlot) {
+    const rows = cvPlot.height;
+    const cols = cvPlot.width;
 
-    var rows = cvPlot.height;
-    var cols = cvPlot.width;
+    const ctx = cvPlot.getContext('2d');
+    const imgdata = ctx.getImageData(0, 0, cols, rows);
+    const imgdatalen = imgdata.data.length;
+    let imageCol = -1;
+    let imageRow = 0;
 
-    var ctx = cvPlot.getContext('2d');
-    var imgdata = ctx.getImageData(0, 0, cols, rows);
-    var imgdatalen = imgdata.data.length;
-    var imageCol = -1;
-    var imageRow = 0;
-
-    var blob = new Array(rows);
+    const blob = new Array(rows);
     for (var i = 0; i < rows; i++) {
         blob[i] = new Array(cols);
     }
 
-    var background = new Array(rows);
+    const background = new Array(rows);
     for (var i = 0; i < rows; i++) {
         background[i] = new Array(cols);
     }
 
-    for (var i = 0; i < imgdatalen; i += 4) {  //iterate over every pixel in the canvas
+    for (var i = 0; i < imgdatalen; i += 4) { // iterate over every pixel in the canvas
         imageCol += 1;
         if (imageCol >= cols) {
             imageCol = 0;
             imageRow += 1;
         }
-        var r = imgdata.data[i + 0];
-        var g = imgdata.data[i + 1];
-        var b = imgdata.data[i + 2];
-        var a = imgdata.data[i + 3];
-        var pixelRgbA = r + "," + g + "," + b;
+        const r = imgdata.data[i + 0];
+        const g = imgdata.data[i + 1];
+        const b = imgdata.data[i + 2];
+        const a = imgdata.data[i + 3];
+        const pixelRgbA = `${r},${g},${b}`;
 
-        if (pixelRgbA === "255,0,0") {
+        if (pixelRgbA === '255,0,0') {
             blob[imageRow][imageCol] = true;
             background[imageRow][imageCol] = false;
-        } else if (pixelRgbA === "0,0,0") {
+        } else if (pixelRgbA === '0,0,0') {
             blob[imageRow][imageCol] = false;
             background[imageRow][imageCol] = true;
-        };
+        }
     }
-    var x = { blob: blob, background: background };
+    const x = { blob, background };
     return x;
 }
 
 export function hexToRgb(hex) {
     // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
-    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-    hex = hex.replace(shorthandRegex, function (m, r, g, b) {
-        return r + r + g + g + b + b;
-    });
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
 
-    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
         r: parseInt(result[1], 16),
         g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
+        b: parseInt(result[3], 16),
     } : null;
 }
 
 export function getLinearMapping(data) {
+    const colorScheme = ['white', 'grey', 'black'];
+    const intensityMin = data.imageMin;
+    const intensityMax = data.imageMax;
+    const intensityMean = (intensityMax + intensityMin) / 2;
 
-    var colorScheme = ["white", "grey", "black"];
-    var intensityMin = data.imageMin;
-    var intensityMax = data.imageMax;
-    var intensityMean = (intensityMax + intensityMin) / 2;
-
-    var cs = d3.scale.linear()
+    const cs = d3.scale.linear()
         .domain([intensityMin, intensityMean, intensityMax])
         .range([colorScheme[2], colorScheme[1], colorScheme[0]]);
 
@@ -194,7 +189,7 @@ export function getLinearMapping(data) {
 
 export function loadImage(url) {
     return new Promise((resolve, reject) => {
-        const image = new Image;
+        const image = new Image();
         image.onload = () => resolve(image);
         image.onerror = () => reject();
         image.src = url;
@@ -205,12 +200,12 @@ export function uploadImage(ccc, file, fixture, token, progress) {
     const markers = [];
     let imageId;
     progress(0, 5, 'Getting markers');
-    return API.GetMarkers(fixture, file).then(data => {
+    return API.GetMarkers(fixture, file).then((data) => {
         markers[0] = data.markers.map(xy => xy[0]);
         markers[1] = data.markers.map(xy => xy[1]);
         progress(1, 5, 'Uploading image');
         return API.GetImageId(ccc, file, token);
-    }).then(data => {
+    }).then((data) => {
         imageId = data.image_identifier;
         const imageData = [
             { key: 'marker_x', value: markers[0] },
@@ -221,10 +216,10 @@ export function uploadImage(ccc, file, fixture, token, progress) {
     }).then(() => {
         progress(3, 5, 'Slicing image');
         return API.SetCccImageSlice(ccc, imageId, token);
-    }).then(() => {
-        progress(4, 5, 'Setting grayscale');
-        return API.SetGrayScaleImageAnalysis(ccc, imageId, token);
-    }).then(() => {
-        return imageId;
-    });
+    })
+        .then(() => {
+            progress(4, 5, 'Setting grayscale');
+            return API.SetGrayScaleImageAnalysis(ccc, imageId, token);
+        })
+        .then(() => imageId);
 }
