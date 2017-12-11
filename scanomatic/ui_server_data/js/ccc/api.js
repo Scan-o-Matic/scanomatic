@@ -1,6 +1,6 @@
-const GetSliceImagePath = "/api/calibration/#0#/image/#1#/slice/get/#2#";
-const GetTranposedMarkerPath = "/api/data/fixture/calculate/";
-const GetGrayScaleAnalysisPath = "/api/data/grayscale/image/";
+const GetSliceImagePath = '/api/calibration/#0#/image/#1#/slice/get/#2#';
+const GetTranposedMarkerPath = '/api/data/fixture/calculate/';
+const GetGrayScaleAnalysisPath = '/api/data/grayscale/image/';
 
 
 class API {
@@ -27,27 +27,26 @@ class API {
     }
 
     static postJSON(url, json) {
-
-        return new Promise(
-            (resolve, reject) => $.ajax({
-                url,
-                type: 'POST',
-                data: JSON.stringify(json),
-                contentType: 'application/json',
-            })
+        return new Promise((resolve, reject) => $.ajax({
+            url,
+            type: 'POST',
+            data: JSON.stringify(json),
+            contentType: 'application/json',
+        })
             .then(
                 resolve,
-                jqXHR => reject(JSON.parse(jqXHR.responseText).reason)));
+                jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
+            ));
     }
 }
 
 export function GetSliceImageURL(cccId, imageId, slice) {
-    var path = GetSliceImagePath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", slice);
+    const path = GetSliceImagePath.replace('#0#', cccId).replace('#1#', imageId).replace('#2#', slice);
     return path;
 }
 
 export function GetSliceImage(cccId, imageId, slice, successCallback, errorCallback) {
-    var path = GetSliceImagePath.replace("#0#", cccId).replace("#1#", imageId).replace("#2#", slice);
+    const path = GetSliceImagePath.replace('#0#', cccId).replace('#1#', imageId).replace('#2#', slice);
 
     $.get(path, successCallback).fail(errorCallback);
 }
@@ -58,7 +57,7 @@ export function GetFixtures() {
 }
 
 function GetFixtureData(fixtureName) {
-    var path = `/api/data/fixture/get/${fixtureName}`;
+    const path = `/api/data/fixture/get/${fixtureName}`;
     return API.get(path);
 }
 
@@ -74,15 +73,15 @@ export function GetPinningFormats() {
 }
 
 export function GetPinningFormatsv2(successCallback, errorCallback) {
-    var path = GetPinningFormatsPath;
+    const path = GetPinningFormatsPath;
 
     $.ajax({
         url: path,
-        type: "GET",
+        type: 'GET',
         success: successCallback,
-        error: errorCallback
+        error: errorCallback,
     });
-};
+}
 
 export function InitiateCCC(species, reference, successCallback, errorCallback) {
     const formData = new FormData();
@@ -92,40 +91,40 @@ export function InitiateCCC(species, reference, successCallback, errorCallback) 
 }
 
 export function SetCccImageData(cccId, imageId, accessToken, dataArray, fixture) {
-    var path = `/api/calibration/${cccId}/image/${imageId}/data/set`;
-    var formData = new FormData();
-    formData.append("ccc_identifier", cccId);
-    formData.append("image_identifier", imageId);
-    formData.append("access_token", accessToken);
-    formData.append("fixture", fixture);
-    for (var i = 0; i < dataArray.length; i++) {
-        var item = dataArray[i];
+    const path = `/api/calibration/${cccId}/image/${imageId}/data/set`;
+    const formData = new FormData();
+    formData.append('ccc_identifier', cccId);
+    formData.append('image_identifier', imageId);
+    formData.append('access_token', accessToken);
+    formData.append('fixture', fixture);
+    for (let i = 0; i < dataArray.length; i++) {
+        const item = dataArray[i];
         formData.append(item.key, item.value);
     }
     return API.postFormData(path, formData);
 }
 
 export function SetCccImageSlice(cccId, imageId, accessToken) {
-    var path = `/api/calibration/${cccId}/image/${imageId}/slice/set`;
-    var formData = new FormData();
-    formData.append("access_token", accessToken);
+    const path = `/api/calibration/${cccId}/image/${imageId}/slice/set`;
+    const formData = new FormData();
+    formData.append('access_token', accessToken);
     return API.postFormData(path, formData);
 }
 
 export function SetGrayScaleImageAnalysis(cccId, imageId, accessToken) {
-    var path = `/api/calibration/${cccId}/image/${imageId}/grayscale/analyse`;
-    var formData = new FormData();
-    formData.append("access_token", accessToken);
+    const path = `/api/calibration/${cccId}/image/${imageId}/grayscale/analyse`;
+    const formData = new FormData();
+    formData.append('access_token', accessToken);
     return API.postFormData(path, formData);
 }
 
 export function GetGrayScaleAnalysis(grayScaleName, imageData, successCallback, errorCallback) {
-    var path = GetGrayScaleAnalysisPath + grayScaleName;
-    var formData = new FormData();
-    formData.append("image", imageData);
+    const path = GetGrayScaleAnalysisPath + grayScaleName;
+    const formData = new FormData();
+    formData.append('image', imageData);
     $.ajax({
         url: path,
-        type: "POST",
+        type: 'POST',
         contentType: false,
         enctype: 'multipart/form-data',
         data: formData,
@@ -134,17 +133,17 @@ export function GetGrayScaleAnalysis(grayScaleName, imageData, successCallback, 
 }
 
 export function SetGrayScaleTransform(cccId, imageId, plate, accessToken) {
-    var path = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/transform`;
-    var formData = new FormData();
-    formData.append("access_token", accessToken);
+    const path = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/transform`;
+    const formData = new FormData();
+    formData.append('access_token', accessToken);
     return API.postFormData(path, formData);
 }
 
 export function SetGridding(cccId, imageId, plate, pinningFormat, offSet, accessToken) {
-    var path = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/grid/set`;
+    const path = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/grid/set`;
     return new Promise((resolve, reject) => $.ajax({
         url: path,
-        type: "POST",
+        type: 'POST',
         dataType: 'json',
         contentType: 'application/json',
         data: JSON.stringify({
@@ -158,26 +157,26 @@ export function SetGridding(cccId, imageId, plate, pinningFormat, offSet, access
 }
 
 export function SetColonyDetection(cccId, imageId, plate, accessToken, row, col, successCallback, errorCallback) {
-    var path = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/detect/colony/${col}/${row}`;
+    const path = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/detect/colony/${col}/${row}`;
 
-    var formData = new FormData();
-    formData.append("access_token", accessToken);
+    const formData = new FormData();
+    formData.append('access_token', accessToken);
     $.ajax({
         url: path,
-        type: "POST",
+        type: 'POST',
         contentType: false,
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
         success: data => successCallback(data),
-        error: (jqXHR) => errorCallback(JSON.parse(jqXHR.responseText)),
+        error: jqXHR => errorCallback(JSON.parse(jqXHR.responseText)),
     });
 }
 
 export function SetColonyCompression(cccId, imageId, plate, accessToken, colony, cellCount, row, col, successCallback, errorCallback) {
-    var path = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/compress/colony/${col}/${row}`;
+    const path = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/compress/colony/${col}/${row}`;
 
-    var data = {
+    const data = {
         access_token: accessToken,
         image: colony.image,
         blob: colony.blob,
@@ -186,70 +185,70 @@ export function SetColonyCompression(cccId, imageId, plate, accessToken, colony,
     };
     $.ajax({
         url: path,
-        method: "POST",
+        method: 'POST',
         data: JSON.stringify(data),
-        contentType: "application/json; charset=utf-8",
-        dataType: "json",
-        success: function (data) {
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        success(data) {
             successCallback(data);
         },
-        error: (jqXHR) => errorCallback(JSON.parse(jqXHR.responseText)),
+        error: jqXHR => errorCallback(JSON.parse(jqXHR.responseText)),
     });
 }
 
 export function GetImageId(cccId, file, accessToken) {
-    var path = `/api/calibration/${cccId}/add_image`;
-    var formData = new FormData();
-    formData.append("image", file);
-    formData.append("access_token", accessToken);
+    const path = `/api/calibration/${cccId}/add_image`;
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('access_token', accessToken);
     return API.postFormData(path, formData);
 }
 
 export function GetMarkers(fixtureName, file) {
-    var path = `/api/data/markers/detect/${fixtureName}`;
-    var formData = new FormData();
-    formData.append("image", file);
-    formData.append("save", "false");
+    const path = `/api/data/markers/detect/${fixtureName}`;
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('save', 'false');
     return API.postFormData(path, formData);
 }
 
 export function GetTransposedMarkersV2(fixtureName, markers, file, successCallback, errorCallback) {
-    var path = GetTranposedMarkerPath + fixtureName;
-    var formData = new FormData();
-    formData.append("image", file);
-    formData.append("markers", markers);
+    const path = GetTranposedMarkerPath + fixtureName;
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('markers', markers);
     $.ajax({
         url: path,
-        type: "POST",
+        type: 'POST',
         contentType: false,
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
         success: successCallback,
-        error: errorCallback
+        error: errorCallback,
     });
 }
 
 export function GetTransposedMarkers(fixtureName, markers, successCallback, errorCallback) {
-    var path = GetTranposedMarkerPath + fixtureName;
-    var formData = new FormData();
-    formData.append("markers", markers);
+    const path = GetTranposedMarkerPath + fixtureName;
+    const formData = new FormData();
+    formData.append('markers', markers);
     $.ajax({
         url: path,
-        type: "POST",
+        type: 'POST',
         contentType: false,
         enctype: 'multipart/form-data',
         data: formData,
         processData: false,
         success: successCallback,
-        error: errorCallback
+        error: errorCallback,
     });
 }
 
 export function SetNewCalibrationPolynomial(cccId, power, accessToken) {
     return API.postJSON(
         `/api/calibration/${cccId}/construct/${power}`,
-        {access_token: accessToken},
+        { access_token: accessToken },
     );
 }
 
