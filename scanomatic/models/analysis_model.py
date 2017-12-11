@@ -66,7 +66,6 @@ class AnalysisModel(model.Model):
             one_time_grayscale=False,
             grid_images=None,
             grid_model=None,
-            xml_model=None,
             image_data_output_item=COMPARTMENTS.Blob,
             image_data_output_measure=MEASURES.Sum,
             chain=True,
@@ -76,9 +75,6 @@ class AnalysisModel(model.Model):
 
         if grid_model is None:
             grid_model = GridModel()
-
-        if xml_model is None:
-            xml_model = XMLModel()
 
         self.cell_count_calibration = cell_count_calibration
         self.cell_count_calibration_id = cell_count_calibration_id
@@ -96,7 +92,6 @@ class AnalysisModel(model.Model):
         self.one_time_grayscale = one_time_grayscale
         self.grid_images = grid_images
         self.grid_model = grid_model
-        self.xml_model = xml_model
         self.image_data_output_item = image_data_output_item
         self.image_data_output_measure = image_data_output_measure
         self.chain = chain
@@ -123,25 +118,6 @@ class GridModel(model.Model):
         self.reference_grid_folder = reference_grid_folder
 
         super(GridModel, self).__init__()
-
-
-class XMLModel(model.Model):
-
-    def __init__(
-            self,
-            exclude_compartments=tuple(),
-            exclude_measures=tuple(),
-            make_short_tag_version=True,
-            slim_measure=MEASURES.Sum,
-            slim_compartment=COMPARTMENTS.Blob):
-
-        self.exclude_compartments = exclude_compartments
-        self.exclude_measures = exclude_measures
-        self.make_short_tag_version = make_short_tag_version
-        self.slim_measure = slim_measure
-        self.slim_compartment = slim_compartment
-
-        super(XMLModel, self).__init__()
 
 
 class AnalysisMetaData(model.Model):

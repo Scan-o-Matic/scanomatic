@@ -10,13 +10,12 @@ import time
 #
 
 import proc_effector
-import scanomatic.io.xml.writer as xml_writer
 import scanomatic.io.image_data as image_data
 from scanomatic.io.paths import Paths
 from scanomatic.io.app_config import Config as AppConfig
 import scanomatic.image_analysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
-from scanomatic.models.factories.analysis_factories import AnalysisModelFactory, XMLModelFactory
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory 
 from scanomatic.models.factories.fixture_factories import GrayScaleAreaModelFactory, FixturePlateFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
@@ -131,8 +130,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
     def _finalize_analysis(self):
 
-        self._xmlWriter.close()
-
         self._logger.info("ANALYSIS, Full analysis took {0} minutes".format(
             ((time.time() - self._start_time) / 60.0)))
 
@@ -231,8 +228,6 @@ Scan-o-Matic""", self._analysis_job)
             self._logger.critical("Terminating analysis since output can't be stored")
             return False
 
-        self._xmlWriter.write_image_features(image_model, features)
-
         self._logger.info("Image took {0} seconds".format(time.time() - scan_start_time))
 
         return True
@@ -283,23 +278,8 @@ Scan-o-Matic""", self._analysis_job)
 
         self._remove_files_from_previous_analysis()
 
-        self._xmlWriter = xml_writer.XML_Writer(
-            self._analysis_job.output_directory, self._analysis_job.xml_model)
-
-        if self._xmlWriter.get_initialized() is False:
-
-            self._logger.critical('XML writer failed to initialize')
-            self._xmlWriter.close()
-            self._running = False
-
-            raise StopIteration
-
         self._image = analysis_image.ProjectImage(
             self._analysis_job, self._first_pass_results)
-
-        self._xmlWriter.write_header(
-            self._scanning_instructions, self._first_pass_results.plates)
-        self._xmlWriter.write_segment_start_scans()
 
         # TODO: Need rework to handle gridding of diff times for diff plates
 
@@ -312,17 +292,6 @@ Scan-o-Matic""", self._analysis_job)
             'Primary data format will save {0}:{1}'.format(
                 self._analysis_job.image_data_output_item,
                 self._analysis_job.image_data_output_measure))
-
-        self._logger.info(
-            'Analysis saved in XML-slimmed will be {0}:{1}'.format(
-                self._analysis_job.xml_model.slim_compartment,
-                self._analysis_job.xml_model.slim_measure))
-
-        self._logger.info('Compartments excluded from big XML are {0}'.format(
-            self._analysis_job.xml_model.exclude_compartments))
-
-        self._logger.info('Measures excluded from big XML are {0}'.format(
-            self._analysis_job.xml_model.exclude_measures))
 
         return True
 
@@ -416,14 +385,6 @@ Scan-o-Matic""", self._analysis_job)
 
     def ensure_default_values_if_missing(self):
 
-        if not self._analysis_job.xml_model.slim_measure:
-            XMLModelFactory.set_default(
-                self._analysis_job.xml_model,
-                [self._analysis_job.xml_model.FIELD_TYPES.slim_measure])
-        if not self._analysis_job.xml_model.slim_compartment:
-            XMLModelFactory.set_default(
-                self._analysis_job.xml_model,
-                [self._analysis_job.xml_model.FIELD_TYPES.slim_compartment])
         if not self._analysis_job.image_data_output_measure:
             AnalysisModelFactory.set_default(
                 self._analysis_job,

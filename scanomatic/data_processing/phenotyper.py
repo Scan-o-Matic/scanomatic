@@ -22,7 +22,6 @@ from scanomatic.io.pickler import unpickle, unpickle_with_unpickler
 # TODO: Something is wrong with phase features again
 
 import mock_numpy_interface
-import scanomatic.io.xml.reader as xml_reader_module
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
@@ -367,9 +366,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
     #Generic instanciation
     p = Phenotyper(...)
 
-    #Instanciation from xml based data
-    p = Phenotyper.LoadFromXML(...)
-
     #Instanciation from numpy data
     p = Phenotyper.LoadFromNumPy(...)
 
@@ -383,7 +379,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     The matching lookup-keys for accessing specific phenotype indices in the
     phenotypes array are stored as static integers on the class following
-    the pattern <code>Phenotyper.PHEN_*</code>. 
+    the pattern <code>Phenotyper.PHEN_*</code>.
     """
 
     UNDO_HISTORY_LENGTH = 50
@@ -412,11 +408,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._phenotypes_inclusion = phenotypes_inclusion
         self._base_name = base_name
-
-        if isinstance(raw_growth_data, xml_reader_module.XML_Reader):
-
-            if times_data is None:
-                times_data = raw_growth_data.get_scan_times()
 
         self.times = times_data
 
@@ -531,28 +522,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                                    if plate is not None)))
         else:
             return tuple(p.name for p in self.phenotypes if p in self)
-
-    @classmethod
-    def LoadFromXML(cls, path, **kwargs):
-        """Class Method used to create a Phenotype Strider directly
-        from a path do an xml
-
-        Parameters:
-
-            path:
-                The path to the xml-file
-            kwargs:
-                Optional parameters passed on to the constructor
-
-        Optional Parameters can be passed as keywords and will be
-        used in instantiating the class.
-        """
-
-        xml = xml_reader_module.XML_Reader(path)
-        if path.lower().endswith(".xml"):
-            path = path[:-4]
-
-        return cls(xml, base_name=path, run_extraction=True, **kwargs)
 
     @classmethod
     def LoadFromState(cls, directory_path):
@@ -804,13 +773,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 yield None
             else:
                 yield plate.shape[:2]
-
-    @staticmethod
-    def _xml_reader_2_array(data_object):
-
-        return np.array([k in data_object.get_data().keys() and
-                         data_object.get_data()[k] or None for k in
-                         range(max((data_object.get_data().keys())) + 1)])
 
     def load_meta_data(self, *meta_data_paths):
         """Loads meta-data about the experiment based on paths to compatible files.
