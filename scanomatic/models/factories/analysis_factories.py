@@ -1,4 +1,3 @@
-from __future__ import division
 import os
 from types import StringTypes, ListType, DictType
 from scanomatic.generics.abstract_model_factory import (
