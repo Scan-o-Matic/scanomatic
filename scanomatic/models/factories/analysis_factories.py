@@ -278,7 +278,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         """
         if model.cell_count_calibration_id in get_active_cccs():
             return True
-        return model.FIELD_TYPES.cell_count_calibration
+        return model.FIELD_TYPES.cell_count_calibration_id
 
     @classmethod
     def _validate_cell_count_calibration(cls, model):

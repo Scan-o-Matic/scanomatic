@@ -90,6 +90,13 @@ class TestAnalysisModels:
         )
         assert isinstance(model, AnalysisModel)
 
+        with mock.patch(
+            'scanomatic.models.factories.analysis_factories.get_active_cccs',
+            return_value=[model.cell_count_calibration_id]
+        ):
+            assert AnalysisModelFactory.validate(model), (
+                AnalysisModelFactory.get_invalid_as_text(model))
+
     @pytest.mark.parametrize('basename', (
         'test.project.compilation',
     ))
