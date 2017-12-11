@@ -196,9 +196,13 @@ class AbstractModelFactory(object):
         return cls.MODEL(**settings)
 
     @classmethod
-    def all_keys_valid(cls, keys):
+    def matching_key_set(cls, keys):
 
-        return set(tuple(cls.default_model.keys())).issuperset(keys)
+        expected = set(tuple(cls.default_model.keys()))
+        return (
+            expected.issuperset(keys) or
+            expected.intersection(keys) == expected
+        )
 
     @classmethod
     def drop_keys(cls, settings, valid_keys):
@@ -910,7 +914,7 @@ class Serializer(object):
 
             try:
 
-                if self._factory.all_keys_valid(conf.options(section)):
+                if self._factory.matching_key_set(conf.options(section)):
                     yield self.unserialize_section(conf, section)
 
             except UnserializationError:
@@ -923,7 +927,7 @@ class Serializer(object):
         factory = self._factory
 
         try:
-            if not factory.all_keys_valid(conf.options(section)):
+            if not factory.matching_key_set(conf.options(section)):
                 self._logger.warning("{1} Refused section {0} because keys {2}".format(
                     section, factory, conf.options(section)))
                 return None
