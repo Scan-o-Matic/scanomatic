@@ -55,5 +55,5 @@ def test_upload_image_unknown_project(scanomatic, image):
             'image': (image.filename, image.image, 'image/tiff'),
         },
     )
-    assert response.status_code == httplib.NOT_FOUND, response.content
+    assert response.status_code == httplib.BAD_REQUEST, response.content
     assert get_nb_of_images(scanomatic, project) == 0
