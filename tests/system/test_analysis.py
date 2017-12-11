@@ -1,8 +1,23 @@
 from __future__ import absolute_import
 
+import pytest
+from warnings import warn
 import requests
 from time import sleep
 from selenium.webdriver.support.ui import Select
+
+
+@pytest.yield_fixture(autouse=True)
+def cleanup_rpc(scanomatic):
+    # Nothing before
+    yield
+    # Remove all jobs after
+    jobs = requests.get(scanomatic + '/status/jobs').json()['data']
+    for job in jobs:
+        job_id = job['id']
+        response = requests.get(scanomatic + '/job/{}/stop'.format(job_id))
+        if response.status_code != 200:
+            warn('Could not terminate job {}'.format(job_id))
 
 
 def test_post_analysis_job_request(scanomatic, browser):
@@ -42,7 +57,7 @@ def test_post_analysis_job_request(scanomatic, browser):
             browser_name)
     )
     tries = 0
-    while tries < 100:
+    while tries < 25:
         payload = requests.get(uri).json()
         if payload.get('instructions'):
             assert payload['instructions'].get('ccc') == 'TEST'
