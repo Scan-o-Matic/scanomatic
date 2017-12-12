@@ -1,5 +1,6 @@
 from StringIO import StringIO
 from collections import namedtuple
+import fnmatch
 from hashlib import sha256
 import httplib
 
@@ -17,14 +18,16 @@ def image():
 
 def get_nb_of_images(scanomatic, project):
     response = requests.get(
-        scanomatic + '/api/tools/path/root/{}'.format(project),
+        scanomatic + '/api/tools/path/root/{}/'.format(project),
         params={'suffix': '.tiff', 'isDirectory': 0, 'checkHasAnalysis': 0},
     )
-    return len(response.json()['suggestions'])
+    suggestions = fnmatch.filter(response.json()['suggestions'], '*.tiff')
+    return len(suggestions)
 
 
 def test_upload_image(scanomatic, image):
     project = 'my/project'
+    assert get_nb_of_images(scanomatic, project) == 0
     response = requests.post(
         scanomatic + '/api/scans',
         data={
