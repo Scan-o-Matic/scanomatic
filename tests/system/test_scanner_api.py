@@ -16,7 +16,7 @@ def image():
     )
 
 
-def get_nb_of_images(scanomatic, project):
+def get_number_of_images(scanomatic, project):
     response = requests.get(
         scanomatic + '/api/tools/path/root/{}/'.format(project),
         params={'suffix': '.tiff', 'isDirectory': 0, 'checkHasAnalysis': 0},
@@ -27,7 +27,7 @@ def get_nb_of_images(scanomatic, project):
 
 def test_upload_image(scanomatic, image):
     project = 'my/project'
-    assert get_nb_of_images(scanomatic, project) == 0
+    assert get_number_of_images(scanomatic, project) == 0
     response = requests.post(
         scanomatic + '/api/scans',
         data={
@@ -41,7 +41,7 @@ def test_upload_image(scanomatic, image):
         },
     )
     assert response.status_code == httplib.CREATED, response.content
-    assert get_nb_of_images(scanomatic, project) == 1
+    assert get_number_of_images(scanomatic, project) == 1
 
 
 def test_upload_image_unknown_project(scanomatic, image):
@@ -59,4 +59,4 @@ def test_upload_image_unknown_project(scanomatic, image):
         },
     )
     assert response.status_code == httplib.BAD_REQUEST, response.content
-    assert get_nb_of_images(scanomatic, project) == 0
+    assert get_number_of_images(scanomatic, project) == 0
