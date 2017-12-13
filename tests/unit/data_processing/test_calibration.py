@@ -11,6 +11,11 @@ from scanomatic.data_processing import calibration
 from scanomatic.io.paths import Paths
 from scanomatic.io import ccc_data
 
+# The curve fitting is done with coefficients as e^x, some tests
+# want to have that expression to be zero while still real.
+# Then this constant is used.
+EVAL_AS_ZERO = -99
+
 # Needs adding for all ccc_* paths if tests extended
 # Don't worry Paths is a singleton
 Paths().ccc_folder = os.path.join(tempfile.gettempdir(), 'tempCCC')
@@ -49,8 +54,8 @@ def test_get_calibration_polynomial_residuals():
             source_values=[[1, 2], [3]],
             target_value=np.array([100, 126])
         )
-        c1 = 0  # e^x=1
-        c2 = -99  # e^x=0
+        c1 = 0  # e^x = 1
+        c2 = EVAL_AS_ZERO  # e^x = 0
         residuals = calibration.get_calibration_polynomial_residuals(
             [c2, c1],
             colony_summer,
@@ -69,7 +74,7 @@ class TestGetCalibrationOptimizationFunction:
             target_value=[100, 126]
         )
         c1 = np.log(2)  # e^x = 2
-        c2 = np.log(4)  # e^x- =4
+        c2 = np.log(4)  # e^x = 4
         sums = colony_summer(data, c2, c1)
         assert all(
             calc == target for calc, target in zip(sums, data.target_value)
@@ -691,12 +696,12 @@ class TestConstructPolynomial:
         ),
         (
             calibration.CalibrationData([[2], [2]], [[1], [2]], []),
-            (np.log(2), -99),
+            (np.log(2), EVAL_AS_ZERO),
             (8, 16),
         ),
         (
             calibration.CalibrationData([[2], [1]], [[1], [1]], []),
-            (-99, np.log(2)),
+            (EVAL_AS_ZERO, np.log(2)),
             (4, 2),
         ),
     ))
@@ -708,42 +713,42 @@ class TestConstructPolynomial:
     @pytest.mark.parametrize("calibration_data,coeffs,expected", (
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (np.log(2), -99, -99, -99),
+            (np.log(2), EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO),
             (2,),
         ),
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (-99, np.log(2), -99, -99),
+            (EVAL_AS_ZERO, np.log(2), EVAL_AS_ZERO, EVAL_AS_ZERO),
             (2,),
         ),
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (-99, -99, np.log(2), -99),
+            (EVAL_AS_ZERO, EVAL_AS_ZERO, np.log(2), EVAL_AS_ZERO),
             (2,),
         ),
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (-99, -99, -99, np.log(2)),
+            (EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO, np.log(2)),
             (2,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (0, -99, -99, -99),
+            (0, EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO),
             (16,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (-99, 0, -99, -99),
+            (EVAL_AS_ZERO, 0, EVAL_AS_ZERO, EVAL_AS_ZERO),
             (8,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (-99, -99, 0, -99),
+            (EVAL_AS_ZERO, EVAL_AS_ZERO, 0, EVAL_AS_ZERO),
             (4,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (-99, -99, -99, 0),
+            (EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO, 0),
             (2,),
         ),
     ))
@@ -754,7 +759,11 @@ class TestConstructPolynomial:
 
     @pytest.mark.parametrize('x, coeffs, test_coeffs', (
         (5, [1, 1, 0], [0, 0]),
-        (6, [42, 0, 0, 7, 0], [np.log(42), -99, -99, np.log(7)]),
+        (
+            6,
+            [42, 0, 0, 7, 0],
+            [np.log(42), EVAL_AS_ZERO, EVAL_AS_ZERO, np.log(7)],
+        ),
     ))
     def test_calibration_functions_give_equal_results(
         self, x, coeffs, test_coeffs
