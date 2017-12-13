@@ -199,7 +199,7 @@ class AbstractModelFactory(object):
     @classmethod
     def matching_key_set(cls, keys):
 
-        expected = set(tuple(cls.default_model.keys()))
+        expected = set(cls.default_model.keys())
         common = len(expected.intersection(keys))
         diff = len(expected.difference(keys))
         n_expected = len(expected)
@@ -207,7 +207,7 @@ class AbstractModelFactory(object):
         return common > diff and (
             common == n_expected or
             common == n_keys or
-            common / float(n_expected) > .75 and common / float(n_keys) > .75
+            common / n_expected > .75 and common / n_keys > .75
         )
 
     @classmethod
