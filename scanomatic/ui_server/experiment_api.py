@@ -2,6 +2,7 @@ import os
 from types import StringTypes
 
 from flask import request, jsonify
+from flask_restful import Api
 
 from scanomatic.io.app_config import Config
 from scanomatic.models.compile_project_model import COMPILE_ACTION
@@ -14,6 +15,7 @@ from scanomatic.util import bioscreen
 from scanomatic.data_processing import phenotyper
 
 from .general import get_2d_list, json_abort
+from .resources import ScanCollection
 
 
 def add_routes(app, rpc_client, logger):
@@ -355,3 +357,6 @@ def add_routes(app, rpc_client, logger):
             return jsonify(
                 success=True if job_id else False,
                 reason="" if job_id else "Invalid parameters")
+
+    api = Api(app)
+    api.add_resource(ScanCollection, '/api/scans', endpoint='scans')
