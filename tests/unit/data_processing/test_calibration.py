@@ -49,10 +49,10 @@ def test_get_calibration_polynomial_residuals():
             source_values=[[1, 2], [3]],
             target_value=np.array([100, 126])
         )
-        c1 = 1
-        c2 = 0
+        c1 = 0  # e^x=1
+        c2 = -999  # e^x=0
         residuals = calibration.get_calibration_polynomial_residuals(
-            [c2, c1],
+            [c2, c1, 0],
             colony_summer,
             data,
         )
@@ -68,22 +68,8 @@ class TestGetCalibrationOptimizationFunction:
             source_values=[[1, 2], [3]],
             target_value=[100, 126]
         )
-        c1 = 2
-        c2 = 4
-        sums = colony_summer(data, c2, c1)
-        assert all(
-            calc == target for calc, target in zip(sums, data.target_value)
-        )
-
-    def test_doesnt_allow_negative_coeffs(self):
-        colony_summer = calibration.get_calibration_optimization_function(2)
-        data = calibration.CalibrationData(
-            source_value_counts=[[10, 2], [3]],
-            source_values=[[1, 2], [3]],
-            target_value=[100, 126]
-        )
-        c1 = -2
-        c2 = -4
+        c1 = np.log(2)  # e^x = 2
+        c2 = np.log(4)  # e^x- =4
         sums = colony_summer(data, c2, c1)
         assert all(
             calc == target for calc, target in zip(sums, data.target_value)
@@ -779,7 +765,7 @@ class TestConstructPolynomial:
 
         assert poly(x) == pytest.approx(
             poly_fitter(
-                calibration.CalibrationData([x], [1], [0]),
+                calibration.CalibrationData(np.log([v if v != 0 else -99 for v in poly[:-1]]), [1], [0]),
                 *coeffs)[0])
 
     def test_calculate_polynomial(self):
