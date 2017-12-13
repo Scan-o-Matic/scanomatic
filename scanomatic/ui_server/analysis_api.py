@@ -124,7 +124,8 @@ def add_routes(app):
                     'grid_model': {
                         'gridding_offsets': model.grid_model.gridding_offsets,
                         'reference_grid_folder':
-                        model.grid_model.reference_grid_folder},
+							model.grid_model.reference_grid_folder,
+					},
                 },
                 analysis_logs=analysis_logs,
                 compile_instructions=[
