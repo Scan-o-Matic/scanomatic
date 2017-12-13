@@ -589,7 +589,7 @@ def get_calibration_optimization_function(degree=5):
     coeffs = np.zeros((degree + 1,), np.float)
 
     def poly(data_store, *guess):
-        coeffs[:-1] = np.e(guess)
+        coeffs[:-1] = np.exp(guess)
         return tuple(
             (np.polyval(coeffs, values) * counts).sum()
             for values, counts in
@@ -643,7 +643,7 @@ def calculate_polynomial(data_store, degree=5):
     except TypeError:
         raise CCCConstructionError("Invalid data (probably too little)")
 
-    poly_vals = np.r_[np.e(poly_vals), 0]
+    poly_vals = np.r_[np.exp(poly_vals), 0]
 
     _logger.info(
         "Produced {} degree polynomial {}".format(
