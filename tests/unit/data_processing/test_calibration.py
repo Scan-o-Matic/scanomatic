@@ -52,7 +52,7 @@ def test_get_calibration_polynomial_residuals():
         c1 = 1
         c2 = 0
         residuals = calibration.get_calibration_polynomial_residuals(
-            [c2, c1, 0],
+            [c2, c1],
             colony_summer,
             data,
         )
@@ -70,7 +70,7 @@ class TestGetCalibrationOptimizationFunction:
         )
         c1 = 2
         c2 = 4
-        sums = colony_summer(data, c2, c1, 0)
+        sums = colony_summer(data, c2, c1)
         assert all(
             calc == target for calc, target in zip(sums, data.target_value)
         )
@@ -84,21 +84,7 @@ class TestGetCalibrationOptimizationFunction:
         )
         c1 = -2
         c2 = -4
-        sums = colony_summer(data, c2, c1, 0)
-        assert all(
-            calc == target for calc, target in zip(sums, data.target_value)
-        )
-
-    def test_doesnt_care_about_intercept(self):
-        colony_summer = calibration.get_calibration_optimization_function(2)
-        data = calibration.CalibrationData(
-            source_value_counts=[[10, 2], [3]],
-            source_values=[[1, 2], [3]],
-            target_value=[100, 126]
-        )
-        c1 = 2
-        c2 = 4
-        sums = colony_summer(data, c2, c1, -100)
+        sums = colony_summer(data, c2, c1)
         assert all(
             calc == target for calc, target in zip(sums, data.target_value)
         )
@@ -737,42 +723,42 @@ class TestConstructPolynomial:
     @pytest.mark.parametrize("calibration_data,coeffs,expected", (
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (2, 0, 0, 0, 0),
+            (2, 0, 0, 0),
             (2,),
         ),
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (0, 2, 0, 0, 0),
+            (0, 2, 0, 0),
             (2,),
         ),
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (0, 0, 2, 0, 0),
+            (0, 0, 2, 0),
             (2,),
         ),
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (0, 0, 0, 2, 0),
+            (0, 0, 0, 2),
             (2,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (1, 0, 0, 0, 0),
+            (1, 0, 0, 0),
             (16,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (0, 1, 0, 0, 0),
+            (0, 1, 0, 0),
             (8,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (0, 0, 1, 0, 0),
+            (0, 0, 1, 0),
             (4,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (0, 0, 0, 1, 0),
+            (0, 0, 0, 1),
             (2,),
         ),
     ))
@@ -788,7 +774,7 @@ class TestConstructPolynomial:
     def test_calibration_functions_give_equal_results(self, x, coeffs):
 
         poly_fitter = calibration.get_calibration_optimization_function(
-            len(coeffs) - 1)
+            len(coeffs))
         poly = calibration.get_calibration_polynomial(coeffs)
 
         assert poly(x) == pytest.approx(
