@@ -50,9 +50,9 @@ def test_get_calibration_polynomial_residuals():
             target_value=np.array([100, 126])
         )
         c1 = 0  # e^x=1
-        c2 = -999  # e^x=0
+        c2 = -99  # e^x=0
         residuals = calibration.get_calibration_polynomial_residuals(
-            [c2, c1, 0],
+            [c2, c1],
             colony_summer,
             data,
         )
@@ -553,7 +553,6 @@ class TestSaving:
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
     @mock.patch('scanomatic.data_processing.calibration.save_ccc')
-
     def test_add_image_to_ccc(self, save_mock, validator_mock, ccc):
         assert calibration.set_image_info(
             ccc[calibration.CellCountCalibration.identifier], 0,
@@ -687,17 +686,17 @@ class TestConstructPolynomial:
     @pytest.mark.parametrize("calibration_data,coeffs,expected", (
         (
             calibration.CalibrationData([[2], [3]], [[1], [1]], []),
-            (1, 1, 0),
+            (0, 0),
             (6, 12),
         ),
         (
             calibration.CalibrationData([[2], [2]], [[1], [2]], []),
-            (2, 0, 0),
+            (np.log(2), -99),
             (8, 16),
         ),
         (
             calibration.CalibrationData([[2], [1]], [[1], [1]], []),
-            (0, 2, 0),
+            (-99, np.log(2)),
             (4, 2),
         ),
     ))
@@ -709,64 +708,66 @@ class TestConstructPolynomial:
     @pytest.mark.parametrize("calibration_data,coeffs,expected", (
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (2, 0, 0, 0),
+            (np.log(2), -99, -99, -99),
             (2,),
         ),
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (0, 2, 0, 0),
+            (-99, np.log(2), -99, -99),
             (2,),
         ),
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (0, 0, 2, 0),
+            (-99, -99, np.log(2), -99),
             (2,),
         ),
         (
             calibration.CalibrationData([[1]], [[1]], []),
-            (0, 0, 0, 2),
+            (-99, -99, -99, np.log(2)),
             (2,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (1, 0, 0, 0),
+            (0, -99, -99, -99),
             (16,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (0, 1, 0, 0),
+            (-99, 0, -99, -99),
             (8,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (0, 0, 1, 0),
+            (-99, -99, 0, -99),
             (4,),
         ),
         (
             calibration.CalibrationData([[2]], [[1]], []),
-            (0, 0, 0, 1),
+            (-99, -99, -99, 0),
             (2,),
         ),
     ))
     def test_calibration_curve_fit_polynomial_function_each_coeff(
         self, calibration_data, coeffs, expected, poly4
     ):
-        assert poly4(calibration_data, *coeffs) == expected
+        assert poly4(calibration_data, *coeffs) == pytest.approx(expected)
 
-    @pytest.mark.parametrize('x, coeffs', (
-        (5, [1, 1, 0]),
-        (6, [42, 0, 0, 7, 0]),
+    @pytest.mark.parametrize('x, coeffs, test_coeffs', (
+        (5, [1, 1, 0], [0, 0]),
+        (6, [42, 0, 0, 7, 0], [np.log(42), -99, -99, np.log(7)]),
     ))
-    def test_calibration_functions_give_equal_results(self, x, coeffs):
+    def test_calibration_functions_give_equal_results(
+        self, x, coeffs, test_coeffs
+    ):
 
         poly_fitter = calibration.get_calibration_optimization_function(
-            len(coeffs))
+            len(test_coeffs))
         poly = calibration.get_calibration_polynomial(coeffs)
 
         assert poly(x) == pytest.approx(
             poly_fitter(
-                calibration.CalibrationData(np.log([v if v != 0 else -99 for v in poly[:-1]]), [1], [0]),
-                *coeffs)[0])
+                calibration.CalibrationData([[x]], [[1]], [0]),
+                *test_coeffs)[0])
 
     def test_calculate_polynomial(self):
         data_store = calibration.CalibrationData(
