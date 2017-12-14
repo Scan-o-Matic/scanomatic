@@ -5,6 +5,7 @@ from warnings import warn
 import requests
 from time import sleep
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.keys import Keys
 
 
 @pytest.yield_fixture(autouse=True)
@@ -15,12 +16,58 @@ def cleanup_rpc(scanomatic):
     jobs = requests.get(scanomatic + '/status/jobs').json()['data']
     for job in jobs:
         job_id = job['id']
-        response = requests.get(scanomatic + '/job/{}/stop'.format(job_id))
+        response = requests.get(scanomatic + '/api/job/{}/stop'.format(job_id))
         if response.status_code != 200:
             warn('Could not terminate job {}'.format(job_id))
 
 
+def queue_has_job(scanomatic, job_settings):
+    uri = scanomatic + '/status/queue'
+    payload = requests.get(uri).json()
+    if payload.get('data', None):
+        for item in payload.get('data'):
+            if item.get('type') == 'Analysis':
+                model = item.get('content_model')
+                has_compilation = (
+                    job_settings['compilation'] in model['compilation']
+                )
+                has_ccc = (
+                    model['cell_count_calibration_id'] ==
+                    job_settings['cell_count_calibration_id'])
+                has_no_chain = model['chain'] is job_settings['chain']
+                has_output = (
+                    model['output_directory'] ==
+                    job_settings['output_directory']
+                )
+                if has_output:
+                    assert has_compilation, (
+                        "Job used unexpected compilation '{}'".format(
+                            model.get('compilation')
+                        )
+                    )
+                    assert has_ccc, (
+                        "Job used unexpected ccc '{}'".format(
+                            model.get('cell_count_calibration_id')
+                        )
+                    )
+                    assert has_no_chain, (
+                        "Job unexpectedly was set to chain next step"
+                    )
+                    return True
+                else:
+                    warn("Unexpectedly found other job in queue {}".format(
+                        model
+                    ))
+            else:
+                warn("Unexpectedly found other job in queue {}".format(
+                    item
+                ))
+    return False
+
+
 def test_post_analysis_job_request(scanomatic, browser):
+
+    # FILLING IN THE FORM
 
     browser_name = browser.capabilities['browserName'].replace(' ', '_')
     payload = requests.get(
@@ -35,7 +82,11 @@ def test_post_analysis_job_request(scanomatic, browser):
     browser.get(scanomatic + '/analysis')
 
     elem = browser.find_element_by_id('compilation')
-    elem.send_keys('')
+
+    # To better ensure the '/root/' is in place in the input
+    elem.send_keys('', Keys.BACKSPACE)
+    sleep(0.1)
+
     elem.send_keys('testproject/testproject.project.compilation')
 
     elem = Select(browser.find_element_by_id('ccc-selection'))
@@ -51,6 +102,15 @@ def test_post_analysis_job_request(scanomatic, browser):
 
     browser.find_element_by_id('submit-button').click()
 
+    if queue_has_job(scanomatic, {
+        'compilation': 'testproject/testproject.project.compilation',
+        'cell_count_calibration_id': 'TEST',
+        'chain': False,
+        'output_directory': 'test_ccc_{}'.format(browser_name),
+    }):
+        return True
+
+    # IF NOT FOUND LOOK FOR ARTIFACT CREATED WHEN JOB IS RUNNING
     uri = (
         scanomatic +
         '/api/analysis/instructions/testproject/test_ccc_{}'.format(
