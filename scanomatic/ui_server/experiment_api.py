@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 from types import StringTypes
 
@@ -34,7 +36,7 @@ def add_routes(app, rpc_client, logger):
                 path = os.path.abspath(path.replace(
                     'root', Config().paths.projects_root))
                 try_keep_qc = bool(
-                    data_object.get("keep_qc", default=1, type=int));
+                    data_object.get("keep_qc", default=1, type=int))
                 logger.info(
                     "Attempting to extract features in '{0}'".format(path))
                 model = FeaturesFactory.create(
@@ -161,18 +163,21 @@ def add_routes(app, rpc_client, logger):
                             'root', Config().paths.projects_root))
 
                 logger.info(
-                    "Attempting to analyse '{0}' (instructions {1})".format(
+                    "Attempting to analyse '{0}' (instructions '{1}')".format(
                         path_compilation, path_compile_instructions))
 
                 model = AnalysisModelFactory.create(
                     compilation=path_compilation,
                     compile_instructions=path_compile_instructions,
                     output_directory=data_object.get("output_directory"),
-                    cell_count_calibration_id=data_object.get(
-                        "cell_count_calibration_id"),
+                    cell_count_calibration_id=data_object.get("ccc"),
                     one_time_positioning=bool(data_object.get(
                         'one_time_positioning', default=1, type=int)),
                     chain=bool(data_object.get('chain', default=1, type=int)))
+
+                logger.info(
+                    "Created  job model {}".format(
+                        AnalysisModelFactory.to_dict(model)))
 
                 if "pinning_matrices" in data_object:
                     model.pinning_matrices = get_2d_list(
@@ -209,6 +214,12 @@ def add_routes(app, rpc_client, logger):
 
                     model.plate_image_inclusion = plate_image_inclusion
 
+                logger.info(
+                    "Status `rpc_client.online`{} `rpc_client.local`{}".format(
+                        rpc_client.online, rpc_client.local))
+                logger.info("Validate model {}".format(
+                    AnalysisModelFactory.validate(model)
+                ))
                 success = (
                     AnalysisModelFactory.validate(model) and
                     rpc_client.create_analysis_job(
