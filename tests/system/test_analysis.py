@@ -21,7 +21,7 @@ def cleanup_rpc(scanomatic):
             warn('Could not terminate job {}'.format(job_id))
 
 
-def queue_has_job(scanomatic, job_settings):
+def assert_has_job(scanomatic, job_settings):
     uri = scanomatic + '/status/queue'
     payload = requests.get(uri).json()
     if payload.get('data', None):
@@ -34,7 +34,6 @@ def queue_has_job(scanomatic, job_settings):
                 has_ccc = (
                     model['cell_count_calibration_id'] ==
                     job_settings['cell_count_calibration_id'])
-                has_no_chain = model['chain'] is job_settings['chain']
                 has_output = (
                     model['output_directory'] ==
                     job_settings['output_directory']
@@ -50,10 +49,7 @@ def queue_has_job(scanomatic, job_settings):
                             model.get('cell_count_calibration_id')
                         )
                     )
-                    assert has_no_chain, (
-                        "Job unexpectedly was set to chain next step"
-                    )
-                    return True
+                    return
                 else:
                     warn("Unexpectedly found other job in queue {}".format(
                         model
@@ -62,7 +58,38 @@ def queue_has_job(scanomatic, job_settings):
                 warn("Unexpectedly found other job in queue {}".format(
                     item
                 ))
-    return False
+
+    uri = (
+        scanomatic +
+        '/api/analysis/instructions/testproject/{}'.format(
+            job_settings['output_directory'])
+    )
+    tries = 0
+    while tries < 25:
+        payload = requests.get(uri).json()
+        if payload.get('instructions'):
+            assert (
+                payload['instructions'].get('ccc') ==
+                job_settings['cell_count_calibration_id']), (
+                "Job used unexpected CCC, found {}, expected {}".format(
+                    payload['instructions'].get('ccc'),
+                    job_settings['cell_count_calibration_id']
+                )
+            )
+            assert (
+                job_settings['compilation'] in
+                payload['instructions'].get('compilation')
+            ), "Job used unexpected compilation file {}".format(
+                payload['instructions'].get('compilation')
+            )
+
+            return
+        else:
+            tries += 1
+            sleep(min(0.5 * tries, 10))
+    assert False, "Time out waiting for results at '{}'".format(
+        uri
+    )
 
 
 def test_post_analysis_job_request(scanomatic, browser):
@@ -102,29 +129,8 @@ def test_post_analysis_job_request(scanomatic, browser):
 
     browser.find_element_by_id('submit-button').click()
 
-    if queue_has_job(scanomatic, {
+    assert_has_job(scanomatic, {
         'compilation': 'testproject/testproject.project.compilation',
         'cell_count_calibration_id': 'TEST',
-        'chain': False,
         'output_directory': 'test_ccc_{}'.format(browser_name),
-    }):
-        return True
-
-    # IF NOT FOUND LOOK FOR ARTIFACT CREATED WHEN JOB IS RUNNING
-    uri = (
-        scanomatic +
-        '/api/analysis/instructions/testproject/test_ccc_{}'.format(
-            browser_name)
-    )
-    tries = 0
-    while tries < 25:
-        payload = requests.get(uri).json()
-        if payload.get('instructions'):
-            assert payload['instructions'].get('ccc') == 'TEST'
-            return
-        else:
-            tries += 1
-            sleep(min(0.5 * tries, 10))
-    assert False, "Time out waiting for results at '{}'".format(
-        uri
-    )
+    })
