@@ -1,8 +1,13 @@
+from __future__ import absolute_import
+
 import os
 from itertools import chain, product
 from glob import glob
 from flask import Flask, jsonify, request
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response
+from scanomatic.ui_server.general import (
+    convert_url_to_path, convert_path_to_url, get_search_results,
+    json_response,
+)
 from scanomatic.io.paths import Paths
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import DefaultPinningFormats
@@ -89,8 +94,9 @@ def add_routes(app):
 
         analysis_logs = tuple(chain(((
             convert_path_to_url("/api/tools/logs/0/0", c),
-            convert_path_to_url("/api/tools/logs/WARNING_ERROR_CRITICAL/0/0", c)) for c in
-            glob(os.path.join(path, Paths().analysis_run_log)))))
+            convert_path_to_url(
+                "/api/tools/logs/WARNING_ERROR_CRITICAL/0/0", c)) for c in
+                glob(os.path.join(path, Paths().analysis_run_log)))))
 
         if model is None:
 
@@ -100,19 +106,30 @@ def add_routes(app):
                     analysis_logs=analysis_logs,
                     **get_search_results(path, base_url))))
 
+        def onetime_or_dynamic(value):
+            return 'one-time' if value else 'dynamic'
+
         return jsonify(**json_response(
             ["urls", "compile_instructions", "analysis_logs"],
             dict(
                 instructions={
-                    'grayscale': "one-time" if model.one_time_grayscale else "dynamic",
-                    'positioning': "one-time" if model.one_time_positioning else "dynamic",
+                    'grayscale': onetime_or_dynamic(model.one_time_grayscale),
+                    'positioning':
+                        onetime_or_dynamic(model.one_time_positioning),
+                    'ccc': model.cell_count_calibration_id,
                     'compilation': model.compilation,
                     'compile_instructions': model.compile_instructions,
                     'email': model.email,
                     'pinning_matrices': model.pinning_matrices,
-                    'grid_model': {'gridding_offsets': model.grid_model.gridding_offsets,
-                                   'reference_grid_folder': model.grid_model.reference_grid_folder},
+                    'grid_model': {
+                        'gridding_offsets': model.grid_model.gridding_offsets,
+                        'reference_grid_folder':
+                            model.grid_model.reference_grid_folder,
+                    },
                 },
                 analysis_logs=analysis_logs,
-                compile_instructions=[convert_path_to_url("/api/compile/instructions", model.compile_instructions)],
+                compile_instructions=[
+                    convert_path_to_url(
+                        "/api/compile/instructions",
+                        model.compile_instructions)],
                 **get_search_results(path, base_url))))

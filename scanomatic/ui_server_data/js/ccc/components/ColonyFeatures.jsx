@@ -24,27 +24,23 @@ export default class ColonyFeatures extends React.Component {
         ];
 
         const style = {
-            background: 'white',
-            display: 'inline-block',
-            paddingd: '3px',
-            textAlign: 'center',
+            padding: '3px',
         };
 
         return (
             <div style={style} >
-                <canvas ref={canvas => this.canvas = canvas} />
-                <ul className="colonyPlot" style={ { color: 'black' } }>
-                    {legend.map( ({ color, text }) => {
-                        const style = { backgroundColor: color };
-                        return (
-                            <li key={text}>
-                                <div className="input-color">
-                                    <input type="text" value={text} readOnly />
-                                    <div className="color-box" style={style} />
-                                </div>
-                            </li>
-                        );
-                    })}
+                <canvas ref={(canvas) => { this.canvas = canvas; }} />
+                <ul className="colonyPlot">
+                    {legend.map(({ color, text }) => (
+                        <li key={text}>
+                            <div
+                                className="color-box"
+                                style={{ backgroundColor: color }}
+                            />
+                            &nbsp;
+                            {text}
+                        </li>
+                    ))}
                 </ul>
             </div>
         );
