@@ -1,65 +1,65 @@
-﻿/* Data Selection*/
+/* Data Selection*/
 
 body {
-	font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 table {
-	font-size: 1em;
+    font-size: 1em;
 }
 
 .math {
-		margin: 0px;
-		padding: 0px;
-		font-size: 110%;
+    margin: 0px;
+    padding: 0px;
+    font-size: 110%;
 }
 
 .math span {
-		margin-right: 2px;
-		margin-left: 2px;
+    margin-right: 2px;
+    margin-left: 2px;
 }
 
 .math .variable {
-		font-style: italic;
-		margin: 0px;
+    font-style: italic;
+    margin: 0px;
 }
 
 .poly-corr-chart {
-	margin-top: 6px;
-	color: #000;
+    margin-top: 6px;
+    color: #000;
 }
 
 .poly-corr-chart svg {
-	background: #fff;
+    background: #fff;
 }
 .poly-corr-chart .c3-shapes-Identity-Line .c3-circle {
-	opacity: 0 !important;
+    opacity: 0 !important;
 }
 
 .poly-corr-chart .c3-shapes-Correlation .c3-circle {
-	opacity: 0 !important;
+    opacity: 0 !important;
 }
 
 .poly-colony-container {
-	margin: 0px;
-	display: block;
-	width: 520px;
-	position: relative;
+    margin: 0px;
+    display: block;
+    width: 520px;
+    position: relative;
 }
 
 .poly-colony-chart {
-	color: #000;
-	background: #fff;
-	display: inline-block;
+    color: #000;
+    background: #fff;
+    display: inline-block;
 }
 
 .poly-colony-txt {
-	color: #000;
-	position: absolute;
-	right: 30px;
-	bottom: 4px;
-	font-size: 90%;
-	font-style: italic;
+    color: #000;
+    position: absolute;
+    right: 30px;
+    bottom: 4px;
+    font-size: 90%;
+    font-style: italic;
 }
 
 .paddedTable td{
@@ -71,7 +71,7 @@ table {
 
 
 .ui-draggable, .ui-droppable {
-	background-position: top;
+    background-position: top;
 }
 
 label, input {
@@ -202,7 +202,7 @@ g.expNode.selected rect {
     stroke-width: 1;
 }
 
-  /* disable text selection */
+/* disable text selection */
 svg *::selection {
     background : transparent;
 }
@@ -217,31 +217,23 @@ svg *::-webkit-selection {
 
 /*colony label*/
 
-.colonyPlot ul {
-    margin: 0px;
+ul.colonyPlot {
+    background: none;
+    display: inline-block;
+    vertical-align: top;
+    color: black;
 }
 
 .colonyPlot li {
-    margin: 0px;
+    margin: 0;
 }
 
-.colonyPlot .input-color {
-    position: relative;
+.colonyPlot li .color-box {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    background-color: #ccc;
 }
-
-    .colonyPlot .input-color input {
-        padding-left: 20px;
-    }
-
-    .colonyPlot .input-color .color-box {
-        width: 10px;
-        height: 10px;
-        display: inline-block;
-        background-color: #ccc;
-        position: absolute;
-        left: 5px;
-        top: 5px;
-    }
 
 /*input file*/
 .cccInputFile {
@@ -253,26 +245,26 @@ svg *::-webkit-selection {
     z-index: -1;
 }
 
-    .cccInputFile + label {
-        font-size: 1.25em;
-        font-weight: 700;
-        color: white;
-        background-color: rgb(84, 31, 15);
-        display: inline-block;
-        text-transform: none;
-        padding: 3px;
-    }
+.cccInputFile + label {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: white;
+    background-color: rgb(84, 31, 15);
+    display: inline-block;
+    text-transform: none;
+    padding: 3px;
+}
 
-        .cccInputFile:focus + label,
-        .cccInputFile + label:hover {
-            background-color: red;
-        }
+.cccInputFile:focus + label,
+.cccInputFile + label:hover {
+    background-color: red;
+}
 
-    .cccInputFile + label {
-        cursor: pointer; /* "hand" cursor */
-    }
+.cccInputFile + label {
+    cursor: pointer; /* "hand" cursor */
+}
 
 .panel {
     color: black;
-		margin-top: 6px;
+    margin-top: 6px;
 }
