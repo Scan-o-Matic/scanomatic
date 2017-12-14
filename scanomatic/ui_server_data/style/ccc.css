@@ -217,30 +217,22 @@ svg *::-webkit-selection {
 
 /*colony label*/
 
-.colonyPlot ul {
-    margin: 0px;
+ul.colonyPlot {
+    background: none;
+    display: inline-block;
+    vertical-align: top;
+    color: black;
 }
 
 .colonyPlot li {
-    margin: 0px;
+    margin: 0;
 }
 
-.colonyPlot .input-color {
-    position: relative;
-}
-
-.colonyPlot .input-color input {
-    padding-left: 20px;
-}
-
-.colonyPlot .input-color .color-box {
+.colonyPlot li .color-box {
     width: 10px;
     height: 10px;
     display: inline-block;
     background-color: #ccc;
-    position: absolute;
-    left: 5px;
-    top: 5px;
 }
 
 /*input file*/
