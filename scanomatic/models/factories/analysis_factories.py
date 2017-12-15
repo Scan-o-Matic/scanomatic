@@ -135,6 +135,19 @@ class AnalysisModelFactory(AbstractModelFactory):
         return path
 
     @classmethod
+    def all_keys_valid(cls, keys):
+
+        # Remove outdated but allowed
+        keys = tuple(key for key in keys if key != 'xml_model')
+
+        # Add introduced but not mandatory
+        keys = set(keys).union((
+            'cell_count_calibration_id', 'cell_count_calibration',
+        ))
+
+        return super(AnalysisModelFactory, cls).all_keys_valid(keys)
+
+    @classmethod
     def _validate_compilation_file(cls, model):
         """
 

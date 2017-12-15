@@ -112,9 +112,9 @@ class TestAnalysisModels:
     ))
     def test_bad_keys_dont_match(self, keys):
 
-        assert AnalysisModelFactory.matching_key_set(keys) is False
+        assert AnalysisModelFactory.all_keys_valid(keys) is False
 
     def test_right_keys_match(self):
 
-        assert AnalysisModelFactory.matching_key_set(
+        assert AnalysisModelFactory.all_keys_valid(
             tuple(AnalysisModelFactory.default_model.keys()))

@@ -1,4 +1,3 @@
-from __future__ import division
 import types
 from types import GeneratorType
 import copy
@@ -197,18 +196,10 @@ class AbstractModelFactory(object):
         return cls.MODEL(**settings)
 
     @classmethod
-    def matching_key_set(cls, keys):
-
+    def all_keys_valid(cls, keys):
         expected = set(cls.default_model.keys())
-        common = len(expected.intersection(keys))
-        diff = len(expected.difference(keys))
-        n_expected = len(expected)
-        n_keys = len(keys)
-        return common > diff and (
-            common == n_expected or
-            common == n_keys or
-            common / n_expected > .75 and common / n_keys > .75
-        )
+        no_unknown_keys = expected.issuperset(keys)
+        return no_unknown_keys and len(expected) == len(keys)
 
     @classmethod
     def drop_keys(cls, settings, valid_keys):
@@ -920,7 +911,7 @@ class Serializer(object):
 
             try:
 
-                if self._factory.matching_key_set(conf.options(section)):
+                if self._factory.all_keys_valid(conf.options(section)):
                     yield self.unserialize_section(conf, section)
 
             except UnserializationError:
@@ -933,7 +924,7 @@ class Serializer(object):
         factory = self._factory
 
         try:
-            if not factory.matching_key_set(conf.options(section)):
+            if not factory.all_keys_valid(conf.options(section)):
                 self._logger.warning("{1} Refused section {0} because keys {2}".format(
                     section, factory, conf.options(section)))
                 return None
