@@ -198,8 +198,7 @@ class AbstractModelFactory(object):
     @classmethod
     def all_keys_valid(cls, keys):
         expected = set(cls.default_model.keys())
-        no_unknown_keys = expected.issuperset(keys)
-        return no_unknown_keys and len(expected) == len(keys)
+        return expected == set(keys)
 
     @classmethod
     def drop_keys(cls, settings, valid_keys):
