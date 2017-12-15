@@ -81,9 +81,9 @@ class TestAnalysisModels:
             AnalysisModelFactory.create(cell_count_calibration_id='BadCCC')
 
     @pytest.mark.parametrize('basename', (
-        'analysis.current.model',
-        'analysis.previous.model',
-        'analysis.previous.previous.model',
+        'analysis.model',
+        'analysis.model.2017.11',
+        'analysis.model.2017.12',
     ))
     def test_can_load_serialized_files_from_disk(self, basename, data_path):
         model = AnalysisModelFactory.serializer.load_first(
