@@ -103,11 +103,11 @@ class TestAnalysisModels:
         assert model is None
 
     @pytest.mark.parametrize('keys', (
-        [],
         [1, 2, 3, 4],
         [
             'email',
             'use_local_fixture',
+            'fake',
         ],
     ))
     def test_bad_keys_dont_match(self, keys):
