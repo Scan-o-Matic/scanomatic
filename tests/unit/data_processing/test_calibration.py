@@ -130,6 +130,12 @@ def edit_bad_slope_ccc():
 
 
 @pytest.fixture(scope='function')
+def full_ccc():
+    _ccc = _fixture_load_ccc('data/TESTUMz.ccc')
+    yield _ccc
+    calibration.reload_cccs()
+
+@pytest.fixture(scope='function')
 def finalizable_ccc():
     _ccc = _fixture_load_ccc('data/test_good.ccc')
     yield _ccc
@@ -218,34 +224,106 @@ class TestEditCCC:
 
         assert response['correlation']['p_value'] == pytest.approx(1)
 
-    @pytest.mark.skip("Unreliable with current data")
-    def test_construct_good_polynomial(self, edit_ccc):
+    def test_construct_good_polynomial(self, full_ccc):
         # The fixture needs to be included, otherwise test is not correct
-        identifier = edit_ccc[calibration.CellCountCalibration.identifier]
+        identifier = full_ccc[calibration.CellCountCalibration.identifier]
         power = 5
-        token = 'password'
-        print(identifier)
+        token = full_ccc[calibration.CellCountCalibration.edit_access_token]
+        full_ccc[calibration.CellCountCalibration.status] = \
+            calibration.CalibrationEntryStatus.UnderConstruction
 
         response = calibration.construct_polynomial(
             identifier, power, access_token=token)
 
-        assert 'correlation' in response
-        assert response['correlation']['slope'] == pytest.approx(1, abs=0.02)
-
         assert response['validation'] == 'OK'
         assert all(coeff >= 0 for coeff in response['polynomial_coefficients'])
-        assert response['polynomial_degree'] == power
-        assert response['ccc'] == identifier
 
-        assert len(response['calculated_sizes']) == 16
-        assert len(response['measured_sizes']) == 16
+        assert len(response['calculated_sizes']) == 62
+        assert response['measured_sizes'] == [
+            640000,
+            680000,
+            800000,
+            1160000,
+            1320000,
+            1660000,
+            1900000,
+            2060000,
+            2240000,
+            2280000,
+            2360000,
+            3120000,
+            3240000,
+            3260000,
+            4100000,
+            4240000,
+            4460000,
+            4580000,
+            5120000,
+            5380000,
+            5520000,
+            5760000,
+            6600000,
+            7980000,
+            8240000,
+            9200000,
+            9840000,
+            10300000,
+            10380000,
+            10760000,
+            10800000,
+            10960000,
+            11040000,
+            11580000,
+            11920000,
+            12120000,
+            12400000,
+            13160000,
+            13860000,
+            14100000,
+            14160000,
+            14220000,
+            14220000,
+            14440000,
+            14720000,
+            14940000,
+            15120000,
+            15160000,
+            15380000,
+            15660000,
+            15920000,
+            16180000,
+            16440000,
+            16700000,
+            16700000,
+            16820000,
+            17060000,
+            17200000,
+            17700000,
+            17900000,
+            18240000,
+            18340000,
+        ]
 
-        assert 'calculated_sizes' in response
-        assert response['correlation']['slope'] == pytest.approx(1)
-        assert response['correlation']['intercept'] == pytest.approx(0)
-        assert response['correlation']['stderr'] == pytest.approx(0)
+        assert response['correlation']['slope'] == pytest.approx(1, abs=0.02)
+        assert response['correlation']['intercept'] == pytest.approx(
+            71000, rel=0.5
+        )
+        assert response['correlation']['stderr'] == pytest.approx(
+            0.015, rel=0.1
+        )
         assert response['correlation']['p_value'] == pytest.approx(0)
-
+        np.testing.assert_allclose(
+            response['polynomial_coefficients'],
+            [
+                5.263000000000004e-05,
+                0.004012000000000001,
+                0.03962,
+                0.9684,
+                2.008000000000001e-06,
+                0.0,
+            ],
+            rtol=0.01,
+        )
 
 class TestActivateCCC:
     def test_has_selected_polynomial(self, finalizable_ccc):
@@ -833,14 +911,13 @@ class TestGetAllColonyData:
         ccc_id = edit_ccc[calibration.CellCountCalibration.identifier]
         colonies = calibration.get_all_colony_data(ccc_id)
         assert colonies['source_values'][0] == [
-            0.21744831955999988, 1.2174483195599999, 2.2174483195599999,
-            3.2174483195599999, 4.2174483195599999, 5.2174483195599999,
-            7.2174483195599999, 9.217448319559999, 13.217448319559999,
+            0.79925410930999963, 1.7992541093099996, 2.7992541093099996,
+            3.7992541093099996, 4.7992541093099996,
         ]
         assert colonies['source_value_counts'][0] == [
-            11620, 10491, 10, 4, 1, 1, 1, 1, 2,
+            5491, 134, 28, 10, 2,
         ]
-        assert colonies['target_values'][0] == 210000.0
+        assert colonies['target_values'][0] == 60000.0
         assert colonies['source_values'][-1] == [
             4.6858251709500003, 5.6858251709500003, 6.6858251709500003,
             7.6858251709500003, 8.6858251709500003, 9.6858251709500003,
