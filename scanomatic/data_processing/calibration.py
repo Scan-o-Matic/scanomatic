@@ -577,10 +577,24 @@ def _collect_all_included_data(ccc):
                 source_values.append(colony_data[CCCMeasurement.source_values])
                 target_value.append(colony_data[CCCMeasurement.cell_count])
 
+    sort_order = np.argsort(target_value)
+    source_values = [source_values[colony] for colony in sort_order]
+    source_value_counts = [
+        source_value_counts[colony] for colony in sort_order
+    ]
+    source_value_sorts = [np.argsort(vector) for vector in source_values]
     return CalibrationData(
-        source_values=source_values,
-        source_value_counts=source_value_counts,
-        target_value=np.array(target_value),
+        source_values=[
+            np.array(vector)[sort].tolist() for vector, sort in
+            zip(source_values, source_value_sorts)
+        ],
+        source_value_counts=[
+            np.array(vector)[sort].tolist() for vector, sort in
+            zip(source_value_counts, source_value_sorts)
+        ],
+        target_value=np.array([
+            target_value[sort] for sort in sort_order
+        ])
     )
 
 
@@ -695,8 +709,6 @@ def construct_polynomial(identifier, power):
         if not save_ccc_to_disk(ccc):
             return False
 
-    calculated_sizes = calculate_sizes(data_store, poly)
-
     return {
         'polynomial_coefficients': poly_coeffs,
         'measured_sizes': data_store.target_value.tolist(),
@@ -714,32 +726,25 @@ def construct_polynomial(identifier, power):
 def get_all_colony_data(identifier):
     ccc = __CCC[identifier]
     data_store = _collect_all_included_data(ccc)
-    modes = [
-        values[np.argmax(counts)] for values, counts in
-        zip(data_store.source_values, data_store.source_value_counts)
-    ]
-    sort_order = np.argsort(modes)
-    values = [data_store.source_values[colony] for colony in sort_order]
-    counts = [data_store.source_value_counts[colony] for colony in sort_order]
-    value_sorts = [np.argsort(vector) for vector in values]
+    if data_store.source_values:
+        min_values = min(min(vector) for vector in data_store.source_values)
+        max_values = max(max(vector) for vector in data_store.source_values)
+    else:
+        min_values = 0
+        max_values = 0
+    if data_store.source_value_counts:
+        max_counts = max(
+            max(vector) for vector in data_store.source_value_counts
+        )
+    else:
+        max_counts = 0
     return {
-        'source_values': [
-            np.array(vector)[sort].tolist() for vector, sort in
-            zip(values, value_sorts)
-        ],
-        'source_value_counts': [
-            np.array(vector)[sort].tolist() for vector, sort in
-            zip(counts, value_sorts)
-        ],
-        'target_values': [
-            data_store.target_value[sort] for sort in sort_order
-        ],
-        'min_source_values':
-        min(np.min(vector) for vector in values) if values else 0,
-        'max_source_values':
-        max(np.max(vector) for vector in values) if values else 0,
-        'max_source_counts':
-        max(np.max(vector) for vector in counts) if counts else 0,
+        'source_values': data_store.source_values,
+        'source_value_counts': data_store.source_value_counts,
+        'target_values': data_store.target_value.tolist(),
+        'min_source_values': min_values,
+        'max_source_values': max_values,
+        'max_source_counts': max_counts,
     }
 
 
