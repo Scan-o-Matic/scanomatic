@@ -35,3 +35,4 @@ data/config/rpc.admin
 /scanomatic/ui_server_data/coverage
 geckodriver.log
 /node_modules
+/data/config/mac_address.config
