@@ -325,8 +325,6 @@ def add_routes(app):
                 suggestions = tuple()
                 suggestion_is_directories = tuple()
 
-            _logger.info("{0}: {1}".format(path, glob.glob(path + "*")))
-
             if check_has_analysis:
                 has_analysis = path_has_saved_project_state(path)
             else:
