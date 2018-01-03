@@ -321,7 +321,7 @@ function StartExperiment(button) {
         }
 
     $.ajax({
-        url: "/experiment?enqueue=1",
+        url: "/api/project/experiment",
         method: "POST",
         data: JSON.stringify(data),
         contentType: "application/json; charset=utf-8",

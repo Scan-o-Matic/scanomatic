@@ -153,7 +153,7 @@ function Compile(button) {
     };
 
     $.ajax({
-        url: "?run=1",
+        url: "/api/project/compile",
         method: "POST",
         data: data,
         success: function (data) {

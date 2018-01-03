@@ -227,7 +227,7 @@ function Analyse(button) {
     console.log(data);
 
     $.ajax({
-        url: '?action=analysis',
+        url: '/api/project/analysis',
         data: data,
         method: 'POST',
         success: function(data) {
@@ -254,7 +254,7 @@ function Extract(button) {
     InputEnabled($(button), false)
 
     $.ajax({
-        url: '?action=extract',
+        url: '/api/project/feature_extract',
         data: {
             analysis_directory: $("#extract").val(),
             keep_qc: $('#keep-qc').is(':checked') ? 0 : 1,
@@ -278,7 +278,7 @@ function BioscreenExtract(button) {
     InputEnabled($(button), false)
 
     $.ajax({
-        url: '?action=bioscreen_extract',
+        url: '/api/project/feature_extract/bioscreen',
         data: {
             bioscreen_file: $("#bioscreen_extract").val()
                },
