@@ -44,7 +44,7 @@ def test_app(app, rpc_client):
 
 class TestFeatureExtractEndpoint:
 
-    route = '/feature_extract'
+    route = '/api/project/feature_extract'
 
     @staticmethod
     def jailed_path(path):
@@ -67,7 +67,7 @@ class TestFeatureExtractEndpoint:
         test_app.rpc_client.create_feature_extract_job.return_value = 'Hi'
 
         response = test_app.post(
-            self.route + '?action=extract',
+            self.route,
             data={
                 'analysis_directory': 'root/test',
                 'keep_qc': 1,
@@ -91,7 +91,7 @@ class TestFeatureExtractEndpoint:
         test_app.rpc_client.create_feature_extract_job.return_value = 'Hi'
 
         response = test_app.post(
-            self.route + '?action=extract',
+            self.route,
             data={
                 'analysis_directory': 'root/test',
                 'keep_qc': 0,
