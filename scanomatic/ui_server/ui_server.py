@@ -156,6 +156,10 @@ def add_base_routes(app, rpc_client):
         if js:
             return send_from_directory(Paths().ui_js, js)
 
+    @app.route("/js/<group>/<js>")
+    def _js_external(group, js):
+        return send_from_directory(os.path.join(Paths().ui_js, group), js)
+
     @app.route("/fonts/<font>")
     def _font_base(font=None):
         if font:
