@@ -3,10 +3,9 @@ from datetime import timedelta
 from hashlib import sha256
 import httplib as HTTPStatus
 import json
-import logging
 import os
 import pytest
-
+from types import MethodType
 from flask import Flask, url_for
 from mock import MagicMock, Mock, patch
 import pytest
@@ -31,13 +30,21 @@ def rpc_client():
 def app(scanstore, rpc_client):
     app = Flask(__name__, template_folder=Paths().ui_templates)
     app.config['scanstore'] = scanstore
-    experiment_api.add_routes(app, rpc_client, logging)
+    experiment_api.add_routes(app, rpc_client)
     return app
 
 
 @pytest.fixture(scope="function")
 def test_app(app, rpc_client):
+    def _post_json(self, uri, data, **kwargs):
+        return self.post(
+            uri,
+            data=json.dumps(data),
+            content_type='application/json',
+            **kwargs
+        )
     test_app = app.test_client()
+    test_app.post_json = MethodType(_post_json, test_app)
     test_app.rpc_client = rpc_client
     return test_app
 
@@ -66,9 +73,9 @@ class TestFeatureExtractEndpoint:
 
         test_app.rpc_client.create_feature_extract_job.return_value = 'Hi'
 
-        response = test_app.post(
+        response = test_app.post_json(
             self.route,
-            data={
+            {
                 'analysis_directory': 'root/test',
                 'keep_qc': 1,
             },
@@ -81,7 +88,6 @@ class TestFeatureExtractEndpoint:
             'analysis_directory': self.jailed_path('root/test/')
         })
         assert response.status_code == 200
-        assert json.loads(response.data)['success']
 
     @patch(
         'scanomatic.ui_server.experiment_api.FeaturesFactory._validate_analysis_directory',
@@ -90,9 +96,9 @@ class TestFeatureExtractEndpoint:
 
         test_app.rpc_client.create_feature_extract_job.return_value = 'Hi'
 
-        response = test_app.post(
+        response = test_app.post_json(
             self.route,
-            data={
+            {
                 'analysis_directory': 'root/test',
                 'keep_qc': 0,
             },
@@ -105,7 +111,6 @@ class TestFeatureExtractEndpoint:
             'analysis_directory': self.jailed_path('root/test/')
         })
         assert response.status_code == 200
-        assert json.loads(response.data)['success']
 
 
 class TestPostScan:
