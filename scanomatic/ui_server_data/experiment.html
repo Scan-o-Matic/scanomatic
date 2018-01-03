@@ -293,6 +293,7 @@
         </form>
     </div>
     <script>
+      $(document).ready(() => {
         set_poetry("#project-description");
         format_time("#project-duration");
         format_minutes("#project-interval");
@@ -302,6 +303,7 @@
         get_fixtures();
         InputEnabled($("#submit-button"), false);
         createSelector($('#ccc-selection'));
+      });
     </script>
 </body>
 </html>

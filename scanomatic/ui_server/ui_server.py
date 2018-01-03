@@ -86,7 +86,7 @@ def launch_server(host, port, debug):
     app.register_blueprint(
         calibration_api.blueprint, url_prefix="/api/calibration")
     settings_api.add_routes(app)
-    experiment_api.add_routes(app, rpc_client, _LOGGER)
+    experiment_api.add_routes(app, rpc_client)
 
     if debug:
         CORS(app)
