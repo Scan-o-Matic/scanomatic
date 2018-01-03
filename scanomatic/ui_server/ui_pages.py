@@ -1,4 +1,6 @@
-from flask import send_from_directory, render_template, redirect, jsonify
+from flask import (
+    send_from_directory, render_template, redirect, jsonify, abort
+)
 import os
 import glob
 
@@ -93,10 +95,7 @@ def add_routes(app):
         elif log == "ui_server":
             log_path = Paths().log_ui_server
         else:
-            return jsonify(
-                success=False,
-                is_endpoint=True,
-                reason="No system log of that type")
+            abort(404)
 
         return serve_log_as_html(log_path, log.replace("_", " ").capitalize())
 
@@ -105,41 +104,11 @@ def add_routes(app):
 
         path = convert_url_to_path(project)
 
-        if not os.path.exists(path):
+        if not os.path.isfile(path):
 
-            return jsonify(success=True,
-                           is_project=False,
-                           is_endpoint=False,
-                           exits=['urls'],
-                           **get_search_results(path, "/logs/project"))
+            abort(404)
 
         is_project_analysis = phenotyper.path_has_saved_project_state(path)
-
-        if not os.path.isfile(path) or not path.endswith(".log"):
-
-            if is_project_analysis:
-                logs = glob.glob(
-                    os.path.join(path, Paths().analysis_run_log))
-                logs += glob.glob(
-                    os.path.join(path, Paths().phenotypes_extraction_log))
-            else:
-                logs = glob.glob(os.path.join(
-                    path, Paths().scan_log_file_pattern.format("*")))
-                logs += glob.glob(os.path.join(
-                    path, Paths().project_compilation_log_pattern.format("*")))
-
-            return jsonify(
-                success=True,
-                is_project=False,
-                is_endpoint=False,
-                is_project_analysis=is_project_analysis,
-                exits=['urls', 'logs'],
-                logs=[
-                    convert_path_to_url("/logs/project", log_path)
-                    for log_path in logs
-                ],
-                **get_search_results(path, "/logs/project"))
-
         include_levels = 3 if is_project_analysis else 2
 
         return serve_log_as_html(
