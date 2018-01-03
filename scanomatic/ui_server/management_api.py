@@ -5,6 +5,7 @@ from scanomatic.io.source import parse_version, get_source_information
 from .general import json_abort
 from xmlrpclib import Fault
 
+
 def add_routes(app, rpc_client):
 
     @app.route("/api/app/<action>", methods=['post', 'get'])

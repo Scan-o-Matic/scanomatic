@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Part of analysis work-flow that holds a grid arrays"""
+import os
 
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
@@ -11,8 +12,6 @@ __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
 __branch = "dev"
-
-import os
 
 
 def get_version():
