@@ -1,15 +1,13 @@
 from __future__ import absolute_import
 
 import os
-import glob
 import time
 import webbrowser
 from socket import error
 from threading import Thread, Timer
 
 import requests
-from flask import (
-    Flask, send_from_directory, redirect, jsonify, render_template)
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 
 from scanomatic.io.app_config import Config
@@ -18,7 +16,6 @@ from scanomatic.io.paths import Paths
 from scanomatic.io.rpc_client import get_client
 from scanomatic.io.backup import backup_file
 from scanomatic.io.scanstore import ScanStore
-from scanomatic.data_processing import phenotyper
 
 from . import qc_api
 from . import analysis_api
@@ -30,15 +27,8 @@ from . import tools_api
 from . import data_api
 from . import settings_api
 from . import experiment_api
-from . import help_ui
-from . import settings_ui
-from . import status_ui
-from . import qc_norm_ui
-from . import experiment_ui
-from .general import (
-    serve_log_as_html, convert_url_to_path, get_search_results,
-    convert_path_to_url
-)
+from . import status_api
+from . import ui_pages
 
 _URL = None
 _LOGGER = Logger("UI-server")
@@ -81,13 +71,9 @@ def launch_server(host, port, debug):
     app.log_recycler = Timer(LOG_RECYCLE_TIME, init_logging)
     app.log_recycler.start()
 
-    add_base_routes(app, rpc_client)
+    add_resource_routes(app, rpc_client)
 
-    help_ui.add_routes(app)
-    settings_ui.add_routes(app)
-    status_ui.add_routes(app, rpc_client)
-    qc_norm_ui.add_routes(app)
-    experiment_ui.add_routes(app)
+    ui_pages.add_routes(app)
 
     management_api.add_routes(app, rpc_client)
     tools_api.add_routes(app)
@@ -95,6 +81,7 @@ def launch_server(host, port, debug):
     analysis_api.add_routes(app)
     compilation_api.add_routes(app)
     scan_api.add_routes(app)
+    status_api.add_routes(app, rpc_client)
     data_api.add_routes(app, rpc_client, debug)
     app.register_blueprint(
         calibration_api.blueprint, url_prefix="/api/calibration")
@@ -125,21 +112,13 @@ def launch_server(host, port, debug):
     return True
 
 
-def add_base_routes(app, rpc_client):
+def add_resource_routes(app, rpc_client):
     """
 
     :param app: The flask webb app
      :type app: Flask
     :return:
     """
-
-    @app.route("/")
-    def _root():
-        return render_template(Paths().ui_root_file, debug=app.debug)
-
-    @app.route("/home")
-    def _show_homescreen():
-        return redirect("/status")
 
     @app.route("/images/<image_name>")
     def _image_base(image_name=None):
@@ -164,98 +143,6 @@ def add_base_routes(app, rpc_client):
     def _font_base(font=None):
         if font:
             return send_from_directory(Paths().ui_font, font)
-
-    @app.route("/logs/system/<log>")
-    def _logs(log):
-        """
-        Args:
-            log: The log-type to be returned {'server' or 'ui_server'}.
-
-        Returns: html-document (or json on invalid log-parameter).
-
-        """
-        if log == 'server':
-            log_path = Paths().log_server
-        elif log == "ui_server":
-            log_path = Paths().log_ui_server
-        else:
-            return jsonify(
-                success=False,
-                is_endpoint=True,
-                reason="No system log of that type")
-
-        return serve_log_as_html(log_path, log.replace("_", " ").capitalize())
-
-    @app.route("/logs/project/<path:project>")
-    def _project_logs(project):
-
-        path = convert_url_to_path(project)
-
-        if not os.path.exists(path):
-
-            return jsonify(success=True,
-                           is_project=False,
-                           is_endpoint=False,
-                           exits=['urls'],
-                           **get_search_results(path, "/logs/project"))
-
-        is_project_analysis = phenotyper.path_has_saved_project_state(path)
-
-        if not os.path.isfile(path) or not path.endswith(".log"):
-
-            if is_project_analysis:
-                logs = glob.glob(
-                    os.path.join(path, Paths().analysis_run_log))
-                logs += glob.glob(
-                    os.path.join(path, Paths().phenotypes_extraction_log))
-            else:
-                logs = glob.glob(os.path.join(
-                    path, Paths().scan_log_file_pattern.format("*")))
-                logs += glob.glob(os.path.join(
-                    path, Paths().project_compilation_log_pattern.format("*")))
-
-            return jsonify(
-                success=True,
-                is_project=False,
-                is_endpoint=False,
-                is_project_analysis=is_project_analysis,
-                exits=['urls', 'logs'],
-                logs=[
-                    convert_path_to_url("/logs/project", log_path)
-                    for log_path in logs
-                ],
-                **get_search_results(path, "/logs/project"))
-
-        include_levels = 3 if is_project_analysis else 2
-
-        return serve_log_as_html(
-            path, os.sep.join(path.split(os.path.sep)[-include_levels:]))
-
-    @app.route("/scanners/<scanner_query>")
-    def _scanners(scanner_query=None):
-        if scanner_query is None or scanner_query.lower() == 'all':
-            return jsonify(
-                scanners=rpc_client.get_scanner_status(), success=True)
-        elif scanner_query.lower() == 'free':
-            return jsonify(
-                scanners={
-                    s['socket']: s['scanner_name'] for s in
-                    rpc_client.get_scanner_status()
-                    if 'owner' not in s or not s['owner']},
-                success=True)
-        else:
-            try:
-                return jsonify(
-                    scanner=(
-                        s for s in rpc_client.get_scanner_status()
-                        if scanner_query
-                        in s['scanner_name']).next(),
-                    success=True)
-            except StopIteration:
-                return jsonify(
-                    scanner=None, success=False,
-                    reason="Unknown scanner or query '{0}'".format(
-                        scanner_query))
 
 
 def launch_webbrowser(delay=0.0):
