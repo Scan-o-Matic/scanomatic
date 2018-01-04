@@ -46,10 +46,6 @@ class Paths(SingeltonOneInit):
             self.config, "install_filezilla.sh")
 
         self.scanomatic = "scan_o_matic"
-        self.analysis = "scan-o-matic_analysis"
-        self.experiment = "scan-o-matic_experiment"
-        self.make_project = "scan-o-matic_compile_project"
-        self.install_autostart = "scan-o-matic_autostart"
 
         self.config_main_app = os.path.join(self.config, 'main.config')
         self.config_mac = os.path.join(self.config, 'mac_address.config')
