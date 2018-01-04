@@ -8,20 +8,13 @@ from xmlrpclib import Fault
 
 def add_routes(app, rpc_client):
 
-    @app.route("/api/app/<action>", methods=['post', 'get'])
-    def _app_actions(action=None):
-
-        if action == 'version':
-            return jsonify(
-                version=get_version(),
-                version_ints=parse_version(get_version()),
-                source_information=get_source_information(test_info=True)
-            )
-        else:
-            return json_abort(
-                400,
-                reason="Unknown action '{0}'".format(action)
-            )
+    @app.route("/api/app/version", methods=['get'])
+    def _app_version():
+        return jsonify(
+            version=get_version(),
+            version_ints=parse_version(get_version()),
+            source_information=get_source_information(test_info=True)
+        )
 
     @app.route("/api/job/<job_id>/<job_command>")
     def _communicate_with_job(job_id="", job_command=""):
