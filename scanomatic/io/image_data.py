@@ -94,20 +94,6 @@ class ImageData(object):
         return True
 
     @staticmethod
-    def iter_write_image_from_xml(path, xml_object, output_item, output_value):
-
-        scans = xml_object.get_scan_times().size
-        plates = max(xml_object.get_data().keys()) + 1
-        data = xml_object.get_data()
-
-        for scan_id in range(scans):
-            features = [None] * plates
-            for plate_id in range(plates):
-                features[plate_id] = data[plate_id][:, :, scan_id]
-
-            ImageData._write_image(path, scan_id, features, output_item=output_item, output_value=output_value)
-
-    @staticmethod
     def write_times(analysis_model, image_model, overwrite):
 
         """
@@ -129,12 +115,6 @@ class ImageData(object):
         current_data[image_model.image.index] = image_model.image.time_stamp / _SECONDS_PER_HOUR
         np.save(os.path.join(*ImageData.directory_path_to_data_path_tuple(analysis_model.output_directory, times=True)),
                 current_data)
-
-    @staticmethod
-    def write_times_from_xml(path, xml_object):
-
-        np.save(os.path.join(*ImageData.directory_path_to_data_path_tuple(
-            path, times=True)), xml_object.get_scan_times())
 
     @staticmethod
     def read_times(path):

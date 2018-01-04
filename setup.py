@@ -33,7 +33,6 @@ packages = [
     "scanomatic.models",
     "scanomatic.models.factories",
     "scanomatic.io",
-    "scanomatic.io.xml",
     "scanomatic.qc",
     "scanomatic.server",
     "scanomatic.image_analysis",
