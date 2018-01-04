@@ -31,8 +31,6 @@ scripts = [
         "scan-o-matic_analysis_patch_times",
         "scan-o-matic_compile_project",
         "scan-o-matic_analysis_skip_gs_norm",
-        "scan-o-matic_analysis_xml_upgrade",
-        "scan-o-matic_xml2image_data",
         "scan-o-matic_inspect_compilation"
     ]
 ]
@@ -43,7 +41,6 @@ packages = [
     "scanomatic.models",
     "scanomatic.models.factories",
     "scanomatic.io",
-    "scanomatic.io.xml",
     "scanomatic.qc",
     "scanomatic.server",
     "scanomatic.image_analysis",

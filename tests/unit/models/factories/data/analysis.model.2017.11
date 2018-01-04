@@ -1,0 +1,89 @@
+[GENERAL]
+focus_position
+one_time_grayscale = False
+stop_at_image = -1
+compile_instructions = /somprojects/SoMSuppData/SoMSuppData.project.compilation.instructions
+chain = True
+suppress_non_focal = False
+compilation = /somprojects/SoMSuppData/SoMSuppData.project.compilation
+xml_model = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'XML'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.analysis_factories
+	XMLModelFactory
+	p9
+	sb.
+image_data_output_item = Blob
+grid_images
+email = S''
+	.
+use_local_fixture = False
+image_data_output_measure = Sum
+plate_image_inclusion
+one_time_positioning = True
+output_directory = analysisBadCCC3
+grid_model = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'GRIDDING'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.analysis_factories
+	GridModelFactory
+	p9
+	sb.
+pinning_matrices = (lp1
+	(lp2
+	I32
+	aI48
+	aa(lp3
+	I32
+	aI48
+	aa(lp4
+	I32
+	aI48
+	aa(lp5
+	I32
+	aI48
+	aa.
+animate_focal = False
+
+[XML]
+slim_compartment = Blob
+slim_measure = Sum
+make_short_tag_version = True
+exclude_measures = (t.
+exclude_compartments = (t.
+
+[GRIDDING]
+use_utso = True
+median_coefficient = 0.99
+grid
+reference_grid_folder
+manual_threshold = 0.05
+gridding_offsets

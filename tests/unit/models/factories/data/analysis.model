@@ -1,0 +1,77 @@
+[GENERAL]
+focus_position
+cell_count_calibration_id = TEST
+one_time_grayscale = False
+stop_at_image = -1
+compile_instructions = /somprojects/SoMSuppData/SoMSuppData.project.compilation.instructions
+chain = False
+suppress_non_focal = False
+compilation = /somprojects/SoMSuppData/SoMSuppData.project.compilation
+image_data_output_item = Blob
+grid_images
+email = S''
+	.
+use_local_fixture = False
+image_data_output_measure = Sum
+cell_count_calibration = (S'2.58502986078e-13'
+	p1
+	S'0.0'
+	p2
+	S'0.0'
+	p3
+	S'0.0'
+	p4
+	S'72.9135126817'
+	p5
+	S'0.0'
+	p6
+	tp7
+	.
+plate_image_inclusion
+one_time_positioning = True
+output_directory = mostRecent
+grid_model = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'GRIDDING'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.analysis_factories
+	GridModelFactory
+	p9
+	sb.
+pinning_matrices = (lp1
+	(lp2
+	I32
+	aI48
+	aa(lp3
+	I32
+	aI48
+	aa(lp4
+	I32
+	aI48
+	aa(lp5
+	I32
+	aI48
+	aa.
+animate_focal = False
+
+[GRIDDING]
+use_utso = True
+median_coefficient = 0.99
+grid
+reference_grid_folder
+manual_threshold = 0.05
+gridding_offsets
+

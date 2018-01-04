@@ -1,0 +1,312 @@
+[Image]
+image = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'0'
+	sS'_subfactory'
+	p7
+	cscanomatic.models.factories.compile_project_factory
+	CompileImageFactory
+	p8
+	sb.
+fixture = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'Bb'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.fixture_factories
+	FixtureFactory
+	p9
+	sb.
+
+[0]
+index = 0
+path = /somprojects/bb/bb_0142_170424.4362.tiff
+time_stamp = 170424.4362
+
+[Bb]
+plates = (S'S"ccopy_reg\\n_reconstructor\\np1\\n(cscanomatic.generics.abstract_model_factory\\n_SectionsLink\\np2\\nc__builtin__\\nobject\\np3\\nNtRp4\\n(dp5\\nS\'_section_name\'\\np6\\nS\'Plate Area\'\\np7\\nsS\'_subfactory\'\\np8\\ncscanomatic.models.factories.fixture_factories\\nFixturePlateFactory\\np9\\nsb."\np1\n.'
+	tp1
+	.
+shape = (lp1
+	I6000
+	aI4800
+	a.
+scale = 1.0
+name = Bb
+orientation_marks_y = S'667.453823269, 5847.37706791, 726.990497528'
+	.
+orientation_marks_x = S'519.293989894, 3592.66868013, 1570.66706089'
+	.
+path = /root/.scan-o-matic/config/fixtures/bb.config
+coordinates_scale = 1.0
+grayscale = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'Grayscale'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.fixture_factories
+	GrayScaleAreaModelFactory
+	p9
+	sb.
+
+[Plate Area]
+y1 = 851.0
+index = 1
+x1 = 2278.0
+y2 = 3711.0
+x2 = 4168.0
+
+[Grayscale]
+width = -1.0
+section_length = -1.0
+y2 = 4131.0
+values = S'17.6133333333, 19.7591240876, 24.0, 29.0, 33.7, 41.7299270073, 47.88, 55.2116788321, 65.5933333333, 74.8933333333, 83.0072992701, 95.0733333333, 104.746666667, 115.291970803, 128.02, 139.605839416, 151.58, 161.64, 173.306666667, 184.973333333, 199.38, 210.313868613, 215.26'
+	.
+name = SilverFast
+y1 = 3331.0
+x2 = 0
+x1 = 0
+
+[Image #2]
+image = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'1'
+	sS'_subfactory'
+	p7
+	cscanomatic.models.factories.compile_project_factory
+	CompileImageFactory
+	p8
+	sb.
+fixture = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'Bb #2'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.fixture_factories
+	FixtureFactory
+	p9
+	sb.
+
+[1]
+index = 1
+path = /somprojects/bb/bb_0143_171620.2829.tiff
+time_stamp = 171620.2829
+
+[Bb #2]
+plates = (S'S"ccopy_reg\\n_reconstructor\\np1\\n(cscanomatic.generics.abstract_model_factory\\n_SectionsLink\\np2\\nc__builtin__\\nobject\\np3\\nNtRp4\\n(dp5\\nS\'_section_name\'\\np6\\nS\'Plate Area #2\'\\np7\\nsS\'_subfactory\'\\np8\\ncscanomatic.models.factories.fixture_factories\\nFixturePlateFactory\\np9\\nsb."\np1\n.'
+	tp1
+	.
+shape = (lp1
+	I6000
+	aI4800
+	a.
+scale = 1.0
+name = Bb
+orientation_marks_y = S'667.229594253, 5847.42906953, 726.463159604'
+	.
+orientation_marks_x = S'519.103229415, 3591.9000286, 1571.23933847'
+	.
+path = /root/.scan-o-matic/config/fixtures/bb.config
+coordinates_scale = 1.0
+grayscale = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'Grayscale #2'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.fixture_factories
+	GrayScaleAreaModelFactory
+	p9
+	sb.
+
+[Plate Area #2]
+y1 = 851.0
+index = 1
+x1 = 2278.0
+y2 = 3711.0
+x2 = 4168.0
+
+[Grayscale #2]
+width = -1.0
+section_length = -1.0
+y2 = 4131.0
+values = S'17.6133333333, 19.7591240876, 24.0, 29.0, 33.7, 41.7299270073, 47.88, 55.2116788321, 65.5933333333, 74.8933333333, 83.0072992701, 95.0733333333, 104.746666667, 115.291970803, 128.02, 139.605839416, 151.58, 161.64, 173.306666667, 184.973333333, 199.38, 210.313868613, 215.26'
+	.
+name = SilverFast
+y1 = 3331.0
+x2 = 0
+x1 = 0
+
+[Image #3]
+image = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'2'
+	sS'_subfactory'
+	p7
+	cscanomatic.models.factories.compile_project_factory
+	CompileImageFactory
+	p8
+	sb.
+fixture = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'Bb #3'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.fixture_factories
+	FixtureFactory
+	p9
+	sb.
+
+[2]
+index = 2
+path = /somprojects/bb/bb_0144_172819.1016.tiff
+time_stamp = 172819.1016
+
+[Bb #3]
+plates = (S'S"ccopy_reg\\n_reconstructor\\np1\\n(cscanomatic.generics.abstract_model_factory\\n_SectionsLink\\np2\\nc__builtin__\\nobject\\np3\\nNtRp4\\n(dp5\\nS\'_section_name\'\\np6\\nS\'Plate Area #3\'\\np7\\nsS\'_subfactory\'\\np8\\ncscanomatic.models.factories.fixture_factories\\nFixturePlateFactory\\np9\\nsb."\np1\n.'
+	tp1
+	.
+shape = (lp1
+	I6000
+	aI4800
+	a.
+scale = 1.0
+name = Bb
+orientation_marks_y = S'667.229594253, 5847.50830644, 726.46382288'
+	.
+orientation_marks_x = S'519.103229415, 3591.88057866, 1571.23723064'
+	.
+path = /root/.scan-o-matic/config/fixtures/bb.config
+coordinates_scale = 1.0
+grayscale = ccopy_reg
+	_reconstructor
+	p1
+	(cscanomatic.generics.abstract_model_factory
+	_SectionsLink
+	p2
+	c__builtin__
+	object
+	p3
+	NtRp4
+	(dp5
+	S'_section_name'
+	p6
+	S'Grayscale #3'
+	p7
+	sS'_subfactory'
+	p8
+	cscanomatic.models.factories.fixture_factories
+	GrayScaleAreaModelFactory
+	p9
+	sb.
+
+[Plate Area #3]
+y1 = 851.0
+index = 1
+x1 = 2278.0
+y2 = 3711.0
+x2 = 4168.0
+
+[Grayscale #3]
+width = -1.0
+section_length = -1.0
+y2 = 4131.0
+values = S'17.6133333333, 19.7591240876, 24.0, 29.0, 33.7, 41.7299270073, 47.88, 55.2116788321, 65.5933333333, 74.8933333333, 83.0072992701, 95.0733333333, 104.746666667, 115.291970803, 128.02, 139.605839416, 151.58, 161.64, 173.306666667, 184.973333333, 199.38, 210.313868613, 215.26'
+	.
+name = SilverFast
+y1 = 3331.0
+x2 = 0
+x1 = 0
+

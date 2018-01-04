@@ -5,7 +5,6 @@ import numpy as np
 #
 
 import mock_numpy_interface
-import scanomatic.io.xml.reader as xmlReader
 
 
 class Data_Bridge(mock_numpy_interface.NumpyArrayInterface):
@@ -21,12 +20,6 @@ class Data_Bridge(mock_numpy_interface.NumpyArrayInterface):
         For importing primary analysis data, this means that measures
         for the different compartments will be enumerated after each other
         along the 4th dimension as they come.
-
-        In the case of working directly on an XML file such as the
-        analysis.xml or the analysis_slim.xml a keyword argument 'time'
-        is required:
-
-            time:   The time index  for which to bridge the data
 
         """
 
@@ -68,21 +61,6 @@ class Data_Bridge(mock_numpy_interface.NumpyArrayInterface):
             self._data = np.array(plates)
             self.update_source = self._update_to_feature_dict
 
-        elif isinstance(self._source, xmlReader.XML_Reader):
-
-            if "time" not in kwargs:
-                raise Exception(
-                    "XML Reader objects can only be bridged for a time index"
-                    " at a time, you must supply keyword argument 'time'")
-
-            else:
-
-                self._time_index = kwargs["time"]
-                tmp_d = []
-                for p in self._source.get_data().values():
-                    tmp_d.append(p[..., self._time_index, :].copy())
-                self._data = np.array(tmp_d)
-
         else:
 
             raise Exception(
@@ -116,19 +94,6 @@ class Data_Bridge(mock_numpy_interface.NumpyArrayInterface):
         for i, p in enumerate(self._source):
 
             p[...] = self._data[i]
-
-    def _update_to_xml_reader(self):
-        """Updates the source inplace"""
-
-        for id_plate in self._data.shape[0]:
-
-            for d1 in self._data[id_plate].shape[0]:
-
-                for d2 in self._data[id_plate].shape[1]:
-
-                    self._source.set_data_value(
-                        id_plate, d1, d2, self._time_index,
-                        self._data[id_plate][d1, d2])
 
     def get_source(self):
         """Returns a reference to the source"""

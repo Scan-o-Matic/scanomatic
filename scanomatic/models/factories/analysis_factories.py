@@ -66,80 +66,10 @@ class GridModelFactory(AbstractModelFactory):
         return model.FIELD_TYPES.gridding_offsets
 
 
-class XMLModelFactory(AbstractModelFactory):
-    MODEL = analysis_model.XMLModel
-    STORE_SECTION_HEAD = "XML"
-    STORE_SECTION_SERIALIZERS = {
-        "exclude_compartments": (tuple, analysis_model.COMPARTMENTS),
-        "exclude_measures": (tuple, analysis_model.MEASURES),
-        "make_short_tag_version": bool,
-        "slim_measure": analysis_model.MEASURES,
-        "slim_compartment": analysis_model.COMPARTMENTS
-    }
-
-    @classmethod
-    def _validate_exclude_compartments(cls, model):
-        """
-
-        :type model: scanomatic.models.analysis_model.XMLModel
-        """
-
-        if (cls._is_tuple_or_list(model.exclude_compartments) and
-                all(compartment in analysis_model.COMPARTMENTS for compartment
-                    in model.exclude_compartments)):
-            return True
-        return model.FIELD_TYPES.exclude_compartments
-
-    @classmethod
-    def _validate_exclude_measures(cls, model):
-        """
-
-        :type model: scanomatic.models.analysis_model.XMLModel
-        """
-
-        if (cls._is_tuple_or_list(model.exclude_measures) and
-                all(measure in analysis_model.MEASURES for measure
-                    in model.exclude_measures)):
-            return True
-        return model.FIELD_TYPES.exclude_measures
-
-    @classmethod
-    def _validate_make_short_tag_version(cls, model):
-        """
-
-        :type model: scanomatic.models.analysis_model.XMLModel
-        """
-
-        if isinstance(model.make_short_tag_version, bool):
-            return True
-        return model.FIELD_TYPES.make_short_tag_version
-
-    @classmethod
-    def _validate_slim_measure(cls, model):
-        """
-
-        :type model: scanomatic.models.analysis_model.XMLModel
-        """
-        if model.slim_measure in analysis_model.MEASURES:
-            return True
-        return model.FIELD_TYPES.slim_measure
-
-    @classmethod
-    def _validate_slim_compartmente(cls, model):
-        """
-
-        :type model: scanomatic.models.analysis_model.XMLModel
-        """
-        if model.slim_compartment in analysis_model.COMPARTMENTS:
-            return True
-        return model.FIELD_TYPES.slim_compartment
-
-
 class AnalysisModelFactory(AbstractModelFactory):
     MODEL = analysis_model.AnalysisModel
     STORE_SECTION_HEAD = "GENERAL"
     _SUB_FACTORIES = {
-        analysis_model.XMLModel: XMLModelFactory,
         analysis_model.GridModel: GridModelFactory
     }
 
@@ -158,7 +88,6 @@ class AnalysisModelFactory(AbstractModelFactory):
         'one_time_grayscale': bool,
         'grid_images': list,
         'grid_model': analysis_model.GridModel,
-        'xml_model': analysis_model.XMLModel,
         'image_data_output_measure': analysis_model.MEASURES,
         'image_data_output_item': analysis_model.COMPARTMENTS,
         'chain': bool,
@@ -204,6 +133,19 @@ class AnalysisModelFactory(AbstractModelFactory):
         if os.path.abspath(path) != path:
             return os.path.join(base_path, path)
         return path
+
+    @classmethod
+    def all_keys_valid(cls, keys):
+
+        # Remove outdated but allowed
+        keys = tuple(key for key in keys if key != 'xml_model')
+
+        # Add introduced but not mandatory
+        keys = set(keys).union((
+            'cell_count_calibration_id', 'cell_count_calibration',
+        ))
+
+        return super(AnalysisModelFactory, cls).all_keys_valid(keys)
 
     @classmethod
     def _validate_compilation_file(cls, model):
@@ -342,16 +284,6 @@ class AnalysisModelFactory(AbstractModelFactory):
         return model.FIELD_TYPES.grid_model
 
     @classmethod
-    def _validate_xml_model(cls, model):
-        """
-
-        :type model: scanomatic.models.analysis_model.AnalysisModel
-        """
-        if cls._is_valid_submodel(model, "xml_model"):
-            return True
-        return model.FIELD_TYPES.xml_model
-
-    @classmethod
     def _validate_cell_count_calibration_id(cls, model):
         """
 
@@ -359,7 +291,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         """
         if model.cell_count_calibration_id in get_active_cccs():
             return True
-        return model.FIELD_TYPES.cell_count_calibration
+        return model.FIELD_TYPES.cell_count_calibration_id
 
     @classmethod
     def _validate_cell_count_calibration(cls, model):
