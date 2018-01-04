@@ -12,7 +12,6 @@ class TestCommonResources:
             'fixtures.js',
             'grayscales.js',
             'helpers.js',
-            'image.js',
             'qc_normAPIHelper.js',
             'qc_normDrawCurves.js',
             'qc_normHelper.js',
