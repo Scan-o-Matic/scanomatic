@@ -5,10 +5,9 @@
     <link rel="stylesheet" type="text/css" href="/style/main.css?ver=_-_VERSIONTAG_-_">
     <link rel="stylesheet" type="text/css" href="/style/status.css?ver=_-_VERSIONTAG_-_">
     <link rel="stylesheet" type="text/css" href="/style/logs.css?ver=_-_VERSIONTAG_-_">
-    <script src="/js/jquery-2.1.4.min.js"></script>
-    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/external/jquery.js"></script>
+    <script src="/js/external/jquery-ui.js"></script>
     <script src="/js/helpers.js?ver=_-_VERSIONTAG_-_"></script>
-    <script src="/js/maintain.js?ver=_-_VERSIONTAG_-_"></script>
     <script>
     </script>
     <title>Scan-o-Matic</title>
@@ -20,61 +19,9 @@
             <p><em>
                 If Scan-o-Matic currently have jobs it is working on or in
                 queue, it is generally not recommended to do anything to the
-                server.  In most cases it still should be alright, but some
-                cases remain to be fully tested and verified (especially
-                rebooting server while scanning projects are running).
-                Shutting down the server while scanning experiments are running
-                will always cause issues as the server is needed to acquire
-                scanners.
+                server. You will terminate all jobs and clear the queue.
             </em></p>
         </div>
-        <h2>Server</h2>
-        <div class="section-frame" id="server-actions">
-            <button type="button" name="Server" value="Reboot"
-                    onclick="javascript:server_reboot(this);">
-                Reboot
-            </button>
-            <button type="button" name="Server" value="Shutdown"
-                    onclick="javascript:server_shutdown(this);">
-                Shutdown
-            </button>
-            <button type="button" name="Server" value="Kill"
-                    onclick="javascript:server_kill(this);">
-                Kill
-            </button>
-            <button type="button" name="Server" value="Launch"
-                    onclick="javascript:server_launch(this);">
-                Launch
-            </button>
-        </div>
-        <h2>Application</h2>
-        <div class="section-frame" id="application-actions">
-            <p><em>
-                It should be fine to close or reboot the application while
-                things are running.
-            </em></p>
-
-            <button type="button" name="Application" value="Reboot"
-                    onclick="javascript:app_reboot(this);">
-                Reboot
-            </button>
-            <button type="button" name="Application" value="Shutdown"
-                    onclick="javascript:app_shutdown(this);">
-                Shutdown
-            </button>
-        </div>
-        <h2>Application & Server</h2>
-        <div class="section-frame" id="joint-actions">
-            <button type="button" name="Joint" value="Reboot"
-                    onclick="javascript:app_server_reboot(this);">
-                Reboot
-            </button>
-            <button type="button" name="Joint" value="Shutdown"
-                    onclick="javascript:app_server_shutdown(this);">
-                Shutdown
-            </button>
-        </div>
-
         <h2>Power Manager</h2>
         <div class="section-frame" id="power-manager">
             <p>
@@ -96,8 +43,7 @@
             </p>
         </div>
 
-        <h2>Upgrade</h2>
-        <div class="section-frame" id="upgrade"></div>
+        <h2>Logs</h2>
 
         <iframe src="/logs/system/server" class="log-frame"></iframe>
         <iframe src="/logs/system/ui_server" class="log-frame"></iframe>
@@ -105,6 +51,5 @@
 </body>
     <script>
         setVersionInformation("#version-info", "Scan-o-Matic ");
-        setUpgradeCheck();
     </script>
 </html>

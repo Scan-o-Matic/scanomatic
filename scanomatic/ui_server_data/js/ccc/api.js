@@ -2,6 +2,7 @@ const GetSliceImagePath = '/api/calibration/#0#/image/#1#/slice/get/#2#';
 const GetTranposedMarkerPath = '/api/data/fixture/calculate/';
 const GetGrayScaleAnalysisPath = '/api/data/grayscale/image/';
 
+export const HasJquery = () => !!$;
 
 class API {
     static get(url) {

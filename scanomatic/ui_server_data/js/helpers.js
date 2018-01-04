@@ -1,3 +1,41 @@
+
+class API {
+    static get(url) {
+        return new Promise((resolve, reject) => $.ajax({
+            url,
+            type: 'GET',
+            success: resolve,
+            error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
+        }));
+    }
+
+    static postFormData(url, formData) {
+        return new Promise((resolve, reject) => $.ajax({
+            url,
+            type: 'POST',
+            contentType: false,
+            enctype: 'multipart/form-data',
+            data: formData,
+            processData: false,
+            success: resolve,
+            error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
+        }));
+    }
+
+    static postJSON(url, json) {
+        return new Promise((resolve, reject) => $.ajax({
+            url,
+            type: 'POST',
+            data: JSON.stringify(json),
+            contentType: 'application/json',
+        })
+            .then(
+                resolve,
+                jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
+            ));
+    }
+}
+
 function get_path_suggestions(input, isDirectory, suffix, suffix_pattern, callback, prefix, checkHasAnalysis) {
 
     if (suffix == undefined)
@@ -128,19 +166,19 @@ function Map(arr, lambda_func) {
 }
 
 function setVersionInformation(target, preface) {
-    $.ajax({
-    url: "/api/app/version",
-    method: 'GET',
-    success: function(data) {
-
-        if (data["source_information"] && data["source_information"]["branch"])
-            branch = ", " + data["source_information"]["branch"];
-        else
-            branch = "";
-        $(target).html(preface + data["version"] + branch);
-    },
-    error: function(data) {
-        $(target).html("Error checking version");
-    }
-    });
+    API.get('/api/app/version')
+        .then((data) => {
+            let branch = '';
+            if (data.source_information && data.source_information.branch) {
+                branch = `, ${data.source_information.branch}`;
+            }
+            $(target).html(preface + data.version + branch);
+        })
+        .catch((reason) => {
+            if (reason) {
+                $(target).html(`Error checking version: ${reason}`);
+            } else {
+                $(target).html('Error checking version');
+            }
+        });
 }

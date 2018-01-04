@@ -5,7 +5,7 @@ services:
       - my-project:/somprojects/my/project
       - ./tests/system/data/testproject.project.compilation:/somprojects/testproject/testproject.project.compilation
       - ./tests/system/data/testproject.project.compilation.instructions:/somprojects/testproject/testproject.project.compilation.instructions
-      - ./tests/system/data/test.ccc:/root/.scan-o-matic/config/ccc/test.ccc
+      - ./tests/system/data/TESTUMz.ccc:/root/.scan-o-matic/config/ccc/TESTUMz.ccc
 
 volumes:
   my-project: {}

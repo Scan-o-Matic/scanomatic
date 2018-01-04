@@ -84,7 +84,6 @@ function update_fixture(options) {
             fixture_selected = true;
         } else {
             data.plates = [];
-            console.log(data.reason);
             fixture_selected = false;
         }
         fixture_plates = data.plates.slice();
@@ -306,41 +305,33 @@ function setAuxTime(input, key, factor) {
 
 function StartExperiment(button) {
     InputEnabled($(button), false);
-    var data = {
-            number_of_scans: number_of_scans,
-            time_between_scans: interval,
-            project_path: project_path,
-            description: $("#project-description").val(),
-            email: $("#project-email").val(),
-            pinning_formats: get_pinnings(),
-            fixture: $("#current-fixture").val(),
-            scanner: parseInt($("#current-scanner").val()),
-            plate_descriptions: get_descriptions(),
-            cell_count_calibration_id: $('#ccc-selection').val(),
-            auxillary_info: auxillary_info
-        }
+    const data = {
+        number_of_scans: number_of_scans,
+        time_between_scans: interval,
+        project_path: project_path,
+        description: $('#project-description').val(),
+        email: $('#project-email').val(),
+        pinning_formats: get_pinnings(),
+        fixture: $('#current-fixture').val(),
+        scanner: parseInt($('#current-scanner').val()),
+        plate_descriptions: get_descriptions(),
+        cell_count_calibration_id: $('#ccc-selection').val(),
+        auxillary_info: auxillary_info
+    }
 
-    $.ajax({
-        url: "/experiment?enqueue=1",
-        method: "POST",
-        data: JSON.stringify(data),
-        contentType: "application/json; charset=utf-8",
-        dataType: "json",
-        success: function(data) {
-            if (data.success) {
-                Dialogue("Experiment",
-                    "Experiment " + data.name +
-                        " enqueued, now go " +
-                        (true ?
-                            "get a cup of coffee and pat yourself on the back. Your work here is done." :
-                            "take a stroll outside to relax a bit. It seems you might need it."), "", "/status");
+    API.postJSON('/api/project/experiment', data)
+        .then((response) => {
+            Dialogue(
+                'Experiment',
+                'Experiment ' + response.name + ' enqueued, now go ' +
+                'get a cup of coffee and pat yourself on the back. Your work here is done.',
+                '', '/status');
+        })
+        .catch((reason) => {
+            if (reason) {
+                Dialogue('Analysis', 'Analysis Refused', reason, false, button);
             } else {
-                Dialogue("Analysis", "Analysis Refused", data.reason ? data.reason : "Unknown reason", false, button);
+                Dialogue('Analysis', 'Unexpected error', 'An error occurred processing request', false, button);
             }
-        },
-        error: function(data) {
-            Dialogue("Analysis", "Error", "An error occurred processing request", false, button);
-        }
-    });
-
+        });
 }

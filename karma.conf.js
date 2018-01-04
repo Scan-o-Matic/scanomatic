@@ -11,11 +11,11 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-        "js/jquery-2.2.3.js",
-        "js/d3.js",
-        "js/jquery.modal.js",
-        "js/jquery.treetable.js",
-        "js/jquery-ui.js",
+        "js/external/jquery.js",
+        "js/external/d3.js",
+        "js/external/jquery.modal.js",
+        "js/external/jquery.treetable.js",
+        "js/external/jquery-ui.js",
         { pattern: 'js/specs/**/*.spec.@(js|jsx)', watched: false },
     ],
 

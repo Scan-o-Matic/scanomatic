@@ -296,7 +296,7 @@ class Logger(object):
 
     def set_output_target(
             self, target, catch_stdout=False, catch_stderr=False,
-            mode='w', buffering=None):
+            mode='w', buffering=0):
 
         if self._log_file is not None:
             cache = self._log_file.close()
@@ -304,7 +304,7 @@ class Logger(object):
             cache = []
 
         if target is not None:
-            self._log_file = _ExtendedFileObject(target, mode, buffering=512 if buffering is None else buffering)
+            self._log_file = _ExtendedFileObject(target, mode, buffering)
             self._log_file.writelines(*cache)
         else:
             self._log_file = None

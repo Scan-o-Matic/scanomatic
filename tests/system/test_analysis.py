@@ -13,7 +13,7 @@ def cleanup_rpc(scanomatic):
     # Nothing before
     yield
     # Remove all jobs after
-    jobs = requests.get(scanomatic + '/status/jobs').json()['data']
+    jobs = requests.get(scanomatic + '/api/status/jobs').json()['jobs']
     for job in jobs:
         job_id = job['id']
         response = requests.get(scanomatic + '/api/job/{}/stop'.format(job_id))
@@ -22,10 +22,10 @@ def cleanup_rpc(scanomatic):
 
 
 def assert_has_job(scanomatic, job_settings):
-    uri = scanomatic + '/status/queue'
+    uri = scanomatic + '/api/status/queue'
     payload = requests.get(uri).json()
-    if payload.get('data', None):
-        for item in payload.get('data'):
+    if payload.get('queue', None):
+        for item in payload.get('queue'):
             if item.get('type') == 'Analysis':
                 model = item.get('content_model')
                 has_compilation = (
@@ -117,7 +117,7 @@ def test_post_analysis_job_request(scanomatic, browser):
     elem.send_keys('testproject/testproject.project.compilation')
 
     elem = Select(browser.find_element_by_id('ccc-selection'))
-    elem.select_by_visible_text('Testum testare, testis')
+    elem.select_by_visible_text('Testum Testis, Test Testare')
 
     elem = browser.find_element_by_id('analysis-directory')
     elem.send_keys('test_ccc_{}'.format(browser_name))
@@ -131,6 +131,6 @@ def test_post_analysis_job_request(scanomatic, browser):
 
     assert_has_job(scanomatic, {
         'compilation': 'testproject/testproject.project.compilation',
-        'cell_count_calibration_id': 'TEST',
+        'cell_count_calibration_id': 'TESTUMz',
         'output_directory': 'test_ccc_{}'.format(browser_name),
     })

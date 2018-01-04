@@ -3,7 +3,7 @@
     <head lang="en">
         <meta charset="UTF-8">
         <link rel="stylesheet" type="text/css" href="style/main.css?ver=_-_VERSIONTAG_-_">
-        <script src="/js/jquery-2.1.4.min.js"></script>
+        <script src="/js/external/jquery.js"></script>
         <script src="/js/helpers.js?ver=_-_VERSIONTAG_-_"></script>
         <title>Scan-o-Matic</title>
         <link rel="icon" type="image/ico" href="images/favicon.ico">
@@ -37,9 +37,7 @@
                         <span class="linky"><img src="/images/menu.png" class="nav-icon">Settings</span>
                         <div class="nav-dropdown-content">
                             <div class="nav-dropdown-item"><a href="/fixtures?ver=_-_VERSIONTAG_-_" target="page">Fixtures</a></div>
-                            {% if debug %}
                             <div class="nav-dropdown-item"><a href="/ccc?ver=_-_VERSIONTAG_-_" target="page" title="Cell Count Calibration">CCC</a></div>
-                            {% endif %}
                             <br>
                             <div class="nav-dropdown-item"><a href="/settings?ver=_-_VERSIONTAG_-_" target="page">Settings</a></div>
                             <div class="nav-dropdown-item"><a href="/maintain?ver=_-_VERSIONTAG_-_" target="page">Maintenance</a></div>

@@ -144,27 +144,21 @@ function Compile(button) {
 
     InputEnabled($(button), false);
 
-    data = {
+    const data = {
         local: localFixture ? 1 : 0,
-        fixture: localFixture ? "" : $(current_fixture_id).val(),
+        fixture: localFixture ? '' : $(current_fixture_id).val(),
         path: path,
-        chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
+        chain: $('#chain-analysis-request').is(':checked') ? 0 : 1,
         images: GetIncludedImageList()
     };
 
-    $.ajax({
-        url: "?run=1",
-        method: "POST",
-        data: data,
-        success: function (data) {
-            if (data.success) {
-                Dialogue("Compile", "Compilation enqueued", "", '/status');
+    API.postJSON('/api/project/compile', data)
+        .then(() => Dialogue('Compile', 'Compilation enqueued', '', '/status'))
+        .catch((reason) => {
+            if (reason) {
+                Dialogue('Compile', 'Compilation Refused', reason, false, button);
             } else {
-                Dialogue("Compile", "Compilation Refused", data.reason ? data.reason : "Unknown reason", false, button);
+                Dialogue('Compile', 'Unexpected error', 'An error occurred processing the request.', false, button);
             }
-
-        },
-        error: function(data) {
-            Dialogue("Compile", "Error", "An error occurred processing the request.", false, button);
-        }});
+        });
 }

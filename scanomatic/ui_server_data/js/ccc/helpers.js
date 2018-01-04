@@ -191,7 +191,10 @@ export function loadImage(url) {
     return new Promise((resolve, reject) => {
         const image = new Image();
         image.onload = () => resolve(image);
-        image.onerror = () => reject();
+        image.onerror = () => {
+            console.log(`Could not load ${url}`);
+            return reject();
+        };
         image.src = url;
     });
 }
