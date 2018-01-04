@@ -7,7 +7,6 @@ import numpy as np
 # SCANNOMATIC LIBRARIES
 #
 
-from scanomatic.io.grid_history import GriddingHistory
 from scanomatic.io.logger import Logger
 from scanomatic.io.fixtures import FixtureSettings
 from scanomatic.models.factories.fixture_factories import FixturePlateFactory
@@ -61,10 +60,6 @@ class FixtureImage(object):
         self._current_fixture_settings = None
         self._reference_overwrite_mode = reference_overwrite_mode
         """:type : scanomatic.io.fixtures.Fixture_Settings"""
-        if fixture:
-            self._history = GriddingHistory(fixture)
-        else:
-            self._history = None
 
         self.im = None
         self.im_path = None
@@ -406,7 +401,7 @@ class FixtureImage(object):
             self._logger.error(
                 "Grayscale detection failed due to: \n{0}".format(
                     traceback.format_exc()))
-                    
+
             current_model.grayscale.values = None
 
         if current_model.grayscale.values is None:
