@@ -98,11 +98,6 @@ function loadgridimage(i) {
     });
 }
 
-
-function can_set_regridding() {
-    return true;
-}
-
 function regridding_settings_data() {
     max = Math.max.apply(Math, gridplates);
     plates = [];
@@ -164,7 +159,7 @@ function set_regridding_source_directory(input) {
 
 function toggleManualRegridding(chkbox) {
     is_active = $(chkbox).prop('checked');
-    if (is_active && can_set_regridding()) {
+    if (is_active) {
         $('#manual-regridding-settings').show();
     } else {
         $('#manual-regridding-settings').hide();

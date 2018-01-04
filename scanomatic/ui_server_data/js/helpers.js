@@ -111,10 +111,6 @@ function InputEnabled(obj, isEnabled) {
 
 }
 
-function IsDisabled(obj) {
-    return obj.attr("disabled") == true;
-}
-
 function unselect(target) {
     target.val("");
 }
