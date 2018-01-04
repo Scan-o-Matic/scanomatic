@@ -158,8 +158,8 @@ function set_regridding_source_directory(input) {
 }
 
 function toggleManualRegridding(chkbox) {
-    is_active = $(chkbox).prop('checked');
-    if (is_active) {
+    const isActive = $(chkbox).prop('checked');
+    if (isActive) {
         $('#manual-regridding-settings').show();
     } else {
         $('#manual-regridding-settings').hide();
