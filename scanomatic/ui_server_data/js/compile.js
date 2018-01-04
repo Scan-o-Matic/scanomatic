@@ -120,7 +120,7 @@ function setOnAllImages(included) {
 }
 
 
-function toggleLocalFixture(caller) {
+function compileToggleLocalFixture(caller) {
     localFixture = $(caller).prop("checked");
     set_fixture_status();
     InputEnabled($(current_fixture_id), !localFixture);

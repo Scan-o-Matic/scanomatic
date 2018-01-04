@@ -2,7 +2,7 @@ var gridplates = null;
 var localFixture = true;
 var path = '';
 
-function toggleLocalFixture(caller) {
+function analysisToggleLocalFixture(caller) {
     localFixture = $(caller).prop('checked');
     InputEnabled($(current_fixture_id), !localFixture);
     set_fixture_plate_listing();
