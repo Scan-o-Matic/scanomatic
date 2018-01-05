@@ -1758,11 +1758,21 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         return np.unravel_index(badness.ravel().argsort()[::-1], badness.shape)
 
+    @staticmethod
+    def _data_lacks_data(data):
+        if isinstance(data, np.ndarray):
+            return (
+                data.size == 0 or not all(
+                    False if plate is None else plate.any() for plate in data
+                )
+            )
+        return True
+
     def set(self, data_type, data):
 
         if data_type == 'phenotypes':
 
-            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+            if self._data_lacks_data(data):
                 self._phenotypes = None
 
             else:
@@ -1777,7 +1787,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         elif data_type == 'normalized_phenotypes':
 
-            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+            if self._data_lacks_data(data):
                 self._normalized_phenotypes = None
             else:
                 self._normalized_phenotypes = data
@@ -1786,7 +1796,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         elif data_type == 'vector_phenotypes':
 
-            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+            if self._data_lacks_data(data):
                 self._vector_phenotypes = None
             else:
                 self._vector_phenotypes = data
@@ -1796,7 +1806,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         elif data_type == 'vector_meta_phenotypes':
 
-            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+            if self._data_lacks_data(data):
                 self._vector_meta_phenotypes = None
             else:
                 self._vector_meta_phenotypes = data
@@ -1806,7 +1816,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         elif data_type == 'smooth_growth_data':
 
-            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+            if self._data_lacks_data(data):
                 self._smooth_growth_data = None
             else:
                 self._smooth_growth_data = data
