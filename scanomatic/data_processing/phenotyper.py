@@ -1760,10 +1760,41 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     @staticmethod
     def _data_lacks_data(data):
+        """ This checks if there is data in the data.
+
+        Due to https://github.com/numpy/numpy/issues/10328
+        this check needs to be overly complex
+        """
+        def _arr_tester(arr):
+            try:
+                val = arr.any()
+                if isinstance(val, np.bool_):
+                    return val
+                elif val is None:
+                        return False
+                else:
+                    raise ValueError("Any check failed")
+            except ValueError:
+                return any(e.any() for e in arr.ravel())
+
+        def _plate_tester(p):
+            if p is None:
+                return False
+            elif isinstance(p, np.ndarray):
+                return _arr_tester(p)
+            elif isinstance(p, dict):
+                return any(
+                    False if v is None else _arr_tester(v) for v in p.values()
+                )
+            else:
+                raise ValueError("Unexpected plate data type {} ({})".format(
+                    type(p), p
+                ))
+
         if isinstance(data, np.ndarray):
             return (
-                data.size == 0 or not all(
-                    False if plate is None else plate.any() for plate in data
+                data.size == 0 or data.ndim == 0 or not any(
+                    _plate_tester(plate) for plate in data
                 )
             )
         return True
