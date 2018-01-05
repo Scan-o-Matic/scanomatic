@@ -2193,12 +2193,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 .format(phenotype)
             )
             shapes = tuple(self.plate_shapes)
-            map(
-                lambda idx, plate: plate.update(
-                    {phenotype: np.zeros(shapes[idx], dtype=np.int)}
-                ),
-                enumerate(self._phenotype_filter),
-            )
+            for shape, plate in zip(shapes, self._phenotype_filter):
+                if phenotype not in plate:
+                    plate.update({phenotype: np.zeros(shape, dtype=np.int)})
             previous_state = False
 
         if isinstance(previous_state, np.ndarray):
