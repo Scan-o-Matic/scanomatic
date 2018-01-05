@@ -1,104 +1,10 @@
 import re
 
 from scanomatic.models.fixture_models import FixtureModel, FixturePlateModel
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting, split_and_replace, \
-    float_list_serializer
+from scanomatic.generics.abstract_model_factory import (
+    AbstractModelFactory, rename_setting, float_list_serializer
+)
 from scanomatic.models import fixture_models
-
-
-class GridHistoryFactory(AbstractModelFactory):
-
-    MODEL = fixture_models.GridHistoryModel
-    STORE_SECTION_HEAD = [('project_id',), ('plate',)]
-    STORE_SECTION_SERIALIZERS = {
-        'project_id': str,
-        'pinning': tuple,
-        'plate': int,
-        'center_x': float,
-        'center_y': float,
-        'delta_x': float,
-        'delta_y': float,
-    }
-
-    @classmethod
-    def create(cls, **settings):
-
-        split_and_replace(settings, "center", "center_{0}", ("x", "y"))
-        split_and_replace(settings, "delta", "delta_{0}", ("x", "y"))
-
-        return super(GridHistoryFactory, cls).create(**settings)
-
-    @classmethod
-    def _validate_plate(cls, model):
-
-        """
-
-        :type model: scanomatic.models.analysis_model.GridHistoryModel
-        """
-        if model.plate >= 0:
-            return True
-        else:
-            return model.FIELD_TYPES.plate
-
-    @classmethod
-    def _validate_pinning(cls, model):
-
-        """
-
-        :type model: scanomatic.models.analysis_model.GridHistoryModel
-        """
-        if len(model.pinning) == 2 and all(isinstance(v, int) for v in model.pinning):
-            return True
-        else:
-            return model.FIELD_TYPES.pinning
-
-    @classmethod
-    def _validate_delta_x(cls, model):
-
-        """
-
-        :type model: scanomatic.models.analysis_model.GridHistoryModel
-        """
-        if model.delta_x > 0:
-            return True
-        else:
-            return model.FIELD_TYPES.delta_x
-
-    @classmethod
-    def _validate_delta_y(cls, model):
-
-        """
-
-        :type model: scanomatic.models.analysis_model.GridHistoryModel
-        """
-        if model.delta_y > 0:
-            return True
-        else:
-            return model.FIELD_TYPES.delta_y
-
-    @classmethod
-    def _validate_center_x(cls, model):
-
-        """
-
-        :type model: scanomatic.models.analysis_model.GridHistoryModel
-        """
-        if model.center_x > 0:
-            return True
-        else:
-            return model.FIELD_TYPES.center_x
-
-    @classmethod
-    def _validate_center_y(cls, model):
-
-        """
-
-        :type model: scanomatic.models.analysis_model.GridHistoryModel
-        """
-        if model.center_y > 0:
-            return True
-        else:
-            return model.FIELD_TYPES.center_y
 
 
 class FixturePlateFactory(AbstractModelFactory):

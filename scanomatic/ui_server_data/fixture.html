@@ -4,8 +4,8 @@
     <link rel="stylesheet" type="text/css" href="/style/main.css?ver=_-_VERSIONTAG_-_">
     <link rel="stylesheet" type="text/css" href="/style/fixtures.css?ver=_-_VERSIONTAG_-_">
     <title>Scan-o-Matic</title>
-    <script src="/js/jquery-2.1.4.min.js"></script>
-    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/external/jquery.js"></script>
+    <script src="/js/external/jquery-ui.js"></script>
     <script src="/js/helpers.js?ver=_-_VERSIONTAG_-_"></script>
     <script src="/js/simple_graphs.js?ver=_-_VERSIONTAG_-_"></script>
     <script src="/js/grayscales.js?ver=_-_VERSIONTAG_-_"></script>
@@ -50,15 +50,15 @@
                         Name:
                     </label>
                     <input name="new-fixture-name" id="new-fixture-name"
-                        onchange="OnEnterFixtureName();"
-                        onkeyup="OnEnterFixtureName();"/>
+                        onchange="SetAllowDetect();"
+                        onkeyup="SetAllowDetect();"/>
                 </li>
                 <li>
                     <label for="new-fixture-image">
                         Reference Image:
                     </label>
                     <input name="new-fixture-image" id="new-fixture-image" type="file" accept="image/tiff"
-                           onchange="set_fixture_image();"/>
+                           onchange="SetAllowDetect();"/>
                 </li>
                 <li>
                     <label for="new-fixture-markers">

@@ -58,22 +58,6 @@ def load_image_to_numpy(path, orientation=IMAGE_ROTATIONS.Portrait, dtype=np.flo
             return data.T.astype(dtype)
 
 
-def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
-
-    small_im = Quick_Scale_To_im(source_path, source_dpi=source_dpi,
-                                 target_dpi=target_dpi)
-
-    try:
-
-        np.save(target_path, small_im)
-
-    except:
-
-        _logger.error("Could not save scaled down image")
-
-        return -1
-
-
 def Quick_Scale_To_im(path=None, im=None, source_dpi=600, target_dpi=150,
                       scale=None):
 

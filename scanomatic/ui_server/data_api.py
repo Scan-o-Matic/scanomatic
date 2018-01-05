@@ -1,7 +1,8 @@
-from flask import request, Flask, jsonify, send_from_directory
+from flask import request, Flask, jsonify, send_from_directory, abort
 from types import ListType, DictType, StringTypes
 import numpy as np
 import os
+import glob
 import shutil
 from enum import Enum
 from ConfigParser import Error as ConfigError
@@ -40,7 +41,11 @@ from .general import (
     get_fixture_image_from_data,
     get_2d_list,
     string_parse_2d_list,
-    get_image_data_as_array)
+    get_image_data_as_array,
+    json_abort,
+    convert_path_to_url,
+    get_search_results,
+)
 
 
 _logger = Logger("Data API")
@@ -969,5 +974,37 @@ def add_routes(app, rpc_client, is_debug_mode):
             success=True,
             features=json_data(
                 AnalysisFeaturesFactory.deep_to_dict(gc_compartment.features)))
+
+    @app.route("/api/data/logs/<path:project>")
+    def _project_logs_api(project):
+
+        path = convert_url_to_path(project)
+        if not os.path.exists(path):
+
+            json_abort(400, reason='Invalid project')
+
+        is_project_analysis = phenotyper.path_has_saved_project_state(path)
+
+        if not os.path.isfile(path) or not path.endswith(".log"):
+
+            if is_project_analysis:
+                logs = glob.glob(
+                    os.path.join(path, Paths().analysis_run_log))
+                logs += glob.glob(
+                    os.path.join(path, Paths().phenotypes_extraction_log))
+            else:
+                logs = glob.glob(os.path.join(
+                    path, Paths().scan_log_file_pattern.format("*")))
+                logs += glob.glob(os.path.join(
+                    path, Paths().project_compilation_log_pattern.format("*")))
+
+            return jsonify(
+                is_project_analysis=is_project_analysis,
+                exits=['urls', 'logs'],
+                logs=[
+                    convert_path_to_url("/logs/project", log_path)
+                    for log_path in logs
+                ],
+                **get_search_results(path, "/api/data/logs"))
 
     # End of adding routes

@@ -1,6 +1,6 @@
 import 'jasmine-ajax';
 
-import { SetColonyCompression, SetColonyDetection, SetGridding } from '../ccc/api';
+import { SetColonyCompression, SetColonyDetection, SetGridding, HasJquery } from '../ccc/api';
 import * as API from '../ccc/api';
 
 const toHaveMethod = (util, customEqualityTesters) => ({
@@ -28,6 +28,10 @@ describe('API', () => {
 
     afterEach(() => {
         jasmine.Ajax.uninstall();
+    });
+
+    it('should have jquery', () => {
+        expect(HasJquery()).toBe(true);
     });
 
     describe('SetGridding', () => {

@@ -1,41 +1,34 @@
 var okIMG = "/images/yeastOK.png";
 var nokIMG = "/images/yeastNOK.png"
 
-function updateStatus(target, status_type, content_formatter) {
-    $.ajax({
-        url: "/status/" + status_type,
-        method: "GET",
-        success: function (data) {
-            if (data.success) {
-                $(target).html(content_formatter(data.data));
+function updateStatus(target, statusType, contentFormatter) {
+    API.get(`/api/status/${statusType}`)
+        .then(response => $(target).html(contentFormatter(response)))
+        .catch((reason) => {
+            if (reason) {
+                $(target).html("<em>Request refused<em>, reason: " + reason);
             } else {
-                $(target).html("<em>Request refused<em>, reason: " + data.reason);
+                $(target).html("<em>Error occurred in UI-server processing request</em>");
             }
-        },
-        error: function (data) {
-            $(target).html("<em>Error occurred in UI-server processing request</em>");
-        }
-    });
+        });
 }
 
 function serverStatusFormatter(data) {
-    return "<img src='" + (data.ResourceCPU ? okIMG : nokIMG) + "' class='icon'> CPU | <img src='" +
-        (data.ResourceMem ? okIMG : nokIMG) + "' class='icon'> Memory | Uptime: " + data.ServerUpTime;
+    return `<img src='${data.ResourceCPU ? okIMG : nokIMG}' class='icon'> CPU | <img src='${data.ResourceMem ? okIMG : nokIMG}' class='icon'> Memory | Uptime: ${data.ServerUpTime}`;
 }
 
-function scannerStatusFormatter(data) {
-    ret = "";
-
-    for (var i=0; i<data.length; i++) {
+function scannerStatusFormatter(response) {
+    const data = response.scanners;
+    if (data.length === 0) {
+        return '<em>No scanners are connected according to Scan-o-Matic. ' +
+            'If this feels wrong, verify your power-manager settings and that the power-manager is reachable.</em>';
+    }
+    let ret = '';
+    for (let i=0; i<data.length; i++) {
         ret += "<div class='scanner'><h3>" + data[i].scanner_name + "</h3>" +
             "<code>" + (data[i].power ? "Has power" : "Is offline") + "</code>" +
             "<p class=''>" + getOwnerName(data[i]) + "</p>" +
             "</div>";
-    }
-
-    if (data.length == 0) {
-        ret = "<em>No scanners are connected according to Scan-o-Matic. " +
-            "If this feels wrong, verify your power-manager settings and that the power-manager is reachable.</em>";
     }
 
     return ret;
@@ -44,36 +37,38 @@ function scannerStatusFormatter(data) {
 function getOwnerName(data) {
     if (data.owner) {
         if (data.email)
-            return "Owner: " + data.email;
+            return 'Owner: ' + data.email;
         else if (data.owner.content_model && data.owner.content_model.email)
-            return "Owner: " + data.owner.content_model.email;
+            return 'Owner: ' + data.owner.content_model.email;
         else
-            return "Owner unknown";
+            return 'Owner unknown';
     }
-    return "Free to use";
+    return 'Free to use';
 }
 
-function queueStatusFormatter(data) {
-    if (data.length == 0)
-        return "<em>No jobs in queue... if it feels like the job disappeared, it is because it may take a few seconds before it pops up below.</em>";
+function queueStatusFormatter(response) {
+    const data = response.queue;
+    if (data.length === 0) {
+        return '<em>No jobs in queue... if it feels like the job disappeared, it is because it may take a few seconds before it pops up below.</em>';
+    }
+    let ret = '';
 
-    ret = "";
-
-    for (var i=0;i<data.length;i++)
+    for (let i = 0; i < data.length; i += 1) {
         ret += queueItemAsHTML(data[i]);
-
+    }
     return ret;
 }
 
-function jobsStatusFormatter(data) {
+function jobsStatusFormatter(response) {
+    const data = response.jobs;
     if (data.length == 0)
-        return "<em>No jobs running</em>";
+        return '<em>No jobs running</em>';
 
-    ret = "";
+    let ret = '';
 
-    for (var i=0;i<data.length;i++)
+    for (let i = 0; i < data.length; i += 1) {
         ret += jobStatusAsHTML(data[i]);
-
+    }
     return ret;
 
 }
@@ -86,15 +81,15 @@ function jobStatusAsHTML(job) {
         + (job.running ? "Running" : "Not running") + "</code>";
 
     if (job.stopping)
-        ret += "&nbsp;<code>Stopping</code>";
+        ret += '&nbsp;<code>Stopping</code>';
 
     if (job.paused)
-        ret += "&nbsp;<code>Paused</code>";
+        ret += '&nbsp;<code>Paused</code>';
 
     if (job.progress != -1)
-        ret += " | <code>" + (job.progress * 100).toFixed(1) + "% progress</code>&nbsp;"
+        ret += ' | <code>' + (job.progress * 100).toFixed(1) + '% progress</code>&nbsp;'
     else
-        ret += " | <code>Progress unknown</code>&nbsp;";
+        ret += ' | <code>Progress unknown</code>&nbsp;';
 
     ret += job.label;
 
@@ -107,9 +102,8 @@ function jobStatusAsHTML(job) {
     return ret + "</div>";
 }
 
-function shortHash(job){
-
-    return " ("  + job.id.substring(job.id.length - 8) + ")";
+function shortHash(job) {
+    return ` (${job.id.substring(job.id.length - 8)})`;
 }
 
 function queueItemAsHTML(job) {

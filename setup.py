@@ -23,15 +23,7 @@ package_dependencies = [
 scripts = [
     os.path.join("scripts", p) for p in [
         "scan-o-matic",
-        'scan-o-matic_as_service_check',
         "scan-o-matic_server",
-        "scan-o-matic_experiment",
-        "scan-o-matic_analysis",
-        "scan-o-matic_analysis_move_plate",
-        "scan-o-matic_analysis_patch_times",
-        "scan-o-matic_compile_project",
-        "scan-o-matic_analysis_skip_gs_norm",
-        "scan-o-matic_inspect_compilation"
     ]
 ]
 
@@ -210,6 +202,7 @@ if len(sys.argv) > 1:
             "scanomatic": [
                 'ui_server_data/*.html',
                 'ui_server_data/js/*.js',
+                'ui_server_data/js/external/*.js',
                 'ui_server_data/style/*.css',
                 'ui_server_data/fonts/*',
                 'ui_server_data/templates/*',

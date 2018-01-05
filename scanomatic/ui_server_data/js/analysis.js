@@ -1,9 +1,9 @@
 var gridplates = null;
 var localFixture = true;
-var path = "";
+var path = '';
 
-function toggleLocalFixture(caller) {
-    localFixture = $(caller).prop("checked");
+function analysisToggleLocalFixture(caller) {
+    localFixture = $(caller).prop('checked');
     InputEnabled($(current_fixture_id), !localFixture);
     set_fixture_plate_listing();
 }
@@ -11,37 +11,37 @@ function toggleLocalFixture(caller) {
 function set_fixture_plate_listing() {
     callback = function(data, status) {
         if (!data.success) {
-            $("#fixture-error-message").html("<em>" + data.reason + "</em>").show();
+            $('#fixture-error-message').html('<em>' + data.reason + '</em>').show();
          } else {
-            $("#fixture-error-message").hide();
+            $('#fixture-error-message').hide();
             gridplates = Map(data.plates, function (e) {return e.index;});
-            if ($("#manual-regridding").prop("checked")) {
-                $("#manual-regridding-settings").show();
+            if ($('#manual-regridding').prop('checked')) {
+                $('#manual-regridding-settings').show();
             } else {
-                $("#manual-regridding-settings").hide();
+                $('#manual-regridding-settings').hide();
             }
-            parent = $("#manual-regridding-plates");
+            parent = $('#manual-regridding-plates');
             parent.empty();
             Map(gridplates, function(e) {append_regridding_ui(parent, e);});
          }
     };
 
     error_callback = function() {
-        $("#fixture-error-message").html("<em>Fixture file missing</em>").show();
+        $('#fixture-error-message').html('<em>Fixture file missing</em>').show();
     }
 
     if (localFixture) {
         if (path.length > 5) {
-            $.get("/api/data/fixture/local/" + path.substring(5, path.length), callback).fail(error_callback);
+            $.get('/api/data/fixture/local/' + path.substring(5, path.length), callback).fail(error_callback);
         } else {
             error_callback();
         }
     } else {
         fixt = $(current_fixture_id).val();
         if (fixt) {
-            $.get("/api/data/fixture/get/" + fixt, callback).fail(error_callback);
+            $.get('/api/data/fixture/get/' + fixt, callback).fail(error_callback);
         } else {
-            $("#fixture-error-message").hide();
+            $('#fixture-error-message').hide();
         }
     }
 }
@@ -49,9 +49,9 @@ function set_fixture_plate_listing() {
 function append_regridding_ui(parent, plate_index) {
     parent.append(
         "<div class='plate-regridding' id='plate-regridding-" + plate_index + "' onmouseleave='hidegridimage();'>" +
-            "<fieldset>" +
+            '<fieldset>' +
             "<img class='grid_icon' src='/images/grid_icon.png' onmouseenter='loadgridimage(" + (plate_index - 1) + ");'>" +
-            "<legend>Plate " +  plate_index + "</legend>" +
+            '<legend>Plate ' +  plate_index + '</legend>' +
 
             "<input type='radio' name='plate-regridding-radio-" + plate_index + "' value='Keep' checked='checked'>" +
             "<label id='plate-regridding-keep" + plate_index + "'>Keep previous</label><br>" +
@@ -63,8 +63,8 @@ function append_regridding_ui(parent, plate_index) {
 
             "<input type='radio' name='plate-regridding-radio-" + plate_index + "' value='New'>" +
             "<label id='plate-regridding-new" + plate_index + "'>New grid from scratch</label><br>" +
-            "</fieldset>" +
-        "</div>"
+            '</fieldset>' +
+        '</div>'
     );
 }
 
@@ -73,7 +73,7 @@ show_gridimage = false;
 function hidegridimage() {
 
     show_gridimage = false;
-    $("#manual-regridding-image").hide();
+    $('#manual-regridding-image').hide();
 
 }
 
@@ -81,26 +81,21 @@ function loadgridimage(i) {
 
     show_gridimage = true;
     curDir = get_dir();
-    $("#manual-regridding-image").empty();
+    $('#manual-regridding-image').empty();
     $.get(
-        "/api/results/gridding/" + i + curDir.substring(4, curDir.length) + "/" + $("#manual-regridding-source-folder").val(),
+        '/api/results/gridding/' + i + curDir.substring(4, curDir.length) + '/' + $('#manual-regridding-source-folder').val(),
         function (data) {
-            $("#manual-regridding-image").append(data.documentElement);
+            $('#manual-regridding-image').append(data.documentElement);
         }
     ).fail(function() {
-        $("#manual-regridding-image").append("<p class='error-message'>Could not find the grid image! Maybe gridding failed last time?</p>");
+        $('#manual-regridding-image').append("<p class='error-message'>Could not find the grid image! Maybe gridding failed last time?</p>");
     }).always(function() {
         if (show_gridimage) {
-            $("#manual-regridding-image").show();
+            $('#manual-regridding-image').show();
         } else {
-            $("#manual-regridding-image").hide();
+            $('#manual-regridding-image').hide();
         }
     });
-}
-
-
-function can_set_regridding() {
-    return true;
 }
 
 function regridding_settings_data() {
@@ -114,18 +109,18 @@ function regridding_settings_data() {
 
 function get_regridding_setting(i) {
 
-    e = $("#plate-regridding-" + i);
+    e = $('#plate-regridding-' + i);
     if (e.length != 0) {
-        switch (e.find("input[name=plate-regridding-radio-" + i + "]:checked").val()) {
-            case "Keep":
+        switch (e.find('input[name=plate-regridding-radio-' + i + ']:checked').val()) {
+            case 'Keep':
                 return [0, 0];
-            case "Offset":
+            case 'Offset':
                 return [
-                    parseInt(e.find("#plate-regridding-offset-d1-" + i).val()),
-                    parseInt(e.find("#plate-regridding-offset-d2-" + i).val()),
+                    parseInt(e.find('#plate-regridding-offset-d1-' + i).val()),
+                    parseInt(e.find('#plate-regridding-offset-d2-' + i).val()),
                 ];
 
-            case "New":
+            case 'New':
                 return null;
             default:
                 return null;
@@ -136,7 +131,7 @@ function get_regridding_setting(i) {
 }
 
 function get_dir() {
-    return $("#compilation").val().replace(/\/[^\/]*$/,"");
+    return $('#compilation').val().replace(/\/[^\/]*$/,'');
 }
 
 function set_regridding_source_directory(input) {
@@ -144,16 +139,16 @@ function set_regridding_source_directory(input) {
     get_path_suggestions(
         input,
         true,
-        "",
+        '',
         null,
         function(data, status) {
 
             //TODO: For some reason popup don't appear...
 
-            regrid_chkbox = $("#manual-regridding");
+            regrid_chkbox = $('#manual-regridding');
             regrid_chkbox
-                .prop("disabled", data.has_analysis ? false : true)
-                .prop("checked", data.has_analysis ? true : false);
+                .prop('disabled', data.has_analysis ? false : true)
+                .prop('checked', data.has_analysis ? true : false);
 
             toggleManualRegridding(regrid_chkbox);
 
@@ -163,11 +158,11 @@ function set_regridding_source_directory(input) {
 }
 
 function toggleManualRegridding(chkbox) {
-    is_active = $(chkbox).prop("checked");
-    if (is_active && can_set_regridding()) {
-        $("#manual-regridding-settings").show();
+    const isActive = $(chkbox).prop('checked');
+    if (isActive) {
+        $('#manual-regridding-settings').show();
     } else {
-        $("#manual-regridding-settings").hide();
+        $('#manual-regridding-settings').hide();
     }
 }
 
@@ -176,11 +171,11 @@ function set_analysis_directory(input, validate) {
     get_path_suggestions(
         input,
         true,
-        "",
+        '',
         null,
         function(data, status) {
             if (validate) {
-                InputEnabled($("#submit-button2"), data.valid_parent && data.exists);
+                InputEnabled($('#submit-button2'), data.valid_parent && data.exists);
             }
 
     });
@@ -196,7 +191,7 @@ function set_file_path(input, suffix, suffix_pattern, toggle_regridding_if_not_e
         function(data, status) {
 
             if (toggle_regridding_if_not_exists) {
-                $("#manual-regridding-source-folder").prop("disabled", !data.exists);
+                $('#manual-regridding-source-folder').prop('disabled', !data.exists);
             }
 
             if (localFixture) {
@@ -210,89 +205,66 @@ function Analyse(button) {
 
     InputEnabled($(button), false);
 
-    data = {
-            compilation: $("#compilation").val(),
-            compile_instructions: $("#compile-instructions").val(),
-            output_directory: $("#analysis-directory").val(),
-            ccc: $('#ccc-selection').val(),
-            chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
-            one_time_positioning: $("#one_time_positioning").is(':checked') ? 0 : 1,
+    const data = {
+        compilation: $('#compilation').val(),
+        compile_instructions: $('#compile-instructions').val(),
+        output_directory: $('#analysis-directory').val(),
+        ccc: $('#ccc-selection').val(),
+        chain: $('#chain-analysis-request').is(':checked') ? 0 : 1,
+        one_time_positioning: $('#one_time_positioning').is(':checked') ? 0 : 1,
     };
 
-    if ($("#manual-regridding").prop("checked")) {
-        data['reference_grid_folder'] = $("#manual-regridding-source-folder").val();
+    if ($('#manual-regridding').prop('checked')) {
+        data['reference_grid_folder'] = $('#manual-regridding-source-folder').val();
         data['gridding_offsets'] = regridding_settings_data();
     }
 
-    console.log(data);
-
-    $.ajax({
-        url: '?action=analysis',
-        data: data,
-        method: 'POST',
-        success: function(data) {
-            if (data.success) {
-                Dialogue("Analysis", "Analysis Enqueued", "", "/status");
-            }
-            else {
-                Dialogue("Analysis", "Unexpected non-success", "", false, button);
-            }
-        },
-        error: function(data) {
-            if (data.reason) {
-                Dialogue("Analysis", "Analysis Refused", data.reason, false, button);
+    API.postJSON('/api/project/analysis', data)
+        .then(() => Dialogue('Analysis', 'Analysis Enqueued', '', '/status'))
+        .catch((reason) => {
+            if (reason) {
+                Dialogue('Analysis', 'Analysis Refused', reason, false, button);
             } else {
-                Dialogue("Analysis", "Error", "An error occurred processing request", false, button);
+                Dialogue('Analysis', 'Error', 'An error occurred processing request', false, button);
             }
-        }
-
-    });
-
+        });
 }
 
 function Extract(button) {
     InputEnabled($(button), false)
 
-    $.ajax({
-        url: '?action=extract',
-        data: {
-            analysis_directory: $("#extract").val(),
+    API.postJSON(
+        '/api/project/feature_extract',
+        {
+            analysis_directory: $('#extract').val(),
             keep_qc: $('#keep-qc').is(':checked') ? 0 : 1,
         },
-        method: 'POST',
-        success: function(data, textStatus) {
-            if (data.success) {
-                Dialogue("Feature Extraction", "Extraction Enqueued", "", "/status");
+    )
+        .then(() => Dialogue('Feature Extraction', 'Extraction Enqueued', '', '/status'))
+        .catch((reason) => {
+            if (reason) {
+                Dialogue('Feature Extraction', 'Extraction refused', reason, false, button);
             } else {
-                Dialogue("Feature Extraction", "Extraction refused", data.reason ? data.reason : "Unknown reason", false, button);
+                Dialogue('Feature Extraction', 'Unexpected error', 'An error occurred processing request', false, button);
             }
-        },
-        error: function(data, textStatus, errorThrown) {
-            Dialogue("Feature Extraction", textStatus, "An error occurred processing request", false, button);
-        }
-
-    });
+        });
 }
 
 function BioscreenExtract(button) {
     InputEnabled($(button), false)
 
-    $.ajax({
-        url: '?action=bioscreen_extract',
-        data: {
-            bioscreen_file: $("#bioscreen_extract").val()
-               },
-        method: 'POST',
-        success: function(data) {
-            if (data.success) {
-                Dialogue("Feature Extraction", "Extraction Enqueued", "", "/status");
-            } else {
-                Dialogue("Feature Extraction", "Extraction refused", data.reason ? data.reason : "Unknown reason", false, button);
-            }
+    API.postJSON(
+        '/api/project/feature_extract/bioscreen',
+        {
+            bioscreen_file: $('#bioscreen_extract').val(),
         },
-        error: function(data) {
-            Dialogue("Feature Extraction", "Error", "An error occurred processing request", false, button);
-        }
-
-    });
+    )
+        .then(() => Dialogue('Feature Extraction', 'Extraction Enqueued', '', '/status'))
+        .catch((reason) => {
+            if (reason) {
+                Dialogue('Feature Extraction', 'Extraction refused', reason, false, button);
+            } else {
+                Dialogue('Feature Extraction', 'Unexpected error', 'An error occurred processing request', false, button);
+            }
+        });
 }
