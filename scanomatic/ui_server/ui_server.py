@@ -50,9 +50,9 @@ def init_logging():
     _LOGGER.pause()
     backup_file(Paths().log_ui_server)
     _LOGGER.set_output_target(
-        Paths().log_ui_server,
-        catch_stdout=_DEBUG_MODE is False, catch_stderr=_DEBUG_MODE is False)
-    _LOGGER.surpress_prints = _DEBUG_MODE is False
+        Paths().log_ui_server)
+    #    catch_stdout=_DEBUG_MODE is False, catch_stderr=_DEBUG_MODE is False)
+    # _LOGGER.surpress_prints = _DEBUG_MODE is False
     _LOGGER.resume()
 
 
