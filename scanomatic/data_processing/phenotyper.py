@@ -2151,17 +2151,25 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
               previously were `Filter.OK`. This may of may not have been true.
 
         """
+        def _safe_position(p):
+            try:
+                return int(p)
+            except TypeError:
+                if isinstance(p, np.ndarray):
+                    return p.astype(int)
+                else:
+                    return p
+
         self._logger.info("Setting {} for plate {}, position {}".format(
             position_mark, plate, positions
         ))
-        print positions
-        return True
 
         if position_mark in (Filter.Empty, Filter.NoGrowth) and phenotype is not None:
             self._logger.error("{0} can only be set for all phenotypes, not specifically for {1}".format(
                 position_mark, phenotype))
             return False
 
+        positions = tuple(_safe_position(p) for p in positions)
         if phenotype is None:
 
             for phenotype in self.phenotypes:
