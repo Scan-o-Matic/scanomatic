@@ -42,14 +42,6 @@ class Paths(SingeltonOneInit):
         self.desktop_file = "scan-o-matic.desktop"
         self.desktop_file_path = os.path.join(
             self.config, self.desktop_file)
-        self.install_filezilla = os.path.join(
-            self.config, "install_filezilla.sh")
-
-        self.scanomatic = "scan_o_matic"
-        self.analysis = "scan-o-matic_analysis"
-        self.experiment = "scan-o-matic_experiment"
-        self.make_project = "scan-o-matic_compile_project"
-        self.install_autostart = "scan-o-matic_autostart"
 
         self.config_main_app = os.path.join(self.config, 'main.config')
         self.config_mac = os.path.join(self.config, 'mac_address.config')
@@ -85,8 +77,6 @@ class Paths(SingeltonOneInit):
         self.ui_ccc_file = 'CCC.html'
 
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
-        self.martin = os.path.join(self.images, "martin3.png")
-        self.logo = os.path.join(self.images, "scan-o-matic.png")
 
         self.fixture_conf_file_suffix = ".config"
         self.fixture_conf_file_rel_pattern = "{0}" + \
@@ -98,26 +88,16 @@ class Paths(SingeltonOneInit):
             self.fixtures, self.fixture_image_file_rel_pattern)
         self.fixture_tmp_scan_image = \
             self.fixture_image_file_pattern.format(".tmp")
-        self.fixture_grid_history_pattern = "{0}.grid.history"
 
         self.log = os.path.join(self.root, "logs")
         Paths._make_directory(self.log)
         self.log_ui_server = os.path.join(self.log, "ui_server.log")
         self.log_server = os.path.join(self.log, "server.log")
-        self.log_scanner_out = os.path.join(self.log, "scanner_{0}.stdout")
-        self.log_scanner_err = os.path.join(self.log, "scanner_{0}.stderr")
-
-        self.log_relaunch = os.path.join(self.log, "relaunch.log")
-        self.log_project_progress = os.path.join(self.log, "progress.projects")
 
         self.experiment_scan_image_pattern = "{0}_{1}_{2:.4f}.tiff"
         self.experiment_analysis_relative_path = "analysis"
 
-        self.analysis_polynomial = os.path.join(
-            self.config, "calibration.polynomials")
-        self.analysis_calibration_data = os.path.join(
-            self.config, "{0}calibration.data")
-        self.analysis_graycsales = os.path.join(
+        self.analysis_grayscales = os.path.join(
             self.config, "grayscales.cfg")
 
         self.ccc_folder = os.path.join(self.config, "ccc")
@@ -133,9 +113,7 @@ class Paths(SingeltonOneInit):
         self.ccc_image_plate_grid_pattern = os.path.join(
             self.ccc_folder,
             "{0}.{1}.plate{2}.grid.npy")
-        self.ccc_external_data_pattern = os.path.join(
-            self.ccc_folder, "{0}.external_data.{1}"
-        )
+
         self.analysis_run_log = 'analysis.log'
         self.analysis_model_file = 'analysis.model'
 

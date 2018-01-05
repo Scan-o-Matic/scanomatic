@@ -5,8 +5,6 @@ import os
 #
 
 from paths import Paths
-import app_config
-import grid_history
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.io.logger import Logger
 import ConfigParser
@@ -32,7 +30,6 @@ class FixtureSettings(object):
             self._conf_path = Paths().get_fixture_path(name)
 
         self.model = self._load_model(name, overwrite)
-        self.history = grid_history.GriddingHistory(self)
 
     def _load_model(self, name, overwrite=False):
         """:rtype : scanomatic.models.fixture_models.FixtureModel"""

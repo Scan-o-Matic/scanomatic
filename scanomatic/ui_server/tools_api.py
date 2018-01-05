@@ -36,22 +36,15 @@ def add_routes(app):
             what = Paths().log_server
         elif what == "ui_server":
             what = Paths().log_ui_server
-        elif what == "scanner_error":
-            if detail is None:
-                return jsonify(success=False, is_endpoint=True,
-                               reason="{0} needs to know what scanner log detail".format(what))
-            what = Paths().log_scanner_err.format(detail)
-        elif what == "scanner":
-            if detail is None:
-                return jsonify(success=False, is_endpoint=True,
-                               reason="{0} needs to know what scanner log detail".format(what))
-            what = Paths().log_scanner_out.format(detail)
         else:
 
             return jsonify(**json_response(
                 ['urls'],
                 dict(
-                    urls=["{0}/{1}".format(base_url, w) for w in ('server', 'ui_server', 'scanner', 'scanner_error')]
+                    urls=[
+                        "{0}/{1}".format(base_url, w) for w in
+                        ('server', 'ui_server')
+                    ],
                 )
             ))
 

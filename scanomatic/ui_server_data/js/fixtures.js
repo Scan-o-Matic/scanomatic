@@ -244,15 +244,6 @@ function hasGrayScale() {
     return false;
 }
 
-function removeGrayScale() {
-    for (var len=areas.length, i=0;i<len;i++) {
-        if (areas[i].grayscale)
-            areas.grayscale = false;
-            break;
-    }
-    InputEnabled($(grayscale_type_id), true);
-}
-
 function testAsGrayScale(plate) {
     if (isInt(plate)) {
         if (isArea(plate))
@@ -296,10 +287,6 @@ function testAsGrayScale(plate) {
     }
 }
 
-function OnEnterFixtureName() {
-    SetAllowDetect();
-}
-
 function SetAllowDetect() {
 
     var disallow = $(new_fixture_image_id).val() == "" || $(new_fixture_name).val() == "";
@@ -324,7 +311,7 @@ function add_fixture() {
     unselect(options);
     unselect($(new_fixture_image_id));
     $(save_fixture_action_id).val("create");
-    set_fixture_image();
+    SetAllowDetect();
     $(new_fixture_detect_id).val("Detect");
     $(new_fixture_data_id).show();
     $(selected_fixture_div_id).hide();
@@ -364,10 +351,6 @@ function get_fixture() {
         });
 }
 
-function set_fixture_image() {
-    SetAllowDetect();
-}
-
 function detect_markers() {
 
     var formData = new FormData();
@@ -404,10 +387,6 @@ function detect_markers() {
             load_fixture($(new_fixture_name).val());
             draw_fixture();
         }});
-}
-
-function endsWith(str, suffix) {
-    return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 
 function load_fixture(name, img_data) {

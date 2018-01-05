@@ -9,7 +9,6 @@ class VersionChangesModel(model.Model):
     def __init__(self, **kwargs):
 
         self.first_pass_change_1 = 0.997
-        self.fixture_grid_history_change_1 = 0.998
         self.oldest_allow_fixture = 0.9991
 
         super(VersionChangesModel, self).__init__()
