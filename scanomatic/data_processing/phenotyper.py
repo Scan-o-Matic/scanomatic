@@ -1799,88 +1799,114 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             )
         return True
 
+    def _set_phenotypes(self, data):
+        allowed = False
+        if self._data_lacks_data(data):
+            self._phenotypes = None
+        else:
+            self._phenotypes = self._convert_phenotype_to_current(data)
+            allowed = True
+        self._init_remove_filter_and_undo_actions()
+        self._init_default_offsets()
+        return allowed
+
+    def _set_normalized_phenotypes(self, data):
+        allowed = False
+        if self._data_lacks_data(data):
+            self._normalized_phenotypes = None
+        else:
+            self._normalized_phenotypes = data
+            allowed = True
+        self._init_default_offsets()
+        return allowed
+
+    def _set_vector_phenotypes(self, data):
+        allowed = False
+        if self._data_lacks_data(data):
+            self._vector_phenotypes = None
+        else:
+            self._vector_phenotypes = data
+            allowed = True
+        self._init_remove_filter_and_undo_actions()
+        self._init_default_offsets()
+        return allowed
+
+    def _set_vector_meta_phenotypes(self, data):
+        allowed = False
+        if self._data_lacks_data(data):
+            self._vector_meta_phenotypes = None
+        else:
+            self._vector_meta_phenotypes = data
+            allowed = True
+
+        self._init_remove_filter_and_undo_actions()
+        self._init_default_offsets()
+        return allowed
+
+    def _set_smooth_growth_data(self, data):
+            if self._data_lacks_data(data):
+                self._smooth_growth_data = None
+                return False
+            else:
+                self._smooth_growth_data = data
+                return True
+
+    def _set_phenotype_filter_undo(self, data):
+        allowed = False
+        if isinstance(data, tuple) and all(isinstance(q, deque) for q in data):
+            self._phenotype_filter_undo = data
+            allowed = True
+        else:
+            self._logger.warning("Not a proper undo history")
+
+        self._init_remove_filter_and_undo_actions()
+        return allowed
+
+    def _set_phenotype_filter(self, data):
+        allowed = False
+        if isinstance(data, np.ndarray) and (data.size == 0 or data.size == 1 and not data.shape):
+            self._phenotype_filter = None
+        elif all(True if plate is None else isinstance(plate, dict) for plate in data):
+            self._phenotype_filter = data
+            allowed = True
+        else:
+            self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
+            allowed = True
+        self._init_remove_filter_and_undo_actions()
+        return allowed
+
+    def _set_meta_data(self, data):
+        if isinstance(data, MetaData) or data is None:
+            self._meta_data = data
+            return True
+        else:
+            self._logger.warning("Not a valid meta data type")
+            return False
+
     def set(self, data_type, data):
 
         if data_type == 'phenotypes':
-
-            if self._data_lacks_data(data):
-                self._phenotypes = None
-
-            else:
-                self._phenotypes = self._convert_phenotype_to_current(data)
-
-            self._init_remove_filter_and_undo_actions()
-            self._init_default_offsets()
-
+            return self._set_phenotypes(data)
         elif data_type == 'reference_offsets':
-
             self._reference_surface_positions = data
-
+            return True
         elif data_type == 'normalized_phenotypes':
-
-            if self._data_lacks_data(data):
-                self._normalized_phenotypes = None
-            else:
-                self._normalized_phenotypes = data
-
-            self._init_default_offsets()
-
+            return self._set_normalized_phenotypes(data)
         elif data_type == 'vector_phenotypes':
-
-            if self._data_lacks_data(data):
-                self._vector_phenotypes = None
-            else:
-                self._vector_phenotypes = data
-
-            self._init_remove_filter_and_undo_actions()
-            self._init_default_offsets()
-
+            return self._set_vector_phenotypes(data)
         elif data_type == 'vector_meta_phenotypes':
-
-            if self._data_lacks_data(data):
-                self._vector_meta_phenotypes = None
-            else:
-                self._vector_meta_phenotypes = data
-
-            self._init_remove_filter_and_undo_actions()
-            self._init_default_offsets()
-
+            return self._set_vector_meta_phenotypes(data)
         elif data_type == 'smooth_growth_data':
-
-            if self._data_lacks_data(data):
-                self._smooth_growth_data = None
-            else:
-                self._smooth_growth_data = data
-
+            return self._set_smooth_growth_data(data)
         elif data_type == "phenotype_filter_undo":
-
-            if isinstance(data, tuple) and all(isinstance(q, deque) for q in data):
-                self._phenotype_filter_undo = data
-            else:
-                self._logger.warning("Not a proper undo history")
-
-            self._init_remove_filter_and_undo_actions()
-
+            return self._set_phenotype_filter_undo(data)
         elif data_type == "phenotype_filter":
-
-            if isinstance(data, np.ndarray) and (data.size == 0 or data.size == 1 and not data.shape):
-                self._phenotype_filter = None
-            elif all(True if plate is None else isinstance(plate, dict) for plate in data):
-                self._phenotype_filter = data
-            else:
-                self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
-
-            self._init_remove_filter_and_undo_actions()
-
+            return self._set_phenotype_filter(data)
         elif data_type == "meta_data":
-
-            if isinstance(data, MetaData) or data is None:
-                self._meta_data = data
-            else:
-                self._logger.warning("Not a valid meta data type")
+            return self._set_meta_data(data)
         else:
-
             self._logger.warning('Unknown type of data {0}'.format(data_type))
+            return False
 
     def _convert_phenotype_to_current(self, data):
 
