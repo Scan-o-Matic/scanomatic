@@ -2106,15 +2106,41 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         return True
 
-    def _set_position_mark(self, plate, positions, phenotype, position_mark, undoable):
+    def _set_position_mark(
+        self, plate, positions, phenotype, position_mark, undoable
+    ):
 
-        previous_state = self._phenotype_filter[plate][phenotype][positions]
+        try:
+            previous_state = (
+                self._phenotype_filter[plate][phenotype][positions]
+            )
+        except KeyError:
+            if self._phenotype_filter.size <= plate:
+                self._logger.error(
+                    "Filer isn't correctly initialized, missing plates."
+                    "Action refursed"
+                )
+                return False
+            self._logger.info(
+                "Updating filter to cover all phenotypes, where missing {}"
+                .format(phenotype)
+            )
+            shapes = tuple(self.plate_shapes)
+            map(
+                lambda idx, plate: plate.update(
+                    {phenotype: np.zeros(shapes[idx], dtype=np.int)}
+                ),
+                enumerate(self._phenotype_filter),
+            )
+            previous_state = False
 
         if isinstance(previous_state, np.ndarray):
             if np.unique(previous_state).size == 1:
                 previous_state = previous_state[0]
 
-        self._phenotype_filter[plate][phenotype][positions] = position_mark.value
+        self._phenotype_filter[plate][phenotype][positions] = (
+            position_mark.value
+        )
 
         if undoable:
             self._add_undo(plate, positions, phenotype, previous_state)
