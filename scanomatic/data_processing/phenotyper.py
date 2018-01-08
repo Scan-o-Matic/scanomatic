@@ -2188,15 +2188,15 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         return True
 
     def _set_position_mark(
-        self, plate, positions, phenotype, position_mark, undoable
+        self, id_plate, positions, phenotype, position_mark, undoable
     ):
 
         try:
             previous_state = (
-                self._phenotype_filter[plate][phenotype][positions]
+                self._phenotype_filter[id_plate][phenotype][positions]
             )
         except KeyError:
-            if self._phenotype_filter.size <= plate:
+            if self._phenotype_filter.size <= id_plate:
                 self._logger.error(
                     "Filer isn't correctly initialized, missing plates."
                     "Action refursed"
@@ -2216,7 +2216,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             if np.unique(previous_state).size == 1:
                 previous_state = previous_state[0]
 
-        self._phenotype_filter[plate][phenotype][positions] = (
+        self._phenotype_filter[id_plate][phenotype][positions] = (
             position_mark.value
         )
 
