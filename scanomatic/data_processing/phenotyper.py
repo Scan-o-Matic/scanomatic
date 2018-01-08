@@ -1864,13 +1864,21 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def _set_phenotype_filter(self, data):
         allowed = False
-        if isinstance(data, np.ndarray) and (data.size == 0 or data.size == 1 and not data.shape):
+        if (
+            isinstance(data, np.ndarray) and
+            (data.size == 0 or data.size == 1 and not data.shape)
+        ):
             self._phenotype_filter = None
-        elif all(True if plate is None else isinstance(plate, dict) for plate in data):
+        elif all(
+            True if plate is None else isinstance(plate, dict)
+            for plate in data
+        ):
             self._phenotype_filter = data
             allowed = True
         else:
-            self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
+            self._phenotype_filter = (
+                self._convert_to_current_phenotype_filter(data)
+            )
             allowed = True
         self._init_remove_filter_and_undo_actions()
         return allowed

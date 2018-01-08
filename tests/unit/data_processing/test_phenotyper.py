@@ -1,7 +1,9 @@
+from __future__ import absolute_import
 import numpy as np
 import pytest
 from scanomatic.data_processing import phenotyper
 import itertools
+
 
 @pytest.fixture(scope='function')
 def empty_phenotyper():
