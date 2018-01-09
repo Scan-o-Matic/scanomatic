@@ -10,7 +10,6 @@ import scanomatic.io.logger as logger
 from scanomatic.server.server import Server
 from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
 import scanomatic.generics.decorators as decorators
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory, ScannerFactory
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
@@ -191,38 +190,6 @@ class InterfaceBuilder(SingeltonOneInit):
         global _SOM_SERVER
         return sanitize_communication(_SOM_SERVER.get_server_status())
 
-    def _server_get_scanner_status(self, user_id=None):
-
-        global _SOM_SERVER
-        if not _SOM_SERVER.scanner_manager.connected_to_scanners:
-            return []
-        else:
-            return sanitize_communication(
-                sorted([ScannerFactory.to_dict(scanner_model)
-                        for scanner_model in _SOM_SERVER.scanner_manager.status], key=lambda x: x['socket']))
-
-    @_verify_admin
-    def _server_get_power_manager_info(self, user_id=None):
-
-        pm = _SOM_SERVER.scanner_manager.power_manager
-        host = None
-        try:
-            host = pm.host
-        except (TypeError, AttributeError):
-            pass
-
-        data = {
-                'pm': type(pm),
-                'host': host,
-                'unasigned_usbs': _SOM_SERVER.scanner_manager.non_reported_usbs,
-                'power_status': _SOM_SERVER.scanner_manager.power_statuses,
-                'modes': _SOM_SERVER.scanner_manager.pm_types,
-             }
-
-        _SOM_SERVER.logger.info("PM Status is {0}".format(data))
-
-        return sanitize_communication(data)
-
     def _server_get_queue_status(self, user_id=None):
 
         global _SOM_SERVER
@@ -313,114 +280,6 @@ class InterfaceBuilder(SingeltonOneInit):
             return False
 
     @_verify_admin
-    def _server_reestablish_process(self, user_id, job_id, label, job_type, process_pid):
-        """Interface for orphaned daemons to re-gain contact with server.
-
-        Parameters
-        ==========
-
-        userID : str
-            The ID of the user requesting to create a job.
-            This must match the current ID of the server admin or
-            the request will be refused.
-            **NOTE**: If using a rpc_client from scanomatic.io the client
-            will typically prepend this parameter
-
-        jobID : str
-
-            The job identifier of the job that wants to regain contact.
-            This job must be known to the server
-
-        jobType: int
-
-            The type of job the job is.
-
-        label : str
-
-            User-friendly string with info about the job
-
-        pid : int
-
-            The process id of the orphaned daemon
-
-        Returns
-        =======
-
-        multiprocessing.Connection or False
-            Returns the part of the pipe used by the child-process if
-            re-establishment is allowed, else False
-
-        """
-        return False
-
-
-        # if jobID in self._jobs:
-        #
-        # return self._jobs.fakeProcess(jobID, label, jobType, pid)
-        #
-        # else:
-        #
-        # self._logger.warning(
-        # "Unknown job "+
-        # "'{0}'({1}, pid {2}) tried to claim it exists".format(
-        #             label, jobID, pid))
-        #
-        #     return False
-
-
-    @_verify_admin
-    def _server_create_scanning_job(self, user_id, scanning_model):
-
-        """Attempts to start a scanning job.
-
-        This is a common interface for all type of scan jobs.
-
-        Parameters
-        ==========
-
-        userID : str
-            The ID of the user requesting to create a job.
-            This must match the current ID of the server admin or
-            the request will be refused.
-            **NOTE**: If using a rpc_client from scanomatic.io the client
-            will typically prepend this parameter
-
-        scanningModel : dict
-            Dictionary representation of model for scanning
-        """
-        global _SOM_SERVER
-
-        _SOM_SERVER.logger.info("Attempting to create scanning job with {0}".format(scanning_model))
-        scanning_model = ScanningModelFactory.create(**scanning_model)
-
-        try:
-            path_valid = not os.path.isdir(os.path.join(scanning_model.directory_containing_project,
-                                           scanning_model.project_name))
-
-            _SOM_SERVER.logger.info("Tested path requested and it is {0}valid".format("" if path_valid else "in"))
-
-        except:
-
-            path_valid = False
-            _SOM_SERVER.logger.warning("Bad data in attempting to check path for scanning job creation")
-
-
-
-        if not path_valid or not ScanningModelFactory.validate(scanning_model):
-            if not path_valid:
-                _SOM_SERVER.logger.error("Project name duplicate in containing directory")
-
-            if not ScanningModelFactory.validate(scanning_model):
-                _report_invalid(
-                    _SOM_SERVER.logger,
-                    ScanningModelFactory,
-                    scanning_model,
-                    "Request scanning job")
-            return False
-
-        return sanitize_communication(_SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan))
-
-    @_verify_admin
     def _server_create_compile_project_job(self, user_id, compile_project_model):
 
         global _SOM_SERVER
@@ -506,74 +365,6 @@ class InterfaceBuilder(SingeltonOneInit):
             queue.remove_and_free_potential_scanner_claim(job)
 
         return True
-
-    @_verify_admin
-    def _server_request_scanner_operation(self, user_id, job_id, scanner, operation):
-        """Interface for subprocess to request scanner operations
-
-        Parameters
-        ==========
-
-        userID : str
-            The ID of the user requesting to create a job.
-            This must match the current ID of the server admin or
-            the request will be refused.
-            **NOTE**: If using a rpc_client from scanomatic.io the client
-            will typically prepend this parameter
-
-        jobID : str
-            Identifier for the job that owns the scanner to be controlled
-            If operation in "CLAIM" set this to None
-
-        scanner: int or string
-            Name of the scanner to be controlled
-
-        operation : str
-            "ON" Turn power on to scanner / obtain USB
-            "OFF" Turn power off
-            "RELEASE" Free scanner from claim
-        """
-
-        global _SOM_SERVER
-
-        scanner_manager = _SOM_SERVER.scanner_manager
-        operation = operation.upper()
-
-        if not scanner_manager.connected_to_scanners:
-
-            _SOM_SERVER.logger.warning("Scanners not loaded (yet)")
-            return False
-
-        if scanner not in scanner_manager:
-
-            _SOM_SERVER.logger.warning("Unknown scanner: {0}".format(scanner))
-            return False
-
-        scanner_model = scanner_manager[scanner]
-
-        if not scanner_model.job_id != job_id:
-
-            _SOM_SERVER.logger.warning(
-                "Job '{0}' tried to manipulate someone else's scanners".format(
-                    job_id))
-
-            return False
-
-        if operation == "ON":
-
-            return sanitize_communication(scanner_manager.request_on(job_id))
-
-        elif operation == "OFF":
-
-            return sanitize_communication(scanner_manager.request_off(job_id))
-
-        elif operation == "RELEASE":
-
-            return sanitize_communication(scanner_manager.release_scanner(job_id))
-
-        else:
-
-            return False
 
     def _server_get_fixtures(self, user_id=None):
         """Gives the names of the fixtures known to the server.

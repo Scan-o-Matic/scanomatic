@@ -1,6 +1,5 @@
 import scanomatic.models.settings_models as settings_models
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
-from scanomatic.io.power_manager import POWER_MODES, POWER_MANAGER_TYPE
 
 
 class VersionChangeFactory(AbstractModelFactory):
@@ -14,30 +13,6 @@ class VersionChangeFactory(AbstractModelFactory):
         :rtype : scanomatic.models.settings_models.VersionChangesModel
         """
         return super(VersionChangeFactory, cls).create()
-
-
-class PowerManagerFactory(AbstractModelFactory):
-
-    MODEL = settings_models.PowerManagerModel
-    STORE_SECTION_HEAD = "Power Manager"
-    STORE_SECTION_SERIALIZERS = {
-        "type": POWER_MANAGER_TYPE,
-        "number_of_sockets": int,
-        "host": str,
-        "password": str,
-        "name": str,
-        "verify_name": bool,
-        "mac": str,
-        "power_mode": POWER_MODES
-    }
-
-    @classmethod
-    def create(cls, **settings):
-        """
-        :rtype : scanomatic.models.settings_models.PowerManagerModel
-        """
-
-        return super(PowerManagerFactory, cls).create(**settings)
 
 
 class RPCServerFactory(AbstractModelFactory):
@@ -133,19 +108,6 @@ class PathsFactory(AbstractModelFactory):
         return super(PathsFactory, cls).create(**settings)
 
 
-def _scanner_model_serializer(enforce=None, serialize=None):
-    return (
-        (
-            [serialize[name] for name in sorted(serialize.keys())]
-            if isinstance(serialize, dict) else None
-        )
-        if serialize is not None else
-        (
-            enforce if not isinstance(enforce, tuple) else list(enforce)
-        )
-    )
-
-
 class ApplicationSettingsFactory(AbstractModelFactory):
 
     MODEL = settings_models.ApplicationSettingsModel
@@ -155,26 +117,19 @@ class ApplicationSettingsFactory(AbstractModelFactory):
         settings_models.PathsModel: PathsFactory,
         settings_models.HardwareResourceLimitsModel:
             HardwareResourceLimitsFactory,
-        settings_models.PowerManagerModel: PowerManagerFactory,
         settings_models.RPCServerModel: RPCServerFactory,
         settings_models.UIServerModel: UIServerFactory,
         settings_models.MailModel: MailFactory
     }
 
     STORE_SECTION_SERIALIZERS = {
-        "power_manager": settings_models.PowerManagerModel,
         "rpc_server": settings_models.RPCServerModel,
         "ui_server": settings_models.UIServerModel,
         "hardware_resource_limits":
             settings_models.HardwareResourceLimitsModel,
         "mail": settings_models.MailModel,
         "paths": settings_models.PathsModel,
-        "number_of_scanners": int,
-        "scanner_name_pattern": str,
-        "scan_program": str,
-        "scan_program_version_flag": str,
         "computer_human_name": str,
-        "scanner_models": _scanner_model_serializer
     }
 
     @classmethod

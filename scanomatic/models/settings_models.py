@@ -1,5 +1,4 @@
 import scanomatic.generics.model as model
-from scanomatic.io.power_manager import POWER_MANAGER_TYPE, POWER_MODES
 import os
 from uuid import uuid1
 
@@ -12,24 +11,6 @@ class VersionChangesModel(model.Model):
         self.oldest_allow_fixture = 0.9991
 
         super(VersionChangesModel, self).__init__()
-
-
-class PowerManagerModel(model.Model):
-
-    def __init__(self, type=POWER_MANAGER_TYPE.LAN, number_of_sockets=4,
-                 host="192.168.0.100", password="1", verify_name=False, mac=None,
-                 name="Server 1", power_mode=POWER_MODES.Toggle):
-
-        self.type = type
-        self.number_of_sockets = number_of_sockets
-        self.host = host
-        self.password = password
-        self.name = name
-        self.verify_name = verify_name
-        self.mac = mac
-        self.power_mode = power_mode
-
-        super(PowerManagerModel, self).__init__()
 
 
 class RPCServerModel(model.Model):
@@ -93,12 +74,7 @@ class MailModel(model.Model):
 class ApplicationSettingsModel(model.Model):
 
     def __init__(self,
-                 number_of_scanners=3,
                  scanner_name_pattern="Scanner {0}",
-                 scan_program="scanimage",
-                 scan_program_version_flag="-V",
-                 scanner_models=tuple(),
-                 power_manager=None,
                  rpc_server=None,
                  ui_server=None,
                  hardware_resource_limits=None,
@@ -107,31 +83,11 @@ class ApplicationSettingsModel(model.Model):
                  paths=None):
 
         self.versions = VersionChangesModel()
-        self.power_manager = power_manager
         self.rpc_server = rpc_server
         self.ui_server = ui_server
         self.hardware_resource_limits = hardware_resource_limits
         self.paths = paths
         self.computer_human_name = computer_human_name
         self.mail = mail
-        self.number_of_scanners = number_of_scanners
-        self.scanner_name_pattern = scanner_name_pattern
-
-        if power_manager is not None:
-            self.scanner_names = [self.scanner_name_pattern.format(i + 1) for i
-                                  in range(self.power_manager.number_of_sockets)]
-        else:
-            self.scanner_names = []
-
-        self.scan_program = scan_program
-        self.scan_program_version_flag = scan_program_version_flag
-
-        scanner_models += tuple('EPSON V700' for _ in range(len(self.scanner_names) - len(scanner_models)))
-
-        self.scanner_models = {name: scanner_model for name, scanner_model in
-                               zip(self.scanner_names, scanner_models)}
-
-        self.scanner_sockets = {name: socket for name, socket in
-                                zip(self.scanner_names, range(len(self.scanner_models)))}
 
         super(ApplicationSettingsModel, self).__init__()

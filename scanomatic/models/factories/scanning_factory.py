@@ -467,7 +467,6 @@ class ScannerFactory(AbstractModelFactory):
         'socket': int,
         'scanner_name': str,
         'usb': str,
-        'power': bool,
         "expected_interval": float,
         "email": email_serializer,
         "warned": bool,

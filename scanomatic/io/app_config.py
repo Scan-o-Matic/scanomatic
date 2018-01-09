@@ -6,7 +6,6 @@ import os
 # INTERNAL DEPENDENCIES
 #
 
-import power_manager
 import paths
 import logger
 from scanomatic.generics.singleton import SingeltonOneInit
@@ -22,7 +21,6 @@ from scanomatic.models.factories.settings_factories import (
 class Config(SingeltonOneInit):
 
     SCANNER_PATTERN = "Scanner {0}"
-    POWER_DEFAULT = power_manager.POWER_MODES.Toggle
 
     def __one_init__(self):
 
@@ -77,16 +75,6 @@ class Config(SingeltonOneInit):
 
         """
         return self._settings.versions
-
-    @property
-    def power_manager(self):
-        """
-
-        Returns: scanomatic.models.settings_models.PowerManagerModel
-
-        """
-
-        return self._settings.power_manager
 
     @property
     def rpc_server(self):
@@ -261,9 +249,6 @@ class Config(SingeltonOneInit):
         if self._use_local_rpc_settings:
             self.apply_local_rpc_settings()
 
-        self._PM = power_manager.get_pm_class(
-            self._settings.power_manager.type)
-
     def apply_local_rpc_settings(self):
 
         rpc_conf = ConfigParser(allow_no_value=True)
@@ -355,21 +340,6 @@ class Config(SingeltonOneInit):
         if scanner:
             return self.scanner_sockes[scanner]
         return None
-
-    def get_pm(self, socket):
-
-        if socket is None or socket < 1 or socket > 4:
-            self._logger.error("Socket '{0}' is unknown, {1} known".format(
-                socket,
-                "sockets 1-{0}".format(self.power_manager.number_of_sockets) if
-                self.power_manager.number_of_sockets else "no sockets"))
-            return power_manager.PowerManagerNull("None")
-
-        self._logger.info(
-            "Creating scanner PM for socked {0} and settings {1}".format(
-                socket, dict(**self.power_manager)))
-
-        return self._PM(socket, **self.power_manager)
 
     def get_min_model(self, model, factory):
 
