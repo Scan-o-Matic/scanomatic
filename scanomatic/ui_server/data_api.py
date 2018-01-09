@@ -361,7 +361,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         """
 
         if rpc_client.online:
-            return jsonify(fixtures=rpc_client.get_fixtures(), success=True)
+            return jsonify(fixtures=Fixtures().all(), success=True)
         else:
             return jsonify(
                 fixtures=[],
@@ -411,7 +411,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         """
         if not rpc_client.online:
             return jsonify(success=False, reason="Scan-o-Matic server offline")
-        elif name in rpc_client.get_fixtures():
+        elif name in Fixtures():
             path = Paths().get_fixture_path(name)
             try:
                 fixture = FixtureFactory.serializer.load_first(path)
@@ -446,8 +446,7 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         """
         name = Paths().get_fixture_name(name)
-        known_fixtures = tuple(
-            Paths().get_fixture_name(f) for f in rpc_client.get_fixtures())
+        known_fixtures = Fixtures().get_names()
         if name not in known_fixtures:
             return jsonify(success=False, reason="Unknown fixture")
         source = Paths().get_fixture_path(name)
