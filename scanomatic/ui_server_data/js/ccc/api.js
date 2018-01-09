@@ -1,45 +1,10 @@
+import API from '../common/api.js';
+
 const GetSliceImagePath = '/api/calibration/#0#/image/#1#/slice/get/#2#';
 const GetTranposedMarkerPath = '/api/data/fixture/calculate/';
 const GetGrayScaleAnalysisPath = '/api/data/grayscale/image/';
 
 export const HasJquery = () => !!$;
-
-class API {
-    static get(url) {
-        return new Promise((resolve, reject) => $.ajax({
-            url,
-            type: 'GET',
-            success: resolve,
-            error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
-        }));
-    }
-
-    static postFormData(url, formData) {
-        return new Promise((resolve, reject) => $.ajax({
-            url,
-            type: 'POST',
-            contentType: false,
-            enctype: 'multipart/form-data',
-            data: formData,
-            processData: false,
-            success: resolve,
-            error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
-        }));
-    }
-
-    static postJSON(url, json) {
-        return new Promise((resolve, reject) => $.ajax({
-            url,
-            type: 'POST',
-            data: JSON.stringify(json),
-            contentType: 'application/json',
-        })
-            .then(
-                resolve,
-                jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
-            ));
-    }
-}
 
 export function GetSliceImageURL(cccId, imageId, slice) {
     const path = GetSliceImagePath.replace('#0#', cccId).replace('#1#', imageId).replace('#2#', slice);
