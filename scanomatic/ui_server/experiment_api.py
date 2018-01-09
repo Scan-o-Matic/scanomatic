@@ -257,9 +257,8 @@ def add_routes(app, rpc_client):
 
         validates = ScanningModelFactory.validate(m)
 
-        job_id = rpc_client.create_scanning_job(
-            ScanningModelFactory.to_dict(m))
-
+        # Until adding new jobs posing refuse all
+        job_id = None
         if validates and job_id:
             return jsonify(name=project_name)
         else:
