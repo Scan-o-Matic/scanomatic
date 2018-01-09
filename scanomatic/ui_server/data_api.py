@@ -361,7 +361,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         """
 
         if rpc_client.online:
-            return jsonify(fixtures=Fixtures().all(), success=True)
+            return jsonify(fixtures=Fixtures().get_names(), success=True)
         else:
             return jsonify(
                 fixtures=[],
