@@ -135,99 +135,16 @@ class Config(SingeltonOneInit):
 
         self._settings.computer_human_name = str(value)
 
-    @property
-    def number_of_scanners(self):
-        """
-
-        Returns: int
-
-        """
-        return self._settings.number_of_scanners
-
-    @number_of_scanners.setter
-    def number_of_scanners(self, value):
-
-        if isinstance(value, int) and value >= 0:
-            self._settings.number_of_scanners = value
-            # TODO: Should update dependent values such as
-            # length of scanner names
-        else:
-            self._logger.warning(
-                "Refused to set number of scanners '{0}', only 0 or positive ints allowed".format(
-                    value))
-
-    @property
-    def scanner_name_pattern(self):
-        """
-
-        Returns: str
-
-        """
-        return self._settings.scanner_name_pattern
-
-    @scanner_name_pattern.setter
-    def scanner_name_pattern(self, value):
-
-        self._settings.scanner_name_pattern = str(value)
-
-    @property
-    def scanner_names(self):
-        """
-
-        Returns: [str]
-
-        """
-        return self._settings.scanner_names
-
-    @property
-    def scan_program(self):
-        """
-
-        Returns: str
-
-        """
-        return self._settings.scan_program
-
-    @property
-    def scan_program_version_flag(self):
-        """
-
-        Returns: str
-
-        """
-        return self._settings.scan_program_version_flag
-
-    @property
-    def scanner_models(self):
-        """
-
-        Returns: {str: str}
-
-        """
-        return self._settings.scanner_models
-
-    @property
-    def scanner_sockets(self):
-        """
-
-        Returns: {str: int}
-
-        """
-        return self._settings.scanner_sockets
-
     def model_copy(self):
 
         return ApplicationSettingsFactory.copy(self._settings)
 
     def get_scanner_name(self, scanner):
 
-        if isinstance(scanner, int) and 0 < scanner <= self.number_of_scanners:
+        if isinstance(scanner, int):
             scanner = self.SCANNER_PATTERN.format(scanner)
 
-        for s in self.scanner_names:
-            if s == scanner:
-                return scanner
-        return None
+        return scanner
 
     def reload_settings(self):
 
@@ -332,14 +249,6 @@ class Config(SingeltonOneInit):
 
             ApplicationSettingsFactory.serializer.dump(
                 self._settings, self._paths.config_main_app)
-
-    def get_scanner_socket(self, scanner):
-
-        scanner = self.get_scanner_name(scanner)
-
-        if scanner:
-            return self.scanner_sockes[scanner]
-        return None
 
     def get_min_model(self, model, factory):
 
