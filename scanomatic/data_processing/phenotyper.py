@@ -2206,7 +2206,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         except KeyError:
             if self._phenotype_filter.size <= id_plate:
                 self._logger.error(
-                    "Filer isn't correctly initialized, missing plates."
+                    "Filter isn't correctly initialized, missing plates."
                     "Action refursed"
                 )
                 return False
