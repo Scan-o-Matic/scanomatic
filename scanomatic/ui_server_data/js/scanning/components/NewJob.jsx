@@ -9,6 +9,11 @@ export default function NewJob(props) {
                     <div className="panel-heading">
                         New scan series
                     </div>
+                    {props.error && (
+                        <div className="alert alert-danger" role="alert">
+                            {props.error}
+                        </div>
+                    )}
                     <div className="panel-body">
                         <div className="form-group">
                             <label>Name</label>
@@ -80,6 +85,7 @@ export default function NewJob(props) {
 
 NewJob.propTypes = {
     name: PropTypes.string,
+    error: PropTypes.string,
     duration: PropTypes.shape({
         days: PropTypes.number.isRequired,
         hours: PropTypes.number.isRequired,
@@ -97,4 +103,5 @@ NewJob.propTypes = {
 
 NewJob.defaultProps = {
     name: '',
+    error: null,
 };

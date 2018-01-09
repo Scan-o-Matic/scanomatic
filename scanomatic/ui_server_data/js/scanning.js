@@ -18988,7 +18988,7 @@ var _api2 = _interopRequireDefault(_api);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function submitJob(job) {
-    return _api2.default.postJSON('/api/project/experiment', job);
+    return _api2.default.postJSON('/api/project/experiment/new', job);
 }
 
 /***/ }),
@@ -19407,6 +19407,11 @@ function NewJob(props) {
                     { className: 'panel-heading' },
                     'New scan series'
                 ),
+                props.error && _react2.default.createElement(
+                    'div',
+                    { className: 'alert alert-danger', role: 'alert' },
+                    props.error
+                ),
                 _react2.default.createElement(
                     'div',
                     { className: 'panel-body' },
@@ -19421,7 +19426,7 @@ function NewJob(props) {
                         _react2.default.createElement('input', {
                             className: 'name form-control',
                             value: props.name,
-                            placeholder: 'Description of content',
+                            placeholder: 'Short description of content',
                             onChange: props.onNameChange
                         })
                     ),
@@ -19525,6 +19530,7 @@ function NewJob(props) {
 
 NewJob.propTypes = {
     name: _propTypes2.default.string,
+    error: _propTypes2.default.string,
     duration: _propTypes2.default.shape({
         days: _propTypes2.default.number.isRequired,
         hours: _propTypes2.default.number.isRequired,
@@ -19541,7 +19547,8 @@ NewJob.propTypes = {
 };
 
 NewJob.defaultProps = {
-    name: ''
+    name: '',
+    error: null
 };
 
 /***/ })
