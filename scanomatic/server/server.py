@@ -231,9 +231,6 @@ class Server(object):
             self.logger.error("Failed to create job model")
             return False
 
-        if job_type is rpc_job_models.JOB_TYPE.Scan and not self.verify_scanner_claim(rpc_job):
-            return False
-
         self._queue.add(rpc_job)
 
         self.logger.info("Job {0} with id {1} added to queue".format(rpc_job, rpc_job.id))

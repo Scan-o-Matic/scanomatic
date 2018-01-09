@@ -137,8 +137,6 @@ class Jobs(SingeltonOneInit):
                     del self[job]
             statuses.append(job_process.status)
 
-        self.handle_scanners()
-
         self._statuses = statuses
 
     def add(self, job):
@@ -187,9 +185,6 @@ class Jobs(SingeltonOneInit):
         job_process.daemon = True
         job_process.start()
         job.pid = job_process.pid
-        if job.type is rpc_job_models.JOB_TYPE.Scan:
-            self._add_scanner_operations_to_job(job_process)
-            job.content_model.id = job.id
 
         job_process.pipe.send('setup', RPC_Job_Model_Factory.serializer.serialize(job))
 
