@@ -15,13 +15,13 @@ export default function NewJob(props) {
                             <input
                                 className="name form-control"
                                 value={props.name}
-                                placeholder="Description of content"
+                                placeholder="Short description of content"
                                 onChange={props.onNameChange}
                             />
                         </div>
                         <div className="form-group">
                             <label>Duration</label>
-                            <div class="input-group">
+                            <div className="input-group">
                                 <input
                                     className="days form-control"
                                     type="number"
@@ -29,9 +29,9 @@ export default function NewJob(props) {
                                     placeholder="Days"
                                     onChange={props.onDurationDaysChange}
                                 />
-                                <span class="input-group-addon" id="duration-days-unit">days</span>
+                                <span className="input-group-addon" id="duration-days-unit">days</span>
                             </div>
-                            <div class="input-group">
+                            <div className="input-group">
                                 <input
                                     className="hours form-control"
                                     type="number"
@@ -39,9 +39,9 @@ export default function NewJob(props) {
                                     placeholder="Hours"
                                     onChange={props.onDurationHoursChange}
                                 />
-                                <span class="input-group-addon" id="duration-hours-unit">hours</span>
+                                <span className="input-group-addon" id="duration-hours-unit">hours</span>
                             </div>
-                            <div class="input-group">
+                            <div className="input-group">
                                 <input
                                     className="minutes form-control"
                                     type="number"
@@ -49,12 +49,12 @@ export default function NewJob(props) {
                                     placeholder="Minutes"
                                     onChange={props.onDurationMinutesChange}
                                 />
-                                <span class="input-group-addon" id="duration-minutes-unit">minutes</span>
+                                <span className="input-group-addon" id="duration-minutes-unit">minutes</span>
                             </div>
                         </div>
                         <div className="form-group">
                             <label>Interval</label>
-                            <div class="input-group">
+                            <div className="input-group">
                                 <input
                                     className="days form-control"
                                     type="number"
@@ -62,11 +62,14 @@ export default function NewJob(props) {
                                     placeholder="Interval (minutes)"
                                     onChange={props.onIntervalChange}
                                 />
-                                <span class="input-group-addon" id="interval-unit">minutes</span>
+                                <span className="input-group-addon" id="interval-unit">minutes</span>
                             </div>
                         </div>
                         <button className="btn btn-primary" onClick={props.onSubmit}>
                             Add to jobs
+                        </button>
+                        <button className="btn" onClick={props.onCancel}>
+                            Cancel
                         </button>
                     </div>
                 </div>
@@ -89,6 +92,7 @@ NewJob.propTypes = {
     onDurationMinutesChange: PropTypes.func.isRequired,
     onIntervalChange: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
 };
 
 NewJob.defaultProps = {

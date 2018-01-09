@@ -19350,6 +19350,7 @@ var NewJobContainer = function (_React$Component) {
         value: function render() {
             return _react2.default.createElement(_NewJob2.default, _extends({}, this.state, {
                 onSubmit: this.handleSumbit,
+                onCancel: this.props.onClose,
                 onIntervalChange: this.handleIntervalChange,
                 onDurationMinutesChange: this.handleDurationMinutesChange,
                 onDurationHoursChange: this.handleDurationHoursChange,
@@ -19434,7 +19435,7 @@ function NewJob(props) {
                         ),
                         _react2.default.createElement(
                             'div',
-                            { 'class': 'input-group' },
+                            { className: 'input-group' },
                             _react2.default.createElement('input', {
                                 className: 'days form-control',
                                 type: 'number',
@@ -19444,13 +19445,13 @@ function NewJob(props) {
                             }),
                             _react2.default.createElement(
                                 'span',
-                                { 'class': 'input-group-addon', id: 'duration-days-unit' },
+                                { className: 'input-group-addon', id: 'duration-days-unit' },
                                 'days'
                             )
                         ),
                         _react2.default.createElement(
                             'div',
-                            { 'class': 'input-group' },
+                            { className: 'input-group' },
                             _react2.default.createElement('input', {
                                 className: 'hours form-control',
                                 type: 'number',
@@ -19460,13 +19461,13 @@ function NewJob(props) {
                             }),
                             _react2.default.createElement(
                                 'span',
-                                { 'class': 'input-group-addon', id: 'duration-hours-unit' },
+                                { className: 'input-group-addon', id: 'duration-hours-unit' },
                                 'hours'
                             )
                         ),
                         _react2.default.createElement(
                             'div',
-                            { 'class': 'input-group' },
+                            { className: 'input-group' },
                             _react2.default.createElement('input', {
                                 className: 'minutes form-control',
                                 type: 'number',
@@ -19476,7 +19477,7 @@ function NewJob(props) {
                             }),
                             _react2.default.createElement(
                                 'span',
-                                { 'class': 'input-group-addon', id: 'duration-minutes-unit' },
+                                { className: 'input-group-addon', id: 'duration-minutes-unit' },
                                 'minutes'
                             )
                         )
@@ -19491,7 +19492,7 @@ function NewJob(props) {
                         ),
                         _react2.default.createElement(
                             'div',
-                            { 'class': 'input-group' },
+                            { className: 'input-group' },
                             _react2.default.createElement('input', {
                                 className: 'days form-control',
                                 type: 'number',
@@ -19501,7 +19502,7 @@ function NewJob(props) {
                             }),
                             _react2.default.createElement(
                                 'span',
-                                { 'class': 'input-group-addon', id: 'interval-unit' },
+                                { className: 'input-group-addon', id: 'interval-unit' },
                                 'minutes'
                             )
                         )
@@ -19510,6 +19511,11 @@ function NewJob(props) {
                         'button',
                         { className: 'btn btn-primary', onClick: props.onSubmit },
                         'Add to jobs'
+                    ),
+                    _react2.default.createElement(
+                        'button',
+                        { className: 'btn', onClick: props.onCancel },
+                        'Cancel'
                     )
                 )
             )
@@ -19530,7 +19536,8 @@ NewJob.propTypes = {
     onDurationHoursChange: _propTypes2.default.func.isRequired,
     onDurationMinutesChange: _propTypes2.default.func.isRequired,
     onIntervalChange: _propTypes2.default.func.isRequired,
-    onSubmit: _propTypes2.default.func.isRequired
+    onSubmit: _propTypes2.default.func.isRequired,
+    onCancel: _propTypes2.default.func.isRequired
 };
 
 NewJob.defaultProps = {

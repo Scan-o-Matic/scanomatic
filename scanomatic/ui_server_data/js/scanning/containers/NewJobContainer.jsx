@@ -93,6 +93,7 @@ export default class NewJobContainer extends React.Component {
         return (<NewJob
             {...this.state}
             onSubmit={this.handleSumbit}
+            onCancel={this.props.onClose}
             onIntervalChange={this.handleIntervalChange}
             onDurationMinutesChange={this.handleDurationMinutesChange}
             onDurationHoursChange={this.handleDurationHoursChange}
