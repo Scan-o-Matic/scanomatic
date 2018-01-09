@@ -4,7 +4,6 @@ from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 import scanomatic.models.rpc_job_models as rpc_job_models
 import scanomatic.generics.decorators as decorators
 from scanomatic.generics.singleton import SingeltonOneInit
-from scanomatic.io.scanner_manager import ScannerPowerManager
 
 #
 # CLASSES
@@ -23,7 +22,6 @@ class Queue(SingeltonOneInit):
         self._logger = logger.Logger("Job Queue")
         self._next_priority = rpc_job_models.JOB_TYPE.Scan
         self._queue = list(RPC_Job_Model_Factory.serializer.load(self._paths.rpc_queue))
-        self._scanner_manager = ScannerPowerManager()
         self._jobs = jobs
         decorators.register_type_lock(self)
 
@@ -75,15 +73,6 @@ class Queue(SingeltonOneInit):
             return RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_queue)
 
         self._logger.warning("No known job {0} in queue, can't remove".format(job.id))
-        return False
-
-    @decorators.type_lock
-    def remove_and_free_potential_scanner_claim(self, job):
-
-        if self.remove(job):
-            if job.type is rpc_job_models.JOB_TYPE.Scan:
-                return self._scanner_manager.release_scanner(job.id)
-            return True
         return False
 
     @decorators.type_lock

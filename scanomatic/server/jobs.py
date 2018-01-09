@@ -18,7 +18,6 @@ import scanomatic.server.scanning_effector as scanning_effector
 import scanomatic.server.compile_effector as compile_effector
 import scanomatic.server.rpcjob as rpc_job
 from scanomatic.generics.singleton import SingeltonOneInit
-from scanomatic.io import scanner_manager
 
 #
 # CLASSES
@@ -30,7 +29,6 @@ class Jobs(SingeltonOneInit):
 
         self._logger = logger.Logger("Jobs Handler")
         self._paths = paths.Paths()
-        self._scanner_manager = scanner_manager.ScannerPowerManager()
 
         self._jobs = {}
         """:type : dict[scanomatic.models.rpc_job_models.RPCJobModel, scanomatic.server.rpcjob.RpcJob] """
@@ -68,8 +66,6 @@ class Jobs(SingeltonOneInit):
         """:type job : scanomatic.models.rpc_job_models.RPCJobModel"""
 
         if job in self._jobs:
-            if job.type == rpc_job_models.JOB_TYPE.Scan and self._scanner_manager.connected_to_scanners:
-                self._scanner_manager.release_scanner(job.id)
             del self._jobs[job]
             self._logger.info("Job '{0}' not active/removed".format(job))
             if not RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_jobs):
@@ -146,25 +142,6 @@ class Jobs(SingeltonOneInit):
 
         self._statuses = statuses
 
-    def handle_scanners(self):
-
-        if not self._scanner_manager.connected_to_scanners:
-            return
-
-        self._scanner_manager.update()
-
-        for scanner in self._scanner_manager.non_reported_usbs:
-            if scanner.owner in self and scanner.usb:
-                self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb, scanner.model)
-                scanner.reported = True
-                self._logger.info("Reported USB {2} for scanner {0} to {1}".format(scanner.socket, scanner.owner.id,
-                                                                                   scanner.usb))
-            else:
-                if scanner.usb:
-                    self._logger.warning("Unknown scanner claiming process {0}".format(scanner.owner))
-                else:
-                    self._logger.info("Waiting for actual USB assignment on request from {0}".format(scanner.owner.id))
-
     def add(self, job):
         """Launches and adds a new jobs.
         :type job: scanomatic.models.rpc_job_models.RPCJobModel
@@ -178,10 +155,6 @@ class Jobs(SingeltonOneInit):
 
         if not job_effector:
             self._logger.error("Job {0} can't be executed, will drop request".format(job.id))
-            return True
-
-        if not self._scanner_manager.connected_to_scanners and job.type == rpc_job_models.JOB_TYPE.Scan:
-            self._logger.error("Scanners aren't ready, job request dropped")
             return True
 
         parent_pipe, child_pipe = Pipe()
@@ -220,15 +193,6 @@ class Jobs(SingeltonOneInit):
             job.content_model.id = job.id
 
         job_process.pipe.send('setup', RPC_Job_Model_Factory.serializer.serialize(job))
-
-    def _add_scanner_operations_to_job(self, job_process):
-
-        """
-
-        :type job_process: scanomatic.server.rpcjob.RpcJob
-        """
-
-        job_process.pipe.add_allowed_calls(self._scanner_manager.subprocess_operations)
 
     def _get_job_effector(self, job):
 

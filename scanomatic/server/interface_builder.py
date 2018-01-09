@@ -263,7 +263,7 @@ class InterfaceBuilder(SingeltonOneInit):
 
         if job is not None:
             if job.status is rpc_job_models.JOB_STATUS.Queued:
-                return sanitize_communication(_SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job))
+                return sanitize_communication(_SOM_SERVER.queue.remove(job))
             else:
                 try:
                     ret = _SOM_SERVER.jobs[job].pipe.send(communication, **communication_content)
@@ -328,7 +328,7 @@ class InterfaceBuilder(SingeltonOneInit):
         """
 
         global _SOM_SERVER
-        return sanitize_communication(_SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job_id))
+        return sanitize_communication(_SOM_SERVER.queue.remove(job_id))
 
     @_verify_admin
     def _server_flush_queue(self, user_id):
@@ -362,22 +362,9 @@ class InterfaceBuilder(SingeltonOneInit):
 
         while queue:
             job = queue.get_highest_priority()
-            queue.remove_and_free_potential_scanner_claim(job)
+            queue.remove(job)
 
         return True
-
-    def _server_get_fixtures(self, user_id=None):
-        """Gives the names of the fixtures known to the server.
-
-        Returns
-        =======
-
-        tuple of strings
-            The names known to the server
-        """
-
-        global _SOM_SERVER
-        return sanitize_communication(_SOM_SERVER.scanner_manager.fixtures)
 
     @_verify_admin
     def _server_create_analysis_job(self, user_id, analysis_model):
