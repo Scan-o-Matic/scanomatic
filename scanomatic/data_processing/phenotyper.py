@@ -1758,88 +1758,163 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         return np.unravel_index(badness.ravel().argsort()[::-1], badness.shape)
 
+    @staticmethod
+    def _data_lacks_data(data):
+        """ This checks if there is data in the data.
+
+        Due to https://github.com/numpy/numpy/issues/10328
+        this check needs to be overly complex
+        """
+        def _arr_tester(arr):
+            try:
+                val = arr.any()
+                if isinstance(val, np.bool_):
+                    return val
+                elif val is None:
+                        return False
+                else:
+                    raise ValueError("Any check failed")
+            except ValueError:
+                return any(e.any() for e in arr.ravel())
+
+        def _plate_tester(p):
+            if p is None:
+                return False
+            elif isinstance(p, np.ndarray):
+                return _arr_tester(p)
+            elif isinstance(p, dict):
+                return any(
+                    False if v is None else _arr_tester(v) for v in p.values()
+                )
+            else:
+                raise ValueError("Unexpected plate data type {} ({})".format(
+                    type(p), p
+                ))
+
+        if isinstance(data, np.ndarray):
+            return (
+                data.size == 0 or data.ndim == 0 or not any(
+                    _plate_tester(plate) for plate in data
+                )
+            )
+        return True
+
+    def _set_phenotypes(self, data):
+        allowed = False
+        if self._data_lacks_data(data):
+            self._phenotypes = None
+        else:
+            self._phenotypes = self._convert_phenotype_to_current(data)
+            allowed = True
+        self._init_remove_filter_and_undo_actions()
+        self._init_default_offsets()
+        return allowed
+
+    def _set_normalized_phenotypes(self, data):
+        allowed = False
+        if self._data_lacks_data(data):
+            self._normalized_phenotypes = None
+        else:
+            self._normalized_phenotypes = data
+            allowed = True
+        self._init_default_offsets()
+        return allowed
+
+    def _set_vector_phenotypes(self, data):
+        allowed = False
+        if self._data_lacks_data(data):
+            self._vector_phenotypes = None
+        else:
+            self._vector_phenotypes = data
+            allowed = True
+        self._init_remove_filter_and_undo_actions()
+        self._init_default_offsets()
+        return allowed
+
+    def _set_vector_meta_phenotypes(self, data):
+        allowed = False
+        if self._data_lacks_data(data):
+            self._vector_meta_phenotypes = None
+        else:
+            self._vector_meta_phenotypes = data
+            allowed = True
+
+        self._init_remove_filter_and_undo_actions()
+        self._init_default_offsets()
+        return allowed
+
+    def _set_smooth_growth_data(self, data):
+            if self._data_lacks_data(data):
+                self._smooth_growth_data = None
+                return False
+            else:
+                self._smooth_growth_data = data
+                return True
+
+    def _set_phenotype_filter_undo(self, data):
+        allowed = False
+        if isinstance(data, tuple) and all(isinstance(q, deque) for q in data):
+            self._phenotype_filter_undo = data
+            allowed = True
+        else:
+            self._logger.warning("Not a proper undo history")
+
+        self._init_remove_filter_and_undo_actions()
+        return allowed
+
+    def _set_phenotype_filter(self, data):
+        allowed = False
+        if (
+            isinstance(data, np.ndarray) and
+            (data.size == 0 or data.size == 1 and not data.shape)
+        ):
+            self._phenotype_filter = None
+        elif all(
+            True if plate is None else isinstance(plate, dict)
+            for plate in data
+        ):
+            self._phenotype_filter = data
+            allowed = True
+        else:
+            self._phenotype_filter = (
+                self._convert_to_current_phenotype_filter(data)
+            )
+            allowed = True
+        self._init_remove_filter_and_undo_actions()
+        return allowed
+
+    def _set_meta_data(self, data):
+        if isinstance(data, MetaData) or data is None:
+            self._meta_data = data
+            return True
+        else:
+            self._logger.warning("Not a valid meta data type")
+            return False
+
     def set(self, data_type, data):
 
         if data_type == 'phenotypes':
-
-            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
-                self._phenotypes = None
-
-            else:
-                self._phenotypes = self._convert_phenotype_to_current(data)
-
-            self._init_remove_filter_and_undo_actions()
-            self._init_default_offsets()
-
+            return self._set_phenotypes(data)
         elif data_type == 'reference_offsets':
-
             self._reference_surface_positions = data
-
+            return True
         elif data_type == 'normalized_phenotypes':
-
-            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
-                self._normalized_phenotypes = None
-            else:
-                self._normalized_phenotypes = data
-
-            self._init_default_offsets()
-
+            return self._set_normalized_phenotypes(data)
         elif data_type == 'vector_phenotypes':
-
-            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
-                self._vector_phenotypes = None
-            else:
-                self._vector_phenotypes = data
-
-            self._init_remove_filter_and_undo_actions()
-            self._init_default_offsets()
-
+            return self._set_vector_phenotypes(data)
         elif data_type == 'vector_meta_phenotypes':
-
-            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
-                self._vector_meta_phenotypes = None
-            else:
-                self._vector_meta_phenotypes = data
-
-            self._init_remove_filter_and_undo_actions()
-            self._init_default_offsets()
-
+            return self._set_vector_meta_phenotypes(data)
         elif data_type == 'smooth_growth_data':
-
-            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
-                self._smooth_growth_data = None
-            else:
-                self._smooth_growth_data = data
-
+            return self._set_smooth_growth_data(data)
         elif data_type == "phenotype_filter_undo":
-
-            if isinstance(data, tuple) and all(isinstance(q, deque) for q in data):
-                self._phenotype_filter_undo = data
-            else:
-                self._logger.warning("Not a proper undo history")
-
-            self._init_remove_filter_and_undo_actions()
-
+            return self._set_phenotype_filter_undo(data)
         elif data_type == "phenotype_filter":
-
-            if isinstance(data, np.ndarray) and (data.size == 0 or data.size == 1 and not data.shape):
-                self._phenotype_filter = None
-            elif all(True if plate is None else isinstance(plate, dict) for plate in data):
-                self._phenotype_filter = data
-            else:
-                self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
-
-            self._init_remove_filter_and_undo_actions()
-
+            return self._set_phenotype_filter(data)
         elif data_type == "meta_data":
-
-            if isinstance(data, MetaData) or data is None:
-                self._meta_data = data
-            else:
-                self._logger.warning("Not a valid meta data type")
+            return self._set_meta_data(data)
         else:
-
             self._logger.warning('Unknown type of data {0}'.format(data_type))
+            return False
 
     def _convert_phenotype_to_current(self, data):
 
@@ -2084,11 +2159,25 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
               previously were `Filter.OK`. This may of may not have been true.
 
         """
+        def _safe_position(p):
+            try:
+                return int(p)
+            except TypeError:
+                if isinstance(p, np.ndarray):
+                    return p.astype(int)
+                else:
+                    return p
+
+        self._logger.info("Setting {} for plate {}, position {}".format(
+            position_mark, plate, positions
+        ))
+
         if position_mark in (Filter.Empty, Filter.NoGrowth) and phenotype is not None:
             self._logger.error("{0} can only be set for all phenotypes, not specifically for {1}".format(
                 position_mark, phenotype))
             return False
 
+        positions = tuple(_safe_position(p) for p in positions)
         if phenotype is None:
 
             for phenotype in self.phenotypes:
@@ -2106,15 +2195,38 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         return True
 
-    def _set_position_mark(self, plate, positions, phenotype, position_mark, undoable):
+    def _set_position_mark(
+        self, id_plate, positions, phenotype, position_mark, undoable
+    ):
 
-        previous_state = self._phenotype_filter[plate][phenotype][positions]
+        try:
+            previous_state = (
+                self._phenotype_filter[id_plate][phenotype][positions]
+            )
+        except KeyError:
+            if self._phenotype_filter.size <= id_plate:
+                self._logger.error(
+                    "Filter isn't correctly initialized, missing plates."
+                    "Action refursed"
+                )
+                return False
+            self._logger.info(
+                "Updating filter to cover all phenotypes, where missing {}"
+                .format(phenotype)
+            )
+            shapes = tuple(self.plate_shapes)
+            for shape, plate in zip(shapes, self._phenotype_filter):
+                if phenotype not in plate:
+                    plate.update({phenotype: np.zeros(shape, dtype=np.int)})
+            previous_state = False
 
         if isinstance(previous_state, np.ndarray):
             if np.unique(previous_state).size == 1:
                 previous_state = previous_state[0]
 
-        self._phenotype_filter[plate][phenotype][positions] = position_mark.value
+        self._phenotype_filter[id_plate][phenotype][positions] = (
+            position_mark.value
+        )
 
         if undoable:
             self._add_undo(plate, positions, phenotype, previous_state)
