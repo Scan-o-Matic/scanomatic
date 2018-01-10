@@ -31,6 +31,7 @@ from . import settings_api
 from . import experiment_api
 from . import status_api
 from . import ui_pages
+from . import scanners_api
 
 _URL = None
 _LOGGER = Logger("UI-server")
@@ -90,6 +91,7 @@ def launch_server(host, port, debug):
         calibration_api.blueprint, url_prefix="/api/calibration")
     settings_api.add_routes(app)
     experiment_api.add_routes(app, rpc_client)
+    scanners_api.add_routes(app)
 
     if debug:
         CORS(app)

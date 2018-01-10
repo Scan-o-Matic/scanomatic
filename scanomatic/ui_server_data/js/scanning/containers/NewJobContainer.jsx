@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import NewJob from '../components/NewJob';
-import { submitJob, getFreeScanners } from '../api'
+import { submitJob, getScanners } from '../api'
 
 export default class NewJobContainer extends React.Component {
     constructor(props) {
@@ -26,7 +26,7 @@ export default class NewJobContainer extends React.Component {
     }
 
     componentDidMount() {
-        getFreeScanners()
+        getScanners()
             .then((r) => {
                 const selectedName = r.length > 0 ? r[0].name : '';
                 this.setState({ scanners: r, scannerName: selectedName });

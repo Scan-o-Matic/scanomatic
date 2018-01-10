@@ -19,8 +19,8 @@ export function getJobs() {
     });
 }
 
-export function getFreeScanners() {
-    return API.get('/api/status/scanners/free')
+export function getScanners() {
+    return API.get('/api/scanners')
         .then(r => r.scanners.map(scanner => ({
             name: scanner.name,
             power: scanner.power,
