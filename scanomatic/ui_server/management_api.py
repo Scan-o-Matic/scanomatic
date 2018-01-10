@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from flask import jsonify
 from scanomatic import get_version
 from scanomatic.io.mail import can_get_server_with_current_settings
