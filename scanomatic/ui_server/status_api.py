@@ -25,7 +25,7 @@ def add_routes(app, rpc_client):
                 if scanners.has_scanner(status_query):
                     return jsonify(scanner=scanners.get(status_query))
                 else:
-                    return json_abort(400, reason="Scanner {} unknown".format(
+                    return json_abort(400, reason="Scanner '{}' unknown".format(
                         status_query
                         ))
         elif 'jobs' == status_type:

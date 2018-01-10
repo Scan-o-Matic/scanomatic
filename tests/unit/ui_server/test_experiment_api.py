@@ -7,8 +7,7 @@ import os
 import pytest
 from types import MethodType
 from flask import Flask, url_for
-from mock import MagicMock, Mock, patch
-import pytest
+from mock import MagicMock, patch
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
