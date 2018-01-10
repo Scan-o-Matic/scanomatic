@@ -19,3 +19,12 @@ button.new-job {
   display: inline-block;
   margin-bottom: 0.5em;
 }
+
+.job-listing {
+  min-height: 7.5em;
+}
+
+.job-description {
+  display: inline-block;
+  vertical-align: middle;
+}
