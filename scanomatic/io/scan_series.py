@@ -24,3 +24,7 @@ def remove_job(name):
 
 def get_jobs():
     return __DB.values()
+
+
+def get_job_names():
+    return __DB.keys()
