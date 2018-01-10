@@ -20,6 +20,7 @@ from scanomatic.data_processing import phenotyper
 
 from .general import json_abort
 from .resources import ScanCollection
+from .status_api import has_scanner
 
 _LOGGER = Logger("Experiment/Project API")
 
@@ -237,10 +238,22 @@ def add_routes(app, rpc_client):
         if interval < 5:
             return json_abort(400, reason="Interval too small")
 
+        scanner = data_object.get('scannerName', None)
+        if scanner is None:
+            return json_abort(400, reason="Scanner not supplied")
+        if not has_scanner(scanner):
+            return json_abort(400, reason="Scanner {} unknonw".format(scanner))
+
         try:
-            scan_series.add_job(name, duration, interval)
+            scan_series.add_job(name, {
+                'name': name,
+                'duration': duration,
+                'interval': interval,
+                'scanner': scanner
+            })
         except scan_series.ScanNameCollision:
             return json_abort(400, reason="Name duplicated")
+
         return jsonify()
 
     @app.route("/api/project/experiment")

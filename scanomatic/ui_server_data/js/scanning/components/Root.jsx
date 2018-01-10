@@ -20,7 +20,7 @@ export default function Root(props) {
                     onClick={props.onNewJob}
                     disabled={props.newJob}
                 >
-                    + Job
+                    <div className="glyphicon glyphicon-plus" /> Job
                 </button>
                 {jobList}
             </div>

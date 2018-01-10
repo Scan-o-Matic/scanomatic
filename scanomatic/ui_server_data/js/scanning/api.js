@@ -7,3 +7,12 @@ export function submitJob(job) {
 export function getJobs() {
     return API.get('/api/project/experiment');
 }
+
+export function getFreeScanners() {
+    return API.get('/api/status/scanners/free')
+        .then(r => r.scanners.map(scanner => ({
+            name: scanner.name,
+            power: scanner.power,
+            owned: !!scanner.owner,
+        })));
+}

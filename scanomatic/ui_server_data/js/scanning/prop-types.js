@@ -8,4 +8,11 @@ export const jobType = PropTypes.shape({
     }).isRequired,
     name: PropTypes.string.isRequired,
     interval: PropTypes.number.isRequired,
+    scanner: PropTypes.string.isRequired,
+});
+
+export const scannerType = PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    owned: PropTypes.bool.isRequired,
+    power: PropTypes.bool.isRequired,
 });

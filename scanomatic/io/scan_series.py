@@ -9,10 +9,10 @@ class ScanNameUnknown(ValueError):
     pass
 
 
-def add_job(name, duration, interval):
+def add_job(name, job):
     if name in __DB:
         raise ScanNameCollision("{} already used".format(name))
-    __DB[name] = {"duration": duration, "interval": interval, "name": name}
+    __DB[name] = job
 
 
 def remove_job(name):

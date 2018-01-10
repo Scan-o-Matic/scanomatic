@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import { scannerType } from '../prop-types';
 
 export default function NewJob(props) {
     return (
@@ -70,6 +71,21 @@ export default function NewJob(props) {
                                 <span className="input-group-addon" id="interval-unit">minutes</span>
                             </div>
                         </div>
+                        <div className="form-group">
+                            <label>Scanner</label>
+                            <select
+                                className="fixtures form-control"
+                                onChange={props.onScannerNameChange}
+                                value={props.scannerName}
+                            >
+                                {props.scanners.map(v => (
+                                    <option key={v.name} value={v.name}>
+                                        {v.name}
+                                        {` (${v.power ? 'online' : 'offline'}, ${v.owned ? ' occupied' : ' free'})`}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <button className="btn btn-primary" onClick={props.onSubmit}>
                             Add to jobs
                         </button>
@@ -91,12 +107,15 @@ NewJob.propTypes = {
         hours: PropTypes.number.isRequired,
         minutes: PropTypes.number.isRequired,
     }).isRequired,
+    scannerName: PropTypes.string,
+    scanners: PropTypes.arrayOf(scannerType),
     interval: PropTypes.number.isRequired,
     onNameChange: PropTypes.func.isRequired,
     onDurationDaysChange: PropTypes.func.isRequired,
     onDurationHoursChange: PropTypes.func.isRequired,
     onDurationMinutesChange: PropTypes.func.isRequired,
     onIntervalChange: PropTypes.func.isRequired,
+    onScannerNameChange: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
 };
@@ -104,4 +123,6 @@ NewJob.propTypes = {
 NewJob.defaultProps = {
     name: '',
     error: null,
+    scannerName: '',
+    scanners: [],
 };

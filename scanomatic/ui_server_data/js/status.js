@@ -25,7 +25,7 @@ function scannerStatusFormatter(response) {
     }
     let ret = '';
     for (let i=0; i<data.length; i++) {
-        ret += "<div class='scanner'><h3>" + data[i].scanner_name + "</h3>" +
+        ret += "<div class='scanner'><h3>" + data[i].name + "</h3>" +
             "<code>" + (data[i].power ? "Has power" : "Is offline") + "</code>" +
             "<p class=''>" + getOwnerName(data[i]) + "</p>" +
             "</div>";

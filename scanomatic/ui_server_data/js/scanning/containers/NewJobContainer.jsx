@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import NewJob from '../components/NewJob';
-import { submitJob } from '../api'
+import { submitJob, getFreeScanners } from '../api'
 
 export default class NewJobContainer extends React.Component {
     constructor(props) {
@@ -22,6 +22,20 @@ export default class NewJobContainer extends React.Component {
         this.handleDurationMinutesChange = this.handleDurationMinutesChange.bind(this);
         this.handleIntervalChange = this.handleIntervalChange.bind(this);
         this.handleSumbit = this.handleSumbit.bind(this);
+        this.handleScannerNameChange = this.handleScannerNameChange.bind(this);
+    }
+
+    componentDidMount() {
+        getFreeScanners()
+            .then((r) => {
+                const selectedName = r.length > 0 ? r[0].name : '';
+                this.setState({ scanners: r, scannerName: selectedName });
+            })
+            .catch(reason => this.setState({ error: `Error retrieving scanners: ${reason}` }));
+    }
+
+    handleScannerNameChange(e) {
+        this.setState({ scannerName: e.target.value });
     }
 
     handleNameChange(e) {
@@ -84,6 +98,7 @@ export default class NewJobContainer extends React.Component {
             name: this.state.name,
             duration: this.state.duration,
             interval: this.state.interval,
+            scannerName: this.state.scannerName,
         })
             .then(this.props.onClose)
             .catch(reason => this.setState({ error: `Error submitting job: ${reason}` }));
@@ -99,6 +114,7 @@ export default class NewJobContainer extends React.Component {
             onDurationHoursChange={this.handleDurationHoursChange}
             onDurationDaysChange={this.handleDurationDaysChange}
             onNameChange={this.handleNameChange}
+            onScannerNameChange={this.handleScannerNameChange}
         />);
     }
 }
