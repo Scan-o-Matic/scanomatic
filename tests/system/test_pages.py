@@ -85,7 +85,7 @@ def test_maintain(scanomatic, browser):
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
     assert r.text and len(r.text), '{} is empty'.format(uri)
-    assert "<h2>Power Manager</h2>" in r.text
+    assert "<h2>Logs</h2>" in r.text
 
 
 def test_qc_norm(scanomatic, browser):

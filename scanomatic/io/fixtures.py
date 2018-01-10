@@ -131,6 +131,10 @@ class Fixtures(object):
 
         return tuple(sorted(self._fixtures.keys()))
 
+    def all(self):
+
+        return tuple(self[name] for name in self.get_names())
+
     def fill_model(self, model):
 
         fixture_name = model['fixture']

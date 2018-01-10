@@ -1,11 +1,10 @@
 import os
 from itertools import chain
-from flask import Flask, jsonify
+from flask import jsonify
 from scanomatic.ui_server.general import (
     convert_url_to_path, convert_path_to_url, get_search_results, json_response
 )
 from scanomatic.io.paths import Paths
-import scanomatic.io.sane as sane
 from glob import glob
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
@@ -118,32 +117,3 @@ def add_routes(app):
                     scan_instructions=scan_instructions,
                     scan_logs=scan_logs,
                     **get_search_results(path, base_url))))
-
-    @app.route("/api/scan/sane/models")
-    def get_scanner_types():
-
-        jsonify(
-            success=True,
-            is_endpoint=True,
-            models=sane.get_scanner_models())
-
-    @app.route("/api/scan/sane/modes/<model>")
-    def get_scanner_modes(model):
-        modes = sane.get_scanning_modes(model)
-        if not modes:
-            jsonify(
-                success=False,
-                is_endpoint=True,
-                reason="Scanner model '{0}' unknown".format(model))
-
-        mode_to_text = {sane.SCAN_MODES.TPU: "Transparency",
-                        sane.SCAN_MODES.TPU16: "16 bit Transparency",
-                        sane.SCAN_MODES.COLOR: "Reflective Color"}
-
-        jsonify(
-            success=True,
-            is_endpoint=True,
-            mode_values=[m.name for m in modes],
-            mode_text=[
-                (mode_to_text[m] if m in mode_to_text else m.name)
-                for m in modes])

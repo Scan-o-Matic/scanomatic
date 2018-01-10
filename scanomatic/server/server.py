@@ -12,7 +12,6 @@ import scanomatic.io.logger as logger
 import scanomatic.io.app_config as app_config
 import scanomatic.server.queue as queue
 import scanomatic.server.jobs as jobs
-import scanomatic.io.scanner_manager as scanner_manager
 from scanomatic.io.resource_status import Resource_Status
 import scanomatic.generics.decorators as decorators
 import scanomatic.models.rpc_job_models as rpc_job_models
@@ -43,8 +42,6 @@ class Server(object):
         self._jobs = jobs.Jobs()
         self._queue = queue.Queue(self._jobs)
 
-        self._scanner_manager = scanner_manager.ScannerPowerManager()
-
     @property
     def _is_time_to_cycle_log(self):
         # self.logger.info(time.time() - self._cycle_log_time)
@@ -58,14 +55,6 @@ class Server(object):
             catch_stdout=True, catch_stderr=True)
         self.logger.surpress_prints = True
         self._cycle_log_time = time.time()
-
-    @property
-    def scanner_manager(self):
-        """
-
-        :type : scanomatic.io.scanner_manager.ScannerPowerManager
-        """
-        return self._scanner_manager
 
     @property
     def queue(self):
@@ -157,8 +146,6 @@ class Server(object):
 
             if i == 0 and self._queue:
                 self._attempt_job_creation()
-            elif i <= 1 and self._scanner_manager.connected_to_scanners:
-                self._scanner_manager.update()
             else:
                 self._jobs.sync()
                 if self._is_time_to_cycle_log:
@@ -244,18 +231,7 @@ class Server(object):
             self.logger.error("Failed to create job model")
             return False
 
-        if job_type is rpc_job_models.JOB_TYPE.Scan and not self.verify_scanner_claim(rpc_job):
-            return False
-
         self._queue.add(rpc_job)
 
         self.logger.info("Job {0} with id {1} added to queue".format(rpc_job, rpc_job.id))
         return rpc_job.id
-
-    def verify_scanner_claim(self, rpc_job_model):
-
-        if not self.scanner_manager.connected_to_scanners or not self.scanner_manager.has_scanners:
-            self.logger.error("There are no scanners reachable from server")
-            return False
-
-        return self.scanner_manager.request_claim(rpc_job_model)

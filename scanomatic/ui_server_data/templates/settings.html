@@ -19,57 +19,6 @@
         <em>Advanced settings are accessible in the actual configuration file. Have a look at the wiki if you need to play with them</em>
         <form>
             <div class="section-frame">
-
-                <div class="section">
-                    <h2>Power manager</h2>
-                    <label for="number_of_sockets">Number of sockets</label>
-                    <input name="number_of_sockets" id="number_of_sockets" class="short" type="number" min="1" max="12" value="{{power_manager['number_of_sockets']}}"
-                            onchange="dynamicallyLimitScanners(this);">
-                </div>
-
-                <div class="section">
-                    <input name="power_manager_type" id="power_manager_type-notInstalled" type="radio" value="notInstalled" onchange="toggleVisibilities(this, false);" {{'checked' if power_manager['type'].name == 'notInstalled' else ''}}>
-                    <label for="power_manager_type-notInstalled">Not Installed</label><br>
-                    <input name="power_manager_type" id="power_manager_type-lan" type="radio" value="LAN" onchange="toggleVisibilities(this, true);" {{'checked' if power_manager['type'].name == 'LAN' else ''}}>
-                    <label for="power_manager_type-lan">LAN</label><br>
-                    <input name="power_manager_type" id="power_manager_type-usb" type="radio" value="linuxUSB" onchange="toggleVisibilities(this, false);" {{'checked' if power_manager['type'].name == 'linuxUSB' else ''}}>
-                    <label for="power_manager_type-usb">USB</label><br>
-                </div>
-
-                <div class="section" style="{{'display: none;' if power_manager['type'].name != 'LAN' else ''}}">
-                    <label for="power_manager_host">IP address</label>
-                    <input name="power_manger_host" id="power_manager_host" value="{{power_manager['host']}}">
-                </div>
-
-                <div class="section" style="{{'display: none;' if power_manager['type'].name != 'LAN' else ''}}">
-                    <label for="power_manager_mac">Server MAC</label>
-                    <input name="power_manger_mac" id="power_manager_mac" value="{{power_manager['mac'] if power_manager['mac'] else ''}}">
-                    <div class="indented"><em>Allows for discovering the IP of the Power Manager on the LAN 192.168.0 - 256 IP address range if given IP setting doesn't work</em></div>
-                </div>
-
-                <div class="section" style="{{'display: none;' if power_manager['type'].name != 'LAN' else ''}}">
-                    <label for="power_manager_name">Server name</label>
-                    <input name="power_manger_name" id="power_manager_name" value="{{power_manager['name']}}">
-                </div>
-
-                <div class="section" style="{{'display: none;' if power_manager['type'].name != 'LAN' else ''}}">
-                    <label for="power_manager_password">Server password</label>
-                    <input name="power_manger_password" id="power_manager_password" value="{{power_manager['password']}}" type="password">
-                </div>
-
-            </div>
-
-            <div class="section-frame" style="{{'display: none;' if power_manager['type'].name != 'LAN' else ''}}" id="scanner_section">
-                <div class="section">
-                    <h2>Scanners</h2>
-                    <label for="number_of_scanners">Number of scanners</label>
-                    <input name="number_of_scanners" id="number_of_scanners" class="short" type="number" min="0" max="{{power_manager['number_of_sockets']}}" value="{{number_of_scanners}}">
-                </div>
-
-            </div>
-
-
-            <div class="section-frame">
                 <div class="section">
                     <h2>Other</h2>
 
@@ -95,8 +44,5 @@
         </form>
 
     </div>
-    <script>
-        pm_type = $("input:radio[name=power_manager_type]:checked").val();
-    </script>
 </body>
 </html>
