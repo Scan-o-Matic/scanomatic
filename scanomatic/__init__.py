@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Part of analysis work-flow that holds a grid arrays"""
+"""The SoM package performs high accuracy and throughput phenotyping"""
 import os
 
 __author__ = "Martin Zackrisson"
