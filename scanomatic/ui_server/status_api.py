@@ -1,7 +1,6 @@
 from flask import send_from_directory, jsonify
 
 from scanomatic.io.paths import Paths
-from scanomatic.io import scanners
 from .general import convert_path_to_url, json_abort
 
 
@@ -17,6 +16,7 @@ def add_routes(app, rpc_client):
         if status_type == 'queue':
             return jsonify(queue=rpc_client.get_queue_status())
         elif 'scanners' == status_type:
+            scanners = app.config['scanners']
             if status_query is None or status_query.lower() == 'all':
                 return jsonify(scanners=scanners.get_all())
             elif status_query.lower() == 'free':

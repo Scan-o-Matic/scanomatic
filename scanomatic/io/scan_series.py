@@ -1,6 +1,3 @@
-__DB = {}
-
-
 class ScanNameCollision(ValueError):
     pass
 
@@ -9,22 +6,23 @@ class ScanNameUnknown(ValueError):
     pass
 
 
-def add_job(name, job):
-    if name in __DB:
-        raise ScanNameCollision("{} already used".format(name))
-    __DB[name] = job
+class ScanSeries:
+    def __init__(self):
+        self._db = {}
 
+    def add_job(self, name, job):
+        if name in self._db:
+            raise ScanNameCollision("{} already used".format(name))
+        self._db[name] = job
 
-def remove_job(name):
-    if name in __DB:
-        del __DB[name]
-    else:
-        raise ScanNameUnknown("{} is not a known job".format(name))
+    def remove_job(self, name):
+        if name in self._db:
+            del self._db[name]
+        else:
+            raise ScanNameUnknown("{} is not a known job".format(name))
 
+    def get_jobs(self):
+        return self._db.values()
 
-def get_jobs():
-    return __DB.values()
-
-
-def get_job_names():
-    return __DB.keys()
+    def get_job_names(self):
+        return self._db.keys()

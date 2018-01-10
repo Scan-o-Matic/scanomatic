@@ -16,6 +16,8 @@ from scanomatic.io.paths import Paths
 from scanomatic.io.rpc_client import get_client
 from scanomatic.io.backup import backup_file
 from scanomatic.io.scanstore import ScanStore
+from scanomatic.io.scan_series import ScanSeries
+from scanomatic.io.scanners import Scanners
 
 from . import qc_api
 from . import analysis_api
@@ -71,6 +73,7 @@ def launch_server(host, port, debug):
     app.log_recycler = Timer(LOG_RECYCLE_TIME, init_logging)
     app.log_recycler.start()
 
+    add_configs(app)
     add_resource_routes(app, rpc_client)
 
     ui_pages.add_routes(app)
@@ -110,6 +113,11 @@ def launch_server(host, port, debug):
             " (see `scan-o-matic --help` for instructions).")
         return False
     return True
+
+
+def add_configs(app):
+    app.config['scanners'] = Scanners()
+    app.config['scan_series'] = ScanSeries()
 
 
 def add_resource_routes(app, rpc_client):

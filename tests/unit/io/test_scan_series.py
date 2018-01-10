@@ -1,55 +1,52 @@
 from __future__ import absolute_import
 
 import pytest
-from scanomatic.io import scan_series
+from scanomatic.io.scan_series import (
+    ScanSeries, ScanNameCollision, ScanNameUnknown
+)
 
 
-@pytest.fixture
-def remove_jobs():
-    yield
-    for name in scan_series.get_job_names():
-        scan_series.remove_job(name)
+@pytest.fixture(scope='function')
+def scan_series():
+    return ScanSeries()
 
 
-@pytest.mark.usefixtures("remove_jobs")
 class TestAddJob:
 
-    def test_add_jobb(self):
+    def test_add_jobb(self, scan_series):
         name = "Test"
         job = {'hello': 'to you'}
         scan_series.add_job(name, job)
         assert job in scan_series.get_jobs()
 
-    def test_add_duplicate_job_raises(self):
+    def test_add_duplicate_job_raises(self, scan_series):
         name = "Test"
         job = {'hello': 'to you'}
         scan_series.add_job(name, job)
-        with pytest.raises(scan_series.ScanNameCollision):
+        with pytest.raises(ScanNameCollision):
             scan_series.add_job(name, job)
 
 
-@pytest.mark.usefixtures("remove_jobs")
 class TestRemoveJob:
 
-    def test_remove_job(self):
+    def test_remove_job(self, scan_series):
         name = "Test"
         job = {'hello': 'to you'}
         scan_series.add_job(name, job)
         scan_series.remove_job(name)
         assert job not in scan_series.get_jobs()
 
-    def test_remove_unknown_job_raises(self):
-        with pytest.raises(scan_series.ScanNameUnknown):
+    def test_remove_unknown_job_raises(self, scan_series):
+        with pytest.raises(ScanNameUnknown):
             scan_series.remove_job("Help")
 
 
-@pytest.mark.usefixtures("remove_jobs")
 class TestGetJobs:
 
-    def test_when_no_jobs(self):
+    def test_when_no_jobs(self, scan_series):
         assert scan_series.get_jobs() == []
 
-    def test_get_all_jobs(self):
+    def test_get_all_jobs(self, scan_series):
         job1 = [42]
         job2 = {6: 7}
         scan_series.add_job('a', job1)

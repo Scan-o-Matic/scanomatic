@@ -8,8 +8,7 @@ from flask_restful import Api
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.logger import Logger
-from scanomatic.io import scan_series
-from scanomatic.io import scanners
+from scanomatic.io.scan_series import ScanNameCollision
 from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.compile_project_factory import (
@@ -221,7 +220,6 @@ def add_routes(app, rpc_client):
 
     @app.route("/api/project/experiment/new", methods=['post'])
     def _experiment_api_add():
-
         data_object = request.get_json(silent=True, force=True)
         _LOGGER.info("Experiment json {}".format(data_object))
         name = data_object.get('name', None)
@@ -236,13 +234,18 @@ def add_routes(app, rpc_client):
             return json_abort(400, reason="Interval not supplied")
 
         if interval < 5:
-            return json_abort(400, reason="Interval too small")
+            return json_abort(400, reason="Interval too short")
 
+        scan_series = app.config['scan_series']
+        scanners = app.config['scanners']
         scanner = data_object.get('scannerName', None)
         if scanner is None:
             return json_abort(400, reason="Scanner not supplied")
         if not scanners.has_scanner(scanner):
-            return json_abort(400, reason="Scanner {} unknonw".format(scanner))
+            return json_abort(
+                400,
+                reason="Scanner '{}' unknown".format(scanner)
+            )
 
         try:
             scan_series.add_job(name, {
@@ -251,7 +254,7 @@ def add_routes(app, rpc_client):
                 'interval': interval,
                 'scanner': scanner
             })
-        except scan_series.ScanNameCollision:
+        except ScanNameCollision:
             return json_abort(400, reason="Name duplicated")
 
         return jsonify()
@@ -259,6 +262,8 @@ def add_routes(app, rpc_client):
     @app.route("/api/project/experiment")
     def _experiment_api_list():
 
+        scanners = app.config['scanners']
+        scan_series = app.config['scan_series']
         return jsonify(jobs=[
             dict(job, scanner=scanners.get(job['scanner']))
             for job in scan_series.get_jobs()
