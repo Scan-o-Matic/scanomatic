@@ -1864,13 +1864,21 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def _set_phenotype_filter(self, data):
         allowed = False
-        if isinstance(data, np.ndarray) and (data.size == 0 or data.size == 1 and not data.shape):
+        if (
+            isinstance(data, np.ndarray) and
+            (data.size == 0 or data.size == 1 and not data.shape)
+        ):
             self._phenotype_filter = None
-        elif all(True if plate is None else isinstance(plate, dict) for plate in data):
+        elif all(
+            True if plate is None else isinstance(plate, dict)
+            for plate in data
+        ):
             self._phenotype_filter = data
             allowed = True
         else:
-            self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
+            self._phenotype_filter = (
+                self._convert_to_current_phenotype_filter(data)
+            )
             allowed = True
         self._init_remove_filter_and_undo_actions()
         return allowed
@@ -2151,17 +2159,25 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
               previously were `Filter.OK`. This may of may not have been true.
 
         """
+        def _safe_position(p):
+            try:
+                return int(p)
+            except TypeError:
+                if isinstance(p, np.ndarray):
+                    return p.astype(int)
+                else:
+                    return p
+
         self._logger.info("Setting {} for plate {}, position {}".format(
             position_mark, plate, positions
         ))
-        print positions
-        return True
 
         if position_mark in (Filter.Empty, Filter.NoGrowth) and phenotype is not None:
             self._logger.error("{0} can only be set for all phenotypes, not specifically for {1}".format(
                 position_mark, phenotype))
             return False
 
+        positions = tuple(_safe_position(p) for p in positions)
         if phenotype is None:
 
             for phenotype in self.phenotypes:
@@ -2180,17 +2196,17 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         return True
 
     def _set_position_mark(
-        self, plate, positions, phenotype, position_mark, undoable
+        self, id_plate, positions, phenotype, position_mark, undoable
     ):
 
         try:
             previous_state = (
-                self._phenotype_filter[plate][phenotype][positions]
+                self._phenotype_filter[id_plate][phenotype][positions]
             )
         except KeyError:
-            if self._phenotype_filter.size <= plate:
+            if self._phenotype_filter.size <= id_plate:
                 self._logger.error(
-                    "Filer isn't correctly initialized, missing plates."
+                    "Filter isn't correctly initialized, missing plates."
                     "Action refursed"
                 )
                 return False
@@ -2208,7 +2224,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             if np.unique(previous_state).size == 1:
                 previous_state = previous_state[0]
 
-        self._phenotype_filter[plate][phenotype][positions] = (
+        self._phenotype_filter[id_plate][phenotype][positions] = (
             position_mark.value
         )
 
