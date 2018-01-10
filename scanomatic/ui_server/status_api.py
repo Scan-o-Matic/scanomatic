@@ -15,19 +15,6 @@ def add_routes(app, rpc_client):
 
         if status_type == 'queue':
             return jsonify(queue=rpc_client.get_queue_status())
-        elif 'scanners' == status_type:
-            scanners = app.config['scanners']
-            if status_query is None or status_query.lower() == 'all':
-                return jsonify(scanners=scanners.get_all())
-            elif status_query.lower() == 'free':
-                return jsonify(scanners=scanners.get_free())
-            else:
-                if scanners.has_scanner(status_query):
-                    return jsonify(scanner=scanners.get(status_query))
-                else:
-                    return json_abort(400, reason="Scanner '{}' unknown".format(
-                        status_query
-                        ))
         elif 'jobs' == status_type:
             data = rpc_client.get_job_status()
             for item in data:
