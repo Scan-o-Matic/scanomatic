@@ -9,6 +9,7 @@ from flask_restful import Api
 from scanomatic.io.app_config import Config
 from scanomatic.io.logger import Logger
 from scanomatic.io import scan_series
+from scanomatic.io import scanners
 from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.compile_project_factory import (
@@ -20,7 +21,6 @@ from scanomatic.data_processing import phenotyper
 
 from .general import json_abort
 from .resources import ScanCollection
-from .status_api import has_scanner
 
 _LOGGER = Logger("Experiment/Project API")
 
@@ -241,7 +241,7 @@ def add_routes(app, rpc_client):
         scanner = data_object.get('scannerName', None)
         if scanner is None:
             return json_abort(400, reason="Scanner not supplied")
-        if not has_scanner(scanner):
+        if not scanners.has_scanner(scanner):
             return json_abort(400, reason="Scanner {} unknonw".format(scanner))
 
         try:
@@ -258,7 +258,11 @@ def add_routes(app, rpc_client):
 
     @app.route("/api/project/experiment")
     def _experiment_api_list():
-        return jsonify(jobs=scan_series.get_jobs())
+
+        return jsonify(jobs=[
+            dict(job, scanner=scanners.get(job['scanner']))
+            for job in scan_series.get_jobs()
+        ])
 
     @app.route("/api/project/compile", methods=['post'])
     def _compile_api():

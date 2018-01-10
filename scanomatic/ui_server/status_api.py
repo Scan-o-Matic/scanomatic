@@ -1,19 +1,8 @@
 from flask import send_from_directory, jsonify
 
 from scanomatic.io.paths import Paths
+from scanomatic.io import scanners
 from .general import convert_path_to_url, json_abort
-
-_SCANNERS = {
-    'Test': {
-        'name': 'Test',
-        'power': True,
-        'owner': None,
-    },
-}
-
-
-def has_scanner(name):
-    return name in _SCANNERS
 
 
 def add_routes(app, rpc_client):
@@ -29,12 +18,12 @@ def add_routes(app, rpc_client):
             return jsonify(queue=rpc_client.get_queue_status())
         elif 'scanners' == status_type:
             if status_query is None or status_query.lower() == 'all':
-                return jsonify(scanners=_SCANNERS.values())
+                return jsonify(scanners=scanners.get_all())
             elif status_query.lower() == 'free':
-                return jsonify(scanners=_SCANNERS.values())
+                return jsonify(scanners=scanners.get_free())
             else:
-                if status_query in _SCANNERS:
-                    return jsonify(scanner=_SCANNERS[status_query])
+                if scanners.has_scanner(status_query):
+                    return jsonify(scanner=scanners.get(status_query))
                 else:
                     return json_abort(400, reason="Scanner {} unknown".format(
                         status_query

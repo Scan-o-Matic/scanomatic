@@ -1,5 +1,11 @@
 import PropTypes from 'prop-types';
 
+export const scannerType = PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    owned: PropTypes.bool.isRequired,
+    power: PropTypes.bool.isRequired,
+});
+
 export const jobType = PropTypes.shape({
     duration: PropTypes.shape({
         days: PropTypes.number.isRequired,
@@ -8,11 +14,5 @@ export const jobType = PropTypes.shape({
     }).isRequired,
     name: PropTypes.string.isRequired,
     interval: PropTypes.number.isRequired,
-    scanner: PropTypes.string.isRequired,
-});
-
-export const scannerType = PropTypes.shape({
-    name: PropTypes.string.isRequired,
-    owned: PropTypes.bool.isRequired,
-    power: PropTypes.bool.isRequired,
+    scanner: scannerType.isRequired,
 });

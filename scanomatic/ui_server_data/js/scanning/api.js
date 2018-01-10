@@ -5,7 +5,18 @@ export function submitJob(job) {
 }
 
 export function getJobs() {
-    return API.get('/api/project/experiment');
+    return API.get('/api/project/experiment').then((r) => {
+        const jobs = r.jobs.map((job) => {
+            const newJob = Object.assign({}, job);
+            newJob.scanner = {
+                name: job.scanner.name,
+                power: job.scanner.power,
+                owned: !!job.scanner.owner,
+            };
+            return newJob;
+        });
+        return jobs;
+    });
 }
 
 export function getFreeScanners() {

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { submitJob, getJobs } from '../api';
+import { getJobs } from '../api';
 import Root from '../components/Root';
 
 
@@ -15,11 +15,11 @@ export default class RootContainer extends React.Component {
         this.handleError = this.handleError.bind(this);
         this.handleNewJob = this.handleNewJob.bind(this);
         this.handleCloseNewJob = this.handleCloseNewJob.bind(this);
-        this.pullJobs = this.pullJobs.bind(this);
+        this.getJobs = this.getJobs.bind(this);
     }
 
     componentDidMount() {
-        this.pullJobs();
+        this.getJobs();
     }
 
     handleNewJob() {
@@ -27,7 +27,7 @@ export default class RootContainer extends React.Component {
     }
 
     handleCloseNewJob() {
-        this.pullJobs();
+        this.getJobs();
         this.setState({ newJob: false });
     }
 
@@ -35,10 +35,10 @@ export default class RootContainer extends React.Component {
         this.setState({ error });
     }
 
-    pullJobs() {
+    getJobs() {
         getJobs()
-            .then(r => this.setState({ jobs: r.jobs, error: null }))
-            .catch(reason => this.setState({error: `Error requesting jobs: ${reason}` }));
+            .then(jobs => this.setState({ jobs, error: null }))
+            .catch(reason => this.setState({ error: `Error requesting jobs: ${reason}` }));
     }
 
     render() {
