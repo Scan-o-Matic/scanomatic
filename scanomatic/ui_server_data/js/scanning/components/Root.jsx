@@ -6,6 +6,7 @@ import { jobType } from '../prop-types';
 
 export default function Root(props) {
     const newJob = props.newJob ? <NewJobContainer onClose={props.onCloseNewJob} /> : null;
+    const jobList = newJob ? null : <JobList jobs={props.jobs} />;
     return (
         <div className="row">
             {props.error && (
@@ -15,13 +16,13 @@ export default function Root(props) {
             )}
             <div className="col-md-6">
                 <button
-                    className="btn btn-primary btn-next"
+                    className="btn btn-primary btn-next new-job"
                     onClick={props.onNewJob}
                     disabled={props.newJob}
                 >
                     + Job
                 </button>
-                <JobList jobs={props.jobs} />
+                {jobList}
             </div>
             {newJob}
         </div>
