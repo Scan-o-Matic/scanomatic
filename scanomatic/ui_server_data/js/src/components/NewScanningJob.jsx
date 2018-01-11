@@ -62,7 +62,7 @@ export default function NewScanningJob(props) {
                             <label>Interval</label>
                             <div className="input-group">
                                 <input
-                                    className="days form-control"
+                                    className="interval form-control"
                                     type="number"
                                     value={props.interval}
                                     placeholder="Interval (minutes)"
@@ -74,22 +74,22 @@ export default function NewScanningJob(props) {
                         <div className="form-group">
                             <label>Scanner</label>
                             <select
-                                className="fixtures form-control"
+                                className="scanner form-control"
                                 onChange={props.onScannerNameChange}
                                 value={props.scannerName}
                             >
                                 {props.scanners.map(v => (
                                     <option key={v.name} value={v.name}>
                                         {v.name}
-                                        {` (${v.power ? 'online' : 'offline'}, ${v.owned ? ' occupied' : ' free'})`}
+                                        {` (${v.power ? 'online' : 'offline'}, ${v.owned ? 'occupied' : 'free'})`}
                                     </option>
                                 ))}
                             </select>
                         </div>
-                        <button className="btn btn-primary" onClick={props.onSubmit}>
+                        <button className="btn btn-primary job-add" onClick={props.onSubmit}>
                             Add to jobs
                         </button>
-                        <button className="btn" onClick={props.onCancel}>
+                        <button className="btn cancel" onClick={props.onCancel}>
                             Cancel
                         </button>
                     </div>
