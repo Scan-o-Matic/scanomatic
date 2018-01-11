@@ -19,7 +19,7 @@ def test_not_having_unkown_scanner(scanners):
 def test_getting_scanner(scanners):
     assert scanners.get("Test") == {
         "name": "Test",
-        "power": True,
+        "power": False,
         "owner": None,
     }
 
@@ -28,7 +28,7 @@ def test_get_free(scanners):
     assert scanners.get_free() == [
         {
             "name": "Test",
-            "power": True,
+            "power": False,
             "owner": None,
         },
     ]
@@ -38,7 +38,7 @@ def test_get_all(scanners):
     assert scanners.get_free() == [
         {
             "name": "Test",
-            "power": True,
+            "power": False,
             "owner": None,
         },
     ]
