@@ -39,8 +39,6 @@ class API {
     }
 }
 
-export const HasJquery = () => !!$;
-
 export function GetSliceImageURL(cccId, imageId, slice) {
     const path = GetSliceImagePath.replace('#0#', cccId).replace('#1#', imageId).replace('#2#', slice);
     return path;
