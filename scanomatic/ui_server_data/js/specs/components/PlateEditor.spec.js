@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React  from 'react';
 
 import './enzyme-setup';
-import PlateEditor, { PlateStatusLabel } from '../../ccc/components/PlateEditor';
+import PlateEditor, { PlateStatusLabel } from '../../src/components/PlateEditor';
 import cccMetadata from '../fixtures/cccMetadata';
 
 describe('<PlateEditor />', () => {

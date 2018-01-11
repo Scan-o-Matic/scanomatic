@@ -2,7 +2,7 @@ import React from 'react';
 import { shallow } from 'enzyme';
 
 import './enzyme-setup';
-import PlateProgress from '../../ccc/components/PlateProgress';
+import PlateProgress from '../../src/components/PlateProgress';
 
 describe('<PlateProgress />', () => {
     const props = {

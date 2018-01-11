@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import '../components/enzyme-setup';
-import CCCEditor from '../../ccc/components/CCCEditor';
+import CCCEditor from '../../src/components/CCCEditor';
 import cccMetadata from '../fixtures/cccMetadata';
 
 describe('<CCCEditor />', () => {

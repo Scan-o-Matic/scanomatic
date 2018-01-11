@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import Gridding from '../../ccc/components/Gridding';
+import Gridding from '../../src/components/Gridding';
 
 describe('<Gridding />', () => {
     const props = {
