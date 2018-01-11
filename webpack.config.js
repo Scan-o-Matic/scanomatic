@@ -1,7 +1,7 @@
 module.exports = {
     entry: {
-        ccc: ['./scanomatic/ui_server_data/js/src/ccc_index.jsx'],
-        scanning: ['./scanomatic/ui_server_data/js/src/scanning_index.jsx'],
+        ccc: ['./scanomatic/ui_server_data/js/src/ccc.jsx'],
+        scanning: ['./scanomatic/ui_server_data/js/src/scanning.jsx'],
     },
     output: {
         filename: 'scanomatic/ui_server_data/js/[name].js',

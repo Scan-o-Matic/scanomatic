@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import RootContainer from './containers/RootContainer';
+import ScanningRootContainer from './containers/ScanningRootContainer';
 
 
 $(document).ready(() => {
-    ReactDOM.render(<RootContainer />, document.getElementById('react-root'));
+    ReactDOM.render(<ScanningRootContainer />, document.getElementById('react-root'));
 });
