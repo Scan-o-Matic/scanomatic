@@ -3,7 +3,7 @@ import { shallow } from 'enzyme';
 
 import './enzyme-setup';
 import PolynomialConstructionError
-    from '../../ccc/components/PolynomialConstructionError';
+    from '../../src/components/PolynomialConstructionError';
 
 describe('<PolynomialConstructionError />', () => {
     const props = {

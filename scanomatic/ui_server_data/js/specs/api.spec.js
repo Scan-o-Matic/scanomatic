@@ -1,7 +1,6 @@
 import 'jasmine-ajax';
 
-import { SetColonyCompression, SetColonyDetection, SetGridding, HasJquery } from '../ccc/api';
-import * as API from '../ccc/api';
+import * as API from '../src/api';
 
 const toHaveMethod = (util, customEqualityTesters) => ({
     compare: (request, expected) => {
@@ -30,10 +29,6 @@ describe('API', () => {
         jasmine.Ajax.uninstall();
     });
 
-    it('should have jquery', () => {
-        expect(HasJquery()).toBe(true);
-    });
-
     describe('SetGridding', () => {
         const cccId = 'CCC42';
         const imageId = '1M4G3';
@@ -54,30 +49,30 @@ describe('API', () => {
         });
 
         it('should query the correct url', () => {
-            SetGridding(...args);
+            API.SetGridding(...args);
             expect(mostRecentRequest().url)
                 .toBe('/api/calibration/CCC42/image/1M4G3/plate/0/grid/set');
         });
 
         it('should send a POST request', () => {
-            SetGridding(...args);
+            API.SetGridding(...args);
             expect(mostRecentRequest()).toHaveMethod('POST');
         });
 
         it('should send the pinning format', ()=>{
-            SetGridding(...args);
+            API.SetGridding(...args);
             const params = JSON.parse(mostRecentRequest().params);
             expect(params.pinning_format).toEqual(pinningFormat);
         });
 
         it('should send the offset', ()=>{
-            SetGridding(...args);
+            API.SetGridding(...args);
             const params = JSON.parse(mostRecentRequest().params);
             expect(params.gridding_correction).toEqual(offset);
         });
 
         it('should send the access token', ()=>{
-            SetGridding(...args);
+            API.SetGridding(...args);
             const params = JSON.parse(mostRecentRequest().params);
             expect(params.access_token).toEqual(accessToken);
         });
@@ -128,20 +123,20 @@ describe('API', () => {
         });
 
         it('should query the correct url', () => {
-            SetColonyCompression(...args);
+            API.SetColonyCompression(...args);
             expect(jasmine.Ajax.requests.mostRecent().url)
                 .toBe('/api/calibration/CCC42/image/1M4G3/plate/PL4T3/compress/colony/1/4');
         });
 
         it('should send the cell count', () => {
-            SetColonyCompression(...args);
+            API.SetColonyCompression(...args);
             const params = JSON.parse(mostRecentRequest().params);
             expect(params.cell_count).toEqual(cellCount);
         });
 
         it('should call onSuccess on success', () => {
             const data = { foo: 'bar' };
-            SetColonyCompression(...args);
+            API.SetColonyCompression(...args);
             jasmine.Ajax.requests.mostRecent().respondWith({
                 status: 200, responseText: JSON.stringify(data),
             });
@@ -150,7 +145,7 @@ describe('API', () => {
 
         it('should call onError on error', () => {
             const data = { foo: 'bar' };
-            SetColonyCompression(...args);
+            API.SetColonyCompression(...args);
             jasmine.Ajax.requests.mostRecent().respondWith({
                 status: 400, responseText: JSON.stringify(data),
             });
@@ -176,14 +171,14 @@ describe('API', () => {
         });
 
         it('should query the correct url', () => {
-            SetColonyDetection(...args);
+            API.SetColonyDetection(...args);
             expect(jasmine.Ajax.requests.mostRecent().url)
                 .toBe('/api/calibration/CCC42/image/1M4G3/plate/PL4T3/detect/colony/1/4');
         });
 
         it('should call onSuccess on success', () => {
             const data = { foo: 'bar' };
-            SetColonyDetection(...args);
+            API.SetColonyDetection(...args);
             jasmine.Ajax.requests.mostRecent().respondWith({
                 status: 200, responseText: JSON.stringify(data),
             });
@@ -192,7 +187,7 @@ describe('API', () => {
 
         it('should call onError on error', () => {
             const data = { foo: 'bar' };
-            SetColonyDetection(...args);
+            API.SetColonyDetection(...args);
             jasmine.Ajax.requests.mostRecent().respondWith({
                 status: 400, responseText: JSON.stringify(data),
             });

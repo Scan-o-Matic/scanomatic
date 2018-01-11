@@ -7,7 +7,7 @@ import CCCEditorContainer from '../containers/CCCEditorContainer';
 import FinalizedCCC from './FinalizedCCC';
 
 
-export default function Root(props) {
+export default function CCCRoot(props) {
     let view;
     if (props.cccMetadata && props.finalized) {
         view = <FinalizedCCC cccMetadata={props.cccMetadata} />;
@@ -38,7 +38,7 @@ export default function Root(props) {
     );
 }
 
-Root.propTypes = {
+CCCRoot.propTypes = {
     cccMetadata: CCCPropTypes.cccMetadata,
     error: PropTypes.string,
     finalized: PropTypes.bool,
@@ -47,7 +47,7 @@ Root.propTypes = {
     onInitializeCCC: PropTypes.func.isRequired,
 };
 
-Root.defaultProps = {
+CCCRoot.defaultProps = {
     cccMetadata: null,
     error: null,
     finalized: false,

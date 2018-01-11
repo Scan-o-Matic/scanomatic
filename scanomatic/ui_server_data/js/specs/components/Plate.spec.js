@@ -2,8 +2,8 @@ import React from 'react';
 import { mount } from 'enzyme';
 
 import './enzyme-setup';
-import Plate from '../../ccc/components/Plate';
-import { loadImage } from '../../ccc/helpers';
+import Plate from '../../src/components/Plate';
+import { loadImage } from '../../src/helpers';
 import expectedPlateImage from '../fixtures/expectedPlate.png';
 import expectedGriddedPlateImage from '../fixtures/expectedGriddedPlate.png';
 import expectedGriddedPlateSelectFirstImage from '../fixtures/expectedGriddedPlateSelectFirst.png';

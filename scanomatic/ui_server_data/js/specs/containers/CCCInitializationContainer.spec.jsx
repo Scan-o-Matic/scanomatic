@@ -2,8 +2,8 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import '../components/enzyme-setup';
-import CCCInitializationContainer from '../../ccc/containers/CCCInitializationContainer';
-import * as API from '../../ccc/api';
+import CCCInitializationContainer from '../../src/containers/CCCInitializationContainer';
+import * as API from '../../src/api';
 import FakePromise from '../helpers/FakePromise';
 
 

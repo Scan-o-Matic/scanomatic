@@ -2,7 +2,7 @@ import { mount } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import ColonyImage from '../../ccc/components/ColonyImage';
+import ColonyImage from '../../src/components/ColonyImage';
 
 describe('<ColonyImage/>', () => {
     const data = {

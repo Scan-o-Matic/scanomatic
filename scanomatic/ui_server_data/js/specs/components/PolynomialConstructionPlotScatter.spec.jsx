@@ -2,7 +2,7 @@ import React from 'react';
 import { shallow, mount } from 'enzyme';
 
 import './enzyme-setup';
-import PolynomialResultsPlotScatter from '../../ccc/components/PolynomialResultsPlotScatter';
+import PolynomialResultsPlotScatter from '../../src/components/PolynomialResultsPlotScatter';
 
 describe('<PolynomialResultsPlotScatter />', () => {
     const props = {

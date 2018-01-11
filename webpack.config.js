@@ -1,6 +1,6 @@
 module.exports = {
     entry: {
-        ccc: ['./scanomatic/ui_server_data/js/ccc/index.jsx'],
+        ccc: ['./scanomatic/ui_server_data/js/src/ccc.jsx'],
     },
     output: {
         filename: 'scanomatic/ui_server_data/js/[name].js',
@@ -12,13 +12,13 @@ module.exports = {
                 exclude: /node_modules/,
                 use: {
                     loader: 'babel-loader',
-                }
+                },
             },
             {
                 test: /\.png$/,
                 use: {
                     loader: 'file-loader',
-                }
+                },
             },
             {
                 test: /\.css$/,
