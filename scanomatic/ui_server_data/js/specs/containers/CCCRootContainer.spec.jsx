@@ -16,7 +16,7 @@ describe('<CCCRootContainer />', () => {
         spyOn(API, 'finalizeCalibration').and.returnValue(new FakePromise());
     });
 
-    it('should render <Root />', () => {
+    it('should render <CCCRoot />', () => {
         const wrapper = shallow(<CCCRootContainer />);
         expect(wrapper.find('CCCRoot').exists()).toBeTruthy();
     });

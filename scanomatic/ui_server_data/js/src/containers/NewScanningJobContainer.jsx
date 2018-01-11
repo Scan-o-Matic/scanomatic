@@ -76,9 +76,7 @@ export default class NewScanningJobContainer extends React.Component {
             minutes -= 60;
             hours += 1;
         }
-        if (hours < 0) {
-            hours = 0;
-        } else if (hours > 23) {
+        if (hours > 23) {
             hours -= 24;
             days += 1;
         }

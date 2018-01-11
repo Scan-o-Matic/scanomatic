@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import { scannerType } from '../prop-types';
+import scannerType from '../prop-types';
 
 export default function NewScanningJob(props) {
     return (
