@@ -18,13 +18,13 @@ export default function ScanningJobPanel(props) {
     let showStart = null;
     if (props.scanner.owned || !props.scanner.power) {
         showStart = (
-            <button type="button" className="btn btn-lg" disabled>
+            <button type="button" className="btn btn-lg job-start" disabled>
                 <span className="glyphicon glyphicon-ban-circle" /> Start
             </button>
         );
     } else {
         showStart = (
-            <button type="button" className="btn btn-lg">
+            <button type="button" className="btn btn-lg job-start">
                 <span className="glyphicon glyphicon-play" /> Start
             </button>
         );
