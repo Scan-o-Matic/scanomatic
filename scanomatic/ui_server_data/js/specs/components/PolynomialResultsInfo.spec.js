@@ -4,7 +4,7 @@ import { shallow } from 'enzyme';
 import './enzyme-setup';
 import PolynomialResultsInfo, {
     PolynomialEquation, ScientificNotation, numberAsScientific
-} from '../../ccc/components/PolynomialResultsInfo';
+} from '../../src/components/PolynomialResultsInfo';
 
 describe('<PolynomialResultsInfo />', () => {
     const props = {

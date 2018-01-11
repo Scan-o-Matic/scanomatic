@@ -2,11 +2,11 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import Root from '../../ccc/components/Root';
+import CCCRoot from '../../src/components/CCCRoot';
 import cccMetadata from '../fixtures/cccMetadata';
 
 
-describe('<Root />', () => {
+describe('<CCCRoot />', () => {
     const onInitializeCCC = jasmine.createSpy('onInitialzeCCC');
     const onFinalizeCCC = jasmine.createSpy('onFinalizeCCC');
     const onError = jasmine.createSpy('onError');
@@ -14,25 +14,25 @@ describe('<Root />', () => {
 
     it('should render the error', () => {
         const error = 'Bad! Wrong! Boooh!';
-        const wrapper = shallow(<Root {...props} error={error} />);
+        const wrapper = shallow(<CCCRoot {...props} error={error} />);
         expect(wrapper.text()).toContain(error);
     });
 
     describe('initializing', () => {
         it('should render a <CCCInitializationContainer />', () => {
-            const wrapper = shallow(<Root {...props} />);
+            const wrapper = shallow(<CCCRoot {...props} />);
             expect(wrapper.find('CCCInitializationContainer').exists())
                 .toBeTruthy();
         });
 
         it('should pass onInitializeCCC to <CCCInitialization />', () => {
-            const wrapper = shallow(<Root {...props} />);
+            const wrapper = shallow(<CCCRoot {...props} />);
             expect(wrapper.find('CCCInitializationContainer').prop('onInitialize'))
                 .toBe(onInitializeCCC);
         });
 
         it('should pass onError to <CCCInitialization />', () => {
-            const wrapper = shallow(<Root {...props} />);
+            const wrapper = shallow(<CCCRoot {...props} />);
             expect(wrapper.find('CCCInitializationContainer').prop('onError'))
                 .toBe(onError);
         });
@@ -40,18 +40,18 @@ describe('<Root />', () => {
 
     describe('editing', () => {
         it('should render a <CCCEditorContainer />', () => {
-            const wrapper = shallow(<Root {...props} cccMetadata={cccMetadata} />);
+            const wrapper = shallow(<CCCRoot {...props} cccMetadata={cccMetadata} />);
             expect(wrapper.find('CCCEditorContainer').exists()).toBeTruthy();
         });
 
         it('should pass cccMetadata to <CCCEditorContainer />', () => {
-            const wrapper = shallow(<Root {...props} cccMetadata={cccMetadata} />);
+            const wrapper = shallow(<CCCRoot {...props} cccMetadata={cccMetadata} />);
             expect(wrapper.find('CCCEditorContainer').prop('cccMetadata'))
                 .toEqual(cccMetadata);
         });
 
         it('should pass onFinalizeCCC to <CCCEditorContainer />', () => {
-            const wrapper = shallow(<Root {...props} cccMetadata={cccMetadata} />);
+            const wrapper = shallow(<CCCRoot {...props} cccMetadata={cccMetadata} />);
             expect(wrapper.find('CCCEditorContainer').prop('onFinalizeCCC'))
                 .toEqual(onFinalizeCCC);
         });
@@ -59,12 +59,12 @@ describe('<Root />', () => {
 
     describe('finalized', () => {
         it('should render a <FinalizedCCC />', () => {
-            const wrapper = shallow(<Root {...props} cccMetadata={cccMetadata} finalized />);
+            const wrapper = shallow(<CCCRoot {...props} cccMetadata={cccMetadata} finalized />);
             expect(wrapper.find('FinalizedCCC').exists()).toBeTruthy();
         });
 
         it('should pass cccMetadata to <FinalizedCCC />', () => {
-            const wrapper = shallow(<Root {...props} cccMetadata={cccMetadata} finalized />);
+            const wrapper = shallow(<CCCRoot {...props} cccMetadata={cccMetadata} finalized />);
             expect(wrapper.find('FinalizedCCC').prop('cccMetadata')).toEqual(cccMetadata);
         });
     });

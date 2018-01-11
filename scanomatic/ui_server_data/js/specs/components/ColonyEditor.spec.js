@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import ColonyEditor from '../../ccc/components/ColonyEditor';
+import ColonyEditor from '../../src/components/ColonyEditor';
 
 
 describe('<ColonyEditor />', () => {

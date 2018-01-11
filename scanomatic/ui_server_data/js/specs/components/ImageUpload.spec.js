@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import '../components/enzyme-setup';
-import ImageUpload from '../../ccc/components/ImageUpload';
+import ImageUpload from '../../src/components/ImageUpload';
 
 describe('<ImageUpload />', () => {
     const onImageChange = jasmine.createSpy('onFileChange');

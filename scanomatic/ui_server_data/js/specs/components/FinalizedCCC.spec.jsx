@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import FinalizedCCC from '../../ccc/components/FinalizedCCC';
+import FinalizedCCC from '../../src/components/FinalizedCCC';
 import cccMetadata from '../fixtures/cccMetadata';
 
 

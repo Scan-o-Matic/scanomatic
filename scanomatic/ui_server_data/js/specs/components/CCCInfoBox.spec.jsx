@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import CCCInfoBox from '../../ccc/components/CCCInfoBox';
+import CCCInfoBox from '../../src/components/CCCInfoBox';
 import cccMetadata from '../fixtures/cccMetadata';
 
 describe('<CCCInfoBox />', () => {

@@ -3,7 +3,7 @@ import { shallow } from 'enzyme';
 
 import './enzyme-setup';
 import PolynomialResultsColonyHistograms from
-    '../../ccc/components/PolynomialResultsColonyHistograms';
+    '../../src/components/PolynomialResultsColonyHistograms';
 
 describe('<PolynomialResultsColonyHistograms />', () => {
     const props = {

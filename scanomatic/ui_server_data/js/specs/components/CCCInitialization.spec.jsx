@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import CCCInitialization from '../../ccc/components/CCCInitialization';
+import CCCInitialization from '../../src/components/CCCInitialization';
 
 
 describe('<CCCInitialization />', () => {

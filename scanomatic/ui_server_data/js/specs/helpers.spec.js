@@ -1,6 +1,6 @@
-import { RGBColor, loadImage, uploadImage, valueFormatter } from '../ccc/helpers';
+import { RGBColor, loadImage, uploadImage, valueFormatter } from '../src/helpers';
 import testPlateImageURL from './fixtures/testPlate.png';
-import * as API from '../ccc/api';
+import * as API from '../src/api';
 
 describe('loadImage()', () => {
     it('should return a promise that resolves for a valid image URL', (done) => {

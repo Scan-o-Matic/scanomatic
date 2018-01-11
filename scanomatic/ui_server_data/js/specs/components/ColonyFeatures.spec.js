@@ -2,7 +2,7 @@ import { mount } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import ColonyFeatures from '../../ccc/components/ColonyFeatures';
+import ColonyFeatures from '../../src/components/ColonyFeatures';
 import data from '../fixtures/colonyData';
 
 

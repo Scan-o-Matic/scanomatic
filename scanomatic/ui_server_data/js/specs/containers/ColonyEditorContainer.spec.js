@@ -2,9 +2,9 @@ import { mount, shallow } from 'enzyme';
 import React from 'react';
 
 import '../components/enzyme-setup';
-import ColonyEditorContainer from '../../ccc/containers/ColonyEditorContainer';
+import ColonyEditorContainer from '../../src/containers/ColonyEditorContainer';
 import colonyData from '../fixtures/colonyData.json';
-import * as API from '../../ccc/api';
+import * as API from '../../src/api';
 
 describe('</ColonyEditorContainer />', () => {
     const props = {

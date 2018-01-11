@@ -1,10 +1,10 @@
 import React from 'react';
 
-import Root from '../components/Root';
+import CCCRoot from '../components/CCCRoot';
 import { InitiateCCC, finalizeCalibration } from '../api';
 
 
-export default class RootContainer extends React.Component {
+export default class CCCRootContainer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -47,7 +47,7 @@ export default class RootContainer extends React.Component {
 
     render() {
         return (
-            <Root
+            <CCCRoot
                 cccMetadata={this.state.cccMetadata}
                 error={this.state.error}
                 finalized={this.state.finalized}
