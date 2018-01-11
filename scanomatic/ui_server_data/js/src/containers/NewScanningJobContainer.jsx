@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import NewScanningJob from '../components/NewScanningJob';
-import { submitScanningJob, getScanners } from '../api'
+import { submitScanningJob, getScanners } from '../api';
 
 export default class NewScanningJobContainer extends React.Component {
     constructor(props) {

@@ -21,4 +21,4 @@ class Scanners:
         ]
 
     def get_all(self):
-        return self._scanners.values()
+        return list(self._scanners.values())

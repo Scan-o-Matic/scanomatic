@@ -22,10 +22,10 @@ class ScanJobs:
             raise ScanNameUnknown("{} is not a known job".format(identifier))
 
     def get_jobs(self):
-        return self._db.values()
+        return list(self._db.values())
 
     def get_job_ids(self):
-        return self._db.keys()
+        return list(self._db.keys())
 
     def exists_job_with(self, key, value):
         for job in self._db.values():
