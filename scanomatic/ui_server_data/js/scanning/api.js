@@ -1,11 +1,11 @@
 import API from '../common/api.js';
 
 export function submitJob(job) {
-    return API.postJSON('/api/project/experiment/new', job);
+    return API.postJSON('/api/scan-jobs', job);
 }
 
 export function getJobs() {
-    return API.get('/api/project/experiment').then((r) => {
+    return API.get('/api/scan-jobs').then((r) => {
         const jobs = r.jobs.map((job) => {
             const newJob = Object.assign({}, job);
             newJob.scanner = {

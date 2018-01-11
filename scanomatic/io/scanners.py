@@ -3,7 +3,7 @@ class Scanners:
         self._scanners = {
             'Test': {
                 'name': 'Test',
-                'power': True,
+                'power': False,
                 'owner': None,
             },
         }

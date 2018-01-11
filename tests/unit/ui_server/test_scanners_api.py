@@ -28,21 +28,21 @@ class TestScannerStatus:
         response = test_app.get(self.URI)
         response.status_code == 200
         assert response.json == {
-            'scanners': [{'name': 'Test', 'owner': None, 'power': True}]
+            'scanners': [{'name': 'Test', 'owner': None, 'power': False}]
         }
 
     def test_get_free_scanners(self, test_app):
         response = test_app.get(self.URI + '?free=1')
         response.status_code == 200
         assert response.json == {
-            'scanners': [{'name': 'Test', 'owner': None, 'power': True}]
+            'scanners': [{'name': 'Test', 'owner': None, 'power': False}]
         }
 
     def test_get_scanner(self, test_app):
         response = test_app.get(self.URI + "/Test")
         response.status_code == 200
         assert response.json == {
-            'scanner': {'name': 'Test', 'owner': None, 'power': True}
+            'scanner': {'name': 'Test', 'owner': None, 'power': False}
         }
 
     def test_get_unknown_scanner(self, test_app):
