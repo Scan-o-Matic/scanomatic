@@ -1,6 +1,6 @@
 module.exports = {
     entry: {
-        ccc: ['./scanomatic/ui_server_data/js/src/ccc_index.jsx'],
+        ccc: ['./scanomatic/ui_server_data/js/src/ccc.jsx'],
     },
     output: {
         filename: 'scanomatic/ui_server_data/js/[name].js',
