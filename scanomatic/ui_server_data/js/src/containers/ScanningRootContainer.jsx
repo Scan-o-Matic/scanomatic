@@ -1,10 +1,10 @@
 import React from 'react';
 
-import { getJobs } from '../api';
-import Root from '../components/Root';
+import { getScanningJobs } from '../api';
+import ScanningRoot from '../components/ScanningRoot';
 
 
-export default class RootContainer extends React.Component {
+export default class ScanningRootContainer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -22,8 +22,10 @@ export default class RootContainer extends React.Component {
         this.getJobs();
     }
 
-    handleNewJob() {
-        this.setState({ newJob: true });
+    getJobs() {
+        getScanningJobs()
+            .then(jobs => this.setState({ jobs, error: null }))
+            .catch(reason => this.setState({ error: `Error requesting jobs: ${reason}` }));
     }
 
     handleCloseNewJob() {
@@ -35,15 +37,13 @@ export default class RootContainer extends React.Component {
         this.setState({ error });
     }
 
-    getJobs() {
-        getJobs()
-            .then(jobs => this.setState({ jobs, error: null }))
-            .catch(reason => this.setState({ error: `Error requesting jobs: ${reason}` }));
+    handleNewJob() {
+        this.setState({ newJob: true });
     }
 
     render() {
         return (
-            <Root
+            <ScanningRoot
                 newJob={this.state.newJob}
                 error={this.state.error}
                 jobs={this.state.jobs}

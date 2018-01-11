@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { scannerType } from '../prop-types';
 
-export default function NewJob(props) {
+export default function NewScanningJob(props) {
     return (
         <div className="row">
             <div className="col-md-6 col-md-offset-3">
@@ -99,7 +99,7 @@ export default function NewJob(props) {
     );
 }
 
-NewJob.propTypes = {
+NewScanningJob.propTypes = {
     name: PropTypes.string,
     error: PropTypes.string,
     duration: PropTypes.shape({
@@ -120,7 +120,7 @@ NewJob.propTypes = {
     onCancel: PropTypes.func.isRequired,
 };
 
-NewJob.defaultProps = {
+NewScanningJob.defaultProps = {
     name: '',
     error: null,
     scannerName: '',

@@ -4,7 +4,7 @@ import React from 'react';
 
 import { scannerType } from '../prop-types';
 
-export default function Job(props) {
+export default function ScanningJobPanel(props) {
     const duration = [];
     if (props.duration.days > 0) {
         duration.push(`${props.duration.days} days`);
@@ -44,7 +44,7 @@ export default function Job(props) {
     );
 }
 
-Job.propTypes = {
+ScanningJobPanel.propTypes = {
     duration: PropTypes.shape({
         days: PropTypes.number.isRequired,
         hours: PropTypes.number.isRequired,

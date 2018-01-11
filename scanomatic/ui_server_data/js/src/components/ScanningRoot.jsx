@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import NewJobContainer from '../containers/NewJobContainer';
-import JobList from './JobList';
-import { jobType } from '../prop-types';
+import NewScanningJobContainer from '../containers/NewScanningJobContainer';
+import ScanningJobsList from './ScanningJobsList';
+import { scanningJobType } from '../prop-types';
 
-export default function Root(props) {
-    const newJob = props.newJob ? <NewJobContainer onClose={props.onCloseNewJob} /> : null;
-    const jobList = newJob ? null : <JobList jobs={props.jobs} />;
+export default function ScanningRoot(props) {
+    const newJob = props.newJob ? <NewScanningJobContainer onClose={props.onCloseNewJob} /> : null;
+    const jobList = newJob ? null : <ScanningJobsList jobs={props.jobs} />;
     return (
         <div className="row">
             {props.error && (
@@ -29,14 +29,14 @@ export default function Root(props) {
     );
 }
 
-Root.propTypes = {
+ScanningRoot.propTypes = {
     error: PropTypes.string,
     newJob: PropTypes.bool.isRequired,
     onNewJob: PropTypes.func.isRequired,
     onCloseNewJob: PropTypes.func.isRequired,
-    jobs: PropTypes.arrayOf(jobType).isRequired,
+    jobs: PropTypes.arrayOf(scanningJobType).isRequired,
 };
 
-Root.defaultProps = {
+ScanningRoot.defaultProps = {
     error: null,
 };

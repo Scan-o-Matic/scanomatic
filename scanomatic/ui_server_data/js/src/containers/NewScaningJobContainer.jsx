@@ -1,10 +1,10 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import NewJob from '../components/NewJob';
-import { submitJob, getScanners } from '../api'
+import NewScanningJob from '../components/NewScanningJob';
+import { submitScanningJob, getScanners } from '../api'
 
-export default class NewJobContainer extends React.Component {
+export default class NewScanningJobContainer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -94,7 +94,7 @@ export default class NewJobContainer extends React.Component {
     }
 
     handleSumbit() {
-        submitJob({
+        submitScanningJob({
             name: this.state.name,
             duration: this.state.duration,
             interval: this.state.interval,
@@ -105,7 +105,7 @@ export default class NewJobContainer extends React.Component {
     }
 
     render() {
-        return (<NewJob
+        return (<NewScanningJob
             {...this.state}
             onSubmit={this.handleSumbit}
             onCancel={this.props.onClose}
@@ -119,6 +119,6 @@ export default class NewJobContainer extends React.Component {
     }
 }
 
-NewJobContainer.propTypes = {
+NewScanningJobContainer.propTypes = {
     onClose: PropTypes.func.isRequired,
 };
