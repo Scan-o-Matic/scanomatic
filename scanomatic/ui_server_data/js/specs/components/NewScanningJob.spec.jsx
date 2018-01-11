@@ -133,9 +133,7 @@ describe('<NewScanningJob/>', () => {
 
         it('renders the scanner options', () => {
             const wrapper = shallow(<NewScanningJob {...props} />);
-            const sel = wrapper.find('select.scanner');
             const opts = wrapper.find('option');
-            //expect(opts.lenght).toBe(2);
             expect(opts.first().text()).toEqual('Tox (online, free)');
             expect(opts.last().text()).toEqual('Npm (offline, occupied)');
         });
