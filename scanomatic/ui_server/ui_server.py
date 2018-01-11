@@ -32,6 +32,7 @@ from . import experiment_api
 from . import status_api
 from . import ui_pages
 from . import scanners_api
+from . import scan_jobs_api
 
 _URL = None
 _LOGGER = Logger("UI-server")
@@ -92,6 +93,7 @@ def launch_server(host, port, debug):
     settings_api.add_routes(app)
     experiment_api.add_routes(app, rpc_client)
     scanners_api.add_routes(app)
+    scan_jobs_api.add_routes(app)
 
     if debug:
         CORS(app)
