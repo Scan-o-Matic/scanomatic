@@ -1,3 +1,5 @@
+import $ from 'jquery';
+
 const GetSliceImagePath = '/api/calibration/#0#/image/#1#/slice/get/#2#';
 const GetTranposedMarkerPath = '/api/data/fixture/calculate/';
 const GetGrayScaleAnalysisPath = '/api/data/grayscale/image/';
@@ -38,8 +40,6 @@ class API {
             ));
     }
 }
-
-export const HasJquery = () => !!$;
 
 export function GetSliceImageURL(cccId, imageId, slice) {
     const path = GetSliceImagePath.replace('#0#', cccId).replace('#1#', imageId).replace('#2#', slice);
@@ -255,7 +255,7 @@ export function submitScanningJob(job) {
 
 export function getScanningJobs() {
     return API.get('/api/scan-jobs').then((r) => {
-        const jobs = r.jobs.map((job) => {
+        const jobs = r.map((job) => {
             const newJob = Object.assign({}, job);
             newJob.scanner = {
                 name: job.scanner.name,
@@ -270,7 +270,7 @@ export function getScanningJobs() {
 
 export function getScanners() {
     return API.get('/api/scanners')
-        .then(r => r.scanners.map(scanner => ({
+        .then(r => r.map(scanner => ({
             name: scanner.name,
             power: scanner.power,
             owned: !!scanner.owner,

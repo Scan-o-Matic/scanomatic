@@ -3,6 +3,7 @@ import pytest
 import json
 from types import MethodType
 from flask import Flask
+from httplib import BAD_REQUEST, FORBIDDEN, OK, CREATED
 
 from scanomatic.ui_server.ui_server import add_configs
 from scanomatic.io.paths import Paths
@@ -12,7 +13,9 @@ from scanomatic.ui_server import scan_jobs_api
 @pytest.fixture
 def app():
     app = Flask(__name__, template_folder=Paths().ui_templates)
-    scan_jobs_api.add_routes(app)
+    app.register_blueprint(
+        scan_jobs_api.blueprint, url_prefix="/api/scan-jobs"
+    )
     return app
 
 
@@ -50,18 +53,18 @@ class TestScanJobs:
 
     def test_get_jobs_and_there_are_none(self, test_app):
         response = test_app.get(self.URI)
-        response.status_code == 200
-        assert response.json == {'jobs': []}
+        response.status_code == OK
+        assert response.json == []
 
     def test_add_job(self, test_app, job):
         response = test_app.post_json(self.URI, job)
-        assert response.status_code == 200
+        assert response.status_code == CREATED
 
     def test_sereval_identical_job_names_fails(self, test_app, job):
         response = test_app.post_json(self.URI, job)
-        assert response.status_code == 200
+        assert response.status_code == CREATED
         response = test_app.post_json(self.URI, job)
-        assert response.status_code == 400
+        assert response.status_code == FORBIDDEN
         assert response.json['reason'] == "Name 'Binary yeast' duplicated"
 
     @pytest.mark.parametrize("key,reason", (
@@ -73,30 +76,30 @@ class TestScanJobs:
     def test_add_job_without_info(self, test_app, job, key, reason):
         del job[key]
         response = test_app.post_json(self.URI, job)
-        assert response.status_code == 400
+        assert response.status_code == BAD_REQUEST
         assert response.json['reason'] == reason
 
     def test_add_with_too_short_interval(self, test_app, job):
         job['interval'] = 1
         response = test_app.post_json(self.URI, job)
-        assert response.status_code == 400
+        assert response.status_code == BAD_REQUEST
         assert response.json['reason'] == 'Interval too short'
 
     def test_add_with_unknown_scanner(self, test_app, job):
         job['scannerName'] = "unknown"
         response = test_app.post_json(self.URI, job)
-        assert response.status_code == 400
+        assert response.status_code == BAD_REQUEST
         assert response.json['reason'] == "Scanner 'unknown' unknown"
 
     def test_added_job_gets_listed(self, test_app, job):
         response = test_app.post_json(self.URI, job)
-        assert response.status_code == 200
+        assert response.status_code == CREATED
         identifier = response.json['jobId']
         response = test_app.get(self.URI)
-        response.status_code == 200
-        assert response.json == {'jobs': [
+        response.status_code == OK
+        assert response.json == [
             {
-                'id': identifier,
+                'identifier': identifier,
                 'name': job['name'],
                 'interval': job['interval'],
                 'duration': job['duration'],
@@ -106,18 +109,18 @@ class TestScanJobs:
                     'owner': None,
                 }
             }
-        ]}
+        ]
 
     def test_cant_store_bogus_setttings(self, test_app, job):
         job['bogus'] = True
         response = test_app.post_json(self.URI, job)
-        assert response.status_code == 200
+        assert response.status_code == CREATED
         identifier = response.json['jobId']
         response = test_app.get(self.URI)
-        response.status_code == 200
-        assert response.json == {'jobs': [
+        response.status_code == OK
+        assert response.json == [
             {
-                'id': identifier,
+                'identifier': identifier,
                 'name': job['name'],
                 'interval': job['interval'],
                 'duration': job['duration'],
@@ -127,4 +130,4 @@ class TestScanJobs:
                     'owner': None,
                 }
             }
-        ]}
+        ]

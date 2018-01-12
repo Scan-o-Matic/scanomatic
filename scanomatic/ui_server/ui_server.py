@@ -92,8 +92,12 @@ def launch_server(host, port, debug):
         calibration_api.blueprint, url_prefix="/api/calibration")
     settings_api.add_routes(app)
     experiment_api.add_routes(app, rpc_client)
-    scanners_api.add_routes(app)
-    scan_jobs_api.add_routes(app)
+    app.register_blueprint(
+        scan_jobs_api.blueprint, url_prefix="/api/scan-jobs"
+    )
+    app.register_blueprint(
+        scanners_api.blueprint, url_prefix="/api/scanners"
+    )
 
     if debug:
         CORS(app)

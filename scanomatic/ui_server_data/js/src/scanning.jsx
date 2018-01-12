@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-
+import $ from 'jquery';
 import ScanningRootContainer from './containers/ScanningRootContainer';
 
 
