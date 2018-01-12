@@ -16,7 +16,7 @@ JOB1 = ScanJob(
     name="Hello",
     duration="to",
     interval="you",
-    scanner="!",
+    scanner="Test",
 )
 
 JOB2 = ScanJob(
@@ -24,7 +24,7 @@ JOB2 = ScanJob(
     name="Hello",
     duration="to",
     interval="you",
-    scanner="!",
+    scanner="Test",
 )
 
 
@@ -64,7 +64,7 @@ class TestScanners:
 class TestAddJob:
     def test_add_jobb(self, scanning_store):
         scanning_store.add_scanjob(JOB1)
-        assert JOB1 in scanning_store.get_scanjobs()
+        assert JOB1.identifier in scanning_store.get_scanjob_ids()
 
     def test_add_duplicate_job_raises(self, scanning_store):
         scanning_store.add_scanjob(JOB1)
@@ -90,8 +90,8 @@ class TestGetJobs:
     def test_get_all_jobs(self, scanning_store):
         scanning_store.add_scanjob(JOB1)
         scanning_store.add_scanjob(JOB2)
-        assert JOB1 in scanning_store.get_scanjobs()
-        assert JOB2 in scanning_store.get_scanjobs()
+        assert JOB1.identifier in scanning_store.get_scanjob_ids()
+        assert JOB2.identifier in scanning_store.get_scanjob_ids()
         assert len(scanning_store.get_scanjobs()) == 2
 
 
@@ -112,4 +112,5 @@ class TestExistsJobWith:
 
     def test_reports_false_for_unknown(self, scanning_store):
         scanning_store.add_scanjob(JOB1)
-        assert scanning_store.exists_scanjob_with('identifier', 'Hello') is False
+        assert scanning_store.exists_scanjob_with(
+            'identifier', 'Hello') is False

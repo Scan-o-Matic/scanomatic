@@ -58,7 +58,10 @@ class ScanningStore:
             )
 
     def get_scanjobs(self):
-        return list(self._scanjobs.values())
+        return list(
+            dict(job._asdict(), scanner=self.get_scanner(job.scanner))
+            for job in self._scanjobs.values()
+        )
 
     def get_scanjob_ids(self):
         return list(self._scanjobs.keys())

@@ -16,7 +16,7 @@ from scanomatic.io.paths import Paths
 from scanomatic.io.rpc_client import get_client
 from scanomatic.io.backup import backup_file
 from scanomatic.io.scanstore import ScanStore
-from scanomatic.io.scanning_store import ScanJob, ScanningStore
+from scanomatic.io.scanning_store import ScanningStore
 
 from . import qc_api
 from . import analysis_api
