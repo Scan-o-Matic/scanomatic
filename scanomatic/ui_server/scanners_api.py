@@ -9,17 +9,18 @@ blueprint = Blueprint("scanners_api", __name__)
 @blueprint.route("", methods=['GET'])
 def scanners_get():
     get_free = request.args.get('free', False)
-    scanners = current_app.config['scanners']
+    scanning_store = current_app.config['scanning_store']
     return jsonify(
-        scanners.get_free() if get_free else scanners.get_all()
+        scanning_store.get_free_scanners() if get_free else
+        scanning_store.get_all_scanners()
     )
 
 
 @blueprint.route("/<scanner>", methods=['GET'])
 def scanner_get(scanner):
-    scanners = current_app.config['scanners']
-    if scanners.has_scanner(scanner):
-        return jsonify(**scanners.get(scanner))
+    scanning_store = current_app.config['scanning_store']
+    if scanning_store.has_scanner(scanner):
+        return jsonify(**scanning_store.get_scanner(scanner))
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
     )

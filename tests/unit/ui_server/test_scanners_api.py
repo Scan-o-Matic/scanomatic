@@ -51,5 +51,5 @@ class TestScannerStatus:
 
     def test_get_unknown_scanner(self, test_app):
         response = test_app.get(self.URI + "/Unknown")
-        response.status_code == NOT_FOUND 
+        response.status_code == NOT_FOUND
         assert response.json['reason'] == "Scanner 'Unknown' unknown"

@@ -38,9 +38,14 @@ describe('<ScanningRoot />', () => {
     });
 
     describe('showing existing jobs', () => {
-        it('should render a <ScanningJobsList />', () => {
+        const jobs = [
+            { name: 'A' },
+            { name: 'B' },
+        ];
+
+        it('should render a list of jobs', () => {
             const wrapper = shallow(<ScanningRoot {...props} />);
-            expect(wrapper.find('ScanningJobsList').exists()).toBeTruthy();
+            expect(wrapper.find('div.jobs-list').exists()).toBeTruthy();
         });
 
         it('should not render a <NewScanningJobContainer />', () => {
@@ -48,18 +53,23 @@ describe('<ScanningRoot />', () => {
             expect(wrapper.find('NewScanningJobContainer').exists()).toBeFalsy();
         });
 
-        it('should pass jobs to jobslist', () => {
-            const jobs = ['Sleep', 'Eat', 'Code'];
+        it('renders <ScanningJobPanel />:s equal to number of jobs', () => {
             const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
-            expect(wrapper.find('ScanningJobsList').prop('jobs'))
-                .toEqual(jobs);
+            expect(wrapper.find('ScanningJobPanel').length).toEqual(2);
+        });
+
+        it('passes jobs-data to <ScanningJobPanel />:s', () => {
+            const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
+            const jobPanels = wrapper.find('ScanningJobPanel');
+            expect(jobPanels.first().prop('name')).toEqual('A');
+            expect(jobPanels.last().prop('name')).toEqual('B');
         });
     });
 
     describe('showing new jobs', () => {
         it('should not render a <ScanningJobsList />', () => {
             const wrapper = shallow(<ScanningRoot {...props} newJob />);
-            expect(wrapper.find('ScanningJobsList').exists()).toBeFalsy();
+            expect(wrapper.find('div.jobs-list').exists()).toBeFalsy();
         });
 
         it('should render a <NewScanningJobContainer />', () => {

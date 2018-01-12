@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import scannerType from '../prop-types';
+import SoMPropTypes from '../prop-types';
 
 export default function NewScanningJob(props) {
     return (
@@ -108,7 +108,7 @@ NewScanningJob.propTypes = {
         minutes: PropTypes.number.isRequired,
     }).isRequired,
     scannerName: PropTypes.string,
-    scanners: PropTypes.arrayOf(scannerType),
+    scanners: PropTypes.arrayOf(SoMPropTypes.scannerType),
     interval: PropTypes.number.isRequired,
     onNameChange: PropTypes.func.isRequired,
     onDurationDaysChange: PropTypes.func.isRequired,

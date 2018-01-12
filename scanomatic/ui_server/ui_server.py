@@ -16,8 +16,7 @@ from scanomatic.io.paths import Paths
 from scanomatic.io.rpc_client import get_client
 from scanomatic.io.backup import backup_file
 from scanomatic.io.scanstore import ScanStore
-from scanomatic.io.scan_jobs import ScanJobs
-from scanomatic.io.scanners import Scanners
+from scanomatic.io.scanning_store import ScanJob, ScanningStore
 
 from . import qc_api
 from . import analysis_api
@@ -124,8 +123,7 @@ def launch_server(host, port, debug):
 
 
 def add_configs(app):
-    app.config['scanners'] = Scanners()
-    app.config['scan_jobs'] = ScanJobs()
+    app.config['scanning_store'] = ScanningStore()
 
 
 def add_resource_routes(app, rpc_client):

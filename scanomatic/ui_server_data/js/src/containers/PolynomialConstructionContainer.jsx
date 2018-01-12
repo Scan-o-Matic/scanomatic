@@ -4,7 +4,7 @@ import React from 'react';
 import PolynomialConstruction from '../components/PolynomialConstruction';
 
 import * as API from '../api';
-import CCCPropTypes from '../prop-types';
+import SoMPropTypes from '../prop-types';
 
 
 export default class PolynomialConstructionContainer extends React.Component {
@@ -92,6 +92,6 @@ export default class PolynomialConstructionContainer extends React.Component {
 }
 
 PolynomialConstructionContainer.propTypes = {
-    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
+    cccMetadata: SoMPropTypes.cccMetadata.isRequired,
     onFinalizeCCC: PropTypes.func.isRequired,
 };

@@ -2,7 +2,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import scannerType from '../prop-types';
+import SoMPropTypes from '../prop-types';
 
 export default function ScanningJobPanel(props) {
     const duration = [];
@@ -50,7 +50,7 @@ ScanningJobPanel.propTypes = {
         hours: PropTypes.number.isRequired,
         minutes: PropTypes.number.isRequired,
     }).isRequired,
-    scanner: scannerType.isRequired,
+    scanner: SoMPropTypes.scannerType.isRequired,
     name: PropTypes.string.isRequired,
     interval: PropTypes.number.isRequired,
 };
