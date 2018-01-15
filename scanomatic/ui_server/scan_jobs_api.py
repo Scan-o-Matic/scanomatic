@@ -37,7 +37,7 @@ def scan_jobs_add():
     if interval < MINIMUM_INTERVAL:
         return json_abort(BAD_REQUEST, reason="Interval too short")
 
-    scanner = data_object.get('scannerName', None)
+    scanner = data_object.get('scannerId', None)
     if scanner is None:
         return json_abort(BAD_REQUEST, reason="Scanner not supplied")
     if not scanning_store.has_scanner(scanner):
@@ -53,7 +53,7 @@ def scan_jobs_add():
             name=name,
             duration=duration,
             interval=interval,
-            scanner=scanner
+            scanner_id=scanner
         ))
     except ScanJobCollisionError:
         return json_abort(INTERNAL_SERVER_ERROR, reason="Identifier collision")
@@ -63,6 +63,16 @@ def scan_jobs_add():
 
 @blueprint.route("", methods=['GET'])
 def scan_jobs_list():
+    def py2js(data):
+        return {
+            'identifier': data.identifier,
+            'name': data.name,
+            'duration': data.duration,
+            'interval': data.interval,
+            'scannerId': data.scanner_id,
+        }
 
     scanning_store = current_app.config['scanning_store']
-    return jsonify(scanning_store.get_scanjobs())
+    return jsonify([
+        py2js(job) for job in scanning_store.get_all_scanjobs()
+    ])

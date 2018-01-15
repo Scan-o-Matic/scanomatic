@@ -12,31 +12,37 @@ class ScanJobUnknownError(ValueError):
 
 ScanJob = namedtuple(
     'ScanJob',
-    ['identifier', 'name', 'duration', 'interval', 'scanner']
+    ['identifier', 'name', 'duration', 'interval', 'scanner_id']
+)
+
+Scanner = namedtuple(
+    'Scanner',
+    ['name', 'power', 'owner', 'identifier']
 )
 
 
 class ScanningStore:
     def __init__(self):
         self._scanners = {
-            'Test': {
-                'name': 'Test',
-                'power': False,
-                'owner': None,
-            },
+            '9a8486a6f9cb11e7ac660050b68338ac': Scanner(
+                'Test',
+                False,
+                None,
+                '9a8486a6f9cb11e7ac660050b68338ac'
+            ),
         }
         self._scanjobs = {}
 
-    def has_scanner(self, name):
-        return name in self._scanners
+    def has_scanner(self, identifier):
+        return identifier in self._scanners
 
-    def get_scanner(self, name):
-        return self._scanners[name]
+    def get_scanner(self, identifier):
+        return self._scanners[identifier]
 
     def get_free_scanners(self):
         return [
             scanner for scanner in self._scanners.values()
-            if scanner['owner'] is None
+            if scanner.owner is None
         ]
 
     def get_all_scanners(self):
@@ -57,11 +63,8 @@ class ScanningStore:
                 "{} is not a known job".format(identifier)
             )
 
-    def get_scanjobs(self):
-        return list(
-            dict(job._asdict(), scanner=self.get_scanner(job.scanner))
-            for job in self._scanjobs.values()
-        )
+    def get_all_scanjobs(self):
+        return list(self._scanjobs.values())
 
     def get_scanjob_ids(self):
         return list(self._scanjobs.keys())

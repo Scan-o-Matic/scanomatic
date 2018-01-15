@@ -42,7 +42,7 @@ class TestScanJobs:
     def job(self):
         return {
             'name': 'Binary yeast',
-            'scannerName': 'Test',
+            'scannerId': '9a8486a6f9cb11e7ac660050b68338ac',
             'interval': 32,
             'duration': {
                 'days': 1024,
@@ -71,7 +71,7 @@ class TestScanJobs:
         ('name', 'No name supplied'),
         ('duration', 'Duration not supplied'),
         ('interval', 'Interval not supplied'),
-        ('scannerName', 'Scanner not supplied'),
+        ('scannerId', 'Scanner not supplied'),
     ))
     def test_add_job_without_info(self, test_app, job, key, reason):
         del job[key]
@@ -86,7 +86,7 @@ class TestScanJobs:
         assert response.json['reason'] == 'Interval too short'
 
     def test_add_with_unknown_scanner(self, test_app, job):
-        job['scannerName'] = "unknown"
+        job['scannerId'] = "unknown"
         response = test_app.post_json(self.URI, job)
         assert response.status_code == BAD_REQUEST
         assert response.json['reason'] == "Scanner 'unknown' unknown"
@@ -103,11 +103,7 @@ class TestScanJobs:
                 'name': job['name'],
                 'interval': job['interval'],
                 'duration': job['duration'],
-                'scanner': {
-                    'name': job['scannerName'],
-                    'power': False,
-                    'owner': None,
-                }
+                'scannerId': job['scannerId'],
             }
         ]
 
@@ -124,10 +120,6 @@ class TestScanJobs:
                 'name': job['name'],
                 'interval': job['interval'],
                 'duration': job['duration'],
-                'scanner': {
-                    'name': job['scannerName'],
-                    'power': False,
-                    'owner': None,
-                }
+                'scannerId': job['scannerId'],
             }
         ]

@@ -27,27 +27,27 @@ def test_app(app):
 class TestScannerStatus:
 
     URI = '/api/scanners'
+    SCANNER = {
+        'name': 'Test',
+        'owner': None,
+        'power': False,
+        'identifier': '9a8486a6f9cb11e7ac660050b68338ac',
+    }
 
     def test_get_all_implicit(self, test_app):
         response = test_app.get(self.URI)
         response.status_code == OK
-        assert response.json == [{
-            'name': 'Test', 'owner': None, 'power': False
-        }]
+        assert response.json == [self.SCANNER]
 
     def test_get_free_scanners(self, test_app):
         response = test_app.get(self.URI + '?free=1')
         response.status_code == OK
-        assert response.json == [{
-            'name': 'Test', 'owner': None, 'power': False
-        }]
+        assert response.json == [self.SCANNER]
 
     def test_get_scanner(self, test_app):
-        response = test_app.get(self.URI + "/Test")
+        response = test_app.get(self.URI + "/9a8486a6f9cb11e7ac660050b68338ac")
         response.status_code == OK
-        assert response.json == {
-            'name': 'Test', 'owner': None, 'power': False
-        }
+        assert response.json == self.SCANNER
 
     def test_get_unknown_scanner(self, test_app):
         response = test_app.get(self.URI + "/Unknown")
