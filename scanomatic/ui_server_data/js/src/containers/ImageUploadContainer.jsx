@@ -3,7 +3,7 @@ import React from 'react';
 
 import ImageUpload from '../components/ImageUpload';
 import { uploadImage } from '../helpers';
-import CCCPropTypes from '../prop-types';
+import SoMPropTypes from '../prop-types';
 
 export default class ImageUploadContainer extends React.Component {
     constructor(props) {
@@ -50,6 +50,6 @@ export default class ImageUploadContainer extends React.Component {
 }
 
 ImageUploadContainer.propTypes = {
-    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
+    cccMetadata: SoMPropTypes.cccMetadata.isRequired,
     onFinish: PropTypes.func.isRequired,
 };

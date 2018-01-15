@@ -7,48 +7,24 @@
 
 */
 
-tr {
-    margin-bottom: 6px;
+div.panel {
+  color: #111;
 }
 
-.eventable td {
- width: 16%;
+div.panel button {
+  margin: 0.25em;
 }
 
-.head-col {
-    vertical-align: top;
+button.new-job {
+  display: inline-block;
+  margin-bottom: 0.5em;
 }
 
-.block {
-    display: inline-block;
-    vertical-align: center;
+.job-listing {
+  min-height: 7.5em;
 }
 
-option {
-    padding: 3px;
-    margin-right: 3px;
-}
-
-#cont h1 {
-}
-
-#cont em {
-}
-
-textarea {
-    width: 80%;
-    min-height: 75px;
-}
-
-.section {
-    margin-bottom: 6px;
-}
-
-#pinnings div {
-    display: inline-block;
-    padding: 6px;
-}
-
-.plate-description {
-    margin-bottom: 3px;
+.job-description {
+  display: inline-block;
+  vertical-align: middle;
 }

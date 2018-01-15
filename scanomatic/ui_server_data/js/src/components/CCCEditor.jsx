@@ -5,7 +5,7 @@ import PlateEditorContainer from '../containers/PlateEditorContainer';
 import ImageUploadContainer from '../containers/ImageUploadContainer';
 import PolynomialConstructionContainer from
     '../containers/PolynomialConstructionContainer';
-import CCCPropTypes from '../prop-types';
+import SoMPropTypes from '../prop-types';
 import CCCInfoBox from './CCCInfoBox';
 
 
@@ -40,7 +40,7 @@ export default function CCCEditor(props) {
 }
 
 CCCEditor.propTypes = {
-    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
+    cccMetadata: SoMPropTypes.cccMetadata.isRequired,
     plates: PropTypes.arrayOf(PropTypes.shape({
         imageId: PropTypes.string.isRequired,
         imageName: PropTypes.string.isRequired,

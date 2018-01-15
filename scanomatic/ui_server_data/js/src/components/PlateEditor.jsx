@@ -5,7 +5,7 @@ import ColonyEditorContainer from '../containers/ColonyEditorContainer';
 import PlateProgress from './PlateProgress';
 import PlateContainer from '../containers/PlateContainer';
 import Gridding from './Gridding';
-import CCCPropTypes from '../prop-types';
+import SoMPropTypes from '../prop-types';
 
 
 const STEPS = ['pre-processing', 'gridding', 'colony-detection', 'done'];
@@ -133,7 +133,7 @@ export default function PlateEditor(props) {
 }
 
 PlateEditor.propTypes = {
-    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
+    cccMetadata: SoMPropTypes.cccMetadata.isRequired,
     imageId: PropTypes.string.isRequired,
     imageName: PropTypes.string.isRequired,
     plateId: PropTypes.number.isRequired,

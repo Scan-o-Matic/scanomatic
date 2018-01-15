@@ -16,7 +16,27 @@ const cccMetadata = PropTypes.shape({
     pinningFormat: pinningFormat.isRequired,
 });
 
+const scannerType = PropTypes.shape({
+    identifier: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    owned: PropTypes.bool.isRequired,
+    power: PropTypes.bool.isRequired,
+});
+
+const scanningJobType = PropTypes.shape({
+    duration: PropTypes.shape({
+        days: PropTypes.number.isRequired,
+        hours: PropTypes.number.isRequired,
+        minutes: PropTypes.number.isRequired,
+    }).isRequired,
+    name: PropTypes.string.isRequired,
+    interval: PropTypes.number.isRequired,
+    scannerId: PropTypes.string.isRequired,
+});
+
 export default {
     cccMetadata,
     pinningFormat,
+    scannerType,
+    scanningJobType,
 };

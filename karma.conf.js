@@ -23,7 +23,8 @@ module.exports = function(config) {
     exclude: [
         'js/image.js',
         '**/*.swp',
-        "js/ccc.js",
+        'js/ccc.js',
+        'js/scanning.js',
     ],
 
     // preprocess matching files before serving them to the browser

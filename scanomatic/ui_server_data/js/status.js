@@ -17,35 +17,6 @@ function serverStatusFormatter(data) {
     return `<img src='${data.ResourceCPU ? okIMG : nokIMG}' class='icon'> CPU | <img src='${data.ResourceMem ? okIMG : nokIMG}' class='icon'> Memory | Uptime: ${data.ServerUpTime}`;
 }
 
-function scannerStatusFormatter(response) {
-    const data = response.scanners;
-    if (data.length === 0) {
-        return '<em>No scanners are connected according to Scan-o-Matic. ' +
-            'If this feels wrong, verify your power-manager settings and that the power-manager is reachable.</em>';
-    }
-    let ret = '';
-    for (let i=0; i<data.length; i++) {
-        ret += "<div class='scanner'><h3>" + data[i].scanner_name + "</h3>" +
-            "<code>" + (data[i].power ? "Has power" : "Is offline") + "</code>" +
-            "<p class=''>" + getOwnerName(data[i]) + "</p>" +
-            "</div>";
-    }
-
-    return ret;
-}
-
-function getOwnerName(data) {
-    if (data.owner) {
-        if (data.email)
-            return 'Owner: ' + data.email;
-        else if (data.owner.content_model && data.owner.content_model.email)
-            return 'Owner: ' + data.owner.content_model.email;
-        else
-            return 'Owner unknown';
-    }
-    return 'Free to use';
-}
-
 function queueStatusFormatter(response) {
     const data = response.queue;
     if (data.length === 0) {

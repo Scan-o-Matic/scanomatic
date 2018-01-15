@@ -1,3 +1,5 @@
+import $ from 'jquery';
+
 const GetSliceImagePath = '/api/calibration/#0#/image/#1#/slice/get/#2#';
 const GetTranposedMarkerPath = '/api/data/fixture/calculate/';
 const GetGrayScaleAnalysisPath = '/api/data/grayscale/image/';
@@ -245,4 +247,22 @@ export function finalizeCalibration(cccId, accessToken) {
         `/api/calibration/${cccId}/finalize`,
         { access_token: accessToken },
     );
+}
+
+export function submitScanningJob(job) {
+    return API.postJSON('/api/scan-jobs', job);
+}
+
+export function getScanningJobs() {
+    return API.get('/api/scan-jobs');
+}
+
+export function getScanners() {
+    return API.get('/api/scanners')
+        .then(r => r.map(scanner => ({
+            name: scanner.name,
+            identifier: scanner.identifier,
+            power: scanner.power,
+            owned: !!scanner.owner,
+        })));
 }

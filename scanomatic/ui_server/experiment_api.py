@@ -13,7 +13,6 @@ from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.compile_project_factory import (
     CompileProjectFactory)
 from scanomatic.models.factories.features_factory import FeaturesFactory
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.util import bioscreen
 from scanomatic.data_processing import phenotyper
 
@@ -216,59 +215,6 @@ def add_routes(app, rpc_client):
                     ", ".join(
                         AnalysisModelFactory.get_invalid_names(model))
                     ))
-
-    @app.route("/api/project/experiment", methods=['post'])
-    def _experiment_api():
-
-        data_object = request.get_json(silent=True, force=True)
-        _LOGGER.info("Experiment json {}".format(data_object))
-        project_name = os.path.basename(
-            os.path.abspath(data_object.get("project_path")))
-        project_root = os.path.dirname(
-            data_object.get("project_path")).replace(
-                'root', Config().paths.projects_root)
-
-        plate_descriptions = data_object.get("plate_descriptions")
-        if all(
-                isinstance(p, StringTypes) or p is None
-                for p in plate_descriptions):
-
-            plate_descriptions = tuple(
-                {"index": i, "description": p}
-                for i, p in enumerate(plate_descriptions))
-
-        m = ScanningModelFactory.create(
-            number_of_scans=data_object.get("number_of_scans"),
-            time_between_scans=data_object.get("time_between_scans"),
-            project_name=project_name,
-            directory_containing_project=project_root,
-            description=data_object.get("description"),
-            email=data_object.get("email"),
-            pinning_formats=data_object.get("pinning_formats"),
-            fixture=data_object.get("fixture"),
-            scanner=data_object.get("scanner"),
-            scanner_hardware=data_object.get("scanner_hardware", "EPSON V800"),
-            mode=data_object.get("mode", "TPU"),
-            plate_descriptions=plate_descriptions,
-            cell_count_calibration_id=data_object.get(
-                "cell_count_calibration_id"),
-            auxillary_info=data_object.get("auxillary_info"),
-        )
-
-        validates = ScanningModelFactory.validate(m)
-
-        # Until adding new jobs posing refuse all
-        job_id = None
-        if validates and job_id:
-            return jsonify(name=project_name)
-        else:
-
-            return json_abort(
-                400,
-                reason="The following has bad data: {0}".format(
-                    ScanningModelFactory.get_invalid_as_text(m))
-                if not validates else
-                "Job refused, probably scanner can't be reached.")
 
     @app.route("/api/project/compile", methods=['post'])
     def _compile_api():

@@ -7,13 +7,13 @@ import os
 import pytest
 from types import MethodType
 from flask import Flask, url_for
-from mock import MagicMock, Mock, patch
-import pytest
+from mock import MagicMock, patch
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
 from scanomatic.io.scanstore import ScanStore, UnknownProjectError
 from scanomatic.ui_server import experiment_api
+from scanomatic.ui_server.ui_server import add_configs
 
 
 @pytest.fixture
@@ -43,6 +43,7 @@ def test_app(app, rpc_client):
             content_type='application/json',
             **kwargs
         )
+    add_configs(app)
     test_app = app.test_client()
     test_app.post_json = MethodType(_post_json, test_app)
     test_app.rpc_client = rpc_client

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import CCCPropTypes from '../prop-types';
+import SoMPropTypes from '../prop-types';
 
 export default function FinalizedCCC(props) {
     return (
@@ -22,5 +22,5 @@ export default function FinalizedCCC(props) {
 }
 
 FinalizedCCC.propTypes = {
-    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
+    cccMetadata: SoMPropTypes.cccMetadata.isRequired,
 };

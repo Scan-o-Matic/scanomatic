@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import CCCPropTypes from '../prop-types';
+import SoMPropTypes from '../prop-types';
 import CCCInitializationContainer from '../containers/CCCInitializationContainer';
 import CCCEditorContainer from '../containers/CCCEditorContainer';
 import FinalizedCCC from './FinalizedCCC';
@@ -39,7 +39,7 @@ export default function CCCRoot(props) {
 }
 
 CCCRoot.propTypes = {
-    cccMetadata: CCCPropTypes.cccMetadata,
+    cccMetadata: SoMPropTypes.cccMetadata,
     error: PropTypes.string,
     finalized: PropTypes.bool,
     onError: PropTypes.func.isRequired,

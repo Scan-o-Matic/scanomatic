@@ -16,6 +16,7 @@ from scanomatic.io.paths import Paths
 from scanomatic.io.rpc_client import get_client
 from scanomatic.io.backup import backup_file
 from scanomatic.io.scanstore import ScanStore
+from scanomatic.io.scanning_store import ScanningStore
 
 from . import qc_api
 from . import analysis_api
@@ -29,6 +30,8 @@ from . import settings_api
 from . import experiment_api
 from . import status_api
 from . import ui_pages
+from . import scanners_api
+from . import scan_jobs_api
 
 _URL = None
 _LOGGER = Logger("UI-server")
@@ -71,6 +74,7 @@ def launch_server(host, port, debug):
     app.log_recycler = Timer(LOG_RECYCLE_TIME, init_logging)
     app.log_recycler.start()
 
+    add_configs(app)
     add_resource_routes(app, rpc_client)
 
     ui_pages.add_routes(app)
@@ -87,6 +91,12 @@ def launch_server(host, port, debug):
         calibration_api.blueprint, url_prefix="/api/calibration")
     settings_api.add_routes(app)
     experiment_api.add_routes(app, rpc_client)
+    app.register_blueprint(
+        scan_jobs_api.blueprint, url_prefix="/api/scan-jobs"
+    )
+    app.register_blueprint(
+        scanners_api.blueprint, url_prefix="/api/scanners"
+    )
 
     if debug:
         CORS(app)
@@ -110,6 +120,10 @@ def launch_server(host, port, debug):
             " (see `scan-o-matic --help` for instructions).")
         return False
     return True
+
+
+def add_configs(app):
+    app.config['scanning_store'] = ScanningStore()
 
 
 def add_resource_routes(app, rpc_client):

@@ -3,7 +3,7 @@ import React from 'react';
 
 import PlateEditor from '../components/PlateEditor';
 import { SetGrayScaleTransform, SetGridding } from '../api';
-import CCCPropTypes from '../prop-types';
+import SoMPropTypes from '../prop-types';
 
 
 export default class PlateEditorContainer extends React.Component {
@@ -123,7 +123,7 @@ export default class PlateEditorContainer extends React.Component {
 }
 
 PlateEditorContainer.propTypes = {
-    cccMetadata: CCCPropTypes.cccMetadata.isRequired,
+    cccMetadata: SoMPropTypes.cccMetadata.isRequired,
     collapse: PropTypes.bool,
     imageId: PropTypes.string.isRequired,
     imageName: PropTypes.string.isRequired,
