@@ -99,7 +99,9 @@ class TestGetJobIds:
 class TestExistsJobWith:
     def test_reports_true_for_inserted(self, scanning_store):
         scanning_store.add_scanjob(JOB1)
-        for key in ('identifier', 'name', 'duration', 'interval', 'scanner_id'):
+        for key in (
+            'identifier', 'name', 'duration', 'interval', 'scanner_id'
+        ):
             assert scanning_store.exists_scanjob_with(key, getattr(JOB1, key))
 
     def test_reports_false_for_unknown(self, scanning_store):

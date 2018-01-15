@@ -55,7 +55,7 @@ describe('helpers', () => {
         it('should reject if GetMarkers rejects', (done) => {
             API.GetMarkers
                 .and.callFake(() => Promise.reject('Whoopsie'));
-            uploadImage(...args).catch(reason => {
+            uploadImage(...args).catch((reason) => {
                 expect(reason).toEqual('Whoopsie');
                 done();
             });
@@ -64,7 +64,7 @@ describe('helpers', () => {
         it('should call GetImageId', (done) => {
             uploadImage(...args).then(() => {
                 expect(API.GetImageId).toHaveBeenCalledWith(cccId, file, token);
-                done()
+                done();
             });
         });
 
@@ -78,7 +78,7 @@ describe('helpers', () => {
         it('should reject if GetImageId rejects', (done) => {
             API.GetImageId
                 .and.callFake(() => Promise.reject('Whoopsie'));
-            uploadImage(...args).catch(reason => {
+            uploadImage(...args).catch((reason) => {
                 expect(reason).toEqual('Whoopsie');
                 done();
             });
@@ -86,8 +86,8 @@ describe('helpers', () => {
 
         it('should call SetCccImageData', (done) => {
             const data = [
-                { key: "marker_x", value: [1, 3, 5] },
-                { key: "marker_y", value: [2, 4, 6] }
+                { key: 'marker_x', value: [1, 3, 5] },
+                { key: 'marker_y', value: [2, 4, 6] },
             ];
             uploadImage(...args).then(() => {
                 expect(API.SetCccImageData)
@@ -106,7 +106,7 @@ describe('helpers', () => {
         it('should reject if SetCccImageData rejects', (done) => {
             API.SetCccImageData
                 .and.callFake(() => Promise.reject('Whoopsie'));
-            uploadImage(...args).catch(reason => {
+            uploadImage(...args).catch((reason) => {
                 expect(reason).toEqual('Whoopsie');
                 done();
             });
@@ -130,7 +130,7 @@ describe('helpers', () => {
         it('should reject if SetCccImageSlice rejects', (done) => {
             API.SetCccImageSlice
                 .and.callFake(() => Promise.reject('Whoopsie'));
-            uploadImage(...args).catch(reason => {
+            uploadImage(...args).catch((reason) => {
                 expect(reason).toEqual('Whoopsie');
                 done();
             });
@@ -154,14 +154,14 @@ describe('helpers', () => {
         it('should reject if SetGrayScaleImageAnalysis rejects', (done) => {
             API.SetGrayScaleImageAnalysis
                 .and.callFake(() => Promise.reject('Whoopsie'));
-            uploadImage(...args).catch(reason => {
+            uploadImage(...args).catch((reason) => {
                 expect(reason).toEqual('Whoopsie');
                 done();
             });
         });
 
         it('should return a promise with the image id', (done) => {
-            uploadImage(...args).then(value => {
+            uploadImage(...args).then((value) => {
                 expect(value).toEqual(imageId);
                 done();
             });
