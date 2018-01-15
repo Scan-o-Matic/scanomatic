@@ -254,24 +254,14 @@ export function submitScanningJob(job) {
 }
 
 export function getScanningJobs() {
-    return API.get('/api/scan-jobs').then((r) => {
-        const jobs = r.map((job) => {
-            const newJob = Object.assign({}, job);
-            newJob.scanner = {
-                name: job.scanner.name,
-                power: job.scanner.power,
-                owned: !!job.scanner.owner,
-            };
-            return newJob;
-        });
-        return jobs;
-    });
+    return API.get('/api/scan-jobs');
 }
 
 export function getScanners() {
     return API.get('/api/scanners')
         .then(r => r.map(scanner => ({
             name: scanner.name,
+            identifier: scanner.identifier,
             power: scanner.power,
             owned: !!scanner.owner,
         })));

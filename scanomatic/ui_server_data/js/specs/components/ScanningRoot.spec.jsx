@@ -15,6 +15,7 @@ describe('<ScanningRoot />', () => {
         error: null,
         newJob: false,
         jobs: [],
+        scanners: [],
     };
 
     it('should render the error', () => {

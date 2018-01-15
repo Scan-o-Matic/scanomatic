@@ -9,9 +9,27 @@ import FakePromise from '../helpers/FakePromise';
 
 
 describe('<ScanningRootContainer />', () => {
+    const job = {
+        name: 'Test',
+        scannerId: 'aha',
+        duration: {
+            days: 55,
+            hours: 66,
+            minutes: 777,
+        },
+        interval: 8888,
+    };
+    const scanner = {
+        name: 'Kassad',
+        identifier: '123asfd124kljsdf',
+        owned: false,
+        power: true,
+    };
+
     describe('Jobs Request doing nothing', () => {
         beforeEach(() => {
             spyOn(API, 'getScanningJobs').and.returnValue(new FakePromise());
+            spyOn(API, 'getScanners').and.returnValue(new FakePromise());
         });
 
         it('should render <ScanningRoot />', () => {
@@ -76,18 +94,25 @@ describe('<ScanningRootContainer />', () => {
         });
     });
 
-    describe('Jobs request resolving', () => {
+    describe('Jobs and Scanners request resolving', () => {
         beforeEach(() => {
             spyOn(API, 'getScanningJobs').and
-                .returnValue(FakePromise.resolve([1, 2]));
+                .returnValue(FakePromise.resolve([job]));
+            spyOn(API, 'getScanners').and
+                .returnValue(FakePromise.resolve([scanner]));
         });
 
         it('should pass updated jobs', () => {
             const wrapper = shallow(<ScanningRootContainer />);
-            expect(wrapper.prop('jobs')).toEqual([1, 2]);
+            expect(wrapper.prop('jobs')).toEqual([job]);
         });
 
-        it('should clear errors when updating jobs', () => {
+        it('should pass updated scanners', () => {
+            const wrapper = shallow(<ScanningRootContainer />);
+            expect(wrapper.prop('scanners')).toEqual([scanner]);
+        });
+
+        it('should clear errors when updating', () => {
             const wrapper = shallow(<ScanningRootContainer />);
             wrapper.setState({ error: 'test' });
             wrapper.update();
@@ -99,12 +124,42 @@ describe('<ScanningRootContainer />', () => {
     });
 
     describe('Jobs request rejecting', () => {
-        it('should set error', () => {
+        beforeEach(() => {
             spyOn(API, 'getScanningJobs').and
                 .returnValue(FakePromise.reject('Fake'));
+            spyOn(API, 'getScanners').and
+                .returnValue(FakePromise.resolve([scanner]));
+        });
+
+        it('should set error', () => {
             const wrapper = shallow(<ScanningRootContainer />);
             expect(wrapper.prop('error'))
                 .toEqual('Error requesting jobs: Fake');
+        });
+
+        it('should pass scanners', () => {
+            const wrapper = shallow(<ScanningRootContainer />);
+            expect(wrapper.prop('scanners')).toEqual([scanner]);
+        });
+    });
+
+    describe('Scanners request rejecting', () => {
+        beforeEach(() => {
+            spyOn(API, 'getScanningJobs').and
+                .returnValue(FakePromise.resolve([job]));
+            spyOn(API, 'getScanners').and
+                .returnValue(FakePromise.reject('Fake'));
+        });
+
+        it('should set error', () => {
+            const wrapper = shallow(<ScanningRootContainer />);
+            expect(wrapper.prop('error'))
+                .toEqual('Error requesting scanners: Fake');
+        });
+
+        it('should pass jobs', () => {
+            const wrapper = shallow(<ScanningRootContainer />);
+            expect(wrapper.prop('jobs')).toEqual([job]);
         });
     });
 });

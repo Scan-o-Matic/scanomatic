@@ -2,7 +2,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import NewScanningJob from '../components/NewScanningJob';
-import { submitScanningJob, getScanners } from '../api';
+import { submitScanningJob } from '../api';
+import SoMPropTypes from '../prop-types';
 
 export default class NewScanningJobContainer extends React.Component {
     constructor(props) {
@@ -14,6 +15,7 @@ export default class NewScanningJobContainer extends React.Component {
                 minutes: 0,
             },
             interval: 20,
+            scannerId: props.scanners.length > 0 ? props.scanners[0].identifier : null,
         };
 
         this.handleNameChange = this.handleNameChange.bind(this);
@@ -22,20 +24,17 @@ export default class NewScanningJobContainer extends React.Component {
         this.handleDurationMinutesChange = this.handleDurationMinutesChange.bind(this);
         this.handleIntervalChange = this.handleIntervalChange.bind(this);
         this.handleSumbit = this.handleSumbit.bind(this);
-        this.handleScannerNameChange = this.handleScannerNameChange.bind(this);
+        this.handleScannerChange = this.handleScannerChange.bind(this);
     }
 
-    componentDidMount() {
-        getScanners()
-            .then((r) => {
-                const selectedName = r.length > 0 ? r[0].name : '';
-                this.setState({ scanners: r, scannerName: selectedName });
-            })
-            .catch(reason => this.setState({ error: `Error retrieving scanners: ${reason}` }));
+    willRecieveNewProps(nextProps) {
+        if (this.state.scannerId === null && nextProps.scanners.length > 0) {
+            this.setState({ scannerId: nextProps.scanners[0].identifier });
+        }
     }
 
-    handleScannerNameChange(e) {
-        this.setState({ scannerName: e.target.value });
+    handleScannerChange(e) {
+        this.setState({ scannerId: e.target.value });
     }
 
     handleNameChange(e) {
@@ -96,7 +95,7 @@ export default class NewScanningJobContainer extends React.Component {
             name: this.state.name,
             duration: this.state.duration,
             interval: this.state.interval,
-            scannerName: this.state.scannerName,
+            scannerId: this.state.scannerId,
         })
             .then(this.props.onClose)
             .catch(reason => this.setState({ error: `Error submitting job: ${reason}` }));
@@ -104,6 +103,7 @@ export default class NewScanningJobContainer extends React.Component {
 
     render() {
         return (<NewScanningJob
+            scanners={this.props.scanners}
             {...this.state}
             onSubmit={this.handleSumbit}
             onCancel={this.props.onClose}
@@ -112,11 +112,12 @@ export default class NewScanningJobContainer extends React.Component {
             onDurationHoursChange={this.handleDurationHoursChange}
             onDurationDaysChange={this.handleDurationDaysChange}
             onNameChange={this.handleNameChange}
-            onScannerNameChange={this.handleScannerNameChange}
+            onScannerChange={this.handleScannerChange}
         />);
     }
 }
 
 NewScanningJobContainer.propTypes = {
     onClose: PropTypes.func.isRequired,
+    scanners: PropTypes.arrayOf(SoMPropTypes.scannerType).isRequired,
 };

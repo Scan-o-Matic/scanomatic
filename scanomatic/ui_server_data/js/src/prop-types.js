@@ -17,6 +17,7 @@ const cccMetadata = PropTypes.shape({
 });
 
 const scannerType = PropTypes.shape({
+    identifier: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     owned: PropTypes.bool.isRequired,
     power: PropTypes.bool.isRequired,
@@ -30,7 +31,7 @@ const scanningJobType = PropTypes.shape({
     }).isRequired,
     name: PropTypes.string.isRequired,
     interval: PropTypes.number.isRequired,
-    scanner: scannerType.isRequired,
+    scannerId: PropTypes.string.isRequired,
 });
 
 export default {

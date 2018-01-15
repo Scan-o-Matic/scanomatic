@@ -15,8 +15,9 @@ export default function ScanningJobPanel(props) {
     if (props.duration.minutes > 0) {
         duration.push(`${props.duration.minutes} minutes`);
     }
+    const { scanner } = props;
     let showStart = null;
-    if (props.scanner.owned || !props.scanner.power) {
+    if (!scanner || scanner.owned || !scanner.power) {
         showStart = (
             <button type="button" className="btn btn-lg job-start" disabled>
                 <span className="glyphicon glyphicon-ban-circle" /> Start
@@ -29,6 +30,20 @@ export default function ScanningJobPanel(props) {
             </button>
         );
     }
+    let scannerStatus = null;
+    if (scanner) {
+        scannerStatus = (
+            <div className="scanner-status">
+                Using scanner <b>{scanner.name}</b> ({scanner.power ? 'online' : 'offline'}, {scanner.owned ? 'occupied' : 'free'}).
+            </div>
+        );
+    } else {
+        scannerStatus = (
+            <div className="scanner-status">
+                Retrieving scanner status...
+            </div>
+        );
+    }
     return (
         <div className="panel panel-default job-listing">
             <div className="panel-heading">
@@ -36,9 +51,8 @@ export default function ScanningJobPanel(props) {
             </div>
             {showStart}
             <div className="job-description">
-                Scan every {props.interval} minutes for {duration.join(' ')}.<br />
-                Using scanner <b>{props.scanner.name}</b> (
-                {props.scanner.power ? 'online' : 'offline'}, {props.scanner.owned ? 'occupied' : 'free'}).
+                Scan every {props.interval} minutes for {duration.join(' ')}.
+                {scannerStatus}
             </div>
         </div>
     );
@@ -50,7 +64,11 @@ ScanningJobPanel.propTypes = {
         hours: PropTypes.number.isRequired,
         minutes: PropTypes.number.isRequired,
     }).isRequired,
-    scanner: SoMPropTypes.scannerType.isRequired,
+    scanner: SoMPropTypes.scannerType,
     name: PropTypes.string.isRequired,
     interval: PropTypes.number.isRequired,
+};
+
+ScanningJobPanel.defaultProps = {
+    scanner: null,
 };

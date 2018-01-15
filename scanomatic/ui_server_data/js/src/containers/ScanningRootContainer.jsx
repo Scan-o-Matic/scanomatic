@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { getScanningJobs } from '../api';
+import { getScanningJobs, getScanners } from '../api';
 import ScanningRoot from '../components/ScanningRoot';
 
 
@@ -11,25 +11,34 @@ export default class ScanningRootContainer extends React.Component {
             error: null,
             newJob: false,
             jobs: [],
+            scanners: [],
         };
         this.handleError = this.handleError.bind(this);
         this.handleNewJob = this.handleNewJob.bind(this);
         this.handleCloseNewJob = this.handleCloseNewJob.bind(this);
-        this.getJobs = this.getJobs.bind(this);
     }
 
     componentDidMount() {
-        this.getJobs();
+        this.getJobStatusRequests();
     }
 
-    getJobs() {
+    getJobStatusRequests() {
         getScanningJobs()
-            .then(jobs => this.setState({ jobs, error: null }))
+            .then(jobs => this.setState({ jobs }))
             .catch(reason => this.setState({ error: `Error requesting jobs: ${reason}` }));
+
+        getScanners()
+            .then(scanners => this.setState({ scanners }))
+            .catch(reason => this.setState({ error: `Error requesting scanners: ${reason}` }));
+    }
+
+    getJobsStatus() {
+        this.setState({ error: null });
+        this.getJobStatusRequests();
     }
 
     handleCloseNewJob() {
-        this.getJobs();
+        this.getJobsStatus();
         this.setState({ newJob: false });
     }
 
@@ -47,6 +56,7 @@ export default class ScanningRootContainer extends React.Component {
                 newJob={this.state.newJob}
                 error={this.state.error}
                 jobs={this.state.jobs}
+                scanners={this.state.scanners}
                 onError={this.handleError}
                 onCloseNewJob={this.handleCloseNewJob}
                 onNewJob={this.handleNewJob}

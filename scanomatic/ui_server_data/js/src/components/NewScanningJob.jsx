@@ -75,11 +75,11 @@ export default function NewScanningJob(props) {
                             <label>Scanner</label>
                             <select
                                 className="scanner form-control"
-                                onChange={props.onScannerNameChange}
-                                value={props.scannerName}
+                                onChange={props.onScannerChange}
+                                value={props.scannerId}
                             >
                                 {props.scanners.map(v => (
-                                    <option key={v.name} value={v.name}>
+                                    <option key={v.name} value={v.identifier}>
                                         {v.name}
                                         {` (${v.power ? 'online' : 'offline'}, ${v.owned ? 'occupied' : 'free'})`}
                                     </option>
@@ -107,7 +107,7 @@ NewScanningJob.propTypes = {
         hours: PropTypes.number.isRequired,
         minutes: PropTypes.number.isRequired,
     }).isRequired,
-    scannerName: PropTypes.string,
+    scannerId: PropTypes.string,
     scanners: PropTypes.arrayOf(SoMPropTypes.scannerType),
     interval: PropTypes.number.isRequired,
     onNameChange: PropTypes.func.isRequired,
@@ -115,7 +115,7 @@ NewScanningJob.propTypes = {
     onDurationHoursChange: PropTypes.func.isRequired,
     onDurationMinutesChange: PropTypes.func.isRequired,
     onIntervalChange: PropTypes.func.isRequired,
-    onScannerNameChange: PropTypes.func.isRequired,
+    onScannerChange: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
 };
@@ -123,6 +123,6 @@ NewScanningJob.propTypes = {
 NewScanningJob.defaultProps = {
     name: '',
     error: null,
-    scannerName: '',
+    scannerId: '',
     scanners: [],
 };

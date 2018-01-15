@@ -9,12 +9,11 @@ import FakePromise from '../helpers/FakePromise';
 
 describe('<NewScanningJobContainer />', () => {
     const onClose = jasmine.createSpy('onError');
-    const props = { onClose };
+    const props = { onClose, scanners: [] };
 
     describe('Not resolving any promises', () => {
         beforeEach(() => {
             spyOn(API, 'submitScanningJob').and.returnValue(new FakePromise());
-            spyOn(API, 'getScanners').and.returnValue(new FakePromise());
             onClose.calls.reset();
         });
 
@@ -37,11 +36,6 @@ describe('<NewScanningJobContainer />', () => {
                 const wrapper = shallow(<NewScanningJobContainer {...props} />);
                 expect(wrapper.prop('interval')).toEqual(20);
             });
-
-            it('should call `getScanners`', () => {
-                shallow(<NewScanningJobContainer {...props} />);
-                expect(API.getScanners).toHaveBeenCalled();
-            });
         });
 
         describe('updating state', () => {
@@ -52,11 +46,11 @@ describe('<NewScanningJobContainer />', () => {
                 expect(wrapper.prop('name')).toEqual('Test');
             });
 
-            it('should set scanner name', () => {
+            it('should set scanner id', () => {
                 const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                wrapper.prop('onScannerNameChange')({ target: { value: 'Testing' } });
+                wrapper.prop('onScannerChange')({ target: { value: 'Testing' } });
                 wrapper.update();
-                expect(wrapper.prop('scannerName')).toEqual('Testing');
+                expect(wrapper.prop('scannerId')).toEqual('Testing');
             });
 
             it('should set interval', () => {
@@ -181,7 +175,7 @@ describe('<NewScanningJobContainer />', () => {
                     name: 'Hyperion',
                     duration: '-eternal',
                     interval: 'limes null',
-                    scannerName: 'Shrike',
+                    scannerId: 'Shrike',
                 };
                 const wrapper = shallow(<NewScanningJobContainer {...props} />);
                 wrapper.setState(state);
@@ -202,7 +196,6 @@ describe('<NewScanningJobContainer />', () => {
         it('should call `onClose` after submit', () => {
             onClose.calls.reset();
             spyOn(API, 'submitScanningJob').and.returnValue(FakePromise.resolve(5));
-            spyOn(API, 'getScanners').and.returnValue(new FakePromise());
             const wrapper = shallow(<NewScanningJobContainer {...props} />);
             wrapper.prop('onSubmit')();
             expect(API.submitScanningJob).toHaveBeenCalled();
@@ -215,7 +208,6 @@ describe('<NewScanningJobContainer />', () => {
             onClose.calls.reset();
             spyOn(API, 'submitScanningJob').and
                 .returnValue(FakePromise.reject('Sad King Billy'));
-            spyOn(API, 'getScanners').and.returnValue(new FakePromise());
         });
 
         it('should call not `onClose`', () => {
@@ -230,41 +222,6 @@ describe('<NewScanningJobContainer />', () => {
             wrapper.update();
             expect(wrapper.prop('error'))
                 .toEqual('Error submitting job: Sad King Billy');
-        });
-    });
-
-    describe('Resovling `getScanners`', () => {
-        beforeEach(() => {
-            onClose.calls.reset();
-            spyOn(API, 'submitScanningJob').and.returnValue(new FakePromise());
-            spyOn(API, 'getScanners').and.returnValue(FakePromise
-                .resolve([{ name: 'hello' }, { name: 'world' }]));
-        });
-
-        it('should set scanners', () => {
-            const wrapper = shallow(<NewScanningJobContainer {...props} />);
-            expect(wrapper.prop('scanners'))
-                .toEqual([{ name: 'hello' }, { name: 'world' }]);
-        });
-
-        it('should default select first scanner', () => {
-            const wrapper = shallow(<NewScanningJobContainer {...props} />);
-            expect(wrapper.prop('scannerName')).toEqual('hello');
-        });
-    });
-
-    describe('Rejecting `getScanners`', () => {
-        beforeEach(() => {
-            onClose.calls.reset();
-            spyOn(API, 'submitScanningJob').and.returnValue(new FakePromise());
-            spyOn(API, 'getScanners').and.returnValue(FakePromise
-                .reject('World Tree'));
-        });
-
-        it('should set error', () => {
-            const wrapper = shallow(<NewScanningJobContainer {...props} />);
-            expect(wrapper.prop('error'))
-                .toEqual('Error retrieving scanners: World Tree');
         });
     });
 });

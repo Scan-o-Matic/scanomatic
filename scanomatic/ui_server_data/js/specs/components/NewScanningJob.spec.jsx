@@ -12,7 +12,7 @@ describe('<NewScanningJob/>', () => {
     const onDurationHoursChange = jasmine.createSpy('onDurationHoursChange');
     const onDurationMinutesChange = jasmine.createSpy('onDurationMinutesChange');
     const onIntervalChange = jasmine.createSpy('onIntervalChange');
-    const onScannerNameChange = jasmine.createSpy('onScannerNameChange');
+    const onScannerChange = jasmine.createSpy('onScannerChange');
     const onSubmit = jasmine.createSpy('onSubmit');
     const onCancel = jasmine.createSpy('onCancel');
 
@@ -23,10 +23,21 @@ describe('<NewScanningJob/>', () => {
             hours: 13,
             minutes: 22,
         },
-        scannerName: 'Tox',
+        scannerId: 'hoho',
         scanners: [
-            { name: 'Tox', owned: false, power: true },
-            { name: 'Npm', owned: true, power: false },
+            {
+                name: 'Tox',
+                owned: false,
+                power: true,
+                identifier:
+                'hoho',
+            },
+            {
+                name: 'Npm',
+                owned: true,
+                power: false,
+                identifier: 'haha',
+            },
         ],
         interval: 16,
         onNameChange,
@@ -34,7 +45,7 @@ describe('<NewScanningJob/>', () => {
         onDurationHoursChange,
         onDurationMinutesChange,
         onIntervalChange,
-        onScannerNameChange,
+        onScannerChange,
         onSubmit,
         onCancel,
     };
@@ -44,7 +55,7 @@ describe('<NewScanningJob/>', () => {
         onDurationHoursChange.calls.reset();
         onDurationMinutesChange.calls.reset();
         onIntervalChange.calls.reset();
-        onScannerNameChange.calls.reset();
+        onScannerChange.calls.reset();
         onSubmit.calls.reset();
         onCancel.calls.reset();
     });
@@ -128,7 +139,7 @@ describe('<NewScanningJob/>', () => {
         it('shows the selected scanner', () => {
             const wrapper = shallow(<NewScanningJob {...props} />);
             const sel = wrapper.find('select.scanner');
-            expect(sel.prop('value')).toEqual(props.scannerName);
+            expect(sel.prop('value')).toEqual(props.scannerId);
         });
 
         it('renders the scanner options', () => {
@@ -138,11 +149,11 @@ describe('<NewScanningJob/>', () => {
             expect(opts.last().text()).toEqual('Npm (offline, occupied)');
         });
 
-        it('calls `onScannerNameChange` when changed', () => {
+        it('calls `onScannerChange` when changed', () => {
             const wrapper = shallow(<NewScanningJob {...props} />);
             const sel = wrapper.find('select.scanner');
             sel.simulate('change');
-            expect(onScannerNameChange).toHaveBeenCalled();
+            expect(onScannerChange).toHaveBeenCalled();
         });
     });
 
