@@ -39,3 +39,4 @@ after_success:
     - coveralls-lcov -v -n scanomatic/ui_server_data/coverage/report-lcov/lcov.info > js-coverage.json
     - coveralls --merge=js-coverage.json
     - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"; docker-compose push; fi
+    - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then curl https://jenkins.molflow.com/job/INFRA/build?token=$JENKINS_TOKEN; fi
