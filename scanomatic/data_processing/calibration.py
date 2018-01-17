@@ -615,7 +615,10 @@ def get_calibration_optimization_function(degree=5):
 def get_calibration_polynomial_residuals(
         guess, colony_sum_function, data_store):
 
-    return data_store.target_value - colony_sum_function(data_store, *guess)
+    return (
+        np.log2(data_store.target_value)
+        - np.log2(colony_sum_function(data_store, *guess))
+    )
 
 
 def get_calibration_polynomial(coefficients_array):
