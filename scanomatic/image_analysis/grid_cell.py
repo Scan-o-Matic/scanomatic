@@ -29,7 +29,7 @@ from scanomatic.generics.maths import mid50_mean as iqr_mean
 
 class GridCell(object):
 
-    MAX_THRESHOLD = 4200
+    MAX_THRESHOLD = np.inf
     MIN_THRESHOLD = 0
     _logger = Logger("Grid Cell")
 
