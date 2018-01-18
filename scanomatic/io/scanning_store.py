@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from collections import namedtuple
 
+from ..models.scanjob import ScanJob
+
 
 class ScanJobCollisionError(ValueError):
     pass
@@ -9,11 +11,6 @@ class ScanJobCollisionError(ValueError):
 class ScanJobUnknownError(ValueError):
     pass
 
-
-ScanJob = namedtuple(
-    'ScanJob',
-    ['identifier', 'name', 'duration', 'interval', 'scanner_id']
-)
 
 Scanner = namedtuple(
     'Scanner',
