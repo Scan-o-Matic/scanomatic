@@ -17,4 +17,9 @@ class ScanJob(ScanJobBase):
         return super(ScanJob, self).__new__(
             self, identifier, name, duration, interval, scanner_id, start,
         )
-    pass
+
+    def is_active(self, t):
+        return (
+            self.start is not None
+            and self.start <= t <= self.start + self.duration
+        )

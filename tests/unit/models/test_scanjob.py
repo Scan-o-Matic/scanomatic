@@ -5,7 +5,7 @@ import pytest
 from scanomatic.models.scanjob import ScanJob
 
 
-class TestScanJob:
+class TestInit:
     def test_init(self):
         job = ScanJob(
             identifier='xxxx',
@@ -42,3 +42,41 @@ class TestScanJob:
                 scanner_id='yyyy',
                 start='xxx',
             )
+
+
+class TestIsActive:
+    def test_not_active_if_not_started(self):
+        job = ScanJob(
+            identifier='xxxx',
+            name='Unknown',
+            duration=timedelta(days=3),
+            interval=timedelta(minutes=5),
+            scanner_id='yyyy',
+        )
+        assert not job.is_active(datetime(1985, 10, 26, 1, 20))
+
+    @pytest.fixture
+    def started_job(self):
+        return ScanJob(
+            identifier='xxxx',
+            name='Unknown',
+            duration=timedelta(minutes=1),
+            interval=timedelta(seconds=5),
+            scanner_id='yyyy',
+            start=datetime(1985, 10, 26, 1, 20)
+        )
+
+    @pytest.mark.parametrize('now', [
+        datetime(1985, 10, 26, 1, 20),
+        datetime(1985, 10, 26, 1, 20, 30),
+        datetime(1985, 10, 26, 1, 21),
+    ])
+    def test_active(self, started_job, now):
+        assert started_job.is_active(now)
+
+    @pytest.mark.parametrize('now', [
+        datetime(1985, 10, 26, 1, 19),
+        datetime(1985, 10, 26, 1, 22),
+    ])
+    def test_not_active(self, started_job, now):
+        assert not started_job.is_active(now)
