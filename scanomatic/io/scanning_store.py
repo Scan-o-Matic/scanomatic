@@ -71,3 +71,8 @@ class ScanningStore:
             if getattr(job, key) == value:
                 return True
         return False
+
+    def get_current_scanjob(self, scanner_id, t):
+        for job in self._scanjobs.values():
+            if job.scanner_id == scanner_id and job.is_active(t):
+                return job
