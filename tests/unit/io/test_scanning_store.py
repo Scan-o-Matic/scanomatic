@@ -15,16 +15,16 @@ def scanning_store():
 JOB1 = ScanJob(
     identifier=5,
     name="Hello",
-    duration="to",
-    interval="you",
+    duration=timedelta(days=1),
+    interval=timedelta(minutes=20),
     scanner_id="9a8486a6f9cb11e7ac660050b68338ac",
 )
 
 JOB2 = ScanJob(
     identifier=6,
     name="Hello",
-    duration="to",
-    interval="you",
+    duration=timedelta(days=1),
+    interval=timedelta(minutes=20),
     scanner_id="9a8486a6f9cb11e7ac660050b68338ac",
 )
 

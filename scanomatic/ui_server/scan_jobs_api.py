@@ -1,7 +1,9 @@
 from __future__ import absolute_import
-from flask import request, jsonify, Blueprint, current_app
-from uuid import uuid1
+from datetime import timedelta
 from httplib import BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, CREATED
+from uuid import uuid1
+
+from flask import request, jsonify, Blueprint, current_app
 
 from scanomatic.io.scanning_store import ScanJobCollisionError, ScanJob
 from .general import json_abort
@@ -10,7 +12,7 @@ blueprint = Blueprint('scan_jobs_api', __name__)
 
 # There must be a minimum interval for scanning to avoid start
 # of scan while still scanning.
-MINIMUM_INTERVAL = 5
+MINIMUM_INTERVAL = timedelta(minutes=5)
 
 
 @blueprint.route("", methods=['POST'])
@@ -29,10 +31,18 @@ def scan_jobs_add():
     duration = data_object.get('duration', None)
     if not duration:
         return json_abort(BAD_REQUEST, reason="Duration not supplied")
+    try:
+        duration = timedelta(seconds=duration)
+    except TypeError:
+        return json_abort(BAD_REQUEST, reason="Invalid duration")
 
     interval = data_object.get('interval', None)
     if not interval:
         return json_abort(BAD_REQUEST, reason="Interval not supplied")
+    try:
+        interval = timedelta(seconds=interval)
+    except TypeError:
+        return json_abort(BAD_REQUEST, reason="Invalid interval")
 
     if interval < MINIMUM_INTERVAL:
         return json_abort(BAD_REQUEST, reason="Interval too short")
@@ -67,8 +77,8 @@ def scan_jobs_list():
         return {
             'identifier': data.identifier,
             'name': data.name,
-            'duration': data.duration,
-            'interval': data.interval,
+            'duration': data.duration.total_seconds(),
+            'interval': data.interval.total_seconds(),
             'scannerId': data.scanner_id,
         }
 

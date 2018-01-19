@@ -1,5 +1,5 @@
 from collections import namedtuple
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 ScanJobBase = namedtuple(
@@ -14,6 +14,10 @@ class ScanJob(ScanJobBase):
     ):
         if start is not None and not isinstance(start, datetime):
             raise ValueError('start should be a datetime')
+        if not isinstance(duration, timedelta):
+            raise ValueError('duration should be a timedelta')
+        if not isinstance(interval, timedelta):
+            raise ValueError('interval should be a timedelta')
         return super(ScanJob, self).__new__(
             self, identifier, name, duration, interval, scanner_id, start,
         )
