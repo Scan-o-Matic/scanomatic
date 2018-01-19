@@ -250,7 +250,16 @@ export function finalizeCalibration(cccId, accessToken) {
 }
 
 export function submitScanningJob(job) {
-    return API.postJSON('/api/scan-jobs', job);
+    const data = {
+        name: job.name,
+        scannerId: job.scannerId,
+        interval: job.interval * 60,
+        duration:
+            (job.duration.days * 86400)
+            + (job.duration.hours * 3600)
+            + (job.duration.minutes * 60),
+    };
+    return API.postJSON('/api/scan-jobs', data);
 }
 
 export function getScanningJobs() {

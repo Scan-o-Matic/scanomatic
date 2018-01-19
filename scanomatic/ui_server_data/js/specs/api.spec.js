@@ -746,4 +746,54 @@ describe('API', () => {
             });
         });
     });
+
+    describe('sumbitScanningJob', () => {
+        const args = [{
+            name: 'Some Job',
+            duration: { days: 1, hours: 3, minutes: 5 },
+            interval: 20,
+            scannerId: 'sc4nn3r',
+        }];
+
+        it('should query the correct URL', () => {
+            API.submitScanningJob(...args);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/scan-jobs');
+        });
+
+        it('should send a POST request', () => {
+            API.submitScanningJob(...args);
+            expect(mostRecentRequest().method).toEqual('POST');
+        });
+
+        it('should send the job', () => {
+            API.submitScanningJob(...args);
+            expect(JSON.parse(mostRecentRequest().params)).toEqual({
+                name: 'Some Job',
+                scannerId: 'sc4nn3r',
+                interval: 1200,
+                duration: 97500,
+            });
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.submitScanningJob(...args).then((value) => {
+                expect(value).toEqual({});
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify({}),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.submitScanningJob(...args).catch((reason) => {
+                expect(reason).toEqual('(+_+)');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: '(+_+)' }),
+            });
+        });
+    });
 });
