@@ -474,7 +474,7 @@ describe('API', () => {
                 .toEqual('POST');
         });
 
-        it('should send the access_coken', () => {
+        it('should send the access_token', () => {
             API.SetGrayScaleTransform(...args);
             expect(mostRecentRequest().params.get('access_token'))
                 .toEqual('T0K3N');
@@ -551,7 +551,7 @@ describe('API', () => {
                 .toEqual('POST');
         });
 
-        it('should send the access_coken', () => {
+        it('should send the access_token', () => {
             API.SetNewCalibrationPolynomial(...args);
             expect(JSON.parse(mostRecentRequest().params).access_token)
                 .toEqual('T0K3N');
@@ -720,7 +720,7 @@ describe('API', () => {
             expect(mostRecentRequest().method).toEqual('POST');
         });
 
-        it('should send the access_coken', () => {
+        it('should send the access_token', () => {
             API.finalizeCalibration(...args);
             expect(JSON.parse(mostRecentRequest().params).access_token)
                 .toEqual('T0K3N');
