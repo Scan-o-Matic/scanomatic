@@ -1,8 +1,6 @@
 from __future__ import absolute_import
 from collections import namedtuple
 
-from ..models.scanjob import ScanJob
-
 
 class ScanJobCollisionError(ValueError):
     pass

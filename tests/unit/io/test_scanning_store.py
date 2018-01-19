@@ -3,8 +3,9 @@ from datetime import datetime, timedelta
 
 import pytest
 from scanomatic.io.scanning_store import (
-    ScanningStore, ScanJobCollisionError, ScanJobUnknownError, ScanJob, Scanner
+    ScanningStore, ScanJobCollisionError, ScanJobUnknownError, Scanner
 )
+from scanomatic.models.scanjob import ScanJob
 
 
 @pytest.fixture(scope='function')

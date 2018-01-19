@@ -5,7 +5,8 @@ from uuid import uuid1
 
 from flask import request, jsonify, Blueprint, current_app
 
-from scanomatic.io.scanning_store import ScanJobCollisionError, ScanJob
+from scanomatic.io.scanning_store import ScanJobCollisionError
+from scanomatic.models.scanjob import ScanJob
 from .general import json_abort
 from .serialization import job2json
 
