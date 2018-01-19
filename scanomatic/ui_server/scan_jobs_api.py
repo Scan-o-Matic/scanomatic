@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from datetime import timedelta
-from httplib import BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, CREATED
+from httplib import BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, CREATED
 from uuid import uuid1
 
 from flask import request, jsonify, Blueprint, current_app
@@ -24,7 +24,7 @@ def scan_jobs_add():
         return json_abort(BAD_REQUEST, reason="No name supplied")
     if scanning_store.exists_scanjob_with('name', name):
         return json_abort(
-            FORBIDDEN,
+            CONFLICT,
             reason="Name '{}' duplicated".format(name)
         )
 
