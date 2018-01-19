@@ -70,7 +70,7 @@ class ScanningStore:
                 return True
         return False
 
-    def get_current_scanjob(self, scanner_id, t):
+    def get_current_scanjob(self, scanner_id, timepoint):
         for job in self._scanjobs.values():
-            if job.scanner_id == scanner_id and job.is_active(t):
+            if job.scanner_id == scanner_id and job.is_active(timepoint):
                 return job

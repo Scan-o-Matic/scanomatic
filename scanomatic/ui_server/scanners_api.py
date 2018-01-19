@@ -39,9 +39,7 @@ class ScannerJob(Resource):
         if not db.has_scanner(scannerid):
             raise NotFound
         job = db.get_current_scanjob(scannerid, datetime.now())
-        if job is None:
-            return None
-        else:
+        if job:
             return job2json(job)
 
 

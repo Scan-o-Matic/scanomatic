@@ -23,8 +23,8 @@ class ScanJob(ScanJobBase):
             self, identifier, name, duration, interval, scanner_id, start,
         )
 
-    def is_active(self, t):
+    def is_active(self, timepoint):
         return (
             self.start is not None
-            and self.start <= t <= self.start + self.duration
+            and self.start <= timepoint <= self.start + self.duration
         )
