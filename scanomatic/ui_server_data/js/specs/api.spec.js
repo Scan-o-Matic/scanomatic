@@ -747,13 +747,69 @@ describe('API', () => {
         });
     });
 
-    describe('sumbitScanningJob', () => {
-        const args = [{
+
+    describe('getScanningJobs', () => {
+        const scanJob = {
+            identifier: 'xyz',
             name: 'Some Job',
             duration: { days: 1, hours: 3, minutes: 5 },
             interval: 20,
             scannerId: 'sc4nn3r',
-        }];
+        };
+        const jsonScanJob = {
+            identifier: 'xyz',
+            name: 'Some Job',
+            scannerId: 'sc4nn3r',
+            interval: 1200,
+            duration: 97500,
+        };
+
+        it('should query the correct URL', () => {
+            API.getScanningJobs();
+            expect(mostRecentRequest().url)
+                .toEqual('/api/scan-jobs');
+        });
+
+        it('should send a GET request', () => {
+            API.getScanningJobs();
+            expect(mostRecentRequest().method).toEqual('GET');
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.getScanningJobs().then((value) => {
+                expect(value).toEqual([scanJob]);
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify([jsonScanJob]),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.getScanningJobs().catch((reason) => {
+                expect(reason).toEqual('(+_+)');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: '(+_+)' }),
+            });
+        });
+    });
+
+    describe('submitScanningJob', () => {
+        const scanJob = {
+            name: 'Some Job',
+            duration: { days: 1, hours: 3, minutes: 5 },
+            interval: 20,
+            scannerId: 'sc4nn3r',
+        };
+        const jsonScanJob = {
+            name: 'Some Job',
+            scannerId: 'sc4nn3r',
+            interval: 1200,
+            duration: 97500,
+        };
+        const args = [scanJob];
 
         it('should query the correct URL', () => {
             API.submitScanningJob(...args);
@@ -768,12 +824,7 @@ describe('API', () => {
 
         it('should send the job', () => {
             API.submitScanningJob(...args);
-            expect(JSON.parse(mostRecentRequest().params)).toEqual({
-                name: 'Some Job',
-                scannerId: 'sc4nn3r',
-                interval: 1200,
-                duration: 97500,
-            });
+            expect(JSON.parse(mostRecentRequest().params)).toEqual(jsonScanJob);
         });
 
         it('should return a promise that resolves on success', (done) => {
