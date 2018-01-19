@@ -100,7 +100,7 @@ class TestGetScannerJob(object):
         response = client.get(self.URI)
         assert response.status_code == OK
         assert response.json == {
-            'id': 'xxxx',
+            'identifier': 'xxxx',
             'name': 'The Job',
             'duration': 259200,
             'interval': 300,

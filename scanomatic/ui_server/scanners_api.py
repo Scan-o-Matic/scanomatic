@@ -7,6 +7,7 @@ from flask_restful import Api, Resource
 from werkzeug.exceptions import NotFound
 
 from .general import json_abort
+from .serialization import job2json
 
 blueprint = Blueprint("scanners_api", __name__)
 
@@ -41,14 +42,7 @@ class ScannerJob(Resource):
         if job is None:
             return None
         else:
-            return {
-                'duration': job.duration.total_seconds(),
-                'id': job.identifier,
-                'interval': job.interval.total_seconds(),
-                'name': job.name,
-                'scannerId': job.scanner_id,
-                'start': job.start.isoformat(),
-            }
+            return job2json(job)
 
 
 api = Api(blueprint)

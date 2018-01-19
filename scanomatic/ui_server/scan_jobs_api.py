@@ -7,6 +7,8 @@ from flask import request, jsonify, Blueprint, current_app
 
 from scanomatic.io.scanning_store import ScanJobCollisionError, ScanJob
 from .general import json_abort
+from .serialization import job2json
+
 
 blueprint = Blueprint('scan_jobs_api', __name__)
 
@@ -73,16 +75,7 @@ def scan_jobs_add():
 
 @blueprint.route("", methods=['GET'])
 def scan_jobs_list():
-    def py2js(data):
-        return {
-            'identifier': data.identifier,
-            'name': data.name,
-            'duration': data.duration.total_seconds(),
-            'interval': data.interval.total_seconds(),
-            'scannerId': data.scanner_id,
-        }
-
     scanning_store = current_app.config['scanning_store']
     return jsonify([
-        py2js(job) for job in scanning_store.get_all_scanjobs()
+        job2json(job) for job in scanning_store.get_all_scanjobs()
     ])
