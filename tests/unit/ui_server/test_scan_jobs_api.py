@@ -141,8 +141,7 @@ class TestScanJobs:
 class TestStartScanJob:
     URI = '/api/scan-jobs/{id}/start'
 
-    @pytest.fixture
-    def jobid(self, test_app):
+    def create_scanjob(self, test_app):
         response = test_app.post_json('/api/scan-jobs', {
             'name': uuid.uuid1().hex,
             'scannerId': '9a8486a6f9cb11e7ac660050b68338ac',
@@ -152,22 +151,31 @@ class TestStartScanJob:
         assert response.status_code == CREATED
         return response.json['jobId']
 
-    def test_start_existing_job(self, test_app, jobid):
+    def test_start_existing_job(self, test_app):
+        jobid = self.create_scanjob(test_app)
         with freezegun.freeze_time('1985-10-26 01:20', tz_offset=0):
             response = test_app.post(self.URI.format(id=jobid))
         assert response.status_code == OK
         job = test_app.get('/api/scan-jobs/' + jobid).json
         return job['start'] == '1985-10-26T01:20:00'
 
-    def test_already_started(self, test_app, jobid):
+    def test_already_started(self, test_app):
+        jobid = self.create_scanjob(test_app)
         with freezegun.freeze_time('1985-10-26 01:20', tz_offset=0):
             test_app.post(self.URI.format(id=jobid))
         with freezegun.freeze_time('1985-10-26 01:21', tz_offset=0):
             response = test_app.post(self.URI.format(id=jobid))
         assert response.status_code == CONFLICT
         job = test_app.get('/api/scan-jobs/' + jobid).json
-        return job['start'] == '1985-10-26T01:20:00'
+        assert job['start'] == '1985-10-26T01:20:00'
 
     def test_unknown_job(self, test_app):
         response = test_app.post(self.URI.format(id='unknown'))
         assert response.status_code == NOT_FOUND
+
+    def test_scanner_busy(self, test_app):
+        jobid1 = self.create_scanjob(test_app)
+        test_app.post(self.URI.format(id=jobid1))
+        jobid2 = self.create_scanjob(test_app)
+        response = test_app.post(self.URI.format(id=jobid2))
+        assert response.status_code == CONFLICT

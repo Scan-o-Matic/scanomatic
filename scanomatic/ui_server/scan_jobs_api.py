@@ -103,9 +103,11 @@ class ScanJobStartController(Resource):
             job = db.get_scanjob(scanjobid)
         except ScanJobUnknownError:
             raise NotFound
-        db.update_scanjob(job._replace(start=datetime.now()))
         if job.start is not None:
-            return '', CONFLICT
+            return json_abort(CONFLICT, reason='Scanning Job already started')
+        if db.get_current_scanjob(job.scanner_id, datetime.now()) is not None:
+            return json_abort(CONFLICT, reason='Scanner busy')
+        db.update_scanjob(job._replace(start=datetime.now()))
         return '', OK
 
 
