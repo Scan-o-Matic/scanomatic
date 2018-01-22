@@ -5,6 +5,7 @@ from uuid import uuid1
 
 from flask import request, jsonify, Blueprint, current_app
 from flask_restful import Api, Resource
+import pytz
 from werkzeug.exceptions import NotFound
 
 from scanomatic.io.scanning_store import (
@@ -103,11 +104,12 @@ class ScanJobStartController(Resource):
             job = db.get_scanjob(scanjobid)
         except ScanJobUnknownError:
             raise NotFound
+        now = datetime.now(pytz.utc)
         if job.start is not None:
             return json_abort(CONFLICT, reason='Scanning Job already started')
-        if db.get_current_scanjob(job.scanner_id, datetime.now()) is not None:
+        if db.get_current_scanjob(job.scanner_id, now) is not None:
             return json_abort(CONFLICT, reason='Scanner busy')
-        db.update_scanjob(job._replace(start=datetime.now()))
+        db.update_scanjob(job._replace(start=now))
         return '', OK
 
 
