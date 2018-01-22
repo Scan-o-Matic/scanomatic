@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from datetime import datetime, timedelta
 
 import pytest
+from pytz import utc
+
 from scanomatic.io.scanning_store import (
     ScanningStore, ScanJobCollisionError, ScanJobUnknownError, Scanner
 )
@@ -130,7 +132,7 @@ class TestGetCurrentJob:
             duration=timedelta(minutes=1),
             interval=timedelta(seconds=5),
             scanner_id=self.SCANNERID,
-            start=datetime(1985, 10, 26, 1, 20)
+            start=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
         ))
         scanning_store.add_scanjob(ScanJob(
             identifier='3',
@@ -138,7 +140,7 @@ class TestGetCurrentJob:
             duration=timedelta(minutes=1),
             interval=timedelta(seconds=5),
             scanner_id=self.SCANNERID,
-            start=datetime(1985, 10, 26, 1, 35)
+            start=datetime(1985, 10, 26, 1, 35, tzinfo=utc)
         ))
         scanning_store.add_scanjob(ScanJob(
             identifier='4',
@@ -146,22 +148,22 @@ class TestGetCurrentJob:
             duration=timedelta(minutes=30),
             interval=timedelta(seconds=5),
             scanner_id='otherscanner',
-            start=datetime(1985, 10, 26, 1, 20)
+            start=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
         ))
         return scanning_store
 
     @pytest.mark.parametrize('t, jobname', [
-        (datetime(1985, 10, 26, 1, 20), 'Bar'),
-        (datetime(1985, 10, 26, 1, 35), 'Baz'),
+        (datetime(1985, 10, 26, 1, 20, tzinfo=utc), 'Bar'),
+        (datetime(1985, 10, 26, 1, 35, tzinfo=utc), 'Baz'),
     ])
     def test_has_active_job(self, store, t, jobname):
         job = store.get_current_scanjob(self.SCANNERID, t)
         assert job is not None and job.name == jobname
 
     @pytest.mark.parametrize('t', [
-        datetime(1985, 10, 26, 1, 15),
-        datetime(1985, 10, 26, 1, 25),
-        datetime(1985, 10, 26, 1, 40),
+        datetime(1985, 10, 26, 1, 15, tzinfo=utc),
+        datetime(1985, 10, 26, 1, 25, tzinfo=utc),
+        datetime(1985, 10, 26, 1, 40, tzinfo=utc),
     ])
     def test_no_active_job(self, store, t):
         job = store.get_current_scanjob(self.SCANNERID, t)
