@@ -1,11 +1,15 @@
 from __future__ import absolute_import
-from datetime import timedelta
-from httplib import BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, CREATED
+from datetime import datetime, timedelta
+from httplib import BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, CREATED, OK
 from uuid import uuid1
 
 from flask import request, jsonify, Blueprint, current_app
+from flask_restful import Api, Resource
+from werkzeug.exceptions import NotFound
 
-from scanomatic.io.scanning_store import ScanJobCollisionError
+from scanomatic.io.scanning_store import (
+    ScanJobCollisionError, ScanJobUnknownError,
+)
 from scanomatic.models.scanjob import ScanJob
 from .general import json_abort
 from .serialization import job2json
@@ -80,3 +84,31 @@ def scan_jobs_list():
     return jsonify([
         job2json(job) for job in scanning_store.get_all_scanjobs()
     ])
+
+
+class ScanJobDocument(Resource):
+    def get(self, scanjobid):
+        db = current_app.config['scanning_store']
+        try:
+            job = db.get_scanjob(scanjobid)
+        except ScanJobUnknownError:
+            raise NotFound
+        return job2json(job)
+
+
+class ScanJobStartController(Resource):
+    def post(self, scanjobid):
+        db = current_app.config['scanning_store']
+        try:
+            job = db.get_scanjob(scanjobid)
+        except ScanJobUnknownError:
+            raise NotFound
+        db.update_scanjob(job._replace(start=datetime.now()))
+        if job.start is not None:
+            return '', CONFLICT
+        return '', OK
+
+
+api = Api(blueprint)
+api.add_resource(ScanJobStartController, '/<scanjobid>/start')
+api.add_resource(ScanJobDocument, '/<scanjobid>')

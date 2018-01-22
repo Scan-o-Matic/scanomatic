@@ -91,6 +91,35 @@ class TestGetJobs:
         assert len(scanning_store.get_all_scanjobs()) == 2
 
 
+class TestGetScanjob:
+    def test_existing_job(self, scanning_store):
+        scanning_store.add_scanjob(JOB1)
+        assert scanning_store.get_scanjob(JOB1.identifier) == JOB1
+
+    def test_unknown_job(self, scanning_store):
+        scanning_store.add_scanjob(JOB1)
+        with pytest.raises(ScanJobUnknownError):
+            scanning_store.get_scanjob('unknown')
+
+
+class TestUpdateScanjob:
+    def test_update_existing(self, scanning_store):
+        scanning_store.add_scanjob(JOB1)
+        updated_scanjob = ScanJob(
+            identifier=JOB1.identifier,
+            name="Bye",
+            duration=JOB1.duration,
+            interval=JOB1.interval,
+            scanner_id=JOB1.scanner_id,
+        )
+        scanning_store.update_scanjob(updated_scanjob)
+        assert scanning_store.get_scanjob(JOB1.identifier) == updated_scanjob
+
+    def test_update_unknown(self, scanning_store):
+        with pytest.raises(ScanJobUnknownError):
+            scanning_store.update_scanjob(JOB1)
+
+
 class TestGetJobIds:
     def test_has_the_ids(self, scanning_store):
         scanning_store.add_scanjob(JOB1)

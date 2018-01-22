@@ -58,6 +58,17 @@ class ScanningStore:
                 "{} is not a known job".format(identifier)
             )
 
+    def get_scanjob(self, identifier):
+        try:
+            return self._scanjobs[identifier]
+        except KeyError:
+            raise ScanJobUnknownError(identifier)
+
+    def update_scanjob(self, job):
+        if job.identifier not in self._scanjobs:
+            raise ScanJobUnknownError(job.identifier)
+        self._scanjobs[job.identifier] = job
+
     def get_all_scanjobs(self):
         return list(self._scanjobs.values())
 
