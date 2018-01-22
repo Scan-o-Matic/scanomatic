@@ -3,7 +3,7 @@ import pytest
 import json
 from types import MethodType
 from flask import Flask
-from httplib import BAD_REQUEST, FORBIDDEN, OK, CREATED
+from httplib import BAD_REQUEST, CONFLICT, OK, CREATED
 
 from scanomatic.ui_server.ui_server import add_configs
 from scanomatic.io.paths import Paths
@@ -43,12 +43,8 @@ class TestScanJobs:
         return {
             'name': 'Binary yeast',
             'scannerId': '9a8486a6f9cb11e7ac660050b68338ac',
-            'interval': 32,
-            'duration': {
-                'days': 1024,
-                'hours': 64,
-                'minutes': 8,
-            }
+            'interval': 500,
+            'duration': 86400,
         }
 
     def test_get_jobs_and_there_are_none(self, test_app):
@@ -64,7 +60,7 @@ class TestScanJobs:
         response = test_app.post_json(self.URI, job)
         assert response.status_code == CREATED
         response = test_app.post_json(self.URI, job)
-        assert response.status_code == FORBIDDEN
+        assert response.status_code == CONFLICT
         assert response.json['reason'] == "Name 'Binary yeast' duplicated"
 
     @pytest.mark.parametrize("key,reason", (

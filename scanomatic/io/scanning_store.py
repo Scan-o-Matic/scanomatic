@@ -10,11 +10,6 @@ class ScanJobUnknownError(ValueError):
     pass
 
 
-ScanJob = namedtuple(
-    'ScanJob',
-    ['identifier', 'name', 'duration', 'interval', 'scanner_id']
-)
-
 Scanner = namedtuple(
     'Scanner',
     ['name', 'power', 'owner', 'identifier']
@@ -74,3 +69,8 @@ class ScanningStore:
             if getattr(job, key) == value:
                 return True
         return False
+
+    def get_current_scanjob(self, scanner_id, timepoint):
+        for job in self._scanjobs.values():
+            if job.scanner_id == scanner_id and job.is_active(timepoint):
+                return job

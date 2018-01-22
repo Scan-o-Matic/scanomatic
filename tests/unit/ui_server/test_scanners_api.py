@@ -1,11 +1,15 @@
 from __future__ import absolute_import
-import pytest
-from flask import Flask
+from datetime import datetime, timedelta
 from httplib import OK, NOT_FOUND
 
-from scanomatic.ui_server.ui_server import add_configs
+from flask import Flask
+import mock
+import pytest
+
 from scanomatic.io.paths import Paths
+from scanomatic.models.scanjob import ScanJob
 from scanomatic.ui_server import scanners_api
+from scanomatic.ui_server.ui_server import add_configs
 
 
 @pytest.fixture
@@ -53,3 +57,54 @@ class TestScannerStatus:
         response = test_app.get(self.URI + "/Unknown")
         response.status_code == NOT_FOUND
         assert response.json['reason'] == "Scanner 'Unknown' unknown"
+
+
+class TestGetScannerJob(object):
+    URI = '/api/scanners/xxxx/job'
+
+    @pytest.fixture
+    def fakedb(self):
+        return mock.MagicMock()
+
+    @pytest.fixture
+    def app(self, fakedb):
+        app = Flask(__name__, template_folder=Paths().ui_templates)
+        app.config['scanning_store'] = fakedb
+        app.register_blueprint(
+            scanners_api.blueprint, url_prefix="/api/scanners"
+        )
+        return app
+
+    def test_invalid_scanner(self, fakedb, client):
+        fakedb.has_scanner.return_value = False
+        response = client.get(self.URI)
+        assert response.status_code == NOT_FOUND
+
+    def test_has_no_scanjob(self, fakedb, client):
+        fakedb.has_scanner.return_value = True
+        fakedb.get_current_scanjob.return_value = None
+        response = client.get(self.URI)
+        assert response.status_code == OK
+        assert response.json is None
+
+    def test_has_scanjob(self, fakedb, client):
+        fakedb.has_scanner.return_value = True
+        fakedb.get_current_scanjob.return_value = ScanJob(
+            identifier='xxxx',
+            name='The Job',
+            duration=timedelta(days=3),
+            interval=timedelta(minutes=5),
+            scanner_id='yyyy',
+            start=datetime(1985, 10, 26, 1, 20),
+        )
+        response = client.get(self.URI)
+        assert response.status_code == OK
+        assert response.json == {
+            'identifier': 'xxxx',
+            'name': 'The Job',
+            'duration': 259200,
+            'interval': 300,
+            'scannerId': 'yyyy',
+            'start': '1985-10-26T01:20:00',
+        }
+        pass

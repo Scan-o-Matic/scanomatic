@@ -4,6 +4,10 @@ const GetSliceImagePath = '/api/calibration/#0#/image/#1#/slice/get/#2#';
 const GetTranposedMarkerPath = '/api/data/fixture/calculate/';
 const GetGrayScaleAnalysisPath = '/api/data/grayscale/image/';
 
+const secondsPerMinute = 60;
+const secondsPerHour = 3600;
+const secondsPerDay = 86400;
+
 class API {
     static get(url) {
         return new Promise((resolve, reject) => $.ajax({
@@ -250,11 +254,31 @@ export function finalizeCalibration(cccId, accessToken) {
 }
 
 export function submitScanningJob(job) {
-    return API.postJSON('/api/scan-jobs', job);
+    const data = {
+        name: job.name,
+        scannerId: job.scannerId,
+        interval: job.interval * secondsPerMinute,
+        duration:
+            (job.duration.days * secondsPerDay)
+            + (job.duration.hours * secondsPerHour)
+            + (job.duration.minutes * secondsPerMinute),
+    };
+    return API.postJSON('/api/scan-jobs', data);
 }
 
 export function getScanningJobs() {
-    return API.get('/api/scan-jobs');
+    return API.get('/api/scan-jobs').then(jobs => jobs.map(jsonJob => ({
+        identifier: jsonJob.identifier,
+        name: jsonJob.name,
+        scannerId: jsonJob.scannerId,
+        interval: jsonJob.interval / secondsPerMinute,
+        duration: {
+            days: Math.floor(jsonJob.duration / secondsPerDay),
+            hours:
+                Math.floor((jsonJob.duration % secondsPerDay) / secondsPerHour),
+            minutes: (jsonJob.duration % secondsPerHour) / secondsPerMinute,
+        },
+    })));
 }
 
 export function getScanners() {
