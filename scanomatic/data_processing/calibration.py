@@ -553,7 +553,7 @@ def validate_polynomial(slope, p_value, stderr):
 
     # return CalibrationValidation.OK
 
-    if abs(1.0 - slope) > 0.12:
+    if abs(1.0 - slope) > 0.1:
         _logger.error("Bad slope for polynomial: {0}".format(slope))
         return CalibrationValidation.BadSlope
 
