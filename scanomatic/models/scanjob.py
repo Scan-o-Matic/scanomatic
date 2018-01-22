@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from collections import namedtuple
 from datetime import datetime, timedelta
 
+from scanomatic.util.datetime import is_utc
+
 
 ScanJobBase = namedtuple(
     'ScanJobBase',
@@ -13,8 +15,11 @@ class ScanJob(ScanJobBase):
     def __new__(
         self, identifier, name, duration, interval, scanner_id, start=None,
     ):
-        if start is not None and not isinstance(start, datetime):
-            raise ValueError('start should be a datetime')
+        if start is not None:
+            if not isinstance(start, datetime):
+                raise ValueError('start should be a datetime')
+            if not is_utc(start):
+                raise ValueError('start should be UTC')
         if not isinstance(duration, timedelta):
             raise ValueError('duration should be a timedelta')
         if not isinstance(interval, timedelta):

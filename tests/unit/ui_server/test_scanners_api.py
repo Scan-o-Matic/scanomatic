@@ -5,6 +5,7 @@ from httplib import OK, NOT_FOUND
 from flask import Flask
 import mock
 import pytest
+from pytz import utc
 
 from scanomatic.io.paths import Paths
 from scanomatic.models.scanjob import ScanJob
@@ -95,7 +96,7 @@ class TestGetScannerJob(object):
             duration=timedelta(days=3),
             interval=timedelta(minutes=5),
             scanner_id='yyyy',
-            start=datetime(1985, 10, 26, 1, 20),
+            start=datetime(1985, 10, 26, 1, 20, tzinfo=utc),
         )
         response = client.get(self.URI)
         assert response.status_code == OK
@@ -105,6 +106,6 @@ class TestGetScannerJob(object):
             'duration': 259200,
             'interval': 300,
             'scannerId': 'yyyy',
-            'start': '1985-10-26T01:20:00',
+            'start': '1985-10-26T01:20:00Z',
         }
         pass
