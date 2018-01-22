@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from scanomatic.util.datetime import is_utc
 
 
