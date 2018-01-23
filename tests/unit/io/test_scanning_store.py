@@ -91,6 +91,35 @@ class TestGetJobs:
         assert len(scanning_store.get_all_scanjobs()) == 2
 
 
+class TestGetScanjob:
+    def test_existing_job(self, scanning_store):
+        scanning_store.add_scanjob(JOB1)
+        assert scanning_store.get_scanjob(JOB1.identifier) == JOB1
+
+    def test_unknown_job(self, scanning_store):
+        scanning_store.add_scanjob(JOB1)
+        with pytest.raises(ScanJobUnknownError):
+            scanning_store.get_scanjob('unknown')
+
+
+class TestUpdateScanjob:
+    def test_update_existing(self, scanning_store):
+        scanning_store.add_scanjob(JOB1)
+        updated_scanjob = ScanJob(
+            identifier=JOB1.identifier,
+            name="Bye",
+            duration=JOB1.duration,
+            interval=JOB1.interval,
+            scanner_id=JOB1.scanner_id,
+        )
+        scanning_store.update_scanjob(updated_scanjob)
+        assert scanning_store.get_scanjob(JOB1.identifier) == updated_scanjob
+
+    def test_update_unknown(self, scanning_store):
+        with pytest.raises(ScanJobUnknownError):
+            scanning_store.update_scanjob(JOB1)
+
+
 class TestGetJobIds:
     def test_has_the_ids(self, scanning_store):
         scanning_store.add_scanjob(JOB1)
@@ -114,7 +143,7 @@ class TestExistsJobWith:
             'identifier', 'Hello') is False
 
 
-class TestGetCurrentJob:
+class TestCurrentScanJob:
     SCANNERID = "9a8486a6f9cb11e7ac660050b68338ac"
 
     @pytest.fixture
@@ -132,7 +161,7 @@ class TestGetCurrentJob:
             duration=timedelta(minutes=1),
             interval=timedelta(seconds=5),
             scanner_id=self.SCANNERID,
-            start=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
+            start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
         ))
         scanning_store.add_scanjob(ScanJob(
             identifier='3',
@@ -140,7 +169,7 @@ class TestGetCurrentJob:
             duration=timedelta(minutes=1),
             interval=timedelta(seconds=5),
             scanner_id=self.SCANNERID,
-            start=datetime(1985, 10, 26, 1, 35, tzinfo=utc)
+            start_time=datetime(1985, 10, 26, 1, 35, tzinfo=utc)
         ))
         scanning_store.add_scanjob(ScanJob(
             identifier='4',
@@ -148,7 +177,7 @@ class TestGetCurrentJob:
             duration=timedelta(minutes=30),
             interval=timedelta(seconds=5),
             scanner_id='otherscanner',
-            start=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
+            start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
         ))
         return scanning_store
 
@@ -156,7 +185,7 @@ class TestGetCurrentJob:
         (datetime(1985, 10, 26, 1, 20, tzinfo=utc), 'Bar'),
         (datetime(1985, 10, 26, 1, 35, tzinfo=utc), 'Baz'),
     ])
-    def test_has_active_job(self, store, t, jobname):
+    def test_get_current_scanjob_with_active_job(self, store, t, jobname):
         job = store.get_current_scanjob(self.SCANNERID, t)
         assert job is not None and job.name == jobname
 
@@ -165,6 +194,16 @@ class TestGetCurrentJob:
         datetime(1985, 10, 26, 1, 25, tzinfo=utc),
         datetime(1985, 10, 26, 1, 40, tzinfo=utc),
     ])
-    def test_no_active_job(self, store, t):
+    def test_get_current_scanjob_with_no_active_job(self, store, t):
         job = store.get_current_scanjob(self.SCANNERID, t)
         assert job is None
+
+    @pytest.mark.parametrize('t, expected', [
+        (datetime(1985, 10, 26, 1, 15, tzinfo=utc), False),
+        (datetime(1985, 10, 26, 1, 20, tzinfo=utc), True),
+        (datetime(1985, 10, 26, 1, 25, tzinfo=utc), False),
+        (datetime(1985, 10, 26, 1, 35, tzinfo=utc), True),
+        (datetime(1985, 10, 26, 1, 40, tzinfo=utc), False),
+    ])
+    def test_has_current_scanjob(self, store, t, expected):
+        assert store.has_current_scanjob(self.SCANNERID, t) is expected

@@ -15,16 +15,16 @@ class TestInit:
             duration=timedelta(days=3),
             interval=timedelta(minutes=5),
             scanner_id='yyyy',
-            start=datetime(1985, 10, 26, 1, 20, tzinfo=utc),
+            start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc),
         )
         assert job.identifier == 'xxxx'
         assert job.name == 'Unknown'
         assert job.duration == timedelta(days=3)
         assert job.interval == timedelta(minutes=5)
         assert job.scanner_id == 'yyyy'
-        assert job.start == datetime(1985, 10, 26, 1, 20, tzinfo=utc)
+        assert job.start_time == datetime(1985, 10, 26, 1, 20, tzinfo=utc)
 
-    def test_init_without_start(self):
+    def test_init_without_start_time(self):
         job = ScanJob(
             identifier='xxxx',
             name='Unknown',
@@ -32,13 +32,13 @@ class TestInit:
             interval=timedelta(minutes=5),
             scanner_id='yyyy',
         )
-        assert job.start is None
+        assert job.start_time is None
 
-    @pytest.mark.parametrize('start', [
+    @pytest.mark.parametrize('start_time', [
         ('xxx',),
         (datetime(1985, 10, 26, 1, 20),),
     ])
-    def test_init_bad_start(self, start):
+    def test_init_bad_start_time(self, start_time):
         with pytest.raises(ValueError):
             ScanJob(
                 identifier='xxxx',
@@ -46,7 +46,7 @@ class TestInit:
                 duration=timedelta(days=3),
                 interval=timedelta(minutes=5),
                 scanner_id='yyyy',
-                start=start,
+                start_time=start_time,
             )
 
 
@@ -69,7 +69,7 @@ class TestIsActive:
             duration=timedelta(minutes=1),
             interval=timedelta(seconds=5),
             scanner_id='yyyy',
-            start=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
+            start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
         )
 
     @pytest.mark.parametrize('now', [
