@@ -161,7 +161,7 @@ class TestCurrentScanJob:
             duration=timedelta(minutes=1),
             interval=timedelta(seconds=5),
             scanner_id=self.SCANNERID,
-            start=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
+            start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
         ))
         scanning_store.add_scanjob(ScanJob(
             identifier='3',
@@ -169,7 +169,7 @@ class TestCurrentScanJob:
             duration=timedelta(minutes=1),
             interval=timedelta(seconds=5),
             scanner_id=self.SCANNERID,
-            start=datetime(1985, 10, 26, 1, 35, tzinfo=utc)
+            start_time=datetime(1985, 10, 26, 1, 35, tzinfo=utc)
         ))
         scanning_store.add_scanjob(ScanJob(
             identifier='4',
@@ -177,7 +177,7 @@ class TestCurrentScanJob:
             duration=timedelta(minutes=30),
             interval=timedelta(seconds=5),
             scanner_id='otherscanner',
-            start=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
+            start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
         ))
         return scanning_store
 

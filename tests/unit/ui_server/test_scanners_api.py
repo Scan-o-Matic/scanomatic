@@ -96,7 +96,7 @@ class TestGetScannerJob(object):
             duration=timedelta(days=3),
             interval=timedelta(minutes=5),
             scanner_id='yyyy',
-            start=datetime(1985, 10, 26, 1, 20, tzinfo=utc),
+            start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc),
         )
         response = client.get(self.URI)
         assert response.status_code == OK
@@ -106,6 +106,6 @@ class TestGetScannerJob(object):
             'duration': 259200,
             'interval': 300,
             'scannerId': 'yyyy',
-            'start': '1985-10-26T01:20:00Z',
+            'startTime': '1985-10-26T01:20:00Z',
         }
         pass

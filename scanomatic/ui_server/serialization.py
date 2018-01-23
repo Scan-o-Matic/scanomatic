@@ -10,7 +10,7 @@ def job2json(job):
         'interval': job.interval.total_seconds(),
         'scannerId': job.scanner_id,
     }
-    if job.start is not None:
-        assert is_utc(job.start)
-        obj['start'] = job.start.strftime('%Y-%m-%dT%H:%M:%SZ')
+    if job.start_time is not None:
+        assert is_utc(job.start_time)
+        obj['startTime'] = job.start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
     return obj

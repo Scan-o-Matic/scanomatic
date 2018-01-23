@@ -105,11 +105,11 @@ class ScanJobStartController(Resource):
         except ScanJobUnknownError:
             raise NotFound
         now = datetime.now(pytz.utc)
-        if job.start is not None:
+        if job.start_time is not None:
             return json_abort(CONFLICT, reason='Scanning Job already started')
         if db.has_current_scanjob(job.scanner_id, now):
             return json_abort(CONFLICT, reason='Scanner busy')
-        db.update_scanjob(job._replace(start=now))
+        db.update_scanjob(job._replace(start_time=now))
         return '', OK
 
 

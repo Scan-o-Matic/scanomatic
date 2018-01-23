@@ -157,7 +157,7 @@ class TestStartScanJob:
             response = test_app.post(self.URI.format(id=jobid))
         assert response.status_code == OK
         job = test_app.get('/api/scan-jobs/' + jobid).json
-        return job['start'] == '1985-10-26T01:20:00Z'
+        return job['startTime'] == '1985-10-26T01:20:00Z'
 
     def test_already_started(self, test_app):
         jobid = self.create_scanjob(test_app)
@@ -167,7 +167,7 @@ class TestStartScanJob:
             response = test_app.post(self.URI.format(id=jobid))
         assert response.status_code == CONFLICT
         job = test_app.get('/api/scan-jobs/' + jobid).json
-        assert job['start'] == '1985-10-26T01:20:00Z'
+        assert job['startTime'] == '1985-10-26T01:20:00Z'
 
     def test_unknown_job(self, test_app):
         response = test_app.post(self.URI.format(id='unknown'))
