@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from datetime import datetime
-from httplib import NOT_FOUND, OK
+from httplib import NOT_FOUND, OK, BAD_REQUEST
 
 from flask import request, jsonify, Blueprint, current_app
 from flask_restful import Api, Resource
@@ -8,6 +8,7 @@ from werkzeug.exceptions import NotFound
 
 from .general import json_abort
 from .serialization import job2json
+from scanomatic.io.scanning_store import ScannerStatus
 
 blueprint = Blueprint("scanners_api", __name__)
 
@@ -39,12 +40,21 @@ def scanner_status_update(scanner):
     if not scanning_store.has_scanner(scanner):
         # TODO: should create non-existent
         return json_abort(
-            NOT_FOUND, reason="Scanner '{}' unknown".format(
-                scanner)
+            NOT_FOUND,
+            reason="Scanner '{}' unknown".format(scanner)
         )
 
     status = request.get_json(silent=True, force=True)
-    scanning_store.scanner_status_update(scanner, status["message"])
+    try:
+        scanning_store.add_scanner_status(
+            scanner, ScannerStatus(
+                status["job"], datetime.utcnow(), status["message"]))
+    except KeyError:
+        return json_abort(
+            BAD_REQUEST,
+            reason="Got malformed status '{}'".format(status)
+        )
+
     return "", OK
 
 
@@ -52,7 +62,10 @@ def scanner_status_update(scanner):
 def scanner_status_get(scanner):
     scanning_store = current_app.config['scanning_store']
     if scanning_store.has_scanner(scanner):
-        return jsonify(scanning_store.get_latest_scanner_status(scanner))
+        status = scanning_store.get_latest_scanner_status(scanner)
+        if status is None:
+            status = ScannerStatus(None, None, None)
+        return jsonify(**status._asdict())
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
     )
