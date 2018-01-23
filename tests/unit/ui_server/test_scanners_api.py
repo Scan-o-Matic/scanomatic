@@ -69,7 +69,7 @@ class TestScannerStatus:
         response = test_app.post(
             self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
             data=json.dumps({"job": "foo", "message": "bar"}),
-            headers={'Content-Type' : 'application/json'}
+            headers={'Content-Type': 'application/json'}
         )
         assert response.status_code == OK
 
@@ -87,9 +87,10 @@ class TestScannerStatus:
         response = test_app.post(
             self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
             data=json.dumps({"foo": "foo", "bar": "bar"}),
-            headers={'Content-Type' : 'application/json'}
+            headers={'Content-Type': 'application/json'}
         )
         assert response.status_code == BAD_REQUEST
+
 
 class TestGetScannerJob(object):
     URI = '/api/scanners/xxxx/job'
