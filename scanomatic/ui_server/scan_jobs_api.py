@@ -107,7 +107,7 @@ class ScanJobStartController(Resource):
         now = datetime.now(pytz.utc)
         if job.start is not None:
             return json_abort(CONFLICT, reason='Scanning Job already started')
-        if db.get_current_scanjob(job.scanner_id, now) is not None:
+        if db.has_current_scanjob(job.scanner_id, now):
             return json_abort(CONFLICT, reason='Scanner busy')
         db.update_scanjob(job._replace(start=now))
         return '', OK

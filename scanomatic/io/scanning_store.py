@@ -85,3 +85,6 @@ class ScanningStore:
         for job in self._scanjobs.values():
             if job.scanner_id == scanner_id and job.is_active(timepoint):
                 return job
+
+    def has_current_scanjob(self, scanner_id, timepoint):
+        return self.get_current_scanjob(scanner_id, timepoint) is not None

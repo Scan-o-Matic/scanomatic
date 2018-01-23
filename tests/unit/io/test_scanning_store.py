@@ -143,7 +143,7 @@ class TestExistsJobWith:
             'identifier', 'Hello') is False
 
 
-class TestGetCurrentJob:
+class TestCurrentScanJob:
     SCANNERID = "9a8486a6f9cb11e7ac660050b68338ac"
 
     @pytest.fixture
@@ -185,7 +185,7 @@ class TestGetCurrentJob:
         (datetime(1985, 10, 26, 1, 20, tzinfo=utc), 'Bar'),
         (datetime(1985, 10, 26, 1, 35, tzinfo=utc), 'Baz'),
     ])
-    def test_has_active_job(self, store, t, jobname):
+    def test_get_current_scanjob_with_active_job(self, store, t, jobname):
         job = store.get_current_scanjob(self.SCANNERID, t)
         assert job is not None and job.name == jobname
 
@@ -194,6 +194,16 @@ class TestGetCurrentJob:
         datetime(1985, 10, 26, 1, 25, tzinfo=utc),
         datetime(1985, 10, 26, 1, 40, tzinfo=utc),
     ])
-    def test_no_active_job(self, store, t):
+    def test_get_current_scanjob_with_no_active_job(self, store, t):
         job = store.get_current_scanjob(self.SCANNERID, t)
         assert job is None
+
+    @pytest.mark.parametrize('t, expected', [
+        (datetime(1985, 10, 26, 1, 15, tzinfo=utc), False),
+        (datetime(1985, 10, 26, 1, 20, tzinfo=utc), True),
+        (datetime(1985, 10, 26, 1, 25, tzinfo=utc), False),
+        (datetime(1985, 10, 26, 1, 35, tzinfo=utc), True),
+        (datetime(1985, 10, 26, 1, 40, tzinfo=utc), False),
+    ])
+    def test_has_current_scanjob(self, store, t, expected):
+        assert store.has_current_scanjob(self.SCANNERID, t) is expected
