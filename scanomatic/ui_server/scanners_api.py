@@ -48,7 +48,6 @@ def scanner_status_update(scanner):
     return "", OK
 
 
-
 @blueprint.route("/<scanner>/status", methods=['GET'])
 def scanner_status_get(scanner):
     scanning_store = current_app.config['scanning_store']
