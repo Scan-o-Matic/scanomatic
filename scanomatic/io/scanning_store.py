@@ -12,7 +12,7 @@ class ScanJobUnknownError(ValueError):
 
 Scanner = namedtuple(
     'Scanner',
-    ['name', 'power', 'owner', 'identifier', 'status']
+    ['name', 'power', 'owner', 'identifier']
 )
 ScannerStatus = namedtuple(
     'ScannerStatus',
@@ -28,9 +28,9 @@ class ScanningStore:
                 False,
                 None,
                 '9a8486a6f9cb11e7ac660050b68338ac',
-                [],
             ),
         }
+        self._scanner_statuses = {scanner: [] for scanner in self._scanners}
         self._scanjobs = {}
 
     def has_scanner(self, identifier):
@@ -94,14 +94,14 @@ class ScanningStore:
     def has_current_scanjob(self, scanner_id, timepoint):
         return self.get_current_scanjob(scanner_id, timepoint) is not None
 
-    def add_scanner_status(self, scanner_id, status):
-        self.get_scanner(scanner_id).status.append(status)
-
     def get_scanner_status_list(self, scanner_id):
-        return self.get_scanner(scanner_id).status
+        return self._scanner_statuses[scanner_id]
 
     def get_latest_scanner_status(self, scanner_id):
         try:
             return self.get_scanner_status_list(scanner_id)[-1]
         except IndexError:
             return None
+
+    def add_scanner_status(self, scanner_id , status):
+        self.get_scanner_status_list(scanner_id).append(status)

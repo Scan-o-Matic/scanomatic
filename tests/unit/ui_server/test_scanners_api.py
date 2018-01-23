@@ -38,7 +38,6 @@ class TestScannerStatus:
         'owner': None,
         'power': False,
         'identifier': '9a8486a6f9cb11e7ac660050b68338ac',
-        'status': [],
     }
 
     def test_get_all_implicit(self, test_app):

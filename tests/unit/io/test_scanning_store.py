@@ -36,7 +36,6 @@ SCANNER = Scanner(
     False,
     None,
     '9a8486a6f9cb11e7ac660050b68338ac',
-    [],
 )
 
 
