@@ -37,6 +37,7 @@ class TestScannerStatus:
         'owner': None,
         'power': False,
         'identifier': '9a8486a6f9cb11e7ac660050b68338ac',
+        'status': [],
     }
 
     def test_get_all_implicit(self, test_app):
@@ -58,6 +59,9 @@ class TestScannerStatus:
         response = test_app.get(self.URI + "/Unknown")
         response.status_code == NOT_FOUND
         assert response.json['reason'] == "Scanner 'Unknown' unknown"
+
+    def test_update_scanner_status(self, test_app):
+        pass
 
 
 class TestGetScannerJob(object):

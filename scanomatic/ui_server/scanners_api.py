@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from datetime import datetime
-from httplib import NOT_FOUND
+from httplib import NOT_FOUND, OK
 
 from flask import request, jsonify, Blueprint, current_app
 from flask_restful import Api, Resource
@@ -28,6 +28,32 @@ def scanner_get(scanner):
     scanning_store = current_app.config['scanning_store']
     if scanning_store.has_scanner(scanner):
         return jsonify(**scanning_store.get_scanner(scanner)._asdict())
+    return json_abort(
+        NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
+    )
+
+
+@blueprint.route("/<scanner>/status", methods=['POST'])
+def scanner_status_update(scanner):
+    scanning_store = current_app.config['scanning_store']
+    if not scanning_store.has_scanner(scanner):
+        # TODO: should create non-existent
+        return json_abort(
+            NOT_FOUND, reason="Scanner '{}' unknown".format(
+                scanner)
+        )
+
+    status = request.get_json(silent=True, force=True)
+    scanning_store.scanner_status_update(scanner, status["message"])
+    return "", OK
+
+
+
+@blueprint.route("/<scanner>/status", methods=['GET'])
+def scanner_status_get(scanner):
+    scanning_store = current_app.config['scanning_store']
+    if scanning_store.has_scanner(scanner):
+        return jsonify(scanning_store.get_latest_scanner_status(scanner))
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
     )

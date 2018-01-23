@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from collections import namedtuple
+from datetime import datetime
 
 
 class ScanJobCollisionError(ValueError):
@@ -12,7 +13,11 @@ class ScanJobUnknownError(ValueError):
 
 Scanner = namedtuple(
     'Scanner',
-    ['name', 'power', 'owner', 'identifier']
+    ['name', 'power', 'owner', 'identifier', 'status']
+)
+ScannerStatus = namedtuple(
+    'ScannerStatus',
+    ['job', 'time', 'status']
 )
 
 
@@ -23,7 +28,8 @@ class ScanningStore:
                 'Test',
                 False,
                 None,
-                '9a8486a6f9cb11e7ac660050b68338ac'
+                '9a8486a6f9cb11e7ac660050b68338ac',
+                [],
             ),
         }
         self._scanjobs = {}
@@ -88,3 +94,15 @@ class ScanningStore:
 
     def has_current_scanjob(self, scanner_id, timepoint):
         return self.get_current_scanjob(scanner_id, timepoint) is not None
+
+    def update_status(self, scanner_id, status):
+        now = datetime.utcnow()
+        job = self.get_current_scanjob(scanner_id, now)
+        self.get_scanner(scanner_id).status.append(
+            ScannerStatus(job, now, status))
+
+    def get_scanner_status(self, scanner_id):
+        return self.get_scanner(scanner_id).status
+
+    def get_latest_scanner_status(self, scanner_id):
+        return self.get_scanner_status(scanner_id)[-1]
