@@ -76,7 +76,7 @@ def scan_jobs_add():
     except ScanJobCollisionError:
         return json_abort(INTERNAL_SERVER_ERROR, reason="Identifier collision")
 
-    return jsonify(jobId=identifier), CREATED
+    return jsonify(identifier=identifier), CREATED
 
 
 @blueprint.route("", methods=['GET'])
