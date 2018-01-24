@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from httplib import OK, NOT_FOUND
+from httplib import OK, NOT_FOUND, CREATED
 import json
 import uuid
 
@@ -25,7 +25,7 @@ def app():
 @pytest.fixture
 def apiclient(client):
     class APIClient:
-        def create_scanning_job(
+        def create_scan_job(
             self, scannerid, name=None, duration=600, interval=300,
         ):
             if name is None:
@@ -41,7 +41,10 @@ def apiclient(client):
                 content_type='application/json',
             )
 
-        def start_scanning_job(self, jobid):
+        def get_scan_job(self, jobid):
+            return client.get('/scan-jobs/{}'.format(jobid))
+
+        def start_scan_job(self, jobid):
             return client.post('/scan-jobs/{}/start'.format(jobid))
 
         def get_scanner_job(self, scannerid):
@@ -64,12 +67,11 @@ class TestGetScannerJob(object):
         assert response.json is None
 
     def test_has_scanjob(self, apiclient):
-        jobid = apiclient.create_scanning_job(self.SCANNERID).json['jobId']
+        jobid = apiclient.create_scan_job(self.SCANNERID).json['identifier']
+        job = apiclient.get_scan_job(jobid).json
         with freeze_time('1985-10-26 01:20', tz_offset=0):
-            apiclient.start_scanning_job(jobid)
+            apiclient.start_scan_job(jobid)
         with freeze_time('1985-10-26 01:21', tz_offset=0):
             response = apiclient.get_scanner_job(self.SCANNERID)
         assert response.status_code == OK
-        assert response.json['identifier'] == jobid
-        assert response.json['scannerId'] == self.SCANNERID
-        assert response.json['startTime'] == '1985-10-26T01:20:00Z'
+        assert response.json == dict(startTime='1985-10-26T01:20:00Z', **job)
