@@ -23,7 +23,7 @@ def cleanup_rpc(scanomatic):
             warn('Could not terminate job {}'.format(job_id))
 
 
-@retry(delay=1, backoff=2, max_delay=10)
+@retry(tries=25, delay=1, backoff=2, max_delay=10)
 def assert_has_job(scanomatic, job_settings):
     uri = scanomatic + '/api/status/queue'
     payload = requests.get(uri).json()
