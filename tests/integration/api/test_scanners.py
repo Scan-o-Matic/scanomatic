@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from httplib import OK, NOT_FOUND, CREATED
+from httplib import OK, NOT_FOUND
 import json
 import uuid
 
