@@ -1,11 +1,13 @@
 from __future__ import absolute_import
 
-import pytest
-from warnings import warn
-import requests
 from time import sleep
-from selenium.webdriver.support.ui import Select
+from warnings import warn
+
+import pytest
+import requests
+from retry import retry
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import Select
 
 
 @pytest.yield_fixture(autouse=True)
@@ -21,6 +23,7 @@ def cleanup_rpc(scanomatic):
             warn('Could not terminate job {}'.format(job_id))
 
 
+@retry(delay=1, backoff=2, max_delay=10)
 def assert_has_job(scanomatic, job_settings):
     uri = scanomatic + '/api/status/queue'
     payload = requests.get(uri).json()
@@ -64,32 +67,25 @@ def assert_has_job(scanomatic, job_settings):
         '/api/analysis/instructions/testproject/{}'.format(
             job_settings['output_directory'])
     )
-    tries = 0
-    while tries < 100:
-        payload = requests.get(uri).json()
-        if payload.get('instructions'):
-            assert (
-                payload['instructions'].get('ccc') ==
-                job_settings['cell_count_calibration_id']), (
-                "Job used unexpected CCC, found {}, expected {}".format(
-                    payload['instructions'].get('ccc'),
-                    job_settings['cell_count_calibration_id']
-                )
+    payload = requests.get(uri).json()
+    if payload.get('instructions'):
+        assert (
+            payload['instructions'].get('ccc') ==
+            job_settings['cell_count_calibration_id']), (
+            "Job used unexpected CCC, found {}, expected {}".format(
+                payload['instructions'].get('ccc'),
+                job_settings['cell_count_calibration_id']
             )
-            assert (
-                job_settings['compilation'] in
-                payload['instructions'].get('compilation')
-            ), "Job used unexpected compilation file {}".format(
-                payload['instructions'].get('compilation')
-            )
+        )
+        assert (
+            job_settings['compilation'] in
+            payload['instructions'].get('compilation')
+        ), "Job used unexpected compilation file {}".format(
+            payload['instructions'].get('compilation')
+        )
 
-            return
-        else:
-            tries += 1
-            sleep(min(0.5 * tries, 10))
-    assert False, "Time out waiting for results at '{}'".format(
-        uri
-    )
+        return
+    assert False, "No Job"
 
 
 def test_post_analysis_job_request(scanomatic, browser):
