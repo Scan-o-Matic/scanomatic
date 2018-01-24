@@ -5,7 +5,6 @@ from warnings import warn
 
 import pytest
 import requests
-from retry import retry
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 
