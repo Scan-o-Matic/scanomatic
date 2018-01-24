@@ -62,7 +62,7 @@ class TestScanJobs:
     def test_add_job(self, test_app, job):
         response = test_app.post_json(self.URI, job)
         assert response.status_code == CREATED
-        jobid = response.json['jobId']
+        jobid = response.json['identifier']
         response2 = test_app.get(self.URI + '/' + jobid)
         assert response2.status_code == OK
         assert response2.json == {
@@ -107,7 +107,7 @@ class TestScanJobs:
     def test_added_job_gets_listed(self, test_app, job):
         response = test_app.post_json(self.URI, job)
         assert response.status_code == CREATED
-        identifier = response.json['jobId']
+        identifier = response.json['identifier']
         response = test_app.get(self.URI)
         response.status_code == OK
         assert response.json == [
@@ -124,7 +124,7 @@ class TestScanJobs:
         job['bogus'] = True
         response = test_app.post_json(self.URI, job)
         assert response.status_code == CREATED
-        identifier = response.json['jobId']
+        identifier = response.json['identifier']
         response = test_app.get(self.URI)
         response.status_code == OK
         assert response.json == [
@@ -149,7 +149,7 @@ class TestStartScanJob:
             'duration': 86400,
         })
         assert response.status_code == CREATED
-        return response.json['jobId']
+        return response.json['identifier']
 
     def test_start_existing_job(self, test_app):
         jobid = self.create_scanjob(test_app)
