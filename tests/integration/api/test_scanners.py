@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from httplib import BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, CREATED, OK, NOT_FOUND
+from httplib import OK, NOT_FOUND
 import json
 import uuid
 
