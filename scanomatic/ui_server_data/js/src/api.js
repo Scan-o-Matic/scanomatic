@@ -281,6 +281,10 @@ export function getScanningJobs() {
     })));
 }
 
+export function startScanningJob(job) {
+    return API.postJSON(`/api/scan-jobs/${job.identifier}/start`, {});
+}
+
 export function getScanners() {
     return API.get('/api/scanners')
         .then(r => r.map(scanner => ({

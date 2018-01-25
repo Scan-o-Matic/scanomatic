@@ -796,6 +796,47 @@ describe('API', () => {
         });
     });
 
+    describe('startScanningJob', () => {
+        const scanJob = {
+            name: 'Some Job',
+            duration: { days: 1, hours: 3, minutes: 5 },
+            interval: 20,
+            scannerId: 'sc4nn3r',
+            identifier: '125dasd12',
+        };
+
+        it('should query the correct URL', () => {
+            API.startScanningJob(scanJob);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/scan-jobs/125dasd12/start');
+        });
+
+        it('should send a POST request', () => {
+            API.startScanningJob(scanJob);
+            expect(mostRecentRequest().method).toEqual('POST');
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.startScanningJob(scanJob).then((value) => {
+                expect(value).toEqual(null);
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify(null),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.getScanningJobs(scanJob).catch((reason) => {
+                expect(reason).toEqual('(+_+)');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: '(+_+)' }),
+            });
+        });
+    });
+
     describe('submitScanningJob', () => {
         const scanJob = {
             name: 'Some Job',
