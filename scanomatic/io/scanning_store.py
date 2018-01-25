@@ -103,5 +103,5 @@ class ScanningStore:
         except IndexError:
             return None
 
-    def add_scanner_status(self, scanner_id , status):
+    def add_scanner_status(self, scanner_id, status):
         self.get_scanner_status_list(scanner_id).append(status)
