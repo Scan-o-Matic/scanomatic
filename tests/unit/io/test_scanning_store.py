@@ -2,17 +2,17 @@ from __future__ import absolute_import
 from datetime import datetime, timedelta
 
 import pytest
+from mock import patch
+
 from pytz import utc
 
-from scanomatic.io.scanning_store import (
-    ScanningStore, ScanJobCollisionError, ScanJobUnknownError, Scanner
-)
+import scanomatic.io.scanning_store as ss_module
 from scanomatic.models.scanjob import ScanJob
 
 
 @pytest.fixture(scope='function')
 def scanning_store():
-    return ScanningStore()
+    return ss_module.ScanningStore()
 
 
 JOB1 = ScanJob(
@@ -31,11 +31,18 @@ JOB2 = ScanJob(
     scanner_id="9a8486a6f9cb11e7ac660050b68338ac",
 )
 
-SCANNER = Scanner(
-    'Test',
+SCANNER = ss_module.Scanner(
+    'Never On',
     False,
     None,
     '9a8486a6f9cb11e7ac660050b68338ac',
+)
+
+SCANNER_POWER = ss_module.Scanner(
+    'Always On',
+    True,
+    None,
+    '350986224086888954',
 )
 
 
@@ -46,14 +53,28 @@ class TestScanners:
     def test_not_having_unkown_scanner(self, scanning_store):
         assert scanning_store.has_scanner("Unknown") is False
 
-    def test_getting_scanner(self, scanning_store):
-        assert scanning_store.get_scanner(SCANNER.identifier) == SCANNER
+    @pytest.mark.parametrize('scanner', (SCANNER, SCANNER_POWER))
+    def test_getting_scanner(self, scanning_store, scanner):
+        assert scanning_store.get_scanner(scanner.identifier) == scanner
 
     def test_get_free(self, scanning_store):
-        assert scanning_store.get_free_scanners() == [SCANNER]
+        assert set(scanning_store.get_free_scanners()) == {
+            SCANNER, SCANNER_POWER,
+        }
 
     def test_get_all(self, scanning_store):
-        assert scanning_store.get_all_scanners() == [SCANNER]
+        assert set(scanning_store.get_all_scanners()) == {
+            SCANNER, SCANNER_POWER,
+        }
+
+    @patch.dict('os.environ', {'SOM_HIDE_TEST_SCANNERS': '1'})
+    def test_has_no_scanner_if_not_using_test_scanners(self):
+        """Ensures no test scanners show up in live systems.
+
+        Note that we can't use the `scanning_store` fixture here since
+        then the patch doesn't work.
+        """
+        assert ss_module.ScanningStore().get_all_scanners() == []
 
 
 class TestAddJob:
@@ -63,7 +84,7 @@ class TestAddJob:
 
     def test_add_duplicate_job_raises(self, scanning_store):
         scanning_store.add_scanjob(JOB1)
-        with pytest.raises(ScanJobCollisionError):
+        with pytest.raises(ss_module.ScanJobCollisionError):
             scanning_store.add_scanjob(JOB1)
 
 
@@ -74,7 +95,7 @@ class TestRemoveJob:
         assert JOB1 not in scanning_store.get_all_scanjobs()
 
     def test_remove_unknown_job_raises(self, scanning_store):
-        with pytest.raises(ScanJobUnknownError):
+        with pytest.raises(ss_module.ScanJobUnknownError):
             scanning_store.remove_scanjob("Help")
 
 
@@ -98,7 +119,7 @@ class TestGetScanjob:
 
     def test_unknown_job(self, scanning_store):
         scanning_store.add_scanjob(JOB1)
-        with pytest.raises(ScanJobUnknownError):
+        with pytest.raises(ss_module.ScanJobUnknownError):
             scanning_store.get_scanjob('unknown')
 
 
@@ -116,7 +137,7 @@ class TestUpdateScanjob:
         assert scanning_store.get_scanjob(JOB1.identifier) == updated_scanjob
 
     def test_update_unknown(self, scanning_store):
-        with pytest.raises(ScanJobUnknownError):
+        with pytest.raises(ss_module.ScanJobUnknownError):
             scanning_store.update_scanjob(JOB1)
 
 
