@@ -66,62 +66,6 @@ describe('<ScanningRootContainer />', () => {
             expect(wrapper.prop('error')).toEqual('Bad');
         });
 
-        describe('Start Job', () => {
-            let evt = null;
-
-            beforeEach(() => {
-                evt = { target: { disabled: false } };
-                spyOn(API, 'startScanningJob').and.returnValue(FakePromise.resolve());
-            });
-
-            it('should deactivate button', () => {
-                const wrapper = shallow(<ScanningRootContainer />);
-                wrapper.prop('onStartJob')(job, evt);
-                expect(evt.target.disabled).toBe(true);
-            });
-
-            it('should update the job', () => {
-                const wrapper = shallow(<ScanningRootContainer />);
-                wrapper.prop('onStartJob')(job, evt);
-                expect(API.startScanningJob).toHaveBeenCalledWith(job);
-            });
-
-            it('should clear errors', () => {
-                const wrapper = shallow(<ScanningRootContainer />);
-                wrapper.setState({ error: 'test' });
-                wrapper.update();
-                expect(wrapper.prop('error')).toEqual('test');
-                wrapper.prop('onStartJob')(job, evt);
-                wrapper.update();
-                expect(wrapper.prop('error')).toBeFalsy();
-            });
-
-            it('should update jobs', () => {
-                const wrapper = shallow(<ScanningRootContainer />);
-                const jobsCalls = API.getScanningJobs.calls.count();
-                const scannerCalls = API.getScanners.calls.count();
-                wrapper.prop('onStartJob')(job, evt);
-                expect(API.getScanningJobs.calls.count()).toEqual(jobsCalls + 1);
-                expect(API.getScanners.calls.count()).toEqual(scannerCalls + 1);
-            });
-        });
-
-        describe('Start Job refused', () => {
-            let evt = null;
-
-            beforeEach(() => {
-                evt = { target: { disabled: false } };
-                spyOn(API, 'startScanningJob').and.returnValue(FakePromise.reject('Busy'));
-            });
-
-            it('should set erros', () => {
-                const wrapper = shallow(<ScanningRootContainer />);
-                wrapper.prop('onStartJob')(job, evt);
-                wrapper.update();
-                expect(wrapper.prop('error')).toEqual('Error starting job: Busy');
-            });
-        });
-
         describe('New jobs', () => {
             it('should show new job', () => {
                 const wrapper = shallow(<ScanningRootContainer />);
@@ -177,6 +121,68 @@ describe('<ScanningRootContainer />', () => {
             wrapper.prop('onCloseNewJob')();
             wrapper.update();
             expect(wrapper.prop('error')).toBeFalsy();
+        });
+
+        describe('Start job not doing a thing', () => {
+            beforeEach(() => {
+                spyOn(API, 'startScanningJob').and.returnValue(new FakePromise());
+            });
+
+            it('should deactivate button', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                wrapper.prop('onStartJob')(job);
+                wrapper.update();
+                const startingJob = Object.assign(job);
+                startingJob.disableStart = true;
+                expect(wrapper.prop('jobs')).toEqual([startingJob]);
+            });
+        });
+
+        describe('Start Job resolving', () => {
+            beforeEach(() => {
+                spyOn(API, 'startScanningJob').and.returnValue(FakePromise.resolve());
+            });
+
+            it('should update the job', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                wrapper.prop('onStartJob')(job);
+                expect(API.startScanningJob).toHaveBeenCalledWith(job);
+            });
+
+            it('should clear errors', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                wrapper.setState({ error: 'test' });
+                wrapper.update();
+                expect(wrapper.prop('error')).toEqual('test');
+                wrapper.prop('onStartJob')(job);
+                wrapper.update();
+                expect(wrapper.prop('error')).toBeFalsy();
+            });
+
+            it('should update jobs', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                API.getScanningJobs.calls.reset();
+                API.getScanners.calls.reset();
+                wrapper.prop('onStartJob')(job);
+                expect(API.getScanningJobs).toHaveBeenCalled();
+                expect(API.getScanners).toHaveBeenCalled();
+            });
+        });
+
+        describe('Start Job refused', () => {
+            let evt = null;
+
+            beforeEach(() => {
+                evt = { target: { disabled: false } };
+                spyOn(API, 'startScanningJob').and.returnValue(FakePromise.reject('Busy'));
+            });
+
+            it('should set error', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                wrapper.prop('onStartJob')(job, evt);
+                wrapper.update();
+                expect(wrapper.prop('error')).toEqual('Error starting job: Busy');
+            });
         });
     });
 

@@ -9,7 +9,6 @@ def job2json(job):
         'duration': job.duration.total_seconds(),
         'interval': job.interval.total_seconds(),
         'scannerId': job.scanner_id,
-        'startTime': job.start_time
     }
     if job.start_time is not None:
         assert is_utc(job.start_time)

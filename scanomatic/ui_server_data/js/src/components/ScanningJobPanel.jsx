@@ -18,12 +18,7 @@ export default function ScanningJobPanel(props) {
     const { scanner } = props;
     let showStart = null;
     let scanVerb = 'Scan';
-    if (props.startTime) {
-        showStart = (
-            <button type="button" className="btn btn-lg job-start" disabled>
-                <span className="glyphicon glyphicon-stop" /> Stop
-            </button>
-        );
+    if (props.disableStart || props.startTime) {
         scanVerb = 'Scanning';
     } else if (!scanner || scanner.owned || !scanner.power) {
         showStart = (
@@ -36,6 +31,14 @@ export default function ScanningJobPanel(props) {
             <button type="button" className="btn btn-lg job-start" onClick={props.onStartJob} >
                 <span className="glyphicon glyphicon-play" /> Start
             </button>
+        );
+    }
+    let jobStatus = null;
+    if (props.startTime) {
+        jobStatus = (
+            <div className="job-status">
+                Started at {props.startTime}.
+            </div>
         );
     }
     let scannerStatus = null;
@@ -61,6 +64,7 @@ export default function ScanningJobPanel(props) {
             <div className="job-description">
                 {scanVerb} every {props.interval} minutes for {duration.join(' ')}.
                 {scannerStatus}
+                {jobStatus}
             </div>
         </div>
     );
@@ -77,9 +81,11 @@ ScanningJobPanel.propTypes = {
     interval: PropTypes.number.isRequired,
     startTime: PropTypes.string,
     onStartJob: PropTypes.func.isRequired,
+    disableStart: PropTypes.bool,
 };
 
 ScanningJobPanel.defaultProps = {
     scanner: null,
     startTime: null,
+    disableStart: false,
 };

@@ -78,17 +78,15 @@ describe('<ScanningRoot />', () => {
         it('couples start callback with job (first)', () => {
             const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
             const jobPanels = wrapper.find('ScanningJobPanel');
-            const evt = { fake: true };
-            jobPanels.first().prop('onStartJob')(evt);
-            expect(onStartJob).toHaveBeenCalledWith(jobs[0], evt);
+            jobPanels.first().prop('onStartJob')();
+            expect(onStartJob).toHaveBeenCalledWith(jobs[0]);
         });
 
         it('couples start callback with job (last)', () => {
             const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
             const jobPanels = wrapper.find('ScanningJobPanel');
-            const evt = { fake: true };
-            jobPanels.last().prop('onStartJob')(evt);
-            expect(onStartJob).toHaveBeenCalledWith(jobs[1], evt);
+            jobPanels.last().prop('onStartJob')();
+            expect(onStartJob).toHaveBeenCalledWith(jobs[1]);
         });
     });
 

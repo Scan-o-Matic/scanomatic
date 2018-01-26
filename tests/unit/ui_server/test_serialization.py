@@ -1,7 +1,6 @@
+from __future__ import absolute_import
 import datetime as dt
 import pytz
-
-import pytest
 
 from scanomatic.ui_server.serialization import job2json
 from scanomatic.models.scanjob import ScanJob

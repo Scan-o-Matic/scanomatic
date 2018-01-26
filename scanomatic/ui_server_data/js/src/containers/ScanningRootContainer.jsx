@@ -51,9 +51,17 @@ export default class ScanningRootContainer extends React.Component {
         this.setState({ newJob: true });
     }
 
-    handleStartJob(job, evt) {
-        const { target } = evt;
-        target.disabled = true;
+    handleStartJob(job) {
+        const { jobs } = this.state;
+        const jobInQuestion = jobs.filter(j => j.identifier === job.identifier);
+        if (jobInQuestion.length === 1) {
+            jobInQuestion.disableStart = true;
+            this.setState({ jobs });
+        } else {
+            this.setState({ error: `UI lost job '${job.name}'` });
+            return;
+        }
+
         startScanningJob(job)
             .then(() => {
                 this.getJobsStatus();
