@@ -3,7 +3,7 @@ import requests
 
 class TestCommonResources:
 
-    def test_own_js(self, scanomatic, browser):
+    def test_own_js(self, scanomatic):
         for js_file in (
             'analysis.js',
             'compile.js',
@@ -24,7 +24,7 @@ class TestCommonResources:
             r.raise_for_status()
             assert r.text and len(r.text), '{} is empty'.format(js_file)
 
-    def test_external_js(self, scanomatic, browser):
+    def test_external_js(self, scanomatic):
 
         for js_file in (
             'bootstrap-toggle.js',
@@ -40,7 +40,7 @@ class TestCommonResources:
             r.raise_for_status()
             assert r.text and len(r.text), '{} is empty'.format(js_file)
 
-    def test_images(self, scanomatic, browser):
+    def test_images(self, scanomatic):
 
         for im_file in (
             'favicon.ico',
@@ -54,7 +54,7 @@ class TestCommonResources:
             r.raise_for_status()
             assert r.content and len(r.content), '{} is empty'.format(im_file)
 
-    def test_css(self, scanomatic, browser):
+    def test_css(self, scanomatic):
 
         for css_file in (
             'main.css',
@@ -64,7 +64,7 @@ class TestCommonResources:
             r.raise_for_status()
             assert r.text and len(r.text), '{} is empty'.format(css_file)
 
-    def test_fonts(self, scanomatic, browser):
+    def test_fonts(self, scanomatic):
 
         for font_file in (
             'glyphicons-halflings-regular.eot',
