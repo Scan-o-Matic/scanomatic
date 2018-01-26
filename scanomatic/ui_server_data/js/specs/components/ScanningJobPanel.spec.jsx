@@ -13,6 +13,14 @@ describe('<ScanningJobPanel />', () => {
         scannerId: 'hoho',
     };
 
+    const jobRunning = {
+        name: 'Omnibus',
+        duration: { days: 3, hours: 2, minutes: 51 },
+        interval: 13,
+        scannerId: 'hoho',
+        startTime: '1980-03-23T13:00:00Z',
+    };
+
     const scanner = {
         name: 'Consule',
         owned: false,
@@ -79,6 +87,15 @@ describe('<ScanningJobPanel />', () => {
         expect(btn.find('span.glyphicon-ban-circle').exists()).toBeTruthy();
     });
 
+    it('should render stop button if job has started', () => {
+        const wrapper = shallow(<ScanningJobPanel
+            {...jobRunning}
+        />);
+        const btn = wrapper.find('button.job-start');
+        expect(btn.prop('disabled')).toBeTruthy();
+        expect(btn.find('span.glyphicon-stop').exists()).toBeTruthy();
+    });
+
     it('should render the description', () => {
         const wrapper = shallow(<ScanningJobPanel {...job} />);
         const desc = wrapper.find('div.job-description');
@@ -89,6 +106,20 @@ describe('<ScanningJobPanel />', () => {
         const wrapper = shallow(<ScanningJobPanel {...job} />);
         const desc = wrapper.find('div.job-description');
         expect(desc.text()).toContain('Scan every 13 minutes');
+    });
+
+    describe('Scan verb', () => {
+        it('should say Scan if not started', () => {
+            const wrapper = shallow(<ScanningJobPanel {...job} />);
+            const desc = wrapper.find('div.job-description');
+            expect(desc.text()).toContain('Scan every');
+        });
+
+        it('should say Scanning if started', () => {
+            const wrapper = shallow(<ScanningJobPanel {...jobRunning} />);
+            const desc = wrapper.find('div.job-description');
+            expect(desc.text()).toContain('Scanning every');
+        });
     });
 
     describe('duration', () => {
