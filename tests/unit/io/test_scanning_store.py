@@ -42,7 +42,6 @@ SCANNER = Scanner(
 SCANNER_POWER = Scanner(
     'Always On',
     True,
-    None,
     '350986224086888954',
 )
 

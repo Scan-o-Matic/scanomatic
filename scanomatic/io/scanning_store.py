@@ -1,6 +1,8 @@
 from __future__ import absolute_import
+from datetime import datetime
 from collections import namedtuple
 import os
+import pytz
 
 
 class ScanJobCollisionError(ValueError):
@@ -28,13 +30,11 @@ class ScanningStore:
                 '9a8486a6f9cb11e7ac660050b68338ac': Scanner(
                     'Never On',
                     False,
-                    None,
                     '9a8486a6f9cb11e7ac660050b68338ac',
                 ),
                 '350986224086888954': Scanner(
                     'Always On',
                     True,
-                    None,
                     '350986224086888954',
                 ),
             }
@@ -52,7 +52,10 @@ class ScanningStore:
     def get_free_scanners(self):
         return [
             scanner for scanner in self._scanners.values()
-            if self.is_free(scanner.identifier)
+            if self.has_current_scanjob(
+                scanner.identifier,
+                datetime.now(pytz.utc)
+            ) == False
         ]
 
     def get_all_scanners(self):
@@ -103,3 +106,15 @@ class ScanningStore:
 
     def has_current_scanjob(self, scanner_id, timepoint):
         return self.get_current_scanjob(scanner_id, timepoint) is not None
+
+    def get_scanner_status_list(self, scanner_id):
+        return self._scanner_statuses[scanner_id]
+
+    def get_latest_scanner_status(self, scanner_id):
+        try:
+            return self.get_scanner_status_list(scanner_id)[-1]
+        except IndexError:
+            return None
+
+    def add_scanner_status(self, scanner_id, status):
+        self.get_scanner_status_list(scanner_id).append(status)
