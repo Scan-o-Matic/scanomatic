@@ -49,7 +49,7 @@ def scanner_status_update(scanner):
     try:
         scanning_store.add_scanner_status(
             scanner, ScannerStatus(
-                status["job"], datetime.utcnow(), status["message"]))
+                status["job"], datetime.now(pytz.utc), status["message"]))
     except KeyError:
         return json_abort(
             BAD_REQUEST,

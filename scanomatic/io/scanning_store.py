@@ -16,7 +16,7 @@ Scanner = namedtuple(
 )
 ScannerStatus = namedtuple(
     'ScannerStatus',
-    ['job', 'time', 'message']
+    ['job', 'server_time', 'message']
 )
 
 
