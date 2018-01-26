@@ -6,6 +6,7 @@ import json
 from flask import Flask
 import mock
 import pytest
+import freezegun
 from pytz import utc
 
 from scanomatic.io.paths import Paths
@@ -60,24 +61,26 @@ class TestScannerStatus:
         assert response.status_code == NOT_FOUND
         assert response.json['reason'] == "Scanner 'Unknown' unknown"
 
-    def test_get_and_add_scanner_status(self, test_app):
-        response = test_app.get(
-            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
-        assert response.status_code == OK
-        assert response.json == {'job': None, 'message': None, 'time': None}
+    def test_add_scanner_status(self, test_app):
+        with freezegun.freeze_time('1985-10-26 01:20', tz_offset=0):
+            response = test_app.get(
+                self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
+            assert response.status_code == OK
+            assert response.json == {'job': None, 'message': None, 'time': None}
 
-        response = test_app.post(
-            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
-            data=json.dumps({"job": "foo", "message": "bar"}),
-            headers={'Content-Type': 'application/json'}
-        )
-        assert response.status_code == OK
+            response = test_app.post(
+                self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+                data=json.dumps({"job": "foo", "message": "bar"}),
+                headers={'Content-Type': 'application/json'}
+            )
+            assert response.status_code == OK
 
-        response = test_app.get(
-            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
-        assert response.status_code == OK
-        assert response.json["job"] == "foo"
-        assert response.json["message"] == "bar"
+            response = test_app.get(
+                self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
+            assert response.status_code == OK
+            assert response.json["job"] == "foo"
+            assert response.json["server_time"] == "1985-10-26T01:20:00Z"
+            assert response.json["message"] == "bar"
 
     def test_get_unknown_scanner_status_fails(self, test_app):
         response = test_app.get(self.URI + "/42/status")
