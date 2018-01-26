@@ -65,6 +65,63 @@ describe('<ScanningRootContainer />', () => {
             wrapper.update();
             expect(wrapper.prop('error')).toEqual('Bad');
         });
+
+        describe('Start Job', () => {
+            let evt = null;
+
+            beforeEach(() => {
+                evt = { target: { disabled: false } };
+                spyOn(API, 'startScanningJob').and.returnValue(FakePromise.resolve());
+            });
+
+            it('should deactivate button', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                wrapper.prop('onStartJob')(job, evt);
+                expect(evt.target.disabled).toBe(true);
+            });
+
+            it('should update the job', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                wrapper.prop('onStartJob')(job, evt);
+                expect(API.startScanningJob).toHaveBeenCalledWith(job);
+            });
+
+            it('should clear errors', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                wrapper.setState({ error: 'test' });
+                wrapper.update();
+                expect(wrapper.prop('error')).toEqual('test');
+                wrapper.prop('onStartJob')(job, evt);
+                wrapper.update();
+                expect(wrapper.prop('error')).toBeFalsy();
+            });
+
+            it('should update jobs', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                const jobsCalls = API.getScanningJobs.calls.count();
+                const scannerCalls = API.getScanners.calls.count();
+                wrapper.prop('onStartJob')(job, evt);
+                expect(API.getScanningJobs.calls.count()).toEqual(jobsCalls + 1);
+                expect(API.getScanners.calls.count()).toEqual(scannerCalls + 1);
+            });
+        });
+
+        describe('Start Job refused', () => {
+            let evt = null;
+
+            beforeEach(() => {
+                evt = { target: { disabled: false } };
+                spyOn(API, 'startScanningJob').and.returnValue(FakePromise.reject('Busy'));
+            });
+
+            it('should set erros', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                wrapper.prop('onStartJob')(job, evt);
+                wrapper.update();
+                expect(wrapper.prop('error')).toEqual('Error starting job: Busy');
+            });
+        });
+
         describe('New jobs', () => {
             it('should show new job', () => {
                 const wrapper = shallow(<ScanningRootContainer />);

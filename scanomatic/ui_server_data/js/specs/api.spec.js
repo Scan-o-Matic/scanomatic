@@ -755,6 +755,7 @@ describe('API', () => {
             duration: { days: 1, hours: 3, minutes: 5 },
             interval: 20,
             scannerId: 'sc4nn3r',
+            startTime: null,
         };
         const jsonScanJob = {
             identifier: 'xyz',
@@ -762,6 +763,7 @@ describe('API', () => {
             scannerId: 'sc4nn3r',
             interval: 1200,
             duration: 97500,
+            startTime: null,
         };
 
         it('should query the correct URL', () => {

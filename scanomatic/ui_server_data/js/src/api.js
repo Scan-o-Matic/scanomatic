@@ -278,6 +278,7 @@ export function getScanningJobs() {
                 Math.floor((jsonJob.duration % secondsPerDay) / secondsPerHour),
             minutes: (jsonJob.duration % secondsPerHour) / secondsPerMinute,
         },
+        startTime: jsonJob.startTime,
     })));
 }
 

@@ -15,7 +15,12 @@ export default function ScanningRoot(props) {
         const jobs = [];
         props.jobs.forEach((job) => {
             const scanner = scanners.filter(s => s.identifier === job.scannerId)[0];
-            jobs.push(<ScanningJobPanel key={job.name} scanner={scanner} {...job} />);
+            jobs.push(<ScanningJobPanel
+                onStartJob={evt => props.onStartJob(job, evt)}
+                key={job.name}
+                scanner={scanner}
+                {...job}
+            />);
         });
         jobList = (
             <div className="jobs-list">
@@ -53,6 +58,7 @@ ScanningRoot.propTypes = {
     onCloseNewJob: PropTypes.func.isRequired,
     jobs: PropTypes.arrayOf(SoMPropTypes.scanningJobType).isRequired,
     scanners: PropTypes.arrayOf(SoMPropTypes.scannerType).isRequired,
+    onStartJob: PropTypes.func.isRequired,
 };
 
 ScanningRoot.defaultProps = {
