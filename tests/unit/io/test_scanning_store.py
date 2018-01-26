@@ -6,13 +6,15 @@ from mock import patch
 
 from pytz import utc
 
-import scanomatic.io.scanning_store as ss_module
+from scanomatic.io.scanning_store import (
+    ScanningStore, Scanner, ScanJobUnknownError, ScanJobCollisionError,
+)
 from scanomatic.models.scanjob import ScanJob
 
 
 @pytest.fixture(scope='function')
 def scanning_store():
-    return ss_module.ScanningStore()
+    return ScanningStore()
 
 
 JOB1 = ScanJob(
@@ -31,14 +33,14 @@ JOB2 = ScanJob(
     scanner_id="9a8486a6f9cb11e7ac660050b68338ac",
 )
 
-SCANNER = ss_module.Scanner(
+SCANNER = Scanner(
     'Never On',
     False,
     None,
     '9a8486a6f9cb11e7ac660050b68338ac',
 )
 
-SCANNER_POWER = ss_module.Scanner(
+SCANNER_POWER = Scanner(
     'Always On',
     True,
     None,
@@ -74,7 +76,7 @@ class TestScanners:
         Note that we can't use the `scanning_store` fixture here since
         then the patch doesn't work.
         """
-        assert ss_module.ScanningStore().get_all_scanners() == []
+        assert ScanningStore().get_all_scanners() == []
 
 
 class TestAddJob:
@@ -84,7 +86,7 @@ class TestAddJob:
 
     def test_add_duplicate_job_raises(self, scanning_store):
         scanning_store.add_scanjob(JOB1)
-        with pytest.raises(ss_module.ScanJobCollisionError):
+        with pytest.raises(ScanJobCollisionError):
             scanning_store.add_scanjob(JOB1)
 
 
@@ -95,7 +97,7 @@ class TestRemoveJob:
         assert JOB1 not in scanning_store.get_all_scanjobs()
 
     def test_remove_unknown_job_raises(self, scanning_store):
-        with pytest.raises(ss_module.ScanJobUnknownError):
+        with pytest.raises(ScanJobUnknownError):
             scanning_store.remove_scanjob("Help")
 
 
@@ -119,7 +121,7 @@ class TestGetScanjob:
 
     def test_unknown_job(self, scanning_store):
         scanning_store.add_scanjob(JOB1)
-        with pytest.raises(ss_module.ScanJobUnknownError):
+        with pytest.raises(ScanJobUnknownError):
             scanning_store.get_scanjob('unknown')
 
 
@@ -137,7 +139,7 @@ class TestUpdateScanjob:
         assert scanning_store.get_scanjob(JOB1.identifier) == updated_scanjob
 
     def test_update_unknown(self, scanning_store):
-        with pytest.raises(ss_module.ScanJobUnknownError):
+        with pytest.raises(ScanJobUnknownError):
             scanning_store.update_scanjob(JOB1)
 
 
