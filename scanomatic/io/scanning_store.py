@@ -12,7 +12,7 @@ class ScanJobUnknownError(ValueError):
 
 Scanner = namedtuple(
     'Scanner',
-    ['name', 'power', 'owner', 'identifier']
+    ['name', 'power', 'identifier']
 )
 ScannerStatus = namedtuple(
     'ScannerStatus',
@@ -42,7 +42,7 @@ class ScanningStore:
     def get_free_scanners(self):
         return [
             scanner for scanner in self._scanners.values()
-            if scanner.owner is None
+            if self.is_free(scanner)
         ]
 
     def get_all_scanners(self):
@@ -105,3 +105,6 @@ class ScanningStore:
 
     def add_scanner_status(self, scanner_id, status):
         self.get_scanner_status_list(scanner_id).append(status)
+
+    def is_free(self, scanner_id):
+        return self.get_latest_scanner_status(scanner_id).job is None

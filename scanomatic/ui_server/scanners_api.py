@@ -45,7 +45,7 @@ def scanner_status_update(scanner):
             reason="Scanner '{}' unknown".format(scanner)
         )
 
-    status = request.get_json(silent=True, force=True)
+    status = request.get_json()
     try:
         scanning_store.add_scanner_status(
             scanner, ScannerStatus(
