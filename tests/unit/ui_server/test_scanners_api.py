@@ -1,11 +1,12 @@
 from __future__ import absolute_import
-import pytest
-from flask import Flask
 from httplib import OK, NOT_FOUND
 
-from scanomatic.ui_server.ui_server import add_configs
+from flask import Flask
+import pytest
+
 from scanomatic.io.paths import Paths
 from scanomatic.ui_server import scanners_api
+from scanomatic.ui_server.ui_server import add_configs
 
 
 @pytest.fixture

@@ -1,7 +1,14 @@
 from __future__ import absolute_import
-from flask import request, jsonify, Blueprint, current_app
+from datetime import datetime
 from httplib import NOT_FOUND
+
+from flask import request, jsonify, Blueprint, current_app
+from flask_restful import Api, Resource
+import pytz
+from werkzeug.exceptions import NotFound
+
 from .general import json_abort
+from .serialization import job2json
 
 blueprint = Blueprint("scanners_api", __name__)
 
@@ -25,3 +32,17 @@ def scanner_get(scanner):
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
     )
+
+
+class ScannerJob(Resource):
+    def get(self, scannerid):
+        db = current_app.config['scanning_store']
+        if not db.has_scanner(scannerid):
+            raise NotFound
+        job = db.get_current_scanjob(scannerid, datetime.now(pytz.utc))
+        if job:
+            return job2json(job)
+
+
+api = Api(blueprint)
+api.add_resource(ScannerJob, '/<scannerid>/job', endpoint='scanner-job')

@@ -27,14 +27,14 @@ pillow==4.1.1
 psutil==5.2.2
 pyparsing==2.2.0          # via matplotlib
 python-dateutil==2.6.0    # via aniso8601, matplotlib, pandas
-pytz==2017.2              # via flask-restful, matplotlib, pandas
+pytz==2017.2
 pywavelets==0.5.2         # via scikit-image
 requests==2.14.1
 scikit-image==0.13.0
 scipy==0.19.0
 setproctitle==1.1.10
 sh==1.12.13
-six==1.10.0               # via cycler, flask-cors, flask-restful, matplotlib, python-dateutil, scikit-image
+six==1.10.0               # via flask-cors, flask-restful, matplotlib, python-dateutil, scikit-image
 subprocess32==3.2.7       # via matplotlib
 uuid==1.30
 werkzeug==0.12.1          # via flask
