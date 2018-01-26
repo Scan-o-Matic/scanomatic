@@ -35,7 +35,7 @@ def scanner_get(scanner):
     )
 
 
-@blueprint.route("/<scanner>/status", methods=['POST'])
+@blueprint.route("/<scanner>/status", methods=['PUT'])
 def scanner_status_update(scanner):
     scanning_store = current_app.config['scanning_store']
     if not scanning_store.has_scanner(scanner):
@@ -67,17 +67,6 @@ def scanner_status_get(scanner):
         if status is None:
             status = ScannerStatus(None, None, None)
         return jsonify(**status._asdict())
-    return json_abort(
-        NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
-    )
-
-
-@blueprint.route("/<scanner>/statuses", methods=['GET'])
-def scanner_statuses_get(scanner):
-    scanning_store = current_app.config['scanning_store']
-    if scanning_store.has_scanner(scanner):
-        statuses = scanning_store.get_scanner_status_list(scanner)
-        return jsonify({"status_list": statuses})
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
     )

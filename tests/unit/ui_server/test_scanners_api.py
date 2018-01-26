@@ -68,7 +68,7 @@ class TestScannerStatus:
             assert response.status_code == OK
             assert response.json == {'job': None, 'message': None, 'time': None}
 
-            response = test_app.post(
+            response = test_app.put(
                 self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
                 data=json.dumps({"job": "foo", "message": "bar"}),
                 headers={'Content-Type': 'application/json'}
