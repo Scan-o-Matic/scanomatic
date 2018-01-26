@@ -8,7 +8,7 @@ import pytz
 from werkzeug.exceptions import NotFound
 
 from .general import json_abort
-from .serialization import job2json
+from .serialization import job2json, status2json
 from scanomatic.io.scanning_store import ScannerStatus
 
 blueprint = Blueprint("scanners_api", __name__)
@@ -66,7 +66,7 @@ def scanner_status_get(scanner):
         status = scanning_store.get_latest_scanner_status(scanner)
         if status is None:
             status = ScannerStatus(None, None, None)
-        return jsonify(**status._asdict())
+        return jsonify(status2json(status))
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
     )

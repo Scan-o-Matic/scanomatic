@@ -14,3 +14,16 @@ def job2json(job):
         assert is_utc(job.start_time)
         obj['startTime'] = job.start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
     return obj
+
+
+def status2json(status):
+    obj = {
+        'job': status.job,
+        'message': status.message,
+    }
+    if status.server_time is None:
+        obj['serverTime'] = None
+    else:
+        assert is_utc(status.server_time)
+        obj['serverTime'] = status.server_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+    return obj

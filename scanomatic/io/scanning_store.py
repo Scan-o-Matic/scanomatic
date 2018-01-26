@@ -26,7 +26,6 @@ class ScanningStore:
             '9a8486a6f9cb11e7ac660050b68338ac': Scanner(
                 'Test',
                 False,
-                None,
                 '9a8486a6f9cb11e7ac660050b68338ac',
             ),
         }
@@ -42,7 +41,7 @@ class ScanningStore:
     def get_free_scanners(self):
         return [
             scanner for scanner in self._scanners.values()
-            if self.is_free(scanner)
+            if self.is_free(scanner.identifier)
         ]
 
     def get_all_scanners(self):
@@ -107,4 +106,7 @@ class ScanningStore:
         self.get_scanner_status_list(scanner_id).append(status)
 
     def is_free(self, scanner_id):
-        return self.get_latest_scanner_status(scanner_id).job is None
+        return (
+            self.get_latest_scanner_status(scanner_id) is None
+            or self.get_latest_scanner_status(scanner_id).job is None
+        )
