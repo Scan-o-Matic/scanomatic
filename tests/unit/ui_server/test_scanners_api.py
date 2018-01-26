@@ -1,15 +1,12 @@
 from __future__ import absolute_import
-from datetime import datetime, timedelta
 from httplib import OK, NOT_FOUND, BAD_REQUEST
 import json
 
 from flask import Flask
 import pytest
 import freezegun
-from pytz import utc
 
 from scanomatic.io.paths import Paths
-from scanomatic.models.scanjob import ScanJob
 from scanomatic.ui_server import scanners_api
 from scanomatic.ui_server.ui_server import add_configs
 
