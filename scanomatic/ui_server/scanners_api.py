@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from datetime import datetime
-from httplib import NOT_FOUND, OK, BAD_REQUEST
+from httplib import NOT_FOUND, OK, BAD_REQUEST, CREATED
 
 from flask import request, jsonify, Blueprint, current_app
 from flask_restful import Api, Resource
@@ -39,11 +39,10 @@ def scanner_get(scanner):
 def scanner_status_update(scanner):
     scanning_store = current_app.config['scanning_store']
     if not scanning_store.has_scanner(scanner):
-        # TODO: should create non-existent
-        return json_abort(
-            NOT_FOUND,
-            reason="Scanner '{}' unknown".format(scanner)
-        )
+        scanning_store.add_scanner(scanner)
+        status_code = CREATED
+    else:
+        status_code = OK
 
     status = request.get_json()
     try:
@@ -56,7 +55,7 @@ def scanner_status_update(scanner):
             reason="Got malformed status '{}'".format(status)
         )
 
-    return "", OK
+    return "", status_code
 
 
 @blueprint.route("/<scanner>/status", methods=['GET'])

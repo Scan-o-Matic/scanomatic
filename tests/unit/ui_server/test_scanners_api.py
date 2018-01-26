@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from httplib import OK, NOT_FOUND, BAD_REQUEST
+from httplib import OK, NOT_FOUND, BAD_REQUEST, CREATED
 import json
 
 from flask import Flask
@@ -72,12 +72,6 @@ class TestScannerStatus:
 
     def test_add_scanner_status(self, test_app):
         with freezegun.freeze_time('1985-10-26 01:20', tz_offset=0):
-            response = test_app.get(
-                self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
-            assert response.status_code == OK
-            assert response.json == {
-                'job': None, 'message': None, 'serverTime': None}
-
             response = test_app.put(
                 self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
                 data=json.dumps({"job": "foo", "message": "bar"}),
@@ -92,6 +86,13 @@ class TestScannerStatus:
             assert response.json["serverTime"] == "1985-10-26T01:20:00Z"
             assert response.json["message"] == "bar"
 
+    def test_get_scanner_status(self, test_app):
+        response = test_app.get(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
+        assert response.status_code == OK
+        assert response.json == {
+            'job': None, 'message': None, 'serverTime': None}
+
     def test_get_unknown_scanner_status_fails(self, test_app):
         response = test_app.get(self.URI + "/42/status")
         assert response.status_code == NOT_FOUND
@@ -103,3 +104,11 @@ class TestScannerStatus:
             headers={'Content-Type': 'application/json'}
         )
         assert response.status_code == BAD_REQUEST
+
+    def test_add_unknown_scanner_status(self, test_app):
+        response = test_app.put(
+            self.URI + "/42/status",
+            data=json.dumps({"job": "foo", "message": "bar"}),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == CREATED

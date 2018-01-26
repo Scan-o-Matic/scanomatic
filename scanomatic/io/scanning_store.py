@@ -4,6 +4,8 @@ from collections import namedtuple
 import os
 import pytz
 
+from .generic_name import get_generic_name
+
 
 class ScanJobCollisionError(ValueError):
     pass
@@ -43,6 +45,15 @@ class ScanningStore:
         self._scanner_statuses = {scanner: [] for scanner in self._scanners}
         self._scanjobs = {}
 
+    def add_scanner(self, scanner_id, name=None):
+        if self.has_scanner(scanner_id):
+            raise ValueError("Cannot add duplicate scanner!")
+
+        if name is None:
+            name = get_generic_name(scanner_id)
+        self._scanners[scanner_id] = Scanner(name, True, scanner_id)
+        self._scanner_statuses[scanner_id] = []
+
     def has_scanner(self, identifier):
         return identifier in self._scanners
 
@@ -55,7 +66,7 @@ class ScanningStore:
             if self.has_current_scanjob(
                 scanner.identifier,
                 datetime.now(pytz.utc)
-            ) == False
+            ) is False
         ]
 
     def get_all_scanners(self):
