@@ -4,6 +4,7 @@ from httplib import NOT_FOUND, OK, BAD_REQUEST
 
 from flask import request, jsonify, Blueprint, current_app
 from flask_restful import Api, Resource
+import pytz
 from werkzeug.exceptions import NotFound
 
 from .general import json_abort
@@ -76,7 +77,7 @@ class ScannerJob(Resource):
         db = current_app.config['scanning_store']
         if not db.has_scanner(scannerid):
             raise NotFound
-        job = db.get_current_scanjob(scannerid, datetime.now())
+        job = db.get_current_scanjob(scannerid, datetime.now(pytz.utc))
         if job:
             return job2json(job)
 
