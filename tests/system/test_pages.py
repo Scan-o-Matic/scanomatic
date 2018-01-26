@@ -1,7 +1,7 @@
 import requests
 
 
-def test_root(scanomatic, browser):
+def test_root(scanomatic):
     uri = '/'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -9,21 +9,21 @@ def test_root(scanomatic, browser):
     assert "src='images/scan-o-matic_2.png'" in r.text
 
 
-def test_home(scanomatic, browser):
+def test_home(scanomatic):
     uri = '/home'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
     assert r.text and len(r.text), '{} is empty'.format(uri)
 
 
-def test_wiki(scanomatic, browser):
+def test_wiki(scanomatic):
     uri = '/wiki'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
     assert r.text and len(r.text), '{} is empty'.format(uri)
 
 
-def test_analysis(scanomatic, browser):
+def test_analysis(scanomatic):
     uri = '/analysis'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -31,7 +31,7 @@ def test_analysis(scanomatic, browser):
     assert "<h1>Analysis</h1>" in r.text
 
 
-def test_ccc(scanomatic, browser):
+def test_ccc(scanomatic):
     uri = '/ccc'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -39,7 +39,7 @@ def test_ccc(scanomatic, browser):
     assert "<h1>Cell Count Calibration</h1>" in r.text
 
 
-def test_compile(scanomatic, browser):
+def test_compile(scanomatic):
     uri = '/compile'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -47,7 +47,7 @@ def test_compile(scanomatic, browser):
     assert "<h1>Compile Project</h1>" in r.text
 
 
-def test_experiment(scanomatic, browser):
+def test_experiment(scanomatic):
     uri = '/experiment'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -55,7 +55,7 @@ def test_experiment(scanomatic, browser):
     assert '<h1>Start Scan Series</h1>' in r.text
 
 
-def test_feature_extract(scanomatic, browser):
+def test_feature_extract(scanomatic):
     uri = '/feature_extract'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -63,7 +63,7 @@ def test_feature_extract(scanomatic, browser):
     assert "<h1>Feature extraction</h1>" in r.text
 
 
-def test_fixture(scanomatic, browser):
+def test_fixture(scanomatic):
     uri = '/fixtures'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -71,7 +71,7 @@ def test_fixture(scanomatic, browser):
     assert "<h1>Fixtures</h1>" in r.text
 
 
-def test_help(scanomatic, browser):
+def test_help(scanomatic):
     uri = '/help'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -80,7 +80,7 @@ def test_help(scanomatic, browser):
      '<h1><a id="installing">Something confusing or wrong?</a></h1>' in r.text)
 
 
-def test_maintain(scanomatic, browser):
+def test_maintain(scanomatic):
     uri = '/maintain'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -88,7 +88,7 @@ def test_maintain(scanomatic, browser):
     assert "<h2>Logs</h2>" in r.text
 
 
-def test_qc_norm(scanomatic, browser):
+def test_qc_norm(scanomatic):
     uri = '/qc_norm'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -96,7 +96,7 @@ def test_qc_norm(scanomatic, browser):
     assert "<h1>Quality Control</h1>" in r.text
 
 
-def test_status(scanomatic, browser):
+def test_status(scanomatic):
     uri = '/status'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -104,7 +104,7 @@ def test_status(scanomatic, browser):
     assert "<h1>Status</h1>" in r.text
 
 
-def test_settings(scanomatic, browser):
+def test_settings(scanomatic):
     uri = '/settings'
     r = requests.get(scanomatic + uri)
     r.raise_for_status()
@@ -112,7 +112,7 @@ def test_settings(scanomatic, browser):
     assert "<h1>Settings</h1>" in r.text
 
 
-def test_system_logs(scanomatic, browser):
+def test_system_logs(scanomatic):
     uri = '/logs/system/{}'
 
     for log in ('server', 'ui_server'):
