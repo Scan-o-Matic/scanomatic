@@ -29,7 +29,6 @@ from scanomatic.generics.maths import mid50_mean as iqr_mean
 
 class GridCell(object):
 
-    MAX_THRESHOLD = 4200
     MIN_THRESHOLD = 0
     _logger = Logger("Grid Cell")
 
@@ -115,26 +114,7 @@ class GridCell(object):
 
                 self.source = np.polyval(polynomial_coeffs, self.source)
 
-            self._set_max_value_filter()
-
         self.push_source_data_to_cell_items()
-
-    def _set_max_value_filter(self):
-
-        max_detect_filter = self.source > self.MAX_THRESHOLD
-
-        if self._adjustment_warning != max_detect_filter.any():
-            self._adjustment_warning = not self._adjustment_warning
-            if self._adjustment_warning:
-                self._logger.warning(
-                    "{0} got {1} pixel-values overshooting {2}.".format(
-                        self._identifier, max_detect_filter.sum(),
-                        self.MAX_THRESHOLD) +
-                    " Further warnings for this colony suppressed.")
-            else:
-                self._logger.info(
-                    "{0} no longer have pixels that reach {1} depth.".format(
-                        self._identifier, self.MAX_THRESHOLD))
 
     def push_source_data_to_cell_items(self):
         for item_names in self._analysis_items:
