@@ -3,7 +3,8 @@ linters:
   pep8:
     ignore: 'W503'
   py3k: {  }
-  eslint: {  }
+  eslint:
+      fixer: true
 files:
   ignore:
     - 'node_modules/*'
