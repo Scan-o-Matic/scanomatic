@@ -71,7 +71,6 @@ class TestScanJobs:
             'interval': job['interval'],
             'duration': job['duration'],
             'scannerId': job['scannerId'],
-            'startTime': None,
         }
 
     def test_sereval_identical_job_names_fails(self, test_app, job):
@@ -118,7 +117,6 @@ class TestScanJobs:
                 'interval': job['interval'],
                 'duration': job['duration'],
                 'scannerId': job['scannerId'],
-                'startTime': None,
             }
         ]
 
@@ -136,7 +134,6 @@ class TestScanJobs:
                 'interval': job['interval'],
                 'duration': job['duration'],
                 'scannerId': job['scannerId'],
-                'startTime': None,
             }
         ]
 
