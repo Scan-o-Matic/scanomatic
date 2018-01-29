@@ -4,7 +4,7 @@ from collections import namedtuple
 import os
 import pytz
 
-from .generic_name import get_generic_name
+from scanomatic.util.generic_name import get_generic_name
 
 
 class ScanJobCollisionError(ValueError):

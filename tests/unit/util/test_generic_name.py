@@ -1,6 +1,6 @@
 import pytest
 
-from scanomatic.io.generic_name import get_generic_name
+from scanomatic.util.generic_name import get_generic_name
 
 
 @pytest.mark.parametrize(
