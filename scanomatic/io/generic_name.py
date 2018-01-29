@@ -1,12 +1,12 @@
-import random
+from random import Random
 
 
 def get_generic_name(seed):
-    random.seed(seed)
-    return "Generic {}".format(random.sample(ANIMALS, 1)[0])
+    rand = Random(seed)
+    return "Generic {}".format(rand.choice(ANIMALS))
 
 
-ANIMALS = [
+ANIMALS = (
     "Gamefowl",
     "Galliform",
     "Gazelle",
@@ -37,4 +37,4 @@ ANIMALS = [
     "Guinea pig",
     "Gull",
     "Guppy",
-]
+)
