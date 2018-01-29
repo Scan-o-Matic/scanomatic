@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from datetime import datetime
+from datetime import datetime, timedelta
 from httplib import NOT_FOUND, OK, BAD_REQUEST, CREATED
 
 from flask import request, jsonify, Blueprint, current_app
@@ -12,6 +12,7 @@ from .serialization import job2json, status2json
 from scanomatic.io.scanning_store import ScannerStatus
 
 blueprint = Blueprint("scanners_api", __name__)
+SCANNER_TIMEOUT = timedelta(minutes=5)
 
 
 @blueprint.route("", methods=['GET'])
@@ -60,14 +61,30 @@ def scanner_status_update(scanner):
 @blueprint.route("/<scanner>/status", methods=['GET'])
 def scanner_status_get(scanner):
     scanning_store = current_app.config['scanning_store']
+
+    def _scanner_is_online(scanner_id):
+        try:
+            return (
+                datetime.now(pytz.utc)
+                - scanning_store.get_latest_scanner_status(
+                    scanner_id).server_time
+                < SCANNER_TIMEOUT
+            )
+        except AttributeError:
+            return False
+
     if scanning_store.has_scanner(scanner):
         status = scanning_store.get_latest_scanner_status(scanner)
+
         if status is None:
             status = ScannerStatus(None, None)
-        return jsonify(status2json(status))
+
+        return jsonify(status2json(status, _scanner_is_online(scanner)))
+
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
     )
+
 
 
 class ScannerJob(Resource):

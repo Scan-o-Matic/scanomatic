@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import namedtuple
 import os
 import pytz
@@ -23,7 +23,6 @@ ScannerStatus = namedtuple(
     'ScannerStatus',
     ['job', 'server_time']
 )
-SCANNER_TIMEOUT = timedelta(minutes=5)
 
 
 class ScanningStore:
@@ -128,19 +127,3 @@ class ScanningStore:
 
     def add_scanner_status(self, scanner_id, status):
         self.get_scanner_status_list(scanner_id).append(status)
-
-    def scanner_is_online(self, scanner_id):
-        try:
-            return (
-                datetime.now(pytz.utc)
-                - self.get_latest_scanner_status(scanner_id).server_time
-                < SCANNER_TIMEOUT
-            )
-        except ValueError:
-            return False
-
-    def get_online_scanners(self):
-        return [
-            scanner for scanner in self._scanners.values()
-            if self.scanner_is_online(scanner)
-        ]

@@ -72,7 +72,7 @@ class TestScannerStatus:
         with freezegun.freeze_time('1985-10-26 01:20', tz_offset=0):
             response = test_app.put(
                 self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
-                data=json.dumps({"job": "foo"}),
+                data=json.dumps({u"job": u"foo"}),
                 headers={'Content-Type': 'application/json'}
             )
             assert response.status_code == OK
@@ -87,7 +87,7 @@ class TestScannerStatus:
         response = test_app.get(
             self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
         assert response.status_code == OK
-        assert response.json == {'job': None}
+        assert response.json == {u'job': None, u'power': False, u'owner': None}
 
     def test_get_unknown_scanner_status_fails(self, test_app):
         response = test_app.get(self.URI + "/42/status")

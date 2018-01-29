@@ -16,9 +16,11 @@ def job2json(job):
     return obj
 
 
-def status2json(status):
+def status2json(status, power=False, owner=None):
     obj = {
         'job': status.job,
+        'power': power,
+        'owner': owner,
     }
     if status.server_time is not None:
         assert is_utc(status.server_time)
