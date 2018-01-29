@@ -15,6 +15,7 @@ from scanomatic.util.generic_name import get_generic_name
 blueprint = Blueprint("scanners_api", __name__)
 SCANNER_TIMEOUT = timedelta(minutes=5)
 
+
 def _scanner_is_online(scanner_id, scanning_store):
     try:
         return (

@@ -57,7 +57,6 @@ class TestScannerStatus:
         response = test_app.get(self.URI + '?free=1')
         assert response.status_code == OK
         assert len(response.json) == 2
-        print response.json
         assert all(
             scanner in response.json
             for scanner in [self.SCANNER_TWO, self.SCANNER_ONE]
