@@ -9,14 +9,23 @@ import ScanningRoot from '../../src/components/ScanningRoot';
 describe('<ScanningRoot />', () => {
     const onNewJob = jasmine.createSpy('onNewJob');
     const onCloseNewJob = jasmine.createSpy('onCloseNewJob');
+    const onStartJob = jasmine.createSpy('onStartJob');
+
     const props = {
         onNewJob,
         onCloseNewJob,
+        onStartJob,
         error: null,
         newJob: false,
         jobs: [],
         scanners: [],
     };
+
+    beforeEach(() => {
+        onStartJob.calls.reset();
+        onCloseNewJob.calls.reset();
+        onNewJob.calls.reset();
+    });
 
     it('should render the error', () => {
         const error = 'Bad! Worse! Predictable!';
@@ -64,6 +73,20 @@ describe('<ScanningRoot />', () => {
             const jobPanels = wrapper.find('ScanningJobPanel');
             expect(jobPanels.first().prop('name')).toEqual('A');
             expect(jobPanels.last().prop('name')).toEqual('B');
+        });
+
+        it('couples start callback with job (first)', () => {
+            const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
+            const jobPanels = wrapper.find('ScanningJobPanel');
+            jobPanels.first().prop('onStartJob')();
+            expect(onStartJob).toHaveBeenCalledWith(jobs[0]);
+        });
+
+        it('couples start callback with job (last)', () => {
+            const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
+            const jobPanels = wrapper.find('ScanningJobPanel');
+            jobPanels.last().prop('onStartJob')();
+            expect(onStartJob).toHaveBeenCalledWith(jobs[1]);
         });
     });
 
