@@ -30,15 +30,13 @@ def test_app(app):
 class TestScannerStatus:
 
     URI = '/api/scanners'
-    SCANNER_OFF = {
-        u'name': u'Never On',
-        u'power': False,
+    SCANNER_TWO = {
+        u'name': u'Scanner two',
         u'identifier': u'9a8486a6f9cb11e7ac660050b68338ac',
     }
 
-    SCANNER_ON = {
-        u'name': u'Always On',
-        u'power': True,
+    SCANNER_ONE = {
+        u'name': u'Scanner one',
         u'identifier': u'350986224086888954',
     }
 
@@ -48,7 +46,7 @@ class TestScannerStatus:
         assert len(response.json) == 2
         assert all(
             scanner in response.json
-            for scanner in [self.SCANNER_ON, self.SCANNER_OFF]
+            for scanner in [self.SCANNER_ONE, self.SCANNER_TWO]
         )
 
     def test_get_free_scanners(self, test_app):
@@ -57,13 +55,13 @@ class TestScannerStatus:
         assert len(response.json) == 2
         assert all(
             scanner in response.json
-            for scanner in [self.SCANNER_ON, self.SCANNER_OFF]
+            for scanner in [self.SCANNER_ONE, self.SCANNER_TWO]
         )
 
     def test_get_scanner(self, test_app):
         response = test_app.get(self.URI + "/9a8486a6f9cb11e7ac660050b68338ac")
         assert response.status_code == OK
-        assert response.json == self.SCANNER_OFF
+        assert response.json == self.SCANNER_TWO
 
     def test_get_unknown_scanner(self, test_app):
         response = test_app.get(self.URI + "/Unknown")

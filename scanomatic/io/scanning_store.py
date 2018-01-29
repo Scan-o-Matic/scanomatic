@@ -17,7 +17,7 @@ class ScanJobUnknownError(ValueError):
 
 Scanner = namedtuple(
     'Scanner',
-    ['name', 'power', 'identifier']
+    ['name', 'identifier']
 )
 ScannerStatus = namedtuple(
     'ScannerStatus',
@@ -30,13 +30,11 @@ class ScanningStore:
         if not int(os.environ.get('SOM_HIDE_TEST_SCANNERS', '0')):
             self._scanners = {
                 '9a8486a6f9cb11e7ac660050b68338ac': Scanner(
-                    'Never On',
-                    False,
+                    'Scanner one',
                     '9a8486a6f9cb11e7ac660050b68338ac',
                 ),
                 '350986224086888954': Scanner(
-                    'Always On',
-                    True,
+                    'Scanner two',
                     '350986224086888954',
                 ),
             }
@@ -51,7 +49,7 @@ class ScanningStore:
 
         if name is None:
             name = get_generic_name(scanner_id)
-        self._scanners[scanner_id] = Scanner(name, True, scanner_id)
+        self._scanners[scanner_id] = Scanner(name, scanner_id)
         self._scanner_statuses[scanner_id] = []
 
     def has_scanner(self, identifier):
