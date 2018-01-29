@@ -1,3 +1,6 @@
+fixers:
+  enable: true
+
 linters:
   flake8: {  }
   pep8:
