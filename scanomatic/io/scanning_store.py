@@ -4,8 +4,6 @@ from collections import namedtuple
 import os
 import pytz
 
-from scanomatic.util.generic_name import get_generic_name
-
 
 class ScanJobCollisionError(ValueError):
     pass
@@ -43,20 +41,39 @@ class ScanningStore:
         self._scanner_statuses = {scanner: [] for scanner in self._scanners}
         self._scanjobs = {}
 
-    def add_scanner(self, scanner_id, name=None):
-        if self.has_scanner(scanner_id):
-            raise ValueError("Cannot add duplicate scanner!")
-
-        if name is None:
-            name = get_generic_name(scanner_id)
-        self._scanners[scanner_id] = Scanner(name, scanner_id)
-        self._scanner_statuses[scanner_id] = []
-
     def has_scanner(self, identifier):
         return identifier in self._scanners
 
     def get_scanner(self, identifier):
         return self._scanners[identifier]
+
+    def get_scanner_by_name(self, name):
+        scanners = [
+            scanner for scanner in self._scanners
+            if self._scanners[scanner].name == name
+        ]
+        if len(scanners) > 1:
+            raise ValueError("Duplicate name '{}' in scanner list".format(
+                name
+            ))
+        elif len(scanners) == 0:
+            return None
+        else:
+            return scanners[0]
+
+    def add_scanner(self, scanner):
+        if self.has_scanner(scanner.identifier):
+            raise ValueError(
+                "Cannot add duplicate scanner with id '{}'".format(
+                    scanner.identifier)
+            )
+        elif self.get_scanner_by_name(scanner.name) is not None:
+            raise ValueError(
+                "Cannot add duplicate scanner with name '{}'".format(
+                    scanner.name)
+            )
+        self._scanners[scanner.identifier] = scanner
+        self._scanner_statuses[scanner.identifier] = []
 
     def get_free_scanners(self):
         return [

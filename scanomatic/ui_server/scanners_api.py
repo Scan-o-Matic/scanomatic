@@ -9,7 +9,8 @@ from werkzeug.exceptions import NotFound
 
 from .general import json_abort
 from .serialization import job2json, status2json
-from scanomatic.io.scanning_store import ScannerStatus
+from scanomatic.io.scanning_store import ScannerStatus, Scanner
+from scanomatic.util.generic_name import get_generic_name
 
 blueprint = Blueprint("scanners_api", __name__)
 SCANNER_TIMEOUT = timedelta(minutes=5)
@@ -39,8 +40,13 @@ def scanner_get(scanner):
 @blueprint.route("/<scanner>/status", methods=['PUT'])
 def scanner_status_update(scanner):
     scanning_store = current_app.config['scanning_store']
+
+    def _add_scanner(scanner_id):
+        name = get_generic_name(scanner_id)
+        scanning_store.add_scanner(Scanner(name, scanner_id))
+
     if not scanning_store.has_scanner(scanner):
-        scanning_store.add_scanner(scanner)
+        _add_scanner(scanner)
         status_code = CREATED
     else:
         status_code = OK
