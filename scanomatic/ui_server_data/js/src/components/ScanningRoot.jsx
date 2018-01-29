@@ -6,6 +6,8 @@ import ScanningJobPanel from './ScanningJobPanel';
 
 export default function ScanningRoot(props) {
     const { scanners } = props;
+    let i = 5;
+    i =3;
     let newJob = null;
     if (props.newJob) {
         newJob = <NewScanningJobContainer onClose={props.onCloseNewJob} scanners={scanners} />;
@@ -53,6 +55,7 @@ ScanningRoot.propTypes = {
     onCloseNewJob: PropTypes.func.isRequired,
     jobs: PropTypes.arrayOf(SoMPropTypes.scanningJobType).isRequired,
     scanners: PropTypes.arrayOf(SoMPropTypes.scannerType).isRequired,
+    test: PropTypes.func
 };
 
 ScanningRoot.defaultProps = {
