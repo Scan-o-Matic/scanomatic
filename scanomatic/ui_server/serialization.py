@@ -19,7 +19,6 @@ def job2json(job):
 def status2json(status):
     obj = {
         'job': status.job,
-        'message': status.message,
     }
     if status.server_time is None:
         obj['serverTime'] = None

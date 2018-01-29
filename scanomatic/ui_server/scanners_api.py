@@ -47,8 +47,7 @@ def scanner_status_update(scanner):
     status = request.get_json()
     try:
         scanning_store.add_scanner_status(
-            scanner, ScannerStatus(
-                status["job"], datetime.now(pytz.utc), status["message"]))
+            scanner, ScannerStatus(status["job"], datetime.now(pytz.utc)))
     except KeyError:
         return json_abort(
             BAD_REQUEST,
@@ -64,7 +63,7 @@ def scanner_status_get(scanner):
     if scanning_store.has_scanner(scanner):
         status = scanning_store.get_latest_scanner_status(scanner)
         if status is None:
-            status = ScannerStatus(None, None, None)
+            status = ScannerStatus(None, None)
         return jsonify(status2json(status))
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
