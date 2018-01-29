@@ -32,7 +32,7 @@ before_script:
     - sleep 3
 script:
     - npm test
-    - docker-compose --verbose --no-cache --force-rm build
+    - docker-compose --verbose build --no-cache --force-rm
     - tox
 
 after_success:
