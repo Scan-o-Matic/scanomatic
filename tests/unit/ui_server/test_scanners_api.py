@@ -30,14 +30,18 @@ def test_app(app):
 class TestScannerStatus:
 
     URI = '/api/scanners'
-    SCANNER_TWO = {
+    SCANNER_ONE = {
         u'name': u'Scanner one',
         u'identifier': u'9a8486a6f9cb11e7ac660050b68338ac',
+        u'owner': None,
+        u'power': False,
     }
 
-    SCANNER_ONE = {
+    SCANNER_TWO = {
         u'name': u'Scanner two',
         u'identifier': u'350986224086888954',
+        u'owner': None,
+        u'power': False,
     }
 
     def test_get_all_implicit(self, test_app):
@@ -46,22 +50,23 @@ class TestScannerStatus:
         assert len(response.json) == 2
         assert all(
             scanner in response.json
-            for scanner in [self.SCANNER_ONE, self.SCANNER_TWO]
+            for scanner in [self.SCANNER_TWO, self.SCANNER_ONE]
         )
 
     def test_get_free_scanners(self, test_app):
         response = test_app.get(self.URI + '?free=1')
         assert response.status_code == OK
         assert len(response.json) == 2
+        print response.json
         assert all(
             scanner in response.json
-            for scanner in [self.SCANNER_ONE, self.SCANNER_TWO]
+            for scanner in [self.SCANNER_TWO, self.SCANNER_ONE]
         )
 
     def test_get_scanner(self, test_app):
         response = test_app.get(self.URI + "/9a8486a6f9cb11e7ac660050b68338ac")
         assert response.status_code == OK
-        assert response.json == self.SCANNER_TWO
+        assert response.json == self.SCANNER_ONE
 
     def test_get_unknown_scanner(self, test_app):
         response = test_app.get(self.URI + "/Unknown")
@@ -87,7 +92,7 @@ class TestScannerStatus:
         response = test_app.get(
             self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
         assert response.status_code == OK
-        assert response.json == {u'job': None, u'power': False, u'owner': None}
+        assert response.json == {u'job': None}
 
     def test_get_unknown_scanner_status_fails(self, test_app):
         response = test_app.get(self.URI + "/42/status")

@@ -8,12 +8,23 @@ import pytz
 from werkzeug.exceptions import NotFound
 
 from .general import json_abort
-from .serialization import job2json, status2json
+from .serialization import job2json, status2json, scanner2json
 from scanomatic.io.scanning_store import ScannerStatus, Scanner
 from scanomatic.util.generic_name import get_generic_name
 
 blueprint = Blueprint("scanners_api", __name__)
 SCANNER_TIMEOUT = timedelta(minutes=5)
+
+def _scanner_is_online(scanner_id, scanning_store):
+    try:
+        return (
+            datetime.now(pytz.utc)
+            - scanning_store.get_latest_scanner_status(
+                scanner_id).server_time
+            < SCANNER_TIMEOUT
+        )
+    except AttributeError:
+        return False
 
 
 @blueprint.route("", methods=['GET'])
@@ -24,14 +35,24 @@ def scanners_get():
         scanning_store.get_free_scanners() if get_free else
         scanning_store.get_all_scanners()
     )
-    return jsonify([scanner._asdict() for scanner in scanners])
+    return jsonify([
+        scanner2json(
+            scanner,
+            _scanner_is_online(scanner.identifier, scanning_store)
+        ) for scanner in scanners
+    ])
 
 
 @blueprint.route("/<scanner>", methods=['GET'])
 def scanner_get(scanner):
     scanning_store = current_app.config['scanning_store']
+
     if scanning_store.has_scanner(scanner):
-        return jsonify(**scanning_store.get_scanner(scanner)._asdict())
+        return jsonify(scanner2json(
+            scanning_store.get_scanner(scanner),
+            _scanner_is_online(scanner, scanning_store)
+        ))
+
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
     )
@@ -68,29 +89,17 @@ def scanner_status_update(scanner):
 def scanner_status_get(scanner):
     scanning_store = current_app.config['scanning_store']
 
-    def _scanner_is_online(scanner_id):
-        try:
-            return (
-                datetime.now(pytz.utc)
-                - scanning_store.get_latest_scanner_status(
-                    scanner_id).server_time
-                < SCANNER_TIMEOUT
-            )
-        except AttributeError:
-            return False
-
     if scanning_store.has_scanner(scanner):
         status = scanning_store.get_latest_scanner_status(scanner)
 
         if status is None:
             status = ScannerStatus(None, None)
 
-        return jsonify(status2json(status, _scanner_is_online(scanner)))
+        return jsonify(status2json(status))
 
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
     )
-
 
 
 class ScannerJob(Resource):

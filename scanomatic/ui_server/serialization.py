@@ -16,13 +16,18 @@ def job2json(job):
     return obj
 
 
-def status2json(status, power=False, owner=None):
+def status2json(status):
     obj = {
         'job': status.job,
-        'power': power,
-        'owner': owner,
     }
     if status.server_time is not None:
         assert is_utc(status.server_time)
         obj['serverTime'] = status.server_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+    return obj
+
+
+def scanner2json(scanner, power=False, owner=None):
+    obj = scanner._asdict()
+    obj['power'] = power
+    obj['owner'] = owner
     return obj
