@@ -7,7 +7,7 @@ linters:
     ignore: 'W503'
   py3k: {  }
   eslint:
-      fixer: true
+    fixer: true
 files:
   ignore:
     - 'node_modules/*'
