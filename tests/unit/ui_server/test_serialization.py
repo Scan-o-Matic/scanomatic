@@ -22,7 +22,6 @@ def test_serialize_job_without_starttime():
         'duration': job.duration.total_seconds(),
         'interval': job.interval.total_seconds(),
         'scannerId': job.scanner_id,
-        'startTime': None,
     }
 
 
