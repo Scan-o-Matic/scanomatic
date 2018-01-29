@@ -28,3 +28,8 @@ button.new-job {
   display: inline-block;
   vertical-align: middle;
 }
+
+.job-status {
+  display: inline-block;
+  font-weight: bold;
+}

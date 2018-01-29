@@ -5,17 +5,25 @@ import SoMPropTypes from '../prop-types';
 import ScanningJobPanel from './ScanningJobPanel';
 
 export default function ScanningRoot(props) {
-    const { scanners } = props;
+    const { onStartJob } = props;
     let newJob = null;
     if (props.newJob) {
-        newJob = <NewScanningJobContainer onClose={props.onCloseNewJob} scanners={scanners} />;
+        newJob = (<NewScanningJobContainer
+            onClose={props.onCloseNewJob}
+            scanners={props.scanners}
+        />);
     }
     let jobList = null;
     if (!newJob) {
         const jobs = [];
         props.jobs.forEach((job) => {
-            const scanner = scanners.filter(s => s.identifier === job.scannerId)[0];
-            jobs.push(<ScanningJobPanel key={job.name} scanner={scanner} {...job} />);
+            const scanner = props.scanners.filter(s => s.identifier === job.scannerId)[0];
+            jobs.push(<ScanningJobPanel
+                onStartJob={() => onStartJob(job)}
+                key={job.name}
+                scanner={scanner}
+                {...job}
+            />);
         });
         jobList = (
             <div className="jobs-list">
@@ -53,6 +61,7 @@ ScanningRoot.propTypes = {
     onCloseNewJob: PropTypes.func.isRequired,
     jobs: PropTypes.arrayOf(SoMPropTypes.scanningJobType).isRequired,
     scanners: PropTypes.arrayOf(SoMPropTypes.scannerType).isRequired,
+    onStartJob: PropTypes.func.isRequired,
 };
 
 ScanningRoot.defaultProps = {

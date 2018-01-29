@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from collections import namedtuple
+import os
 
 
 class ScanJobCollisionError(ValueError):
@@ -18,14 +19,23 @@ Scanner = namedtuple(
 
 class ScanningStore:
     def __init__(self):
-        self._scanners = {
-            '9a8486a6f9cb11e7ac660050b68338ac': Scanner(
-                'Test',
-                False,
-                None,
-                '9a8486a6f9cb11e7ac660050b68338ac'
-            ),
-        }
+        if not int(os.environ.get('SOM_HIDE_TEST_SCANNERS', '0')):
+            self._scanners = {
+                '9a8486a6f9cb11e7ac660050b68338ac': Scanner(
+                    'Never On',
+                    False,
+                    None,
+                    '9a8486a6f9cb11e7ac660050b68338ac',
+                ),
+                '350986224086888954': Scanner(
+                    'Always On',
+                    True,
+                    None,
+                    '350986224086888954',
+                ),
+            }
+        else:
+            self._scanners = {}
         self._scanjobs = {}
 
     def has_scanner(self, identifier):

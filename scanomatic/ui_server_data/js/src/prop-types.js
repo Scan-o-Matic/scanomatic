@@ -32,6 +32,7 @@ const scanningJobType = PropTypes.shape({
     name: PropTypes.string.isRequired,
     interval: PropTypes.number.isRequired,
     scannerId: PropTypes.string.isRequired,
+    disableStart: PropTypes.bool,
 });
 
 export default {
