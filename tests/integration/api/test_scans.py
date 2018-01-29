@@ -9,7 +9,6 @@ import pytest
 
 @pytest.fixture
 def existing_scanjob_id(apiclient):
-    # TODO: create scanner
     scannerid = '9a8486a6f9cb11e7ac660050b68338ac'
     response = apiclient.create_scan_job(scannerid)
     assert response.status_code == HTTPStatus.CREATED
@@ -74,6 +73,7 @@ class TestGetScans(object):
         assert response2.json[0]['startTime'] == scan_data['startTime']
         assert response2.json[0]['endTime'] == scan_data['endTime']
         assert response2.json[0]['digest'] == scan_data['digest']
+        assert response2.json[0]['scanJobId'] == scan_data['scanJobId']
 
 
 class TestGetScan(object):
