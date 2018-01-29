@@ -278,7 +278,12 @@ export function getScanningJobs() {
                 Math.floor((jsonJob.duration % secondsPerDay) / secondsPerHour),
             minutes: (jsonJob.duration % secondsPerHour) / secondsPerMinute,
         },
+        startTime: jsonJob.startTime,
     })));
+}
+
+export function startScanningJob(job) {
+    return API.postJSON(`/api/scan-jobs/${job.identifier}/start`, {});
 }
 
 export function getScanners() {
