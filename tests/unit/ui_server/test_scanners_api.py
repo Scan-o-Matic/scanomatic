@@ -31,12 +31,12 @@ class TestScannerStatus:
 
     URI = '/api/scanners'
     SCANNER_TWO = {
-        u'name': u'Scanner two',
+        u'name': u'Scanner one',
         u'identifier': u'9a8486a6f9cb11e7ac660050b68338ac',
     }
 
     SCANNER_ONE = {
-        u'name': u'Scanner one',
+        u'name': u'Scanner two',
         u'identifier': u'350986224086888954',
     }
 
@@ -87,8 +87,7 @@ class TestScannerStatus:
         response = test_app.get(
             self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
         assert response.status_code == OK
-        assert response.json == {
-            'job': None, 'serverTime': None}
+        assert response.json == {'job': None}
 
     def test_get_unknown_scanner_status_fails(self, test_app):
         response = test_app.get(self.URI + "/42/status")

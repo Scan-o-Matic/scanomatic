@@ -20,9 +20,7 @@ def status2json(status):
     obj = {
         'job': status.job,
     }
-    if status.server_time is None:
-        obj['serverTime'] = None
-    else:
+    if status.server_time is not None:
         assert is_utc(status.server_time)
         obj['serverTime'] = status.server_time.strftime('%Y-%m-%dT%H:%M:%SZ')
     return obj
