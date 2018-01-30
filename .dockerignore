@@ -1,0 +1,8 @@
+**/*.pyc
+*.log
+.git/
+.tox/
+coverage.xml
+node_modules/
+tests/
+result.xml
