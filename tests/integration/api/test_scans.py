@@ -83,7 +83,6 @@ class TestGetScan(object):
 
     def test_existing_scan(self, apiclient, scan_data):
         post_response = apiclient.post_scan(scan_data)
-        print(post_response.json)
         scanid = post_response.json['identifier']
         response = apiclient.get_scan(scanid)
         assert response.status_code == HTTPStatus.OK
@@ -105,5 +104,4 @@ class TestGetScanImage(object):
         response = apiclient.get_scan_image(scanid)
         assert response.status_code == HTTPStatus.OK
         assert response.data == b'foobar'
-        print(response.headers)
         assert response.headers['Content-Type'] == 'image/tiff'
