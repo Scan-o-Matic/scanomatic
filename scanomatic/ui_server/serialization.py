@@ -16,7 +16,7 @@ def job2json(job):
     return obj
 
 
-def status2json(status):
+def scanner_status2json(status):
     obj = {
         'job': status.job,
     }
