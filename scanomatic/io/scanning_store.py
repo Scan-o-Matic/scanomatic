@@ -11,6 +11,14 @@ class ScanJobUnknownError(ValueError):
     pass
 
 
+class DuplicateIdError(ValueError):
+    pass
+
+
+class UnknownIdError(ValueError):
+    pass
+
+
 Scanner = namedtuple(
     'Scanner',
     ['name', 'power', 'owner', 'identifier']
@@ -37,6 +45,7 @@ class ScanningStore:
         else:
             self._scanners = {}
         self._scanjobs = {}
+        self._scans = {}
 
     def has_scanner(self, identifier):
         return identifier in self._scanners
@@ -98,3 +107,20 @@ class ScanningStore:
 
     def has_current_scanjob(self, scanner_id, timepoint):
         return self.get_current_scanjob(scanner_id, timepoint) is not None
+
+    def add_scan(self, scan):
+        if scan.scanjob_id not in self._scanjobs:
+            raise ScanJobUnknownError
+        if scan.id in self._scans:
+            raise DuplicateIdError
+        self._scans[scan.id] = scan
+
+    def get_scans(self):
+        for item in self._scans.values():
+            yield item
+
+    def get_scan(self, scanid):
+        try:
+            return self._scans[scanid]
+        except KeyError:
+            raise UnknownIdError

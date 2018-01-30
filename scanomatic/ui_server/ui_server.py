@@ -15,7 +15,7 @@ from scanomatic.io.logger import Logger, LOG_RECYCLE_TIME
 from scanomatic.io.paths import Paths
 from scanomatic.io.rpc_client import get_client
 from scanomatic.io.backup import backup_file
-from scanomatic.io.scanstore import ScanStore
+from scanomatic.io.imagestore import ImageStore
 from scanomatic.io.scanning_store import ScanningStore
 
 from . import qc_api
@@ -32,6 +32,7 @@ from . import status_api
 from . import ui_pages
 from . import scanners_api
 from . import scan_jobs_api
+from . import scans_api
 
 _URL = None
 _LOGGER = Logger("UI-server")
@@ -54,7 +55,7 @@ def launch_server(host, port, debug):
     global _URL, _DEBUG_MODE
     _DEBUG_MODE = debug
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
-    app.config['scanstore'] = ScanStore(Config().paths.projects_root)
+    app.config['imagestore'] = ImageStore(Config().paths.projects_root)
 
     rpc_client = get_client(admin=True)
 
@@ -97,6 +98,7 @@ def launch_server(host, port, debug):
     app.register_blueprint(
         scanners_api.blueprint, url_prefix="/api/scanners"
     )
+    app.register_blueprint(scans_api.blueprint, url_prefix="/api/scans")
 
     if debug:
         CORS(app)

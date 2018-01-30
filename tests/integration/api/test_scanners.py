@@ -1,60 +1,12 @@
 from __future__ import absolute_import
 
 from httplib import OK, NOT_FOUND
-import json
-import uuid
 
 from freezegun import freeze_time
-import pytest
 from flask import Flask
-
-from scanomatic.ui_server import scanners_api
-from scanomatic.ui_server import scan_jobs_api
-from scanomatic.ui_server.ui_server import add_configs
-
-
-@pytest.fixture
-def app():
-    app = Flask(__name__)
-    app.register_blueprint(scanners_api.blueprint, url_prefix="/scanners")
-    app.register_blueprint(scan_jobs_api.blueprint, url_prefix="/scan-jobs")
-    add_configs(app)
-    return app
-
-
-@pytest.fixture
-def apiclient(client):
-    class APIClient:
-        def create_scan_job(
-            self, scannerid, name=None, duration=600, interval=300,
-        ):
-            if name is None:
-                name = uuid.uuid1().hex
-            return client.post(
-                '/scan-jobs',
-                data=json.dumps({
-                    'name': name,
-                    'duration': duration,
-                    'interval': interval,
-                    'scannerId': scannerid,
-                }),
-                content_type='application/json',
-            )
-
-        def get_scan_job(self, jobid):
-            return client.get('/scan-jobs/{}'.format(jobid))
-
-        def start_scan_job(self, jobid):
-            return client.post('/scan-jobs/{}/start'.format(jobid))
-
-        def get_scanner_job(self, scannerid):
-            return client.get('/scanners/{}/job'.format(scannerid))
-
-    return APIClient()
 
 
 class TestGetScannerJob(object):
-    URI = '/api/scanners/{}/job'
     SCANNERID = '9a8486a6f9cb11e7ac660050b68338ac'
 
     def test_invalid_scanner(self, apiclient):
