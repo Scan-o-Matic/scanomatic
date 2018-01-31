@@ -1,6 +1,6 @@
 from __future__ import absolute_import
-from datetime import datetime
-from httplib import NOT_FOUND
+from datetime import datetime, timedelta
+from httplib import NOT_FOUND, OK, BAD_REQUEST, CREATED
 
 from flask import request, jsonify, Blueprint, current_app
 from flask_restful import Api, Resource
@@ -8,9 +8,25 @@ import pytz
 from werkzeug.exceptions import NotFound
 
 from .general import json_abort
-from .serialization import job2json
+from .serialization import job2json, scanner_status2json, scanner2json
+from scanomatic.io.scanning_store import (
+    ScannerStatus, Scanner, DuplicateNameError)
+from scanomatic.util.generic_name import get_generic_name
 
 blueprint = Blueprint("scanners_api", __name__)
+SCANNER_TIMEOUT = timedelta(minutes=5)
+
+
+def _scanner_is_online(scanner_id, scanning_store):
+    try:
+        return (
+            datetime.now(pytz.utc)
+            - scanning_store.get_latest_scanner_status(
+                scanner_id).server_time
+            < SCANNER_TIMEOUT
+        )
+    except AttributeError:
+        return False
 
 
 @blueprint.route("", methods=['GET'])
@@ -21,14 +37,72 @@ def scanners_get():
         scanning_store.get_free_scanners() if get_free else
         scanning_store.get_all_scanners()
     )
-    return jsonify([scanner._asdict() for scanner in scanners])
+    return jsonify([
+        scanner2json(
+            scanner,
+            _scanner_is_online(scanner.identifier, scanning_store)
+        ) for scanner in scanners
+    ])
 
 
 @blueprint.route("/<scanner>", methods=['GET'])
 def scanner_get(scanner):
     scanning_store = current_app.config['scanning_store']
+
     if scanning_store.has_scanner(scanner):
-        return jsonify(**scanning_store.get_scanner(scanner)._asdict())
+        return jsonify(scanner2json(
+            scanning_store.get_scanner(scanner),
+            _scanner_is_online(scanner, scanning_store)
+        ))
+
+    return json_abort(
+        NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
+    )
+
+
+@blueprint.route("/<scanner>/status", methods=['PUT'])
+def scanner_status_update(scanner):
+    scanning_store = current_app.config['scanning_store']
+
+    def _add_scanner(scanner_id):
+        try:
+            name = get_generic_name()
+            scanning_store.add_scanner(Scanner(name, scanner_id))
+        except DuplicateNameError:
+            name = get_generic_name()
+            scanning_store.add_scanner(Scanner(name, scanner_id))
+
+    if not scanning_store.has_scanner(scanner):
+        _add_scanner(scanner)
+        status_code = CREATED
+    else:
+        status_code = OK
+
+    status = request.get_json()
+    try:
+        scanning_store.add_scanner_status(
+            scanner, ScannerStatus(status["job"], datetime.now(pytz.utc)))
+    except KeyError:
+        return json_abort(
+            BAD_REQUEST,
+            reason="Got malformed status '{}'".format(status)
+        )
+
+    return "", status_code
+
+
+@blueprint.route("/<scanner>/status", methods=['GET'])
+def scanner_status_get(scanner):
+    scanning_store = current_app.config['scanning_store']
+
+    if scanning_store.has_scanner(scanner):
+        status = scanning_store.get_latest_scanner_status(scanner)
+
+        if status is None:
+            status = ScannerStatus(None, None)
+
+        return jsonify(scanner_status2json(status))
+
     return json_abort(
         NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
     )

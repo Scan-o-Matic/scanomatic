@@ -35,40 +35,36 @@ JOB2 = ScanJob(
     scanner_id="9a8486a6f9cb11e7ac660050b68338ac",
 )
 
-SCANNER = Scanner(
-    'Never On',
-    False,
-    None,
+SCANNER_ONE = Scanner(
+    'Scanner one',
     '9a8486a6f9cb11e7ac660050b68338ac',
 )
 
-SCANNER_POWER = Scanner(
-    'Always On',
-    True,
-    None,
+SCANNER_TWO = Scanner(
+    'Scanner two',
     '350986224086888954',
 )
 
 
 class TestScanners:
     def test_has_test_scanner(self, scanning_store):
-        assert scanning_store.has_scanner(SCANNER.identifier)
+        assert scanning_store.has_scanner(SCANNER_ONE.identifier)
 
     def test_not_having_unkown_scanner(self, scanning_store):
         assert scanning_store.has_scanner("Unknown") is False
 
-    @pytest.mark.parametrize('scanner', (SCANNER, SCANNER_POWER))
+    @pytest.mark.parametrize('scanner', (SCANNER_ONE, SCANNER_TWO))
     def test_getting_scanner(self, scanning_store, scanner):
         assert scanning_store.get_scanner(scanner.identifier) == scanner
 
     def test_get_free(self, scanning_store):
         assert set(scanning_store.get_free_scanners()) == {
-            SCANNER, SCANNER_POWER,
+            SCANNER_ONE, SCANNER_TWO,
         }
 
     def test_get_all(self, scanning_store):
         assert set(scanning_store.get_all_scanners()) == {
-            SCANNER, SCANNER_POWER,
+            SCANNER_ONE, SCANNER_TWO,
         }
 
     @patch.dict('os.environ', {'SOM_HIDE_TEST_SCANNERS': '1'})

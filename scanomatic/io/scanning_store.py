@@ -1,6 +1,8 @@
 from __future__ import absolute_import
+from datetime import datetime
 from collections import namedtuple
 import os
+import pytz
 
 
 class ScanJobCollisionError(ValueError):
@@ -15,13 +17,21 @@ class DuplicateIdError(ValueError):
     pass
 
 
+class DuplicateNameError(ValueError):
+    pass
+
+
 class UnknownIdError(ValueError):
     pass
 
 
 Scanner = namedtuple(
     'Scanner',
-    ['name', 'power', 'owner', 'identifier']
+    ['name', 'identifier']
+)
+ScannerStatus = namedtuple(
+    'ScannerStatus',
+    ['job', 'server_time']
 )
 
 
@@ -30,20 +40,17 @@ class ScanningStore:
         if not int(os.environ.get('SOM_HIDE_TEST_SCANNERS', '0')):
             self._scanners = {
                 '9a8486a6f9cb11e7ac660050b68338ac': Scanner(
-                    'Never On',
-                    False,
-                    None,
+                    'Scanner one',
                     '9a8486a6f9cb11e7ac660050b68338ac',
                 ),
                 '350986224086888954': Scanner(
-                    'Always On',
-                    True,
-                    None,
+                    'Scanner two',
                     '350986224086888954',
                 ),
             }
         else:
             self._scanners = {}
+        self._scanner_statuses = {scanner: [] for scanner in self._scanners}
         self._scanjobs = {}
         self._scans = {}
 
@@ -53,10 +60,41 @@ class ScanningStore:
     def get_scanner(self, identifier):
         return self._scanners[identifier]
 
+    def get_scanner_by_name(self, name):
+        scanners = [
+            scanner for scanner in self._scanners
+            if self._scanners[scanner].name == name
+        ]
+        if len(scanners) > 1:
+            raise DuplicateNameError(
+                "Duplicate name '{}' in scanner list".format(name)
+            )
+        elif len(scanners) == 0:
+            return None
+        else:
+            return scanners[0]
+
+    def add_scanner(self, scanner):
+        if self.has_scanner(scanner.identifier):
+            raise DuplicateIdError(
+                "Cannot add duplicate scanner with id '{}'".format(
+                    scanner.identifier)
+            )
+        elif self.get_scanner_by_name(scanner.name) is not None:
+            raise DuplicateNameError(
+                "Cannot add duplicate scanner with name '{}'".format(
+                    scanner.name)
+            )
+        self._scanners[scanner.identifier] = scanner
+        self._scanner_statuses[scanner.identifier] = []
+
     def get_free_scanners(self):
         return [
             scanner for scanner in self._scanners.values()
-            if scanner.owner is None
+            if self.has_current_scanjob(
+                scanner.identifier,
+                datetime.now(pytz.utc)
+            ) is False
         ]
 
     def get_all_scanners(self):
@@ -124,3 +162,18 @@ class ScanningStore:
             return self._scans[scanid]
         except KeyError:
             raise UnknownIdError
+
+    def get_scanner_status_list(self, scanner_id):
+        try:
+            return self._scanner_statuses[scanner_id]
+        except KeyError:
+            raise UnknownIdError
+
+    def get_latest_scanner_status(self, scanner_id):
+        try:
+            return self.get_scanner_status_list(scanner_id)[-1]
+        except IndexError:
+            return None
+
+    def add_scanner_status(self, scanner_id, status):
+        self.get_scanner_status_list(scanner_id).append(status)

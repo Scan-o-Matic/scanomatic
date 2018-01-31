@@ -27,3 +27,21 @@ def scan2json(scan):
         'scanJobId': scan.scanjob_id,
         'digest': scan.digest,
     }
+
+
+def scanner_status2json(status):
+    obj = {
+        'job': status.job,
+    }
+    if status.server_time is not None:
+        assert is_utc(status.server_time)
+        obj['serverTime'] = status.server_time.strftime(DATETIME_FORMAT)
+    return obj
+
+
+def scanner2json(scanner, power=False, owner=None):
+    obj = scanner._asdict()
+    obj['power'] = power
+    if owner is not None:
+        obj['owner'] = owner
+    return obj

@@ -1,8 +1,10 @@
 from __future__ import absolute_import
-from httplib import OK, NOT_FOUND
+from httplib import OK, NOT_FOUND, BAD_REQUEST, CREATED
+import json
 
 from flask import Flask
 import pytest
+import freezegun
 
 from scanomatic.io.paths import Paths
 from scanomatic.ui_server import scanners_api
@@ -28,18 +30,16 @@ def test_app(app):
 class TestScannerStatus:
 
     URI = '/api/scanners'
-    SCANNER_OFF = {
-        u'name': u'Never On',
-        u'owner': None,
-        u'power': False,
+    SCANNER_ONE = {
+        u'name': u'Scanner one',
         u'identifier': u'9a8486a6f9cb11e7ac660050b68338ac',
+        u'power': False,
     }
 
-    SCANNER_ON = {
-        u'name': u'Always On',
-        u'owner': None,
-        u'power': True,
+    SCANNER_TWO = {
+        u'name': u'Scanner two',
         u'identifier': u'350986224086888954',
+        u'power': False,
     }
 
     def test_get_all_implicit(self, test_app):
@@ -48,7 +48,7 @@ class TestScannerStatus:
         assert len(response.json) == 2
         assert all(
             scanner in response.json
-            for scanner in [self.SCANNER_ON, self.SCANNER_OFF]
+            for scanner in [self.SCANNER_TWO, self.SCANNER_ONE]
         )
 
     def test_get_free_scanners(self, test_app):
@@ -57,15 +57,56 @@ class TestScannerStatus:
         assert len(response.json) == 2
         assert all(
             scanner in response.json
-            for scanner in [self.SCANNER_ON, self.SCANNER_OFF]
+            for scanner in [self.SCANNER_TWO, self.SCANNER_ONE]
         )
 
     def test_get_scanner(self, test_app):
         response = test_app.get(self.URI + "/9a8486a6f9cb11e7ac660050b68338ac")
         assert response.status_code == OK
-        assert response.json == self.SCANNER_OFF
+        assert response.json == self.SCANNER_ONE
 
     def test_get_unknown_scanner(self, test_app):
         response = test_app.get(self.URI + "/Unknown")
         assert response.status_code == NOT_FOUND
         assert response.json['reason'] == "Scanner 'Unknown' unknown"
+
+    def test_add_scanner_status(self, test_app):
+        with freezegun.freeze_time('1985-10-26 01:20', tz_offset=0):
+            response = test_app.put(
+                self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+                data=json.dumps({u"job": u"foo"}),
+                headers={'Content-Type': 'application/json'}
+            )
+            assert response.status_code == OK
+
+            response = test_app.get(
+                self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
+            assert response.status_code == OK
+            assert response.json["job"] == "foo"
+            assert response.json["serverTime"] == "1985-10-26T01:20:00Z"
+
+    def test_get_scanner_status(self, test_app):
+        response = test_app.get(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
+        assert response.status_code == OK
+        assert response.json == {u'job': None}
+
+    def test_get_unknown_scanner_status_fails(self, test_app):
+        response = test_app.get(self.URI + "/42/status")
+        assert response.status_code == NOT_FOUND
+
+    def test_add_bad_scanner_status_fails(self, test_app):
+        response = test_app.put(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+            data=json.dumps({"foo": "foo", "bar": "bar"}),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == BAD_REQUEST
+
+    def test_add_unknown_scanner_status(self, test_app):
+        response = test_app.put(
+            self.URI + "/42/status",
+            data=json.dumps({"job": "foo"}),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == CREATED
