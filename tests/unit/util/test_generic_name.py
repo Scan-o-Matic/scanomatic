@@ -1,14 +1,18 @@
 import pytest
+from string import split
 
-from scanomatic.util.generic_name import get_generic_name
+from scanomatic.util.generic_name import get_generic_name, get_name_list
 
 
-@pytest.mark.parametrize(
-    "seed,expected",
-    [
-        (42, "Generic Goulds emerald"),
-        (1764, "Generic Dusky woodswallow"),
-    ]
-)
-def test_generic_name_from_int(seed, expected):
-    assert get_generic_name(seed) == expected
+def test_get_generic_name():
+    name = get_generic_name()
+    name_list = get_name_list()
+    assert split(name, maxsplit=1)[0] == "Generic"
+    assert split(name, maxsplit=1)[1] in name_list
+
+
+def test_get_name_list():
+    name_list = get_name_list()
+    assert isinstance(name_list, list)
+    assert len(name_list) > 1
+    assert "Long-tailed tit" in name_list

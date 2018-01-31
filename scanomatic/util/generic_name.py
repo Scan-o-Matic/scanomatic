@@ -1,9 +1,8 @@
-from random import Random
+import random
 
 
-def get_generic_name(seed):
-    rand = Random(seed)
-    return "Generic {}".format(rand.choice(get_name_list()))
+def get_generic_name():
+    return "Generic {}".format(random.choice(get_name_list()))
 
 
 def get_name_list(filename='scanomatic/util/birds.txt'):
