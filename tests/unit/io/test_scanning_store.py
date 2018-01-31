@@ -7,8 +7,8 @@ from mock import patch
 from pytz import utc
 
 from scanomatic.io.scanning_store import (
-    ScanningStore, ScanJobCollisionError, ScanJobUnknownError, Scanner,
-    DuplicateIdError, UnknownIdError
+    ScanningStore, Scanner, ScannerStatus, ScanJobCollisionError,
+    ScanJobUnknownError, DuplicateIdError, DuplicateNameError, UnknownIdError
 )
 from scanomatic.models.scanjob import ScanJob
 from scanomatic.models.scan import Scan
@@ -50,7 +50,7 @@ class TestScanners:
     def test_has_test_scanner(self, scanning_store):
         assert scanning_store.has_scanner(SCANNER_ONE.identifier)
 
-    def test_not_having_unkown_scanner(self, scanning_store):
+    def test_not_having_unknown_scanner(self, scanning_store):
         assert scanning_store.has_scanner("Unknown") is False
 
     @pytest.mark.parametrize('scanner', (SCANNER_ONE, SCANNER_TWO))
@@ -75,6 +75,54 @@ class TestScanners:
         then the patch doesn't work.
         """
         assert ScanningStore().get_all_scanners() == []
+
+    def test_add_scanner(self, scanning_store):
+        scanner = Scanner("Deep Thought", "42")
+        scanning_store.add_scanner(scanner)
+        assert set(scanning_store.get_all_scanners()) == {
+            scanner, SCANNER_ONE, SCANNER_TWO}
+
+    def test_no_add_scanner_duplicate_id(self, scanning_store):
+        with pytest.raises(DuplicateIdError):
+            scanning_store.add_scanner(SCANNER_ONE)
+
+    def test_no_add_scanner_duplicate_name(self, scanning_store):
+        scanner = Scanner("Scanner two", "2")
+        with pytest.raises(DuplicateNameError):
+            scanning_store.add_scanner(scanner)
+
+    def test_get_scanner(self, scanning_store):
+        assert scanning_store.get_scanner(
+            '9a8486a6f9cb11e7ac660050b68338ac') == SCANNER_ONE
+
+    def test_no_get_scanner_by_unknown_id(self, scanning_store):
+        with pytest.raises(UnknownIdError):
+            assert scanning_store.get_scanner("42")
+
+    def test_get_scanner_by_name(self, scanning_store):
+        assert scanning_store.get_scanner_by_name("Scanner two") == SCANNER_TWO
+
+    def test_no_get_scanner_by_unknown_name(self, scanning_store):
+        assert scanning_store.get_scanner_by_name("Deep Thought") is None
+
+    def test_get_scanner_status_list(self, scanning_store):
+        assert scanning_store.get_scanner_status_list(
+            SCANNER_ONE.identifier) == []
+
+    def test_no_get_scanner_status_list_unknown(self, scanning_store):
+        with pytest.raises(UnknownIdError):
+            scanning_store.get_scanner_status_list("42")
+
+    def test_get_lastest_scanner_status(self, scanning_store):
+        assert scanning_store.get_latest_scanner_status(
+            '9a8486a6f9cb11e7ac660050b68338ac') is None
+
+    def test_add_scanner_status(self, scanning_store):
+        status = ScannerStatus("Work", datetime.now(utc))
+        scanning_store.add_scanner_status(
+            '9a8486a6f9cb11e7ac660050b68338ac', status)
+        assert scanning_store.get_latest_scanner_status(
+            '9a8486a6f9cb11e7ac660050b68338ac') == status
 
 
 class TestAddJob:

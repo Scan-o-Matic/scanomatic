@@ -58,11 +58,14 @@ class ScanningStore:
         return identifier in self._scanners
 
     def get_scanner(self, identifier):
-        return self._scanners[identifier]
+        try:
+            return self._scanners[identifier]
+        except KeyError:
+            raise UnknownIdError
 
     def get_scanner_by_name(self, name):
         scanners = [
-            scanner for scanner in self._scanners
+            self._scanners[scanner] for scanner in self._scanners
             if self._scanners[scanner].name == name
         ]
         if len(scanners) > 1:
