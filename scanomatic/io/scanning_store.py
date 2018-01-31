@@ -13,6 +13,14 @@ class ScanJobUnknownError(ValueError):
     pass
 
 
+class DuplicateIdError(ValueError):
+    pass
+
+
+class UnknownIdError(ValueError):
+    pass
+
+
 Scanner = namedtuple(
     'Scanner',
     ['name', 'identifier']
@@ -40,6 +48,7 @@ class ScanningStore:
             self._scanners = {}
         self._scanner_statuses = {scanner: [] for scanner in self._scanners}
         self._scanjobs = {}
+        self._scans = {}
 
     def has_scanner(self, identifier):
         return identifier in self._scanners
@@ -132,15 +141,3 @@ class ScanningStore:
 
     def has_current_scanjob(self, scanner_id, timepoint):
         return self.get_current_scanjob(scanner_id, timepoint) is not None
-
-    def get_scanner_status_list(self, scanner_id):
-        return self._scanner_statuses[scanner_id]
-
-    def get_latest_scanner_status(self, scanner_id):
-        try:
-            return self.get_scanner_status_list(scanner_id)[-1]
-        except IndexError:
-            return None
-
-    def add_scanner_status(self, scanner_id, status):
-        self.get_scanner_status_list(scanner_id).append(status)
