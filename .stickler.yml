@@ -1,6 +1,6 @@
+---
 fixers:
   enable: true
-
 linters:
   flake8: {  }
   pep8:
@@ -8,6 +8,8 @@ linters:
   py3k: {  }
   eslint:
     fixer: true
+  yamllint: {  }
+  csslint: {  }
 files:
   ignore:
     - 'node_modules/*'
