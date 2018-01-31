@@ -66,9 +66,9 @@ class ScanningStore:
             if self._scanners[scanner].name == name
         ]
         if len(scanners) > 1:
-            raise DuplicateNameError("Duplicate name '{}' in scanner list".format(
-                name
-            ))
+            raise DuplicateNameError(
+                "Duplicate name '{}' in scanner list".format(name)
+            )
         elif len(scanners) == 0:
             return None
         else:
