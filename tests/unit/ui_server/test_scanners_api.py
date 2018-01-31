@@ -33,14 +33,12 @@ class TestScannerStatus:
     SCANNER_ONE = {
         u'name': u'Scanner one',
         u'identifier': u'9a8486a6f9cb11e7ac660050b68338ac',
-        u'owner': None,
         u'power': False,
     }
 
     SCANNER_TWO = {
         u'name': u'Scanner two',
         u'identifier': u'350986224086888954',
-        u'owner': None,
         u'power': False,
     }
 

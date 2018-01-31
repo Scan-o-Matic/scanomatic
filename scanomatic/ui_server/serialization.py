@@ -42,5 +42,6 @@ def scanner_status2json(status):
 def scanner2json(scanner, power=False, owner=None):
     obj = scanner._asdict()
     obj['power'] = power
-    obj['owner'] = owner
+    if owner is not None:
+        obj['owner'] = owner
     return obj
