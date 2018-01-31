@@ -17,6 +17,10 @@ class DuplicateIdError(ValueError):
     pass
 
 
+class DuplicateNameError(ValueError):
+    pass
+
+
 class UnknownIdError(ValueError):
     pass
 
@@ -62,7 +66,7 @@ class ScanningStore:
             if self._scanners[scanner].name == name
         ]
         if len(scanners) > 1:
-            raise ValueError("Duplicate name '{}' in scanner list".format(
+            raise DuplicateNameError("Duplicate name '{}' in scanner list".format(
                 name
             ))
         elif len(scanners) == 0:
@@ -72,12 +76,12 @@ class ScanningStore:
 
     def add_scanner(self, scanner):
         if self.has_scanner(scanner.identifier):
-            raise ValueError(
+            raise DuplicateIdError(
                 "Cannot add duplicate scanner with id '{}'".format(
                     scanner.identifier)
             )
         elif self.get_scanner_by_name(scanner.name) is not None:
-            raise ValueError(
+            raise DuplicateNameError(
                 "Cannot add duplicate scanner with name '{}'".format(
                     scanner.name)
             )
@@ -141,3 +145,35 @@ class ScanningStore:
 
     def has_current_scanjob(self, scanner_id, timepoint):
         return self.get_current_scanjob(scanner_id, timepoint) is not None
+
+    def add_scan(self, scan):
+        if scan.scanjob_id not in self._scanjobs:
+            raise ScanJobUnknownError
+        if scan.id in self._scans:
+            raise DuplicateIdError
+        self._scans[scan.id] = scan
+
+    def get_scans(self):
+        for item in self._scans.values():
+            yield item
+
+    def get_scan(self, scanid):
+        try:
+            return self._scans[scanid]
+        except KeyError:
+            raise UnknownIdError
+
+    def get_scanner_status_list(self, scanner_id):
+        try:
+            return self._scanner_statuses[scanner_id]
+        except KeyError:
+            raise UnknownIdError
+
+    def get_latest_scanner_status(self, scanner_id):
+        try:
+            return self.get_scanner_status_list(scanner_id)[-1]
+        except IndexError:
+            return None
+
+    def add_scanner_status(self, scanner_id, status):
+        self.get_scanner_status_list(scanner_id).append(status)
