@@ -1,10 +1,11 @@
 from __future__ import absolute_import
-from httplib import OK, NOT_FOUND, BAD_REQUEST, CREATED
+from httplib import OK, NOT_FOUND, BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR
 import json
 
 from flask import Flask
 import pytest
 import freezegun
+import mock
 
 from scanomatic.io.paths import Paths
 from scanomatic.ui_server import scanners_api
@@ -110,3 +111,15 @@ class TestScannerStatus:
             headers={'Content-Type': 'application/json'}
         )
         assert response.status_code == CREATED
+
+    def test_add_unkown_scanner_status_duplicate_name(self, test_app):
+        with mock.patch(
+            'scanomatic.ui_server.scanners_api.get_generic_name',
+            return_value="Scanner two"
+        ):
+            response = test_app.put(
+                self.URI + "/42/status",
+                data=json.dumps({"job": "foo"}),
+                headers={'Content-Type': 'application/json'}
+            )
+        assert response.status_code == INTERNAL_SERVER_ERROR
