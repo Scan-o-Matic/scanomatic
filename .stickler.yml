@@ -2,14 +2,14 @@
 fixers:
   enable: true
 linters:
-  flake8: { }
+  flake8: {}
   pep8:
     ignore: 'W503'
-  py3k: { }
+  py3k: {}
   eslint:
     fixer: true
-  yamllint: { }
-  csslint: { }
+  yamllint: {}
+  csslint: {}
 files:
   ignore:
     - 'node_modules/*'
