@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from datetime import datetime, timedelta
-from httplib import NOT_FOUND, OK, BAD_REQUEST, CREATED
+from httplib import NOT_FOUND, OK, BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR
 
 from flask import request, jsonify, Blueprint, current_app
 from flask_restful import Api, Resource
@@ -69,8 +69,10 @@ def scanner_status_update(scanner):
             name = get_generic_name()
             scanning_store.add_scanner(Scanner(name, scanner_id))
         except DuplicateNameError:
-            name = get_generic_name()
-            scanning_store.add_scanner(Scanner(name, scanner_id))
+            return json_abort(
+                INTERNAL_SERVER_ERROR,
+                reason="Failed to create scanner, please try again"
+            )
 
     if not scanning_store.has_scanner(scanner):
         _add_scanner(scanner)
