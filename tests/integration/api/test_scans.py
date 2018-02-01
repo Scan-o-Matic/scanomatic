@@ -12,7 +12,9 @@ def existing_scanjob_id(apiclient):
     scannerid = '9a8486a6f9cb11e7ac660050b68338ac'
     response = apiclient.create_scan_job(scannerid)
     assert response.status_code == HTTPStatus.CREATED
-    return response.json['identifier']
+    scanjobid = response.json['identifier']
+    assert apiclient.start_scan_job(scanjobid).status_code == HTTPStatus.OK
+    return scanjobid
 
 
 @pytest.fixture
