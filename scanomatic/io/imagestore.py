@@ -32,10 +32,6 @@ class ImageStore(object):
             raise ImageNotFoundError
 
     def _mk_image_path(self, scan):
-        epoch = datetime(1970, 1, 1, tzinfo=pytz.utc)
-        timestamp = (scan.start_time - epoch).total_seconds()
         dirname = scan.scanjob_id
-        filename = '{jobid}_{timestamp:.0f}.tiff'.format(
-            jobid=scan.scanjob_id, timestamp=timestamp,
-        )
+        filename = '{}.tiff'.format(scan.id)
         return os.path.join(self._path, dirname, filename)
