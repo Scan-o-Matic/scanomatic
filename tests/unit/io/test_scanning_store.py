@@ -102,6 +102,8 @@ class TestScanners:
     def test_get_scanner_by_name(self, scanning_store):
         assert scanning_store.get_scanner_by_name("Scanner two") == SCANNER_TWO
 
+
+class TestScannerStatus:
     def test_no_get_scanner_by_unknown_name(self, scanning_store):
         assert scanning_store.get_scanner_by_name("Deep Thought") is None
 
@@ -113,9 +115,15 @@ class TestScanners:
         with pytest.raises(UnknownIdError):
             scanning_store.get_scanner_status_list("42")
 
-    def test_get_lastest_scanner_status(self, scanning_store):
+    def test_get_lastest_scanner_status_empty(self, scanning_store):
         assert scanning_store.get_latest_scanner_status(
             '9a8486a6f9cb11e7ac660050b68338ac') is None
+
+    def test_get_lastest_scanner_status(self, scanning_store):
+        scanning_store._scanner_statuses[
+            '9a8486a6f9cb11e7ac660050b68338ac'] = ["1", "2"]
+        assert scanning_store.get_latest_scanner_status(
+            '9a8486a6f9cb11e7ac660050b68338ac') == "2"
 
     def test_add_scanner_status(self, scanning_store):
         status = ScannerStatus("Work", datetime.now(utc))
