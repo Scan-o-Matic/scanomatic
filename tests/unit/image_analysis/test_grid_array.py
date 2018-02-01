@@ -70,6 +70,7 @@ def test_get_im_slice(easy_plate, grid_cell, expected_type, expected_shape):
         assert im_slice.shape == expected_shape
 
 
+@pytest.mark.slow
 class TestGridDetection():
 
     def test_grid_shape_is_correct(self, grid_array):

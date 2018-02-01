@@ -88,6 +88,7 @@ class TestGetGridParameters:
         assert new_spacings is None
 
 
+@pytest.mark.slow
 class TestGetGrid:
 
     def test_getting_grid_easy_plate(self, easy_plate):

@@ -37,6 +37,7 @@ def proj1_analysis(proj1, tmpdir):
     return namedtuple('proj1_analysis', 'job, workdir')(job, workdir)
 
 
+@pytest.mark.slow
 def test_colony_sizes(proj1, proj1_analysis):
     analysis_effector = AnalysisEffector(proj1_analysis.job)
     analysis_effector.setup(proj1_analysis.job, False)
@@ -49,6 +50,7 @@ def test_colony_sizes(proj1, proj1_analysis):
     numpy.testing.assert_allclose(expected, actual, rtol=.01)
 
 
+@pytest.mark.slow
 def test_grid_plate(proj1, proj1_analysis):
     analysis_effector = AnalysisEffector(proj1_analysis.job)
     analysis_effector.setup(proj1_analysis.job, False)
@@ -61,6 +63,7 @@ def test_grid_plate(proj1, proj1_analysis):
     numpy.testing.assert_allclose(expected, actual, atol=3)
 
 
+@pytest.mark.slow
 def test_grid_size(proj1, proj1_analysis):
     analysis_effector = AnalysisEffector(proj1_analysis.job)
     analysis_effector.setup(proj1_analysis.job, False)
