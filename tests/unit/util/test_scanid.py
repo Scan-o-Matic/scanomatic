@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 import pytest
 from pytz import utc
 
-from scanomatic.scanning import generate_scan_id
 from scanomatic.models.scanjob import ScanJob
+from scanomatic.util.scanid import generate_scan_id
 
 
 @pytest.fixture
