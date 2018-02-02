@@ -8,6 +8,7 @@ numpy
 odfpy
 pandas
 pillow
+prometheus-client
 psutil
 pytz
 requests

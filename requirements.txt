@@ -24,6 +24,7 @@ odfpy==1.3.4
 olefile==0.44             # via pillow
 pandas==0.20.1
 pillow==4.1.1
+prometheus-client==0.1.1
 psutil==5.2.2
 pyparsing==2.2.0          # via matplotlib
 python-dateutil==2.6.0    # via aniso8601, matplotlib, pandas
