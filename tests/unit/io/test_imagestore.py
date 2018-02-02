@@ -20,22 +20,23 @@ def scan():
 
 
 @pytest.fixture
-def filename():
-    return 'bbbb_499137600.tiff'
-
-
-@pytest.fixture
 def imagestore(tmpdir):
     return ImageStore(str(tmpdir))
 
 
 class TestPutImage:
-    def test_directory_exists(self, imagestore, tmpdir, scan):
+    def test_file_content(self, imagestore, tmpdir, scan):
         scanjobdir = tmpdir.mkdir('bbbb')
         imagestore.put(b'I am an image', scan)
-        imagepath = scanjobdir.join('bbbb_499137600.tiff')
-        assert imagepath in scanjobdir.listdir()
-        assert imagepath.read() == 'I am an image'
+        files = scanjobdir.listdir()
+        assert len(files) == 1
+        assert files[0].read() == 'I am an image'
+
+    def test_file_name(self, imagestore, tmpdir, scan):
+        scanjobdir = tmpdir.mkdir('bbbb')
+        imagepath = scanjobdir.join('aaaa.tiff')
+        imagestore.put(b'I am an image', scan)
+        assert scanjobdir.listdir() == [imagepath]
 
     def test_create_directory(self, imagestore, tmpdir, scan):
         imagestore.put(b'I am an image', scan)
@@ -44,7 +45,7 @@ class TestPutImage:
 
 class TestGetImage:
     def test_existing_image(self, imagestore, tmpdir, scan):
-        imagepath = tmpdir.mkdir('bbbb').join('bbbb_499137600.tiff')
+        imagepath = tmpdir.mkdir('bbbb').join('aaaa.tiff')
         with imagepath.open('wb') as f:
             f.write(b'I am an image')
         image = imagestore.get(scan)

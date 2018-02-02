@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 import httplib as HTTPStatus
 from io import BytesIO
-from uuid import uuid1
 
 from flask import Blueprint, current_app, send_file
 from flask_restful import Api, Resource, reqparse, inputs
@@ -13,6 +12,7 @@ from .general import json_abort
 from .serialization import scan2json
 from scanomatic.io.scanning_store import ScanJobUnknownError, UnknownIdError
 from scanomatic.models.scan import Scan
+from scanomatic.util.scanid import generate_scan_id
 
 
 class ScanCollection(Resource):
@@ -58,14 +58,14 @@ class ScanCollection(Resource):
         )
         args = parser.parse_args(strict=True)
         try:
-            db.get_scanjob(args.scanjob_id)
+            scanjob = db.get_scanjob(args.scanjob_id)
         except ScanJobUnknownError:
             return json_abort(
                 HTTPStatus.BAD_REQUEST,
                 message='Unknown scan job',
             )
         scan = Scan(
-            id=uuid1().hex,
+            id=generate_scan_id(scanjob, args.start_time),
             start_time=args.start_time,
             end_time=args.end_time,
             digest=args.digest,
