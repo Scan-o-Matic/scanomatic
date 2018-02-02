@@ -33,6 +33,7 @@ from . import ui_pages
 from . import scanners_api
 from . import scan_jobs_api
 from . import scans_api
+from .flask_prometheus import Prometheus
 
 _URL = None
 _LOGGER = Logger("UI-server")
@@ -55,6 +56,7 @@ def launch_server(host, port, debug):
     global _URL, _DEBUG_MODE
     _DEBUG_MODE = debug
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
+    Prometheus(app)
     app.config['imagestore'] = ImageStore(Config().paths.projects_root)
 
     rpc_client = get_client(admin=True)
