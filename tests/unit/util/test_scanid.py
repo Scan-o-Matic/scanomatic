@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from datetime import datetime, timedelta
 
 import pytest
@@ -21,7 +22,7 @@ def scanjob():
 
 @pytest.mark.parametrize('delay, scanid', [
     (timedelta(minutes=0), 'j00b_0000_0.0000'),
-    (timedelta(minutes=10), 'j00b_0001_600.0000'),
+    (timedelta(minutes=10), 'j00b_0000_600.0000'),
     (timedelta(minutes=15), 'j00b_0001_900.0000'),
     (timedelta(minutes=20), 'j00b_0001_1200.0000'),
     (timedelta(minutes=25), 'j00b_0001_1500.0000'),

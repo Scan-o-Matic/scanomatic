@@ -1,3 +1,7 @@
+from __future__ import absolute_import, division
+from builtins import round
+
+
 def generate_scan_id(scanjob, scantime):
     scan_timedelta = (scantime - scanjob.start_time)
     scan_index = round(
