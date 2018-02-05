@@ -90,7 +90,6 @@ def scanner_status_update(scanner):
         required=True,
     )
     args = parser.parse_args(strict=True)
-    print(args.start_time)
 
     if not scanning_store.has_scanner(scanner):
         _add_scanner(scanner)
