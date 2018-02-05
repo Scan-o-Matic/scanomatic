@@ -7,11 +7,12 @@ from mock import patch
 from pytz import utc
 
 from scanomatic.io.scanning_store import (
-    ScanningStore, Scanner, ScannerStatus, ScanJobCollisionError,
+    ScanningStore, Scanner, ScanJobCollisionError,
     ScanJobUnknownError, DuplicateIdError, DuplicateNameError, UnknownIdError
 )
 from scanomatic.models.scanjob import ScanJob
 from scanomatic.models.scan import Scan
+from scanomatic.models.scannerstatus import ScannerStatus
 
 
 @pytest.fixture(scope='function')

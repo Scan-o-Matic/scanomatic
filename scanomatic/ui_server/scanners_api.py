@@ -10,7 +10,8 @@ from werkzeug.exceptions import NotFound
 from .general import json_abort
 from .serialization import job2json, scanner_status2json, scanner2json
 from scanomatic.io.scanning_store import (
-    ScannerStatus, Scanner, DuplicateNameError)
+    Scanner, DuplicateNameError)
+from scanomatic.models.scannerstatus import ScannerStatus
 from scanomatic.util.generic_name import get_generic_name
 
 blueprint = Blueprint("scanners_api", __name__)
