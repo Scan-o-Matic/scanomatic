@@ -75,12 +75,17 @@ def scanner_status_update(scanner):
                 reason="Failed to create scanner, please try again"
             )
     parser = reqparse.RequestParser()
-    parser.add_argument('job', required=True)
+    parser.add_argument('job')
     parser.add_argument(
         'startTime',
         dest='start_time',
         type=inputs.datetime_from_iso8601,
         required=True,
+    )
+    parser.add_argument(
+        'nextScheduledScan',
+        dest='next_scheduled_scan',
+        type=inputs.datetime_from_iso8601,
     )
     parser.add_argument(
         'imagesToSend',

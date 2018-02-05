@@ -80,6 +80,7 @@ class TestScannerStatus:
             'job': 'curr3ntj0b',
             'imagesToSend': 2,
             'startTime': '1985-10-26T00:00:00Z',
+            'nextScheduledScan': '1985-10-26T00:22:00Z',
         }
 
     def test_add_scanner_status(self, client, jsonstatus):
@@ -98,6 +99,33 @@ class TestScannerStatus:
             assert response.json["imagesToSend"] == jsonstatus['imagesToSend']
             assert response.json["startTime"] == jsonstatus['startTime']
             assert response.json["serverTime"] == "1985-10-26T01:20:00Z"
+            assert (
+                response.json["nextScheduledScan"]
+                == jsonstatus['nextScheduledScan']
+            )
+
+    @pytest.mark.parametrize('status', [
+        {'imagesToSend': 0, 'startTime': '1985-10-26T00:00:00Z'},
+        {
+            'imagesToSend': 0,
+            'startTime': '1985-10-26T00:00:00Z',
+            'job': None,
+            'nextScheduledScan': None,
+        },
+    ])
+    def test_add_scanner_status_no_job(self, client, status):
+        response = client.put(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+            data=json.dumps(status),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        response = client.get(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
+        assert response.status_code == HTTPStatus.OK
+        assert 'job' not in response.json
+        assert 'nextScheduledScan' not in response.json
 
     @pytest.mark.parametrize('property, value', [
         ('imagesToSend', 'x'),
@@ -113,7 +141,7 @@ class TestScannerStatus:
         )
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-    @pytest.mark.parametrize('property', ['job', 'imagesToSend', 'startTime'])
+    @pytest.mark.parametrize('property', ['imagesToSend', 'startTime'])
     def test_put_missing_property(self, client, jsonstatus, property):
         del jsonstatus[property]
         response = client.put(

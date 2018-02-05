@@ -132,6 +132,7 @@ class TestScannerStatus:
             server_time=datetime.now(utc),
             start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc),
             images_to_send=3,
+            next_scheduled_scan=datetime(1985, 10, 26, 1, 21, tzinfo=utc),
         )
         scanning_store.add_scanner_status(
             '9a8486a6f9cb11e7ac660050b68338ac', status)
