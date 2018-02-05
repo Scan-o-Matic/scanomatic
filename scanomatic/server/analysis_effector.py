@@ -21,10 +21,10 @@ from scanomatic.models.factories.fixture_factories import (
     GrayScaleAreaModelFactory, FixturePlateFactory
 )
 from scanomatic.models.factories.features_factory import FeaturesFactory
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
 import scanomatic.io.rpc_client as rpc_client
 from scanomatic.data_processing.phenotyper import remove_state_from_path
+
 
 def get_label_from_analysis_model(analysis_model, id_hash):
     """Make a suitable label to show in status view
@@ -80,8 +80,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._original_model = None
 
         self._job.content_model = self._analysis_job
-
-        self._scanning_instructions = None
 
         self._current_image_model = None
         """:type : scanomatic.models.compile_project_model.CompileImageAnalysisModel"""
@@ -363,17 +361,6 @@ Scan-o-Matic""", self._analysis_job)
 
         self._original_model = AnalysisModelFactory.copy(self._analysis_job)
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
-
-        try:
-            self._scanning_instructions = ScanningModelFactory.serializer.load_first(
-                Paths().get_scan_instructions_path_from_compile_instructions_path(
-                    self._analysis_job.compile_instructions))
-        except IOError:
-            self._logger.warning("No information found about how the scanning was done," +
-                                 " using empty instructions instead")
-
-        if not self._scanning_instructions:
-            self._scanning_instructions = ScanningModelFactory.create()
 
         self.ensure_default_values_if_missing()
 
