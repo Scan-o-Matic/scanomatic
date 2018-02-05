@@ -56,7 +56,8 @@ def launch_server(host, port, debug):
     global _URL, _DEBUG_MODE
     _DEBUG_MODE = debug
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
-    Prometheus(app)
+    prom = Prometheus(app)
+    prom.start_server(9999)
     app.config['imagestore'] = ImageStore(Config().paths.projects_root)
 
     rpc_client = get_client(admin=True)
