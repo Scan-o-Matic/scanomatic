@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 
-from httplib import OK, NOT_FOUND
+import httplib as HTTPStatus
+import json
 
 from freezegun import freeze_time
-from flask import Flask
+import mock
 
 
 class TestGetScannerJob(object):
@@ -11,11 +12,11 @@ class TestGetScannerJob(object):
 
     def test_invalid_scanner(self, apiclient):
         response = apiclient.get_scanner_job('xxxx')
-        assert response.status_code == NOT_FOUND
+        assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_has_no_scanjob(self, apiclient):
         response = apiclient.get_scanner_job(self.SCANNERID)
-        assert response.status_code == OK
+        assert response.status_code == HTTPStatus.OK
         assert response.json is None
 
     def test_has_scanjob(self, apiclient):
@@ -25,5 +26,102 @@ class TestGetScannerJob(object):
             apiclient.start_scan_job(jobid)
         with freeze_time('1985-10-26 01:21', tz_offset=0):
             response = apiclient.get_scanner_job(self.SCANNERID)
-        assert response.status_code == OK
+        assert response.status_code == HTTPStatus.OK
         assert response.json == dict(startTime='1985-10-26T01:20:00Z', **job)
+
+
+class TestScannerStatus:
+
+    URI = '/scanners'
+    SCANNER_ONE = {
+        u'name': u'Scanner one',
+        u'identifier': u'9a8486a6f9cb11e7ac660050b68338ac',
+        u'power': False,
+    }
+
+    SCANNER_TWO = {
+        u'name': u'Scanner two',
+        u'identifier': u'350986224086888954',
+        u'power': False,
+    }
+
+    def test_get_all_implicit(self, client):
+        response = client.get(self.URI)
+        assert response.status_code == HTTPStatus.OK
+        assert len(response.json) == 2
+        assert all(
+            scanner in response.json
+            for scanner in [self.SCANNER_TWO, self.SCANNER_ONE]
+        )
+
+    def test_get_free_scanners(self, client):
+        response = client.get(self.URI + '?free=1')
+        assert response.status_code == HTTPStatus.OK
+        assert len(response.json) == 2
+        assert all(
+            scanner in response.json
+            for scanner in [self.SCANNER_TWO, self.SCANNER_ONE]
+        )
+
+    def test_get_scanner(self, client):
+        response = client.get(self.URI + "/9a8486a6f9cb11e7ac660050b68338ac")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json == self.SCANNER_ONE
+
+    def test_get_unknown_scanner(self, client):
+        response = client.get(self.URI + "/Unknown")
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert response.json['reason'] == "Scanner 'Unknown' unknown"
+
+    def test_add_scanner_status(self, client):
+        with freeze_time('1985-10-26 01:20', tz_offset=0):
+            response = client.put(
+                self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+                data=json.dumps({u"job": u"foo"}),
+                headers={'Content-Type': 'application/json'}
+            )
+            assert response.status_code == HTTPStatus.OK
+
+            response = client.get(
+                self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
+            assert response.status_code == HTTPStatus.OK
+            assert response.json["job"] == "foo"
+            assert response.json["serverTime"] == "1985-10-26T01:20:00Z"
+
+    def test_get_scanner_status(self, client):
+        response = client.get(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json == {u'job': None}
+
+    def test_get_unknown_scanner_status_fails(self, client):
+        response = client.get(self.URI + "/42/status")
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
+    def test_add_bad_scanner_status_fails(self, client):
+        response = client.put(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+            data=json.dumps({"foo": "foo", "bar": "bar"}),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    def test_add_unknown_scanner_status(self, client):
+        response = client.put(
+            self.URI + "/42/status",
+            data=json.dumps({"job": "foo"}),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+    def test_add_unkown_scanner_status_duplicate_name(self, client):
+        with mock.patch(
+            'scanomatic.ui_server.scanners_api.get_generic_name',
+            return_value="Scanner two"
+        ):
+            response = client.put(
+                self.URI + "/42/status",
+                data=json.dumps({"job": "foo"}),
+                headers={'Content-Type': 'application/json'}
+            )
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR

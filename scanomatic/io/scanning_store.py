@@ -29,10 +29,6 @@ Scanner = namedtuple(
     'Scanner',
     ['name', 'identifier']
 )
-ScannerStatus = namedtuple(
-    'ScannerStatus',
-    ['job', 'server_time']
-)
 
 
 class ScanningStore:
