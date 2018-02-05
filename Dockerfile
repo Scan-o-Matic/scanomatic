@@ -1,5 +1,8 @@
 FROM node:4 as npmbuilder
-COPY . /src
+COPY scanomatic/ui_server_data /src/scanomatic/ui_server_data
+COPY package.json /src
+COPY webpack.config.js /src
+COPY .babelrc /src
 WORKDIR /src
 RUN npm install
 RUN npm run build
