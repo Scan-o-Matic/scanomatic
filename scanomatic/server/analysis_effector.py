@@ -266,9 +266,7 @@ Scan-o-Matic""", self._analysis_job)
             self._logger.surpress_prints = False
             self._log_file_path = log_path
 
-        if (len(self._first_pass_results.plates) !=
-                len(self._analysis_job.pinning_matrices)):
-            self._filter_pinning_on_included_plates()
+        self.setup_pinning(len(self._first_pass_results.plates))
 
         AnalysisModelFactory.serializer.dump(
             self._original_model, os.path.join(
@@ -295,6 +293,15 @@ Scan-o-Matic""", self._analysis_job)
                 self._analysis_job.image_data_output_measure))
 
         return True
+
+    def setup_pinning(self, number_of_plates):
+
+        if self._analysis_job.pinning_matrices is None:
+            self._analysis_job.pinning_matrices = [
+                (32, 48) for _ in range(number_of_plates)
+            ]
+        elif number_of_plates != len(self._analysis_job.pinning_matrices):
+            self._filter_pinning_on_included_plates()
 
     def _filter_pinning_on_included_plates(self):
 
