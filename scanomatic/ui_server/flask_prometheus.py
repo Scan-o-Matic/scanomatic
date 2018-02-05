@@ -1,10 +1,7 @@
-from flask import Response, request
+from __future__ import absolute_import
+from flask import request
 from prometheus_client import (
-    CONTENT_TYPE_LATEST,
-    CollectorRegistry,
     Counter,
-    generate_latest,
-    multiprocess,
     start_http_server,
 )
 
