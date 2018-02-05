@@ -3,6 +3,8 @@ import scanomatic.generics.model as model
 import scanomatic
 import re
 
+DEFAULT_PINNING_FORMAT = (32, 48)
+
 
 class DefaultPinningFormats(Enum):
 

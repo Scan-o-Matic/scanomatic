@@ -7,6 +7,7 @@ from scanomatic.server.analysis_effector import AnalysisEffector
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.rpc_job_models import JOB_TYPE, JOB_STATUS
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.analysis_model import DEFAULT_PINNING_FORMAT
 
 
 @pytest.fixture
@@ -64,10 +65,10 @@ def test_first_iteration_sets_pinning_formats(
         project_image_mock.assert_called()
 
         pinnings = analysis_effector._analysis_job.pinning_matrices
-        assert pinnings == [(32, 48)] * 3
+        assert pinnings == [DEFAULT_PINNING_FORMAT] * 3
 
 
 def test_set_default_pinning_formats(analysis_effector):
     analysis_effector.setup_pinning(13)
     pinnings = analysis_effector._analysis_job.pinning_matrices
-    assert pinnings == [(32, 48)] * 13
+    assert pinnings == [DEFAULT_PINNING_FORMAT] * 13

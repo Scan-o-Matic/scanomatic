@@ -21,6 +21,7 @@ from scanomatic.models.factories.fixture_factories import (
     GrayScaleAreaModelFactory, FixturePlateFactory
 )
 from scanomatic.models.factories.features_factory import FeaturesFactory
+from scanomatic.models.analysis_model import DEFAULT_PINNING_FORMAT
 import scanomatic.io.first_pass_results as first_pass_results
 import scanomatic.io.rpc_client as rpc_client
 from scanomatic.data_processing.phenotyper import remove_state_from_path
@@ -298,7 +299,7 @@ Scan-o-Matic""", self._analysis_job)
 
         if self._analysis_job.pinning_matrices is None:
             self._analysis_job.pinning_matrices = [
-                (32, 48) for _ in range(number_of_plates)
+                DEFAULT_PINNING_FORMAT for _ in range(number_of_plates)
             ]
         elif number_of_plates != len(self._analysis_job.pinning_matrices):
             self._filter_pinning_on_included_plates()
