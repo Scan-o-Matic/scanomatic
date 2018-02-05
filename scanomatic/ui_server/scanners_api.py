@@ -74,7 +74,6 @@ def scanner_status_update(scanner):
                 INTERNAL_SERVER_ERROR,
                 reason="Failed to create scanner, please try again"
             )
-
     parser = reqparse.RequestParser()
     parser.add_argument('job', required=True)
     parser.add_argument(
@@ -90,24 +89,14 @@ def scanner_status_update(scanner):
         required=True,
     )
     args = parser.parse_args(strict=True)
-
     if not scanning_store.has_scanner(scanner):
         _add_scanner(scanner)
         status_code = CREATED
     else:
         status_code = OK
-
-    status = request.get_json()
-    try:
-        scanning_store.add_scanner_status(
-            scanner, ScannerStatus(server_time=datetime.now(pytz.utc), **args)
-        )
-    except KeyError:
-        return json_abort(
-            BAD_REQUEST,
-            reason="Got malformed status '{}'".format(status)
-        )
-
+    scanning_store.add_scanner_status(
+        scanner, ScannerStatus(server_time=datetime.now(pytz.utc), **args)
+    )
     return "", status_code
 
 
