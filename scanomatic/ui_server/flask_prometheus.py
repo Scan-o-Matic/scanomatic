@@ -9,7 +9,7 @@ from prometheus_client import (
 REQUEST_COUNTER = Counter(
     'http_requests_total',
     'Number of requests by method, status and url rule',
-    ['path',  'http_status', 'method']
+    ['path', 'http_status', 'method']
 )
 
 
