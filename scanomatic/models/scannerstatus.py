@@ -4,5 +4,5 @@ from collections import namedtuple
 
 ScannerStatus = namedtuple(
     'ScannerStatus',
-    ['job', 'server_time']
+    ['job', 'server_time', 'start_time', 'images_to_send']
 )
