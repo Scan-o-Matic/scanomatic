@@ -5,28 +5,15 @@ import './enzyme-setup';
 import ScanningJobPanel from '../../src/components/ScanningJobPanel';
 
 
-describe('<ScanningJobPanel />', () => {
-    const job = {
+fdescribe('<ScanningJobPanel />', () => {
+    const onStartJob = jasmine.createSpy('onStartJob');
+    const props = {
         name: 'Omnibus',
+        identifier: 'job0000',
         duration: { days: 3, hours: 2, minutes: 51 },
         interval: 13,
         scannerId: 'hoho',
-    };
-
-    const jobRunning = {
-        name: 'Omnibus',
-        duration: { days: 3, hours: 2, minutes: 51 },
-        interval: 13,
-        scannerId: 'hoho',
-        startTime: '1980-03-23T13:00:00Z',
-    };
-
-    const jobStarting = {
-        name: 'Omnibus',
-        duration: { days: 3, hours: 2, minutes: 51 },
-        interval: 13,
-        scannerId: 'hoho',
-        disableStart: true,
+        onStartJob,
     };
 
     const scanner = {
@@ -50,15 +37,19 @@ describe('<ScanningJobPanel />', () => {
         identifier: 'hoho',
     };
 
+    beforeEach(() => {
+        onStartJob.calls.reset();
+    });
+
     it('should render a panel-title with the name', () => {
-        const wrapper = shallow(<ScanningJobPanel {...job} />);
+        const wrapper = shallow(<ScanningJobPanel {...props} />);
         const title = wrapper.find('h3.panel-title');
         expect(title.exists()).toBeTruthy();
-        expect(title.text()).toContain(job.name);
+        expect(title.text()).toContain(props.name);
     });
 
     it('should render a job-start button', () => {
-        const wrapper = shallow(<ScanningJobPanel {...job} scanner={scanner} />);
+        const wrapper = shallow(<ScanningJobPanel {...props} scanner={scanner} />);
         const btn = wrapper.find('button.job-start');
         expect(btn.exists()).toBeTruthy();
         expect(btn.text()).toContain('Start');
@@ -67,7 +58,7 @@ describe('<ScanningJobPanel />', () => {
 
     it('should disable job-start button if scanner unknown', () => {
         const wrapper = shallow(<ScanningJobPanel
-            {...job}
+            {...props}
             scanner={null}
         />);
         const btn = wrapper.find('button.job-start');
@@ -77,7 +68,7 @@ describe('<ScanningJobPanel />', () => {
 
     it('should disable job-start button if scanner offline', () => {
         const wrapper = shallow(<ScanningJobPanel
-            {...job}
+            {...props}
             scanner={scannerOffline}
         />);
         const btn = wrapper.find('button.job-start');
@@ -87,7 +78,7 @@ describe('<ScanningJobPanel />', () => {
 
     it('should disable job-start button if scanner ownded', () => {
         const wrapper = shallow(<ScanningJobPanel
-            {...job}
+            {...props}
             scanner={scannerOccupied}
         />);
         const btn = wrapper.find('button.job-start');
@@ -96,48 +87,50 @@ describe('<ScanningJobPanel />', () => {
     });
 
     it('should not render a start button if job is starting', () => {
-        const wrapper = shallow(<ScanningJobPanel
-            {...jobStarting}
-        />);
+        const wrapper = shallow(<ScanningJobPanel {...props} disableStart />);
         const btn = wrapper.find('button.job-start');
         expect(btn.exists()).toBeFalsy();
     });
 
     it('should not render a start button if job has started', () => {
         const wrapper = shallow(<ScanningJobPanel
-            {...jobRunning}
+            {...props}
+            startTime="1980-03-23T13:00:00Z"
         />);
         const btn = wrapper.find('button.job-start');
         expect(btn.exists()).toBeFalsy();
     });
 
     it('should render the description', () => {
-        const wrapper = shallow(<ScanningJobPanel {...job} />);
+        const wrapper = shallow(<ScanningJobPanel {...props} />);
         const desc = wrapper.find('div.job-description');
         expect(desc.exists()).toBeTruthy();
     });
 
     it('should render the interval', () => {
-        const wrapper = shallow(<ScanningJobPanel {...job} />);
+        const wrapper = shallow(<ScanningJobPanel {...props} />);
         const desc = wrapper.find('div.job-description');
         expect(desc.text()).toContain('Scan every 13 minutes');
     });
 
     describe('Scan verb', () => {
         it('should say Scan if not started', () => {
-            const wrapper = shallow(<ScanningJobPanel {...job} />);
+            const wrapper = shallow(<ScanningJobPanel {...props} />);
             const desc = wrapper.find('div.job-description');
             expect(desc.text()).toContain('Scan every');
         });
 
         it('should say Scanning if started', () => {
-            const wrapper = shallow(<ScanningJobPanel {...jobRunning} />);
+            const wrapper = shallow(<ScanningJobPanel
+                {...props}
+                startTime="1980-03-23T13:00:00Z"
+            />);
             const desc = wrapper.find('div.job-description');
             expect(desc.text()).toContain('Scanning every');
         });
 
         it('should say Scanning if starting', () => {
-            const wrapper = shallow(<ScanningJobPanel {...jobStarting} />);
+            const wrapper = shallow(<ScanningJobPanel {...props} disableStart />);
             const desc = wrapper.find('div.job-description');
             expect(desc.text()).toContain('Scanning every');
         });
@@ -145,14 +138,14 @@ describe('<ScanningJobPanel />', () => {
 
     describe('duration', () => {
         it('should render the duration', () => {
-            const wrapper = shallow(<ScanningJobPanel {...job} />);
+            const wrapper = shallow(<ScanningJobPanel {...props} />);
             const desc = wrapper.find('div.job-description');
             expect(desc.text()).toContain('for 3 days 2 hours 51 minutes.');
         });
 
         it('should skip days if zero', () => {
             const wrapper = shallow(<ScanningJobPanel
-                {...job}
+                {...props}
                 duration={{ days: 0, hours: 2, minutes: 51 }}
             />);
             const desc = wrapper.find('div.job-description');
@@ -161,7 +154,7 @@ describe('<ScanningJobPanel />', () => {
 
         it('should skip days if zero', () => {
             const wrapper = shallow(<ScanningJobPanel
-                {...job}
+                {...props}
                 duration={{ days: 2, hours: 0, minutes: 51 }}
             />);
             const desc = wrapper.find('div.job-description');
@@ -170,7 +163,7 @@ describe('<ScanningJobPanel />', () => {
 
         it('should skip days if zero', () => {
             const wrapper = shallow(<ScanningJobPanel
-                {...job}
+                {...props}
                 duration={{ days: 3, hours: 2, minutes: 0 }}
             />);
             const desc = wrapper.find('div.job-description');
@@ -180,14 +173,14 @@ describe('<ScanningJobPanel />', () => {
 
     describe('scanner', () => {
         it('should render the scanner retrieving scanner status', () => {
-            const wrapper = shallow(<ScanningJobPanel {...job} />);
+            const wrapper = shallow(<ScanningJobPanel {...props} />);
             const desc = wrapper.find('div.scanner-status');
             expect(desc.text()).toContain('Retrieving scanner status...');
         });
 
         it('should render the scanner offline', () => {
             const wrapper = shallow(<ScanningJobPanel
-                {...job}
+                {...props}
                 scanner={scannerOffline}
             />);
             const desc = wrapper.find('div.scanner-status');
@@ -196,7 +189,7 @@ describe('<ScanningJobPanel />', () => {
 
         it('should render the scanner occupied', () => {
             const wrapper = shallow(<ScanningJobPanel
-                {...job}
+                {...props}
                 scanner={scannerOccupied}
             />);
             const desc = wrapper.find('div.scanner-status');
@@ -205,7 +198,10 @@ describe('<ScanningJobPanel />', () => {
     });
 
     it('should say when a job was started', () => {
-        const wrapper = shallow(<ScanningJobPanel {...jobRunning} />);
+        const wrapper = shallow(<ScanningJobPanel
+            {...props}
+            startTime="1980-03-23T13:00:00Z"
+        />);
         const desc = wrapper.find('div.job-status');
         expect(desc.text()).toContain('Started at 1980-03-23T13:00:00Z.');
     });
