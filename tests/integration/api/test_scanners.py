@@ -5,6 +5,7 @@ import json
 
 from freezegun import freeze_time
 import mock
+import pytest
 
 
 class TestGetScannerJob(object):
@@ -73,11 +74,20 @@ class TestScannerStatus:
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert response.json['reason'] == "Scanner 'Unknown' unknown"
 
-    def test_add_scanner_status(self, client):
+    @pytest.fixture
+    def jsonstatus(app):
+        return {
+            'job': 'curr3ntj0b',
+            'imagesToSend': 2,
+            'startTime': '1985-10-26T00:00:00Z',
+            'nextScheduledScan': '1985-10-26T00:22:00Z',
+        }
+
+    def test_add_scanner_status(self, client, jsonstatus):
         with freeze_time('1985-10-26 01:20', tz_offset=0):
             response = client.put(
                 self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
-                data=json.dumps({u"job": u"foo"}),
+                data=json.dumps(jsonstatus),
                 headers={'Content-Type': 'application/json'}
             )
             assert response.status_code == HTTPStatus.OK
@@ -85,14 +95,67 @@ class TestScannerStatus:
             response = client.get(
                 self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
             assert response.status_code == HTTPStatus.OK
-            assert response.json["job"] == "foo"
+            assert response.json["job"] == jsonstatus['job']
+            assert response.json["imagesToSend"] == jsonstatus['imagesToSend']
+            assert response.json["startTime"] == jsonstatus['startTime']
             assert response.json["serverTime"] == "1985-10-26T01:20:00Z"
+            assert (
+                response.json["nextScheduledScan"]
+                == jsonstatus['nextScheduledScan']
+            )
 
-    def test_get_scanner_status(self, client):
+    @pytest.mark.parametrize('status', [
+        {'imagesToSend': 0, 'startTime': '1985-10-26T00:00:00Z'},
+        {
+            'imagesToSend': 0,
+            'startTime': '1985-10-26T00:00:00Z',
+            'job': None,
+            'nextScheduledScan': None,
+        },
+    ])
+    def test_add_scanner_status_no_job(self, client, status):
+        response = client.put(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+            data=json.dumps(status),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == HTTPStatus.OK
+
         response = client.get(
             self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
         assert response.status_code == HTTPStatus.OK
-        assert response.json == {u'job': None}
+        assert 'job' not in response.json
+        assert 'nextScheduledScan' not in response.json
+
+    @pytest.mark.parametrize('property, value', [
+        ('imagesToSend', 'x'),
+        ('imagesToSend', -5),
+        ('startTime', 'xxx'),
+    ])
+    def test_put_invalid_value(self, client, jsonstatus, property, value):
+        jsonstatus[property] = value
+        response = client.put(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+            data=json.dumps(jsonstatus),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    @pytest.mark.parametrize('property', ['imagesToSend', 'startTime'])
+    def test_put_missing_property(self, client, jsonstatus, property):
+        del jsonstatus[property]
+        response = client.put(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+            data=json.dumps(jsonstatus),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    def test_get_empty_scanner_status(self, client):
+        response = client.get(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json == {}
 
     def test_get_unknown_scanner_status_fails(self, client):
         response = client.get(self.URI + "/42/status")
@@ -106,22 +169,24 @@ class TestScannerStatus:
         )
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-    def test_add_unknown_scanner_status(self, client):
+    def test_add_unknown_scanner_status(self, client, jsonstatus):
         response = client.put(
             self.URI + "/42/status",
-            data=json.dumps({"job": "foo"}),
+            data=json.dumps(jsonstatus),
             headers={'Content-Type': 'application/json'}
         )
         assert response.status_code == HTTPStatus.CREATED
 
-    def test_add_unkown_scanner_status_duplicate_name(self, client):
+    def test_add_unkown_scanner_status_duplicate_name(
+        self, client, jsonstatus,
+    ):
         with mock.patch(
             'scanomatic.ui_server.scanners_api.get_generic_name',
             return_value="Scanner two"
         ):
             response = client.put(
                 self.URI + "/42/status",
-                data=json.dumps({"job": "foo"}),
+                data=json.dumps(jsonstatus),
                 headers={'Content-Type': 'application/json'}
             )
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR

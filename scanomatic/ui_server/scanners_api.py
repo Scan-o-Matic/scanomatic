@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from httplib import NOT_FOUND, OK, BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR
 
 from flask import request, jsonify, Blueprint, current_app
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource, reqparse, inputs
 import pytz
 from werkzeug.exceptions import NotFound
 
@@ -74,23 +74,34 @@ def scanner_status_update(scanner):
                 INTERNAL_SERVER_ERROR,
                 reason="Failed to create scanner, please try again"
             )
-
+    parser = reqparse.RequestParser()
+    parser.add_argument('job')
+    parser.add_argument(
+        'startTime',
+        dest='start_time',
+        type=inputs.datetime_from_iso8601,
+        required=True,
+    )
+    parser.add_argument(
+        'nextScheduledScan',
+        dest='next_scheduled_scan',
+        type=inputs.datetime_from_iso8601,
+    )
+    parser.add_argument(
+        'imagesToSend',
+        dest='images_to_send',
+        type=inputs.natural,
+        required=True,
+    )
+    args = parser.parse_args(strict=True)
     if not scanning_store.has_scanner(scanner):
         _add_scanner(scanner)
         status_code = CREATED
     else:
         status_code = OK
-
-    status = request.get_json()
-    try:
-        scanning_store.add_scanner_status(
-            scanner, ScannerStatus(status["job"], datetime.now(pytz.utc)))
-    except KeyError:
-        return json_abort(
-            BAD_REQUEST,
-            reason="Got malformed status '{}'".format(status)
-        )
-
+    scanning_store.add_scanner_status(
+        scanner, ScannerStatus(server_time=datetime.now(pytz.utc), **args)
+    )
     return "", status_code
 
 
@@ -102,7 +113,7 @@ def scanner_status_get(scanner):
         status = scanning_store.get_latest_scanner_status(scanner)
 
         if status is None:
-            status = ScannerStatus(None, None)
+            return jsonify({})
 
         return jsonify(scanner_status2json(status))
 

@@ -5,6 +5,11 @@ from scanomatic.util.datetime import is_utc
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 
+def datetime2json(dt):
+    assert is_utc(dt), '{} is not UTC'.format(dt)
+    return dt.strftime(DATETIME_FORMAT)
+
+
 def job2json(job):
     obj = {
         'identifier': job.identifier,
@@ -14,8 +19,7 @@ def job2json(job):
         'scannerId': job.scanner_id,
     }
     if job.start_time is not None:
-        assert is_utc(job.start_time)
-        obj['startTime'] = job.start_time.strftime(DATETIME_FORMAT)
+        obj['startTime'] = datetime2json(job.start_time)
     return obj
 
 
@@ -31,11 +35,14 @@ def scan2json(scan):
 
 def scanner_status2json(status):
     obj = {
-        'job': status.job,
+        'imagesToSend': status.images_to_send,
+        'serverTime': datetime2json(status.server_time),
+        'startTime': datetime2json(status.start_time),
     }
-    if status.server_time is not None:
-        assert is_utc(status.server_time)
-        obj['serverTime'] = status.server_time.strftime(DATETIME_FORMAT)
+    if status.next_scheduled_scan is not None:
+        obj['nextScheduledScan'] = datetime2json(status.next_scheduled_scan)
+    if status.job is not None:
+        obj['job'] = status.job
     return obj
 
 

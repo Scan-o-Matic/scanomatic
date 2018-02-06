@@ -127,7 +127,13 @@ class TestScannerStatus:
             '9a8486a6f9cb11e7ac660050b68338ac') == "2"
 
     def test_add_scanner_status(self, scanning_store):
-        status = ScannerStatus("Work", datetime.now(utc))
+        status = ScannerStatus(
+            job="j0bid",
+            server_time=datetime.now(utc),
+            start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc),
+            images_to_send=3,
+            next_scheduled_scan=datetime(1985, 10, 26, 1, 21, tzinfo=utc),
+        )
         scanning_store.add_scanner_status(
             '9a8486a6f9cb11e7ac660050b68338ac', status)
         assert scanning_store.get_latest_scanner_status(
