@@ -175,7 +175,9 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.analysis_model.AnalysisModel
         """
-        if AbstractModelFactory._is_pinning_formats(model.pinning_matrices):
+        if model.pinning_matrices is None:
+            return True
+        elif AbstractModelFactory._is_pinning_formats(model.pinning_matrices):
             return True
         return model.FIELD_TYPES.pinning_matrices
 

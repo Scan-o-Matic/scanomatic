@@ -21,10 +21,11 @@ from scanomatic.models.factories.fixture_factories import (
     GrayScaleAreaModelFactory, FixturePlateFactory
 )
 from scanomatic.models.factories.features_factory import FeaturesFactory
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.models.analysis_model import DEFAULT_PINNING_FORMAT
 import scanomatic.io.first_pass_results as first_pass_results
 import scanomatic.io.rpc_client as rpc_client
 from scanomatic.data_processing.phenotyper import remove_state_from_path
+
 
 def get_label_from_analysis_model(analysis_model, id_hash):
     """Make a suitable label to show in status view
@@ -80,8 +81,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._original_model = None
 
         self._job.content_model = self._analysis_job
-
-        self._scanning_instructions = None
 
         self._current_image_model = None
         """:type : scanomatic.models.compile_project_model.CompileImageAnalysisModel"""
@@ -268,9 +267,7 @@ Scan-o-Matic""", self._analysis_job)
             self._logger.surpress_prints = False
             self._log_file_path = log_path
 
-        if (len(self._first_pass_results.plates) !=
-                len(self._analysis_job.pinning_matrices)):
-            self._filter_pinning_on_included_plates()
+        self.setup_pinning(len(self._first_pass_results.plates))
 
         AnalysisModelFactory.serializer.dump(
             self._original_model, os.path.join(
@@ -297,6 +294,15 @@ Scan-o-Matic""", self._analysis_job)
                 self._analysis_job.image_data_output_measure))
 
         return True
+
+    def setup_pinning(self, number_of_plates):
+
+        if self._analysis_job.pinning_matrices is None:
+            self._analysis_job.pinning_matrices = [
+                DEFAULT_PINNING_FORMAT for _ in range(number_of_plates)
+            ]
+        elif number_of_plates != len(self._analysis_job.pinning_matrices):
+            self._filter_pinning_on_included_plates()
 
     def _filter_pinning_on_included_plates(self):
 
@@ -363,17 +369,6 @@ Scan-o-Matic""", self._analysis_job)
 
         self._original_model = AnalysisModelFactory.copy(self._analysis_job)
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
-
-        try:
-            self._scanning_instructions = ScanningModelFactory.serializer.load_first(
-                Paths().get_scan_instructions_path_from_compile_instructions_path(
-                    self._analysis_job.compile_instructions))
-        except IOError:
-            self._logger.warning("No information found about how the scanning was done," +
-                                 " using empty instructions instead")
-
-        if not self._scanning_instructions:
-            self._scanning_instructions = ScanningModelFactory.create()
 
         self.ensure_default_values_if_missing()
 

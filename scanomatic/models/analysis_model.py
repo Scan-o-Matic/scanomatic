@@ -3,6 +3,8 @@ import scanomatic.generics.model as model
 import scanomatic
 import re
 
+DEFAULT_PINNING_FORMAT = (32, 48)
+
 
 class DefaultPinningFormats(Enum):
 
@@ -54,7 +56,7 @@ class AnalysisModel(model.Model):
     def __init__(
             self, compilation="",
             compile_instructions="",
-            pinning_matrices=((32, 48), (32, 48), (32, 48), (32, 48)),
+            pinning_matrices=None,
             use_local_fixture=False,
             email="",
             stop_at_image=-1,

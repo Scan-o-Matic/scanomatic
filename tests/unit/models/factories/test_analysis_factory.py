@@ -118,3 +118,14 @@ class TestAnalysisModels:
 
         assert AnalysisModelFactory.all_keys_valid(
             tuple(AnalysisModelFactory.default_model.keys()))
+
+    def test_can_have_no_pinning_instructions(self):
+        assert AnalysisModelFactory.create().pinning_matrices is None
+
+    def test_using_default_pinning_is_valid(self):
+        assert (
+            'pinning_matrices' not in
+            AnalysisModelFactory.get_invalid_names(
+                AnalysisModelFactory.create()
+            )
+        )
