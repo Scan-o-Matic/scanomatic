@@ -5,7 +5,7 @@ import './enzyme-setup';
 import ScanningJobPanel from '../../src/components/ScanningJobPanel';
 
 
-fdescribe('<ScanningJobPanel />', () => {
+describe('<ScanningJobPanel />', () => {
     const onStartJob = jasmine.createSpy('onStartJob');
     const props = {
         name: 'Omnibus',
