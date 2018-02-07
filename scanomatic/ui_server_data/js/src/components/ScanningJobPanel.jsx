@@ -66,6 +66,11 @@ export default function ScanningJobPanel(props) {
                 {scannerStatus}
                 {jobStatus}
             </div>
+            <div className="text-right">
+                <a href={`/compile?projectdirectory=root/${props.identifier}`}>
+                    Compile project {props.name}
+                </a>
+            </div>
         </div>
     );
 }
@@ -82,6 +87,7 @@ ScanningJobPanel.propTypes = {
     startTime: PropTypes.string,
     onStartJob: PropTypes.func.isRequired,
     disableStart: PropTypes.bool,
+    identifier: PropTypes.string.isRequired,
 };
 
 ScanningJobPanel.defaultProps = {

@@ -1,16 +1,12 @@
 from flask import (
-    send_from_directory, render_template, redirect, jsonify, abort
+    send_from_directory, render_template, redirect, abort, request
 )
 import os
-import glob
 
 from scanomatic.io.paths import Paths
 from scanomatic.io.app_config import Config
 from scanomatic.data_processing import phenotyper
-from .general import (
-    serve_log_as_html, convert_url_to_path, get_search_results,
-    convert_path_to_url
-)
+from .general import serve_log_as_html, convert_url_to_path
 
 
 def add_routes(app):
@@ -78,8 +74,12 @@ def add_routes(app):
 
     @app.route("/compile", methods=['get'])
     def _compile():
-
-        return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
+        projectdir = request.args.get('projectdirectory')
+        context = {
+            'projectdirectory': projectdir if projectdir is not None else '',
+            'projectdirectory_readonly': projectdir is not None,
+        }
+        return render_template(Paths().ui_compile_file, **context)
 
     @app.route("/logs/system/<log>")
     def _logs(log):

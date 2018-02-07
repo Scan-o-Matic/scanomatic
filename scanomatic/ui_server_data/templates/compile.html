@@ -37,7 +37,12 @@
                 </div>
                 <div class="section">
                     <label for="project-directory">Project Directory</label>
-                    <input id="project-directory" name="project-directory" class="long"
+                    <input
+                        id="project-directory"
+                        name="project-directory"
+                        class="long"
+                        value="{{ projectdirectory }}"
+                        {% if projectdirectory_readonly %}readonly{% endif %}
                         onchange="set_project_directory(this);"
                         onfocus="set_project_directory(this);"
                         onkeyup="set_project_directory(this);"/>
@@ -84,13 +89,16 @@
     </div>
 
     <script>
-        image_list_div = $('#manual-selection-div');
-        manual_btn = $('#manual-selection');
-        InputEnabled(manual_btn, false);
-        toggleManualSelectionBtn(manual_btn);
-        get_fixtures();
-        compileToggleLocalFixture("#local-fixture");
-        InputEnabled($("#submit-button"), false);
+        $().ready(function() {
+          image_list_div = $('#manual-selection-div');
+          manual_btn = $('#manual-selection');
+          InputEnabled(manual_btn, false);
+          toggleManualSelectionBtn(manual_btn);
+          get_fixtures();
+          compileToggleLocalFixture("#local-fixture");
+          InputEnabled($("#submit-button"), false);
+          set_project_directory('#project-directory');
+        });
     </script>
 
 </body>

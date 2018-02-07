@@ -87,6 +87,7 @@ function setImageSuggestions(path) {
             } else if ($("#fixture-error-message").html() == no_img_err) {
                 $("#fixture-error-message").html("").hide();
             }
+            $("#project-directory-info").html("Scan images in folder: " + GetIncludedImageList(true).length);
         });
 
     }
