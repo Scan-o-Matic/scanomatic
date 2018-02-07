@@ -113,6 +113,14 @@ fdescribe('<ScanningJobPanel />', () => {
         expect(desc.text()).toContain('Scan every 13 minutes');
     });
 
+    it('should render a link to the compile page', () => {
+        const wrapper = shallow(<ScanningJobPanel {...props} />);
+        const link = wrapper
+            .find('[href="/compile?projectdirectory=root/job0000"]');
+        expect(link.exists()).toBe(true);
+        expect(link.text()).toEqual('Compile project Omnibus');
+    });
+
     describe('Scan verb', () => {
         it('should say Scan if not started', () => {
             const wrapper = shallow(<ScanningJobPanel {...props} />);
