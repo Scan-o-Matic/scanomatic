@@ -3,7 +3,7 @@ import {
     getScannersWithOwned,
     loadImage,
     uploadImage,
-    valueFormatter
+    valueFormatter,
 } from '../src/helpers';
 import testPlateImageURL from './fixtures/testPlate.png';
 import * as API from '../src/api';
