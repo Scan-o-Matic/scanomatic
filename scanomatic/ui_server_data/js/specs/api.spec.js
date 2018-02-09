@@ -890,4 +890,55 @@ describe('API', () => {
             });
         });
     });
+
+    describe('getScannerJob', () => {
+        const scanJob = {
+            name: 'Some Job',
+            duration: { days: 1, hours: 3, minutes: 5 },
+            interval: 20,
+            scannerId: 'sc4nn3r',
+        };
+        const args = ['sc4nn3r'];
+
+        it('should query the correct URL', () => {
+            API.getScannerJob(...args);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/scanners/sc4nn3r/job');
+        });
+
+        it('should send a GET request', () => {
+            API.getScannerJob(...args);
+            expect(mostRecentRequest().method).toEqual('GET');
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.getScannerJob(...args).then((value) => {
+                expect(value).toEqual(scanJob);
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify(scanJob),
+            });
+        });
+
+        it('should return a promise that resolves if no job', (done) => {
+            API.getScannerJob(...args).then((value) => {
+                expect(value).toBe(null);
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200, responseText: 'null',
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.getScannerJob(...args).catch((reason) => {
+                expect(reason).toEqual('(+_+)');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: '(+_+)' }),
+            });
+        });
+    });
 });
