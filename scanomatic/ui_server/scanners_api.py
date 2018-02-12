@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from datetime import datetime, timedelta
-from httplib import NOT_FOUND, OK, BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR
+from httplib import NOT_FOUND, OK, CREATED, INTERNAL_SERVER_ERROR
 
 from flask import request, jsonify, Blueprint, current_app
 from flask_restful import Api, Resource, reqparse, inputs
@@ -9,10 +9,6 @@ from werkzeug.exceptions import NotFound
 
 from .general import json_abort
 from .serialization import job2json, scanner_status2json, scanner2json
-from scanomatic.io.scanning_store import DuplicateNameError
-from scanomatic.models.scanner import Scanner
-from scanomatic.models.scannerstatus import ScannerStatus
-from scanomatic.util.generic_name import get_generic_name
 from scanomatic.scanning.update_scanner_status import (
     update_scanner_status, UpdateScannerStatusError,
 )
