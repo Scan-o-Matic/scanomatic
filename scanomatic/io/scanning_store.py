@@ -1,8 +1,9 @@
 from __future__ import absolute_import
 from datetime import datetime
-from collections import namedtuple
 import os
 import pytz
+
+from scanomatic.models.scanner import Scanner
 
 
 class ScanJobCollisionError(ValueError):
@@ -23,12 +24,6 @@ class DuplicateNameError(ValueError):
 
 class UnknownIdError(ValueError):
     pass
-
-
-Scanner = namedtuple(
-    'Scanner',
-    ['name', 'identifier']
-)
 
 
 class ScanningStore:
