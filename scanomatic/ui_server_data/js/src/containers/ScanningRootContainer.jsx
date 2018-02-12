@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { getScanningJobs, getScanners, startScanningJob } from '../api';
+import { getScanningJobs, startScanningJob } from '../api';
+import { getScannersWithOwned } from '../helpers';
 import ScanningRoot from '../components/ScanningRoot';
 
 
@@ -28,7 +29,7 @@ export default class ScanningRootContainer extends React.Component {
             .then(jobs => this.setState({ jobs }))
             .catch(reason => this.setState({ error: `Error requesting jobs: ${reason}` }));
 
-        getScanners()
+        getScannersWithOwned()
             .then(scanners => this.setState({ scanners }))
             .catch(reason => this.setState({ error: `Error requesting scanners: ${reason}` }));
     }

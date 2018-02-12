@@ -226,3 +226,10 @@ export function uploadImage(ccc, file, fixture, token, progress) {
         })
         .then(() => imageId);
 }
+
+export function getScannersWithOwned() {
+    return API.getScanners().then(scanners =>
+        Promise.all(scanners.map(scanner =>
+            API.getScannerJob(scanner.identifier)
+                .then(job => Object.assign(scanner, { owned: job != null })))));
+}

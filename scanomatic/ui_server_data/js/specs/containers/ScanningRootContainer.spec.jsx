@@ -1,10 +1,10 @@
-
 import { shallow } from 'enzyme';
 import React from 'react';
 
 import '../components/enzyme-setup';
 import ScanningRootContainer from '../../src/containers/ScanningRootContainer';
 import * as API from '../../src/api';
+import * as helpers from '../../src/helpers';
 import FakePromise from '../helpers/FakePromise';
 
 
@@ -29,7 +29,8 @@ describe('<ScanningRootContainer />', () => {
     describe('Jobs Request doing nothing', () => {
         beforeEach(() => {
             spyOn(API, 'getScanningJobs').and.returnValue(new FakePromise());
-            spyOn(API, 'getScanners').and.returnValue(new FakePromise());
+            spyOn(helpers, 'getScannersWithOwned')
+                .and.returnValue(new FakePromise());
         });
 
         it('should render <ScanningRoot />', () => {
@@ -99,7 +100,7 @@ describe('<ScanningRootContainer />', () => {
         beforeEach(() => {
             spyOn(API, 'getScanningJobs').and
                 .returnValue(FakePromise.resolve([job]));
-            spyOn(API, 'getScanners').and
+            spyOn(helpers, 'getScannersWithOwned').and
                 .returnValue(FakePromise.resolve([scanner]));
         });
 
@@ -162,10 +163,10 @@ describe('<ScanningRootContainer />', () => {
             it('should update jobs', () => {
                 const wrapper = shallow(<ScanningRootContainer />);
                 API.getScanningJobs.calls.reset();
-                API.getScanners.calls.reset();
+                helpers.getScannersWithOwned.calls.reset();
                 wrapper.prop('onStartJob')(job);
                 expect(API.getScanningJobs).toHaveBeenCalled();
-                expect(API.getScanners).toHaveBeenCalled();
+                expect(helpers.getScannersWithOwned).toHaveBeenCalled();
             });
         });
 
@@ -190,7 +191,7 @@ describe('<ScanningRootContainer />', () => {
         beforeEach(() => {
             spyOn(API, 'getScanningJobs').and
                 .returnValue(FakePromise.reject('Fake'));
-            spyOn(API, 'getScanners').and
+            spyOn(helpers, 'getScannersWithOwned').and
                 .returnValue(FakePromise.resolve([scanner]));
         });
 
@@ -210,7 +211,7 @@ describe('<ScanningRootContainer />', () => {
         beforeEach(() => {
             spyOn(API, 'getScanningJobs').and
                 .returnValue(FakePromise.resolve([job]));
-            spyOn(API, 'getScanners').and
+            spyOn(helpers, 'getScannersWithOwned').and
                 .returnValue(FakePromise.reject('Fake'));
         });
 

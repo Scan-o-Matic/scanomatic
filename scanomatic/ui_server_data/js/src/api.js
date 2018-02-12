@@ -292,6 +292,9 @@ export function getScanners() {
             name: scanner.name,
             identifier: scanner.identifier,
             power: scanner.power,
-            owned: !!scanner.owner,
         })));
+}
+
+export function getScannerJob(scannerId) {
+    return API.get(`/api/scanners/${scannerId}/job`);
 }

@@ -1,4 +1,10 @@
-import { RGBColor, loadImage, uploadImage, valueFormatter } from '../src/helpers';
+import {
+    RGBColor,
+    getScannersWithOwned,
+    loadImage,
+    uploadImage,
+    valueFormatter,
+} from '../src/helpers';
 import testPlateImageURL from './fixtures/testPlate.png';
 import * as API from '../src/api';
 
@@ -197,6 +203,65 @@ describe('helpers', () => {
 
         it('works with negative numbers', () => {
             expect(valueFormatter(-320, 1)).toEqual('-3.2 x 10^2');
+        });
+    });
+
+    describe('getScannersWithOwned', () => {
+        const scanners = [
+            {
+                identifier: 'sc4nn3r01',
+                name: 'Scanner 01',
+                owned: false,
+                power: true,
+            },
+            {
+                identifier: 'sc4nn3r02',
+                name: 'Scanner 02',
+                owned: true,
+                power: true,
+            },
+        ];
+
+        const apiScanners = scanners.map(obj => ({
+            identifier: obj.identifier,
+            name: obj.name,
+            power: obj.power,
+        }));
+
+        it('should return a list of scanners on success', (done) => {
+            spyOn(API, 'getScanners')
+                .and.callFake(() => Promise.resolve(apiScanners));
+            spyOn(API, 'getScannerJob')
+                .and.callFake((id) => {
+                    const job = id === 'sc4nn3r02' ? { identifier: 'job0123' } : null;
+                    return Promise.resolve(job);
+                });
+            getScannersWithOwned().then((data) => {
+                expect(data).toEqual(scanners);
+                done();
+            });
+        });
+
+        it('should reject if getScanners rejects', (done) => {
+            const message = 'Sorry, Dave.';
+            spyOn(API, 'getScanners')
+                .and.callFake(() => Promise.reject(message));
+            getScannersWithOwned().catch((error) => {
+                expect(error).toEqual(message);
+                done();
+            });
+        });
+
+        it('should reject if getScannerJob rejects', (done) => {
+            const message = "I'm afraid I can't do that.";
+            spyOn(API, 'getScanners')
+                .and.callFake(() => Promise.resolve(apiScanners));
+            spyOn(API, 'getScannerJob')
+                .and.callFake(() => Promise.reject(message));
+            getScannersWithOwned().catch((error) => {
+                expect(error).toEqual(message);
+                done();
+            });
         });
     });
 });
