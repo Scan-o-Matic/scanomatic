@@ -38,6 +38,7 @@ packages = [
     "scanomatic.image_analysis",
     "scanomatic.data_processing",
     "scanomatic.data_processing.phases",
+    "scanomatic.scanning",
     "scanomatic.util",
     "scanomatic.ui_server"
 ]

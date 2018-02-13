@@ -181,7 +181,7 @@ class TestScannerStatus:
         self, client, jsonstatus,
     ):
         with mock.patch(
-            'scanomatic.ui_server.scanners_api.get_generic_name',
+            'scanomatic.scanning.update_scanner_status.get_generic_name',
             return_value="Scanner two"
         ):
             response = client.put(

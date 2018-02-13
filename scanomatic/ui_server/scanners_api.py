@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from datetime import datetime, timedelta
-from httplib import NOT_FOUND, OK, BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR
+from httplib import NOT_FOUND, OK, CREATED, INTERNAL_SERVER_ERROR
 
 from flask import request, jsonify, Blueprint, current_app
 from flask_restful import Api, Resource, reqparse, inputs
@@ -9,10 +9,9 @@ from werkzeug.exceptions import NotFound
 
 from .general import json_abort
 from .serialization import job2json, scanner_status2json, scanner2json
-from scanomatic.io.scanning_store import (
-    Scanner, DuplicateNameError)
-from scanomatic.models.scannerstatus import ScannerStatus
-from scanomatic.util.generic_name import get_generic_name
+from scanomatic.scanning.update_scanner_status import (
+    update_scanner_status, UpdateScannerStatusError,
+)
 
 blueprint = Blueprint("scanners_api", __name__)
 SCANNER_TIMEOUT = timedelta(minutes=5)
@@ -64,16 +63,6 @@ def scanner_get(scanner):
 @blueprint.route("/<scanner>/status", methods=['PUT'])
 def scanner_status_update(scanner):
     scanning_store = current_app.config['scanning_store']
-
-    def _add_scanner(scanner_id):
-        try:
-            name = get_generic_name()
-            scanning_store.add_scanner(Scanner(name, scanner_id))
-        except DuplicateNameError:
-            return json_abort(
-                INTERNAL_SERVER_ERROR,
-                reason="Failed to create scanner, please try again"
-            )
     parser = reqparse.RequestParser()
     parser.add_argument('job')
     parser.add_argument(
@@ -94,14 +83,11 @@ def scanner_status_update(scanner):
         required=True,
     )
     args = parser.parse_args(strict=True)
-    if not scanning_store.has_scanner(scanner):
-        _add_scanner(scanner)
-        status_code = CREATED
-    else:
-        status_code = OK
-    scanning_store.add_scanner_status(
-        scanner, ScannerStatus(server_time=datetime.now(pytz.utc), **args)
-    )
+    try:
+        result = update_scanner_status(scanning_store, scanner, **args)
+    except UpdateScannerStatusError as error:
+        return json_abort(INTERNAL_SERVER_ERROR, reason=str(error))
+    status_code = CREATED if result.new_scanner else OK
     return "", status_code
 
 
