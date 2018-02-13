@@ -64,11 +64,12 @@ def update_scanner_status(
         images_to_send=images_to_send,
     )
     db.add_scanner_status(scanner_id, status)
-    SCANNER_CURRENT_JOBS.labels(scanner=scanner_id).set(job is not None)
-    SCANNER_QUEUED_UPLOADS.labels(scanner=scanner_id).set(images_to_send)
-    SCANNER_START_TIME.labels(scanner=scanner_id).set(timestamp(start_time))
-    SCANNER_LAST_STATUS_UPDATE_TIME.labels(scanner=scanner_id).set_to_current_time()
-    SCANNER_STATUS_UPDATES.labels(scanner=scanner_id).inc()
+    labels = {'scanner': scanner_id}
+    SCANNER_CURRENT_JOBS.labels(**labels).set(job is not None)
+    SCANNER_QUEUED_UPLOADS.labels(**labels).set(images_to_send)
+    SCANNER_START_TIME.labels(**labels).set(timestamp(start_time))
+    SCANNER_LAST_STATUS_UPDATE_TIME.labels(**labels).set_to_current_time()
+    SCANNER_STATUS_UPDATES.labels(**labels).inc()
     return UpdateScannerStatusResult(new_scanner=new_scanner)
 
 
