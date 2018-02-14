@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, tzinfo
 import pytest
 from pytz import utc, timezone
 
-from scanomatic.util.datetime import is_utc
+from scanomatic.util.datetime import is_utc, timestamp
 
 
 class CustomUTC(tzinfo):
@@ -43,3 +43,11 @@ class TestIsUtc:
     ])
     def test_not_utc(self, date):
         assert not is_utc(date)
+
+
+@pytest.mark.parametrize('dt, seconds', [
+    (datetime(1970, 1, 1, tzinfo=utc), 0),
+    (datetime(1985, 10, 26, 1, 20, tzinfo=utc), 499137600.0),
+])
+def test_timestamp(dt, seconds):
+    assert timestamp(dt) == seconds
