@@ -51,3 +51,15 @@ class TestMetrics:
             update_scanner_status(db, scanner, **update)
         assert REGISTRY.get_sample_value(
             metric, labels={'scanner': scanner}) == value
+
+    @pytest.mark.parametrize('devices, value', [
+        (None, 0),
+        ([], 0),
+        (['a'], 1),
+        (['a', 'b'], 2),
+    ])
+    def test_current_devices(self, db, scanner, update, devices, value):
+        update['devices'] = devices
+        update_scanner_status(db, scanner, **update)
+        assert REGISTRY.get_sample_value(
+            'scanner_current_devices', labels={'scanner': scanner}) == value

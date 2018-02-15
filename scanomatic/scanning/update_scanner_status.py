@@ -82,7 +82,8 @@ def update_scanner_status(
     SCANNER_START_TIME.labels(**labels).set(timestamp(start_time))
     SCANNER_LAST_STATUS_UPDATE_TIME.labels(**labels).set_to_current_time()
     SCANNER_STATUS_UPDATES.labels(**labels).inc()
-    SCANNER_CURRENT_DEVICES.labels(**labels).set(devices is not None)
+    SCANNER_CURRENT_DEVICES.labels(**labels).set(
+        len(devices) if devices is not None else 0)
     return UpdateScannerStatusResult(new_scanner=new_scanner)
 
 

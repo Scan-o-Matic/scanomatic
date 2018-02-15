@@ -86,7 +86,6 @@ def scanner_status_update(scanner):
         'devices',
         dest='devices',
         action='append',
-        required=True,
     )
     args = parser.parse_args(strict=True)
     try:

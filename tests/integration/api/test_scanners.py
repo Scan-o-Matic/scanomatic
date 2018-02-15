@@ -84,6 +84,15 @@ class TestScannerStatus:
             'devices': ['epson'],
         }
 
+    def test_add_scanner_no_scanners_status(self, client, jsonstatus):
+        jsonstatus['devices'] = []
+        response = client.put(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+            data=json.dumps(jsonstatus),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == HTTPStatus.OK
+    
     def test_add_scanner_status(self, client, jsonstatus):
         with freeze_time('1985-10-26 01:20', tz_offset=0):
             response = client.put(
