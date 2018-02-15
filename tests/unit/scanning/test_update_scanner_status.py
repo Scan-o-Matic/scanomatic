@@ -23,6 +23,7 @@ def update():
         'images_to_send': 5,
         'next_scheduled_scan': datetime(1985, 10, 26, 1, 35, tzinfo=utc),
         'start_time': datetime(1985, 10, 26, 1, 20, tzinfo=utc),
+        'devices': ['epson'],
     }
 
 

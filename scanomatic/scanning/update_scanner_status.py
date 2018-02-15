@@ -37,6 +37,11 @@ SCANNER_STATUS_UPDATES = Counter(
     'Number of status updates',
     ['scanner']
 )
+SCANNER_CURRENT_DEVICES = Gauge(
+    'scanner_current_devices',
+    'Number of devices currently online',
+    ['scanner']
+)
 
 
 def UpdateScannerStatusError(Exception):
@@ -49,7 +54,13 @@ UpdateScannerStatusResult = namedtuple('UpdateScannerStatusResult', [
 
 
 def update_scanner_status(
-    db, scanner_id, job, start_time, next_scheduled_scan, images_to_send
+    db,
+    scanner_id,
+    job,
+    start_time,
+    next_scheduled_scan,
+    images_to_send,
+    devices,
 ):
     if not db.has_scanner(scanner_id):
         _add_scanner(db, scanner_id)
@@ -62,6 +73,7 @@ def update_scanner_status(
         start_time=start_time,
         next_scheduled_scan=next_scheduled_scan,
         images_to_send=images_to_send,
+        devices=devices,
     )
     db.add_scanner_status(scanner_id, status)
     labels = {'scanner': scanner_id}
@@ -70,6 +82,7 @@ def update_scanner_status(
     SCANNER_START_TIME.labels(**labels).set(timestamp(start_time))
     SCANNER_LAST_STATUS_UPDATE_TIME.labels(**labels).set_to_current_time()
     SCANNER_STATUS_UPDATES.labels(**labels).inc()
+    SCANNER_CURRENT_DEVICES.labels(**labels).set(devices is not None)
     return UpdateScannerStatusResult(new_scanner=new_scanner)
 
 
