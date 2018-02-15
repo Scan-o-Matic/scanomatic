@@ -82,6 +82,11 @@ def scanner_status_update(scanner):
         type=inputs.natural,
         required=True,
     )
+    parser.add_argument(
+        'devices',
+        dest='devices',
+        action='append',
+    )
     args = parser.parse_args(strict=True)
     try:
         result = update_scanner_status(scanning_store, scanner, **args)
@@ -100,7 +105,6 @@ def scanner_status_get(scanner):
 
         if status is None:
             return jsonify({})
-
         return jsonify(scanner_status2json(status))
 
     return json_abort(

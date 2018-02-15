@@ -7,5 +7,6 @@ ScannerStatus = namedtuple('ScannerStatus', [
     'server_time',
     'start_time',
     'images_to_send',
-    'next_scheduled_scan'
+    'next_scheduled_scan',
+    'devices',
 ])

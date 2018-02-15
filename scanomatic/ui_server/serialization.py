@@ -43,6 +43,8 @@ def scanner_status2json(status):
         obj['nextScheduledScan'] = datetime2json(status.next_scheduled_scan)
     if status.job is not None:
         obj['job'] = status.job
+    if status.devices is not None:
+        obj['devices'] = status.devices
     return obj
 
 

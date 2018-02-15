@@ -81,7 +81,17 @@ class TestScannerStatus:
             'imagesToSend': 2,
             'startTime': '1985-10-26T00:00:00Z',
             'nextScheduledScan': '1985-10-26T00:22:00Z',
+            'devices': ['epson'],
         }
+
+    def test_add_scanner_no_scanners_status(self, client, jsonstatus):
+        jsonstatus['devices'] = []
+        response = client.put(
+            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status",
+            data=json.dumps(jsonstatus),
+            headers={'Content-Type': 'application/json'}
+        )
+        assert response.status_code == HTTPStatus.OK
 
     def test_add_scanner_status(self, client, jsonstatus):
         with freeze_time('1985-10-26 01:20', tz_offset=0):
@@ -103,14 +113,20 @@ class TestScannerStatus:
                 response.json["nextScheduledScan"]
                 == jsonstatus['nextScheduledScan']
             )
+            assert response.json["devices"] == jsonstatus['devices']
 
     @pytest.mark.parametrize('status', [
-        {'imagesToSend': 0, 'startTime': '1985-10-26T00:00:00Z'},
+        {
+            'imagesToSend': 0,
+            'startTime': '1985-10-26T00:00:00Z',
+            'devices': ['epson'],
+        },
         {
             'imagesToSend': 0,
             'startTime': '1985-10-26T00:00:00Z',
             'job': None,
             'nextScheduledScan': None,
+            'devices': ['epson'],
         },
     ])
     def test_add_scanner_status_no_job(self, client, status):

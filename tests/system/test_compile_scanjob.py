@@ -28,7 +28,11 @@ def create_scanner(scanomatic):
     scannerid = uuid.uuid4().hex
     response = requests.put(
         scanomatic + '/api/scanners/{}/status'.format(scannerid),
-        json={'startTime': '2000-01-02T00:00:00Z', 'imagesToSend': 0},
+        json={
+            'startTime': '2000-01-02T00:00:00Z',
+            'imagesToSend': 0,
+            'devices': ['epson'],
+        },
     )
     response.raise_for_status()
     return scannerid
