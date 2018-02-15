@@ -89,7 +89,6 @@ def scanner_status_update(scanner):
         required=True,
     )
     args = parser.parse_args(strict=True)
-    print(args.devices)
     try:
         result = update_scanner_status(scanning_store, scanner, **args)
     except UpdateScannerStatusError as error:
@@ -107,7 +106,6 @@ def scanner_status_get(scanner):
 
         if status is None:
             return jsonify({})
-        print(scanner_status2json(status))
         return jsonify(scanner_status2json(status))
 
     return json_abort(
