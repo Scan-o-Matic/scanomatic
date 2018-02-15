@@ -34,10 +34,8 @@ script:
     - npm test
     - docker-compose --verbose build --no-cache --force-rm
     - tox
-after_script:
-    - codecov
-
 after_success:
+    - codecov
     - coveralls-lcov -v -n scanomatic/ui_server_data/coverage/report-lcov/lcov.info > js-coverage.json
     - coveralls --merge=js-coverage.json
     - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"; docker-compose push; fi
