@@ -92,7 +92,7 @@ class TestScannerStatus:
             headers={'Content-Type': 'application/json'}
         )
         assert response.status_code == HTTPStatus.OK
-    
+
     def test_add_scanner_status(self, client, jsonstatus):
         with freeze_time('1985-10-26 01:20', tz_offset=0):
             response = client.put(
