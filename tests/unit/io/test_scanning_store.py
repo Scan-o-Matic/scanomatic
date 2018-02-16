@@ -16,11 +16,6 @@ from scanomatic.models.scanner import Scanner
 from scanomatic.models.scannerstatus import ScannerStatus
 
 
-@pytest.fixture(scope='function')
-def scanning_store():
-    return ScanningStore()
-
-
 JOB1 = ScanJob(
     identifier=5,
     name="Hello",
@@ -48,6 +43,14 @@ SCANNER_TWO = Scanner(
 )
 
 
+@pytest.fixture(scope='function')
+def scanning_store():
+    store = ScanningStore()
+    store.add_scanner(SCANNER_ONE)
+    store.add_scanner(SCANNER_TWO)
+    return store
+
+
 class TestScanners:
     def test_has_test_scanner(self, scanning_store):
         assert scanning_store.has_scanner(SCANNER_ONE.identifier)
@@ -68,15 +71,6 @@ class TestScanners:
         assert set(scanning_store.get_all_scanners()) == {
             SCANNER_ONE, SCANNER_TWO,
         }
-
-    @patch.dict('os.environ', {'SOM_HIDE_TEST_SCANNERS': '1'})
-    def test_has_no_scanner_if_not_using_test_scanners(self):
-        """Ensures no test scanners show up in live systems.
-
-        Note that we can't use the `scanning_store` fixture here since
-        then the patch doesn't work.
-        """
-        assert ScanningStore().get_all_scanners() == []
 
     def test_add_scanner(self, scanning_store):
         scanner = Scanner("Deep Thought", "42")

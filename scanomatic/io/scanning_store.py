@@ -28,19 +28,7 @@ class UnknownIdError(ValueError):
 
 class ScanningStore:
     def __init__(self):
-        if not int(os.environ.get('SOM_HIDE_TEST_SCANNERS', '0')):
-            self._scanners = {
-                '9a8486a6f9cb11e7ac660050b68338ac': Scanner(
-                    'Scanner one',
-                    '9a8486a6f9cb11e7ac660050b68338ac',
-                ),
-                '350986224086888954': Scanner(
-                    'Scanner two',
-                    '350986224086888954',
-                ),
-            }
-        else:
-            self._scanners = {}
+        self._scanners = {}
         self._scanner_statuses = {scanner: [] for scanner in self._scanners}
         self._scanjobs = {}
         self._scans = {}
