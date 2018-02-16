@@ -2,13 +2,12 @@ from __future__ import absolute_import
 from datetime import datetime, timedelta
 
 import pytest
-from mock import patch
 
 from pytz import utc
 
 from scanomatic.io.scanning_store import (
-    ScanningStore, ScanJobCollisionError,
-    ScanJobUnknownError, DuplicateIdError, DuplicateNameError, UnknownIdError
+    ScanningStore,
+    DuplicateIdError, DuplicateNameError, UnknownIdError
 )
 from scanomatic.models.scanjob import ScanJob
 from scanomatic.models.scan import Scan
@@ -46,21 +45,21 @@ SCANNER_TWO = Scanner(
 @pytest.fixture(scope='function')
 def scanning_store():
     store = ScanningStore()
-    store.add_scanner(SCANNER_ONE)
-    store.add_scanner(SCANNER_TWO)
+    store.add(SCANNER_ONE)
+    store.add(SCANNER_TWO)
     return store
 
 
 class TestScanners:
     def test_has_test_scanner(self, scanning_store):
-        assert scanning_store.has_scanner(SCANNER_ONE.identifier)
+        assert scanning_store.exists(Scanner, SCANNER_ONE.identifier)
 
     def test_not_having_unknown_scanner(self, scanning_store):
-        assert scanning_store.has_scanner("Unknown") is False
+        assert scanning_store.exists(Scanner, "Unknown") is False
 
     @pytest.mark.parametrize('scanner', (SCANNER_ONE, SCANNER_TWO))
     def test_getting_scanner(self, scanning_store, scanner):
-        assert scanning_store.get_scanner(scanner.identifier) == scanner
+        assert scanning_store.get(Scanner, scanner.identifier) == scanner
 
     def test_get_free(self, scanning_store):
         assert set(scanning_store.get_free_scanners()) == {
@@ -68,41 +67,35 @@ class TestScanners:
         }
 
     def test_get_all(self, scanning_store):
-        assert set(scanning_store.get_all_scanners()) == {
+        assert set(scanning_store.find(Scanner)) == {
             SCANNER_ONE, SCANNER_TWO,
         }
 
     def test_add_scanner(self, scanning_store):
         scanner = Scanner("Deep Thought", "42")
-        scanning_store.add_scanner(scanner)
-        assert set(scanning_store.get_all_scanners()) == {
+        scanning_store.add(scanner)
+        assert set(scanning_store.find(Scanner)) == {
             scanner, SCANNER_ONE, SCANNER_TWO}
 
     def test_no_add_scanner_duplicate_id(self, scanning_store):
         with pytest.raises(DuplicateIdError):
-            scanning_store.add_scanner(SCANNER_ONE)
+            scanning_store.add(SCANNER_ONE)
 
     def test_no_add_scanner_duplicate_name(self, scanning_store):
         scanner = Scanner("Scanner two", "2")
         with pytest.raises(DuplicateNameError):
-            scanning_store.add_scanner(scanner)
+            scanning_store.add(scanner)
 
     def test_get_scanner(self, scanning_store):
-        assert scanning_store.get_scanner(
-            '9a8486a6f9cb11e7ac660050b68338ac') == SCANNER_ONE
+        assert scanning_store.get(
+            Scanner, '9a8486a6f9cb11e7ac660050b68338ac') == SCANNER_ONE
 
     def test_no_get_scanner_by_unknown_id(self, scanning_store):
         with pytest.raises(UnknownIdError):
-            assert scanning_store.get_scanner("42")
-
-    def test_get_scanner_by_name(self, scanning_store):
-        assert scanning_store.get_scanner_by_name("Scanner two") == SCANNER_TWO
+            assert scanning_store.get(Scanner, "42")
 
 
 class TestScannerStatus:
-    def test_no_get_scanner_by_unknown_name(self, scanning_store):
-        assert scanning_store.get_scanner_by_name("Deep Thought") is None
-
     def test_get_scanner_status_list(self, scanning_store):
         assert scanning_store.get_scanner_status_list(
             SCANNER_ONE.identifier) == []
@@ -116,10 +109,19 @@ class TestScannerStatus:
             '9a8486a6f9cb11e7ac660050b68338ac') is None
 
     def test_get_lastest_scanner_status(self, scanning_store):
-        scanning_store._scanner_statuses[
-            '9a8486a6f9cb11e7ac660050b68338ac'] = ["1", "2"]
+        status1 = ScannerStatus(
+            job="j0bid",
+            server_time=datetime.now(utc),
+            start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc),
+            images_to_send=3,
+            next_scheduled_scan=datetime(1985, 10, 26, 1, 21, tzinfo=utc),
+            devices=['epson'],
+        )
+        status2 = status1._replace(server_time=datetime.now(utc))
+        scanning_store.add_scanner_status(SCANNER_ONE.identifier, status1)
+        scanning_store.add_scanner_status(SCANNER_ONE.identifier, status2)
         assert scanning_store.get_latest_scanner_status(
-            '9a8486a6f9cb11e7ac660050b68338ac') == "2"
+            SCANNER_ONE.identifier) == status2
 
     def test_add_scanner_status(self, scanning_store):
         status = ScannerStatus(
@@ -138,53 +140,39 @@ class TestScannerStatus:
 
 class TestAddJob:
     def test_add_jobb(self, scanning_store):
-        scanning_store.add_scanjob(JOB1)
-        assert JOB1.identifier in scanning_store.get_scanjob_ids()
+        scanning_store.add(JOB1)
+        assert scanning_store.exists(ScanJob, JOB1.identifier)
 
     def test_add_duplicate_job_raises(self, scanning_store):
-        scanning_store.add_scanjob(JOB1)
-        with pytest.raises(ScanJobCollisionError):
-            scanning_store.add_scanjob(JOB1)
-
-
-class TestRemoveJob:
-    def test_remove_job(self, scanning_store):
-        scanning_store.add_scanjob(JOB1)
-        scanning_store.remove_scanjob(JOB1.identifier)
-        assert JOB1 not in scanning_store.get_all_scanjobs()
-
-    def test_remove_unknown_job_raises(self, scanning_store):
-        with pytest.raises(ScanJobUnknownError):
-            scanning_store.remove_scanjob("Help")
+        scanning_store.add(JOB1)
+        with pytest.raises(DuplicateIdError):
+            scanning_store.add(JOB1)
 
 
 class TestGetJobs:
     def test_when_no_jobs(self, scanning_store):
-        assert scanning_store.get_all_scanjobs() == []
-        assert scanning_store.get_scanjob_ids() == []
+        assert list(scanning_store.find(ScanJob)) == []
 
     def test_get_all_jobs(self, scanning_store):
-        scanning_store.add_scanjob(JOB1)
-        scanning_store.add_scanjob(JOB2)
-        assert JOB1.identifier in scanning_store.get_scanjob_ids()
-        assert JOB2.identifier in scanning_store.get_scanjob_ids()
-        assert len(scanning_store.get_all_scanjobs()) == 2
+        scanning_store.add(JOB1)
+        scanning_store.add(JOB2)
+        assert set(scanning_store.find(ScanJob)) == {JOB1, JOB2}
 
 
 class TestGetScanjob:
     def test_existing_job(self, scanning_store):
-        scanning_store.add_scanjob(JOB1)
-        assert scanning_store.get_scanjob(JOB1.identifier) == JOB1
+        scanning_store.add(JOB1)
+        assert scanning_store.get(ScanJob, JOB1.identifier) == JOB1
 
     def test_unknown_job(self, scanning_store):
-        scanning_store.add_scanjob(JOB1)
-        with pytest.raises(ScanJobUnknownError):
-            scanning_store.get_scanjob('unknown')
+        scanning_store.add(JOB1)
+        with pytest.raises(UnknownIdError):
+            scanning_store.get(ScanJob, 'unknown')
 
 
 class TestUpdateScanjob:
     def test_update_existing(self, scanning_store):
-        scanning_store.add_scanjob(JOB1)
+        scanning_store.add(JOB1)
         updated_scanjob = ScanJob(
             identifier=JOB1.identifier,
             name="Bye",
@@ -192,35 +180,25 @@ class TestUpdateScanjob:
             interval=JOB1.interval,
             scanner_id=JOB1.scanner_id,
         )
-        scanning_store.update_scanjob(updated_scanjob)
-        assert scanning_store.get_scanjob(JOB1.identifier) == updated_scanjob
+        scanning_store.update(updated_scanjob)
+        assert scanning_store.get(ScanJob, JOB1.identifier) == updated_scanjob
 
     def test_update_unknown(self, scanning_store):
-        with pytest.raises(ScanJobUnknownError):
-            scanning_store.update_scanjob(JOB1)
-
-
-class TestGetJobIds:
-    def test_has_the_ids(self, scanning_store):
-        scanning_store.add_scanjob(JOB1)
-        scanning_store.add_scanjob(JOB2)
-        assert set(scanning_store.get_scanjob_ids()) == set(
-            [JOB1.identifier, JOB2.identifier]
-        )
+        with pytest.raises(UnknownIdError):
+            scanning_store.update(JOB1)
 
 
 class TestExistsJobWith:
     def test_reports_true_for_inserted(self, scanning_store):
-        scanning_store.add_scanjob(JOB1)
+        scanning_store.add(JOB1)
         for key in (
             'identifier', 'name', 'duration', 'interval', 'scanner_id'
         ):
-            assert scanning_store.exists_scanjob_with(key, getattr(JOB1, key))
+            assert scanning_store.exists(ScanJob, **{key: getattr(JOB1, key)})
 
     def test_reports_false_for_unknown(self, scanning_store):
-        scanning_store.add_scanjob(JOB1)
-        assert scanning_store.exists_scanjob_with(
-            'identifier', 'Hello') is False
+        scanning_store.add(JOB1)
+        assert scanning_store.exists(ScanJob, identifier='Hello') is False
 
 
 class TestCurrentScanJob:
@@ -228,14 +206,14 @@ class TestCurrentScanJob:
 
     @pytest.fixture
     def store(self, scanning_store):
-        scanning_store.add_scanjob(ScanJob(
+        scanning_store.add(ScanJob(
             identifier='1',
             name='Foo',
             duration=timedelta(minutes=1),
             interval=timedelta(seconds=5),
             scanner_id=self.SCANNERID
         ))
-        scanning_store.add_scanjob(ScanJob(
+        scanning_store.add(ScanJob(
             identifier='2',
             name='Bar',
             duration=timedelta(minutes=1),
@@ -243,7 +221,7 @@ class TestCurrentScanJob:
             scanner_id=self.SCANNERID,
             start_time=datetime(1985, 10, 26, 1, 20, tzinfo=utc)
         ))
-        scanning_store.add_scanjob(ScanJob(
+        scanning_store.add(ScanJob(
             identifier='3',
             name='Baz',
             duration=timedelta(minutes=1),
@@ -251,7 +229,7 @@ class TestCurrentScanJob:
             scanner_id=self.SCANNERID,
             start_time=datetime(1985, 10, 26, 1, 35, tzinfo=utc)
         ))
-        scanning_store.add_scanjob(ScanJob(
+        scanning_store.add(ScanJob(
             identifier='4',
             name='Biz',
             duration=timedelta(minutes=30),
@@ -329,42 +307,39 @@ class TestScan:
         )
 
     def test_add_one(self, scanning_store, scanjob1, scanjob1_scan1):
-        scanning_store.add_scanjob(scanjob1)
-        scanning_store.add_scan(scanjob1_scan1)
-        assert (
-            list(scanning_store.get_scans())
-            == [scanjob1_scan1]
-        )
+        scanning_store.add(scanjob1)
+        scanning_store.add(scanjob1_scan1)
+        assert list(scanning_store.find(Scan)) == [scanjob1_scan1]
 
     def test_add_multiple(
         self, scanning_store,
         scanjob1, scanjob1_scan1, scanjob1_scan2
     ):
-        scanning_store.add_scanjob(scanjob1)
-        scanning_store.add_scan(scanjob1_scan1)
-        scanning_store.add_scan(scanjob1_scan2)
+        scanning_store.add(scanjob1)
+        scanning_store.add(scanjob1_scan1)
+        scanning_store.add(scanjob1_scan2)
         assert (
-            set(scanning_store.get_scans())
+            set(scanning_store.find(Scan))
             == {scanjob1_scan1, scanjob1_scan2}
         )
 
     def test_duplicate_id(
         self, scanning_store, scanjob1, scanjob1_scan1,
     ):
-        scanning_store.add_scanjob(scanjob1)
-        scanning_store.add_scan(scanjob1_scan1)
+        scanning_store.add(scanjob1)
+        scanning_store.add(scanjob1_scan1)
         with pytest.raises(DuplicateIdError):
-            scanning_store.add_scan(scanjob1_scan1)
+            scanning_store.add(scanjob1_scan1)
 
     def test_add_unknown_scanjob(self, scanning_store, scanjob1_scan1):
-        with pytest.raises(ScanJobUnknownError):
-            scanning_store.add_scan(scanjob1_scan1)
+        with pytest.raises(UnknownIdError):
+            scanning_store.add(scanjob1_scan1)
 
     def test_get_scan(self, scanning_store, scanjob1, scanjob1_scan1):
-        scanning_store.add_scanjob(scanjob1)
-        scanning_store.add_scan(scanjob1_scan1)
-        assert scanning_store.get_scan(scanjob1_scan1.id) == scanjob1_scan1
+        scanning_store.add(scanjob1)
+        scanning_store.add(scanjob1_scan1)
+        assert scanning_store.get(Scan, scanjob1_scan1.id) == scanjob1_scan1
 
     def test_get_unknown_scan(self, scanning_store):
         with pytest.raises(UnknownIdError):
-            scanning_store.get_scan('unknown')
+            scanning_store.get(Scan, 'unknown')

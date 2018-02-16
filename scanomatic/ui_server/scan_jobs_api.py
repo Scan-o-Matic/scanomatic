@@ -8,10 +8,9 @@ from flask_restful import Api, Resource
 import pytz
 from werkzeug.exceptions import NotFound
 
-from scanomatic.io.scanning_store import (
-    ScanJobCollisionError, ScanJobUnknownError,
-)
+from scanomatic.io.scanning_store import DuplicateIdError, UnknownIdError
 from scanomatic.models.scanjob import ScanJob
+from scanomatic.models.scanner import Scanner
 from .general import json_abort
 from .serialization import job2json
 
@@ -30,7 +29,7 @@ def scan_jobs_add():
     name = data_object.get('name', None)
     if not name:
         return json_abort(BAD_REQUEST, reason="No name supplied")
-    if scanning_store.exists_scanjob_with('name', name):
+    if scanning_store.exists(ScanJob, name=name):
         return json_abort(
             CONFLICT,
             reason="Name '{}' duplicated".format(name)
@@ -58,7 +57,7 @@ def scan_jobs_add():
     scanner = data_object.get('scannerId', None)
     if scanner is None:
         return json_abort(BAD_REQUEST, reason="Scanner not supplied")
-    if not scanning_store.has_scanner(scanner):
+    if not scanning_store.exists(Scanner, scanner):
         return json_abort(
             BAD_REQUEST,
             reason="Scanner '{}' unknown".format(scanner)
@@ -66,14 +65,14 @@ def scan_jobs_add():
 
     identifier = uuid1().hex
     try:
-        scanning_store.add_scanjob(ScanJob(
+        scanning_store.add(ScanJob(
             identifier=identifier,
             name=name,
             duration=duration,
             interval=interval,
             scanner_id=scanner
         ))
-    except ScanJobCollisionError:
+    except DuplicateIdError:
         return json_abort(INTERNAL_SERVER_ERROR, reason="Identifier collision")
 
     return jsonify(identifier=identifier), CREATED
@@ -83,7 +82,7 @@ def scan_jobs_add():
 def scan_jobs_list():
     scanning_store = current_app.config['scanning_store']
     return jsonify([
-        job2json(job) for job in scanning_store.get_all_scanjobs()
+        job2json(job) for job in scanning_store.find(ScanJob)
     ])
 
 
@@ -91,8 +90,8 @@ class ScanJobDocument(Resource):
     def get(self, scanjobid):
         db = current_app.config['scanning_store']
         try:
-            job = db.get_scanjob(scanjobid)
-        except ScanJobUnknownError:
+            job = db.get(ScanJob, scanjobid)
+        except UnknownIdError:
             raise NotFound
         return job2json(job)
 
@@ -101,15 +100,15 @@ class ScanJobStartController(Resource):
     def post(self, scanjobid):
         db = current_app.config['scanning_store']
         try:
-            job = db.get_scanjob(scanjobid)
-        except ScanJobUnknownError:
+            job = db.get(ScanJob, scanjobid)
+        except UnknownIdError:
             raise NotFound
         now = datetime.now(pytz.utc)
         if job.start_time is not None:
             return json_abort(CONFLICT, reason='Scanning Job already started')
         if db.has_current_scanjob(job.scanner_id, now):
             return json_abort(CONFLICT, reason='Scanner busy')
-        db.update_scanjob(job._replace(start_time=now))
+        db.update(job._replace(start_time=now))
         return '', OK
 
 

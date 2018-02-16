@@ -10,8 +10,9 @@ from werkzeug.exceptions import NotFound
 
 from .general import json_abort
 from .serialization import scan2json
-from scanomatic.io.scanning_store import ScanJobUnknownError, UnknownIdError
+from scanomatic.io.scanning_store import UnknownIdError
 from scanomatic.models.scan import Scan
+from scanomatic.models.scanjob import ScanJob
 from scanomatic.util.scanid import generate_scan_id
 
 
@@ -19,11 +20,8 @@ class ScanCollection(Resource):
     def get(self):
         db = current_app.config['scanning_store']
         try:
-            return [
-                scan2json(md)
-                for md in db.get_scans()
-            ]
-        except ScanJobUnknownError:
+            return [scan2json(md) for md in db.find(Scan)]
+        except UnknownIdError:
             raise NotFound
 
     def post(self):
@@ -58,8 +56,8 @@ class ScanCollection(Resource):
         )
         args = parser.parse_args(strict=True)
         try:
-            scanjob = db.get_scanjob(args.scanjob_id)
-        except ScanJobUnknownError:
+            scanjob = db.get(ScanJob, args.scanjob_id)
+        except UnknownIdError:
             return json_abort(
                 HTTPStatus.BAD_REQUEST,
                 message='Unknown scan job',
@@ -78,7 +76,7 @@ class ScanCollection(Resource):
         # the scan whereas the image is not there. (I.e. the source of truth
         # is the database).
         imagestore.put(args.image.read(), scan)
-        db.add_scan(scan)
+        db.add(scan)
         return {'identifier': scan.id}, HTTPStatus.CREATED
 
 
@@ -86,7 +84,7 @@ class ScanDocument(Resource):
     def get(self, scanid):
         db = current_app.config['scanning_store']
         try:
-            return scan2json(db.get_scan(scanid))
+            return scan2json(db.get(Scan, scanid))
         except UnknownIdError:
             return json_abort(
                 HTTPStatus.NOT_FOUND, message='No scan with this id',
@@ -98,7 +96,7 @@ class ScanImage(Resource):
         db = current_app.config['scanning_store']
         imagestore = current_app.config['imagestore']
         try:
-            scan = db.get_scan(scanid)
+            scan = db.get(Scan, scanid)
         except UnknownIdError:
             return json_abort(
                 HTTPStatus.NOT_FOUND, message='No scan with this id',

@@ -62,7 +62,7 @@ def update_scanner_status(
     images_to_send,
     devices,
 ):
-    if not db.has_scanner(scanner_id):
+    if not db.exists(Scanner, scanner_id):
         _add_scanner(db, scanner_id)
         new_scanner = True
     else:
@@ -90,7 +90,7 @@ def update_scanner_status(
 def _add_scanner(db, scanner_id):
     try:
         name = get_generic_name()
-        db.add_scanner(Scanner(name, scanner_id))
+        db.add(Scanner(name, scanner_id))
     except DuplicateNameError:
         UpdateScannerStatusError(
             "Failed to create scanner, please try again",
