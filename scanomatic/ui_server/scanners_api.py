@@ -32,12 +32,8 @@ def _scanner_is_online(scanner_id, scanning_store):
 
 @blueprint.route("", methods=['GET'])
 def scanners_get():
-    get_free = request.args.get('free', False)
     scanning_store = current_app.config['scanning_store']
-    scanners = (
-        scanning_store.get_free_scanners() if get_free else
-        scanning_store.find(Scanner)
-    )
+    scanners = scanning_store.find(Scanner)
     return jsonify([
         scanner2json(
             scanner,

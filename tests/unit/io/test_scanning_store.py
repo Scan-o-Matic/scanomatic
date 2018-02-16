@@ -61,16 +61,6 @@ class TestScanners:
     def test_getting_scanner(self, scanning_store, scanner):
         assert scanning_store.get(Scanner, scanner.identifier) == scanner
 
-    def test_get_free(self, scanning_store):
-        assert set(scanning_store.get_free_scanners()) == {
-            SCANNER_ONE, SCANNER_TWO,
-        }
-
-    def test_get_all(self, scanning_store):
-        assert set(scanning_store.find(Scanner)) == {
-            SCANNER_ONE, SCANNER_TWO,
-        }
-
     def test_add_scanner(self, scanning_store):
         scanner = Scanner("Deep Thought", "42")
         scanning_store.add(scanner)

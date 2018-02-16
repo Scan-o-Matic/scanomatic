@@ -84,14 +84,6 @@ class ScanningStore:
             raise UnknownIdError(type(item), item.identifier)
         self._get_store(type(item))[item.identifier] = item
 
-    def get_free_scanners(self):
-        for scanner in self.find(Scanner):
-            if not self.has_current_scanjob(
-                scanner.identifier,
-                datetime.now(pytz.utc)
-            ):
-                yield scanner
-
     def get_current_scanjob(self, scanner_id, timepoint):
         for job in self.find(ScanJob, scanner_id=scanner_id):
             if job.is_active(timepoint):
