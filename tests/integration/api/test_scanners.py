@@ -55,15 +55,6 @@ class TestScannerStatus:
             for scanner in [self.SCANNER_TWO, self.SCANNER_ONE]
         )
 
-    def test_get_free_scanners(self, client):
-        response = client.get(self.URI + '?free=1')
-        assert response.status_code == HTTPStatus.OK
-        assert len(response.json) == 2
-        assert all(
-            scanner in response.json
-            for scanner in [self.SCANNER_TWO, self.SCANNER_ONE]
-        )
-
     def test_get_scanner(self, client):
         response = client.get(self.URI + "/9a8486a6f9cb11e7ac660050b68338ac")
         assert response.status_code == HTTPStatus.OK

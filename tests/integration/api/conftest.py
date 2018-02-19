@@ -20,10 +20,10 @@ def app(tmpdir):
     app.register_blueprint(scan_jobs_api.blueprint, url_prefix="/scan-jobs")
     app.register_blueprint(scans_api.blueprint, url_prefix="/scans")
     app.config['scanning_store'] = ScanningStore()
-    app.config['scanning_store'].add_scanner(
+    app.config['scanning_store'].add(
         Scanner('Scanner one', '9a8486a6f9cb11e7ac660050b68338ac')
     )
-    app.config['scanning_store'].add_scanner(
+    app.config['scanning_store'].add(
         Scanner('Scanner two', '350986224086888954')
     )
     app.config['imagestore'] = ImageStore(str(tmpdir))

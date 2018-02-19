@@ -12,6 +12,7 @@ from .serialization import job2json, scanner_status2json, scanner2json
 from scanomatic.scanning.update_scanner_status import (
     update_scanner_status, UpdateScannerStatusError,
 )
+from scanomatic.models.scanner import Scanner
 
 blueprint = Blueprint("scanners_api", __name__)
 SCANNER_TIMEOUT = timedelta(minutes=5)
@@ -31,12 +32,8 @@ def _scanner_is_online(scanner_id, scanning_store):
 
 @blueprint.route("", methods=['GET'])
 def scanners_get():
-    get_free = request.args.get('free', False)
     scanning_store = current_app.config['scanning_store']
-    scanners = (
-        scanning_store.get_free_scanners() if get_free else
-        scanning_store.get_all_scanners()
-    )
+    scanners = scanning_store.find(Scanner)
     return jsonify([
         scanner2json(
             scanner,
@@ -49,9 +46,9 @@ def scanners_get():
 def scanner_get(scanner):
     scanning_store = current_app.config['scanning_store']
 
-    if scanning_store.has_scanner(scanner):
+    if scanning_store.exists(Scanner, scanner):
         return jsonify(scanner2json(
-            scanning_store.get_scanner(scanner),
+            scanning_store.get(Scanner, scanner),
             _scanner_is_online(scanner, scanning_store)
         ))
 
@@ -100,7 +97,7 @@ def scanner_status_update(scanner):
 def scanner_status_get(scanner):
     scanning_store = current_app.config['scanning_store']
 
-    if scanning_store.has_scanner(scanner):
+    if scanning_store.exists(Scanner, scanner):
         status = scanning_store.get_latest_scanner_status(scanner)
 
         if status is None:
@@ -115,7 +112,7 @@ def scanner_status_get(scanner):
 class ScannerJob(Resource):
     def get(self, scannerid):
         db = current_app.config['scanning_store']
-        if not db.has_scanner(scannerid):
+        if not db.exists(Scanner, scannerid):
             raise NotFound
         job = db.get_current_scanjob(scannerid, datetime.now(pytz.utc))
         if job:

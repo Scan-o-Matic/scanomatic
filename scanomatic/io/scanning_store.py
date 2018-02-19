@@ -1,17 +1,12 @@
 from __future__ import absolute_import
+from collections import defaultdict
 from datetime import datetime
-import os
 import pytz
 
+from scanomatic.models.scan import Scan
+from scanomatic.models.scanjob import ScanJob
 from scanomatic.models.scanner import Scanner
-
-
-class ScanJobCollisionError(ValueError):
-    pass
-
-
-class ScanJobUnknownError(ValueError):
-    pass
+from scanomatic.models.scannerstatus import ScannerStatus
 
 
 class DuplicateIdError(ValueError):
@@ -23,133 +18,86 @@ class DuplicateNameError(ValueError):
 
 
 class UnknownIdError(ValueError):
-    pass
+    def __init__(self, klass, identifier):
+        super(UnknownIdError, self).__init__()
+        self._klass = klass
+        self._identifier = identifier
+
+    def __str__(self):
+        return 'Unknown {} id: {}'.format(
+            self._klass.__name__, self._identifier
+        )
 
 
 class ScanningStore:
     def __init__(self):
-        self._scanners = {}
-        self._scanner_statuses = {scanner: [] for scanner in self._scanners}
-        self._scanjobs = {}
-        self._scans = {}
+        self._stores = {
+            Scan: {},
+            ScanJob: {},
+            Scanner: {},
+            ScannerStatus: defaultdict(list),
+        }
 
-    def has_scanner(self, identifier):
-        return identifier in self._scanners
-
-    def get_scanner(self, identifier):
+    def _get_store(self, klass):
         try:
-            return self._scanners[identifier]
+            return self._stores[klass]
         except KeyError:
-            raise UnknownIdError
+            raise TypeError('No store for object type {}'.format(klass))
 
-    def get_scanner_by_name(self, name):
-        scanners = [
-            self._scanners[scanner] for scanner in self._scanners
-            if self._scanners[scanner].name == name
-        ]
-        if len(scanners) > 1:
-            raise DuplicateNameError(
-                "Duplicate name '{}' in scanner list".format(name)
-            )
-        elif len(scanners) == 0:
-            return None
-        else:
-            return scanners[0]
-
-    def add_scanner(self, scanner):
-        if self.has_scanner(scanner.identifier):
-            raise DuplicateIdError(
-                "Cannot add duplicate scanner with id '{}'".format(
-                    scanner.identifier)
-            )
-        elif self.get_scanner_by_name(scanner.name) is not None:
+    def add(self, item):
+        klass = type(item)
+        store = self._get_store(klass)
+        if item.identifier in store:
+            raise DuplicateIdError(klass, item.identifier)
+        if klass is Scanner and self.exists(Scanner, name=item.name):
             raise DuplicateNameError(
                 "Cannot add duplicate scanner with name '{}'".format(
-                    scanner.name)
+                    item.name)
             )
-        self._scanners[scanner.identifier] = scanner
-        self._scanner_statuses[scanner.identifier] = []
+        if klass is Scan and not self.exists(ScanJob, item.scanjob_id):
+            raise UnknownIdError(ScanJob, item.scanjob_id)
+        store[item.identifier] = item
 
-    def get_free_scanners(self):
-        return [
-            scanner for scanner in self._scanners.values()
-            if self.has_current_scanjob(
-                scanner.identifier,
-                datetime.now(pytz.utc)
-            ) is False
-        ]
-
-    def get_all_scanners(self):
-        return list(self._scanners.values())
-
-    def add_scanjob(self, job):
-        if job.identifier in self._scanjobs:
-            raise ScanJobCollisionError(
-                "{} already used".format(job.identifier)
-            )
-        self._scanjobs[job.identifier] = job
-
-    def remove_scanjob(self, identifier):
-        if identifier in self._scanjobs:
-            del self._scanjobs[identifier]
-        else:
-            raise ScanJobUnknownError(
-                "{} is not a known job".format(identifier)
-            )
-
-    def get_scanjob(self, identifier):
+    def get(self, klass, id_):
         try:
-            return self._scanjobs[identifier]
+            return self._get_store(klass)[id_]
         except KeyError:
-            raise ScanJobUnknownError(identifier)
+            raise UnknownIdError(klass, id_)
 
-    def update_scanjob(self, job):
-        if job.identifier not in self._scanjobs:
-            raise ScanJobUnknownError(job.identifier)
-        self._scanjobs[job.identifier] = job
+    def find(self, klass, **constraints):
+        store = self._get_store(klass)
+        for item in store.values():
+            for key in constraints:
+                if getattr(item, key) != constraints[key]:
+                    break
+            else:
+                yield item
 
-    def get_all_scanjobs(self):
-        return list(self._scanjobs.values())
-
-    def get_scanjob_ids(self):
-        return list(self._scanjobs.keys())
-
-    def exists_scanjob_with(self, key, value):
-        for job in self._scanjobs.values():
-            if getattr(job, key) == value:
-                return True
+    def exists(self, klass, identifier=None, **constraints):
+        if identifier is not None:
+            constraints['identifier'] = identifier
+        for item in self.find(klass, **constraints):
+            return True
         return False
 
+    def update(self, item):
+        if not self.exists(type(item), item.identifier):
+            raise UnknownIdError(type(item), item.identifier)
+        self._get_store(type(item))[item.identifier] = item
+
     def get_current_scanjob(self, scanner_id, timepoint):
-        for job in self._scanjobs.values():
-            if job.scanner_id == scanner_id and job.is_active(timepoint):
+        for job in self.find(ScanJob, scanner_id=scanner_id):
+            if job.is_active(timepoint):
                 return job
 
     def has_current_scanjob(self, scanner_id, timepoint):
         return self.get_current_scanjob(scanner_id, timepoint) is not None
 
-    def add_scan(self, scan):
-        if scan.scanjob_id not in self._scanjobs:
-            raise ScanJobUnknownError
-        if scan.id in self._scans:
-            raise DuplicateIdError
-        self._scans[scan.id] = scan
-
-    def get_scans(self):
-        for item in self._scans.values():
-            yield item
-
-    def get_scan(self, scanid):
-        try:
-            return self._scans[scanid]
-        except KeyError:
-            raise UnknownIdError
-
     def get_scanner_status_list(self, scanner_id):
-        try:
-            return self._scanner_statuses[scanner_id]
-        except KeyError:
-            raise UnknownIdError
+        if self.exists(Scanner, scanner_id):
+            return self._get_store(ScannerStatus)[scanner_id]
+        else:
+            raise UnknownIdError(Scanner, scanner_id)
 
     def get_latest_scanner_status(self, scanner_id):
         try:
