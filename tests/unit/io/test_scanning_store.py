@@ -77,8 +77,9 @@ class TestScanners:
             scanning_store.add(scanner)
 
     def test_get_scanner(self, scanning_store):
-        assert scanning_store.get(
-            Scanner, '9a8486a6f9cb11e7ac660050b68338ac') == SCANNER_ONE
+        assert (
+            scanning_store.get(Scanner, SCANNER_ONE.identifier) == SCANNER_ONE
+        )
 
     def test_no_get_scanner_by_unknown_id(self, scanning_store):
         with pytest.raises(UnknownIdError):

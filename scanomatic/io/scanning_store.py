@@ -45,17 +45,18 @@ class ScanningStore:
             raise TypeError('No store for object type {}'.format(klass))
 
     def add(self, item):
-        store = self._get_store(type(item))
+        klass = type(item)
+        store = self._get_store(klass)
         if item.identifier in store:
-            raise DuplicateIdError(type(item), item.identifier)
-        if type(item) is Scanner and self.exists(Scanner, name=item.name):
+            raise DuplicateIdError(klass, item.identifier)
+        if klass is Scanner and self.exists(Scanner, name=item.name):
             raise DuplicateNameError(
                 "Cannot add duplicate scanner with name '{}'".format(
                     item.name)
             )
-        if type(item) is Scan and not self.exists(ScanJob, item.scanjob_id):
+        if klass is Scan and not self.exists(ScanJob, item.scanjob_id):
             raise UnknownIdError(ScanJob, item.scanjob_id)
-        self._get_store(type(item))[item.identifier] = item
+        store[item.identifier] = item
 
     def get(self, klass, id_):
         try:
@@ -74,7 +75,7 @@ class ScanningStore:
 
     def exists(self, klass, identifier=None, **constraints):
         if identifier is not None:
-            return identifier in self._get_store(klass)
+            constraints['identifier'] = identifier
         for item in self.find(klass, **constraints):
             return True
         return False
