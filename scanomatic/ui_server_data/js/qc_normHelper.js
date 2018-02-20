@@ -192,7 +192,7 @@ function getChar(event) {
     } else if (event.which != 0 && event.charCode != 0) {
         return String.fromCharCode(event.which); // the rest
     } else {
-        return null; // special key
+        return ''; // special key
     }
 }
 
