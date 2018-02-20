@@ -76,8 +76,16 @@ function getBaseLog(base, value) {
     return Math.log(value) / Math.log(base);
 }
 
+function modalMessage(msg, allowClose) {
+    $("#divLoading")
+        .html(`<p>${msg}</p>`)
+        .modal({ escapeClose: !!allowClose, clickClose: !!allowClose, showClose: false });
+}
+
 function wait() {
-    $("#divLoading").modal({ escapeClose: false, clickClose: false, showClose: false });
+    $("#divLoading")
+        .html('<p>Talking to server...</p>')
+        .modal({ escapeClose: false, clickClose: false, showClose: false });
     spinner.spin(spinTarget);
 }
 
