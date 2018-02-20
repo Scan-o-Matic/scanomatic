@@ -118,7 +118,15 @@ describe('<ScanningJobPanel />', () => {
         const link = wrapper
             .find('[href="/compile?projectdirectory=root/job0000"]');
         expect(link.exists()).toBe(true);
-        expect(link.text()).toEqual('Compile project Omnibus');
+        expect(link.text()).toEqual('Compile project');
+    });
+
+    it('should render a link to the qc page', () => {
+        const wrapper = shallow(<ScanningJobPanel {...props} />);
+        const link = wrapper
+            .find('[href="/qc?analysisdirectory=job0000/analysis&project=Omnibus"]');
+        expect(link.exists()).toBe(true);
+        expect(link.text()).toEqual('QC project');
     });
 
     describe('Scan verb', () => {

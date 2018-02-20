@@ -70,7 +70,7 @@ export default function ScanningJobPanel(props) {
                 <a href={`/compile?projectdirectory=root/${props.identifier}`}>
                     Compile project
                 </a>
-                <a href={`/qc_norm?projectdirectory=${props.identifier}&project=${props.name}`}>
+                <a href={`/qc_norm?analysisdirectory=${encodeURL(props.identifier)}/analysis&project=${encodeURL(props.name)}`}>
                     QC project
                 </a>
             </div>

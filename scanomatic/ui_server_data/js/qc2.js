@@ -1,15 +1,16 @@
 const getURLParam = (name) => {
     const results = new RegExp(`[?&]${name}=([^&#]*)`)
         .exec(window.location.href);
-    return results && results[1];
+    return results && decodeURI(results[1]);
 };
 
 const setQCProjectFromURL = () => {
-    const projectHint = getURLParam('projectdirectory');
-    if (projectHint) {
-        return $.get(`/api/results/browse/${projectHint}/analysis`)
+    const analysisDirectory = getURLParam('analysisdirectory');
+    if (analysisDirectory) {
+        return $.get(`/api/results/browse/${analysisDirectory}`)
             .then((r) => {
                 $('#btnBrowseProject-box').hide();
+                projectSlelectionStage('project');
                 if (!r.is_project) {
                     modalMessage('<strong>Error</strong>: No analyis found!');
                     return;
