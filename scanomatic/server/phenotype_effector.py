@@ -56,6 +56,12 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         self._feature_job = job.content_model
         self._job.content_model = self._feature_job
 
+        log_path = os.path.join(
+            self._feature_job.analysis_directory,
+            paths.Paths().phenotypes_extraction_log,
+        )
+        self._logger.log_to_file(log_path)
+
         if feature_factory.FeaturesFactory.validate(self._feature_job) is True:
             feature_factory.FeaturesFactory.serializer.dump(
                 self._feature_job,

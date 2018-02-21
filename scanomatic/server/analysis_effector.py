@@ -69,7 +69,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._allowed_calls['setup'] = self.setup
 
-        self._redirect_logging = True
         self._reference_compilation_image_model = None
 
         if job.content_model:
@@ -255,6 +254,11 @@ Scan-o-Matic""", self._analysis_job)
                         self._analysis_job.output_directory))
                 raise StopIteration
 
+        log_path = os.path.join(
+            self._analysis_job.output_directory, Paths().analysis_run_log
+        )
+        self._logger.log_to_file(log_path)
+
         self.setup_pinning(len(self._first_pass_results.plates))
 
         AnalysisModelFactory.serializer.dump(
@@ -336,13 +340,11 @@ Scan-o-Matic""", self._analysis_job)
 
         remove_state_from_path(self._analysis_job.output_directory)
 
-    def setup(self, job, redirect_logging=True):
+    def setup(self, job):
 
         if self._running:
             self.add_message("Cannot change settings while running")
             return
-
-        self._redirect_logging = redirect_logging
 
         if not self._analysis_job.output_directory:
             AnalysisModelFactory.set_default(self._analysis_job, [self._analysis_job.FIELD_TYPES.output_directory])
