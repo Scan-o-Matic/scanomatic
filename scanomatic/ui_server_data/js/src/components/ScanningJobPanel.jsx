@@ -56,7 +56,7 @@ export default function ScanningJobPanel(props) {
         );
     }
     return (
-        <div className="panel panel-default job-listing">
+        <div className="panel panel-default job-listing" id={`job-${props.identifier}`}>
             <div className="panel-heading">
                 <h3 className="panel-title">{props.name}</h3>
             </div>

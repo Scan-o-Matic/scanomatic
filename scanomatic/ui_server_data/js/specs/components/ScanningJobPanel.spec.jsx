@@ -48,6 +48,12 @@ describe('<ScanningJobPanel />', () => {
         expect(title.text()).toContain(props.name);
     });
 
+    it('should render a panel with id from the job', () => {
+        const wrapper = shallow(<ScanningJobPanel {...props} />);
+        const panel = wrapper.find('div.panel');
+        expect(panel.prop('id')).toEqual(`job-${props.identifier}`);
+    });
+
     it('should render a job-start button', () => {
         const wrapper = shallow(<ScanningJobPanel {...props} scanner={scanner} />);
         const btn = wrapper.find('button.job-start');

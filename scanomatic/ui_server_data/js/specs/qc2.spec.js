@@ -72,7 +72,7 @@ describe('QC2 module', () => {
                 it('alerts user to missing analysis', (done) => {
                     window.setQCProjectFromURL().then(() => {
                         expect(modalMessageSpy)
-                            .toHaveBeenCalledWith('<strong>Error</strong>: No analyis found!');
+                            .toHaveBeenCalledWith('<strong>Error</strong>: No analysis found!');
                         done();
                     });
                 });
