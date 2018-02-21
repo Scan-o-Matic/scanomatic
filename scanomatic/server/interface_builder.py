@@ -136,29 +136,6 @@ class InterfaceBuilder(SingeltonOneInit):
 
         return successful_stop
 
-    @_verify_admin
-    def _server_shutdown(self, user_id, wait_for_jobs_to_stop=False):
-
-        self._remove_rpc_server()
-
-        val = self._remove_som_server(wait_for_jobs_to_stop=wait_for_jobs_to_stop)
-
-        if val:
-            self.logger.info("Server is shutting down")
-        else:
-            self.logger.error("Unknown error shutting down Scan-o-Matic server")
-
-        return sanitize_communication(val)
-
-    @_verify_admin
-    def _server_restart(self, user_id, wait_for_jobs_to_stop=False):
-
-        self._remove_rpc_server()
-
-        self._restart_server_thread(wait_for_jobs_to_stop)
-
-        return True
-
     @decorators.threaded
     def _restart_server_thread(self, wait_for_jobs_to_stop):
 

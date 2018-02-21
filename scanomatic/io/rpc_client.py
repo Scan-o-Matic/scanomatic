@@ -16,6 +16,7 @@ import scanomatic.io.logger as logger
 # METHODS
 #
 
+socket.setdefaulttimeout(3)
 
 def sanitize_communication(obj):
 
@@ -68,9 +69,7 @@ class _ClientProxy(object):
                               'createAnalysisJob',
                               'removeFromQueue',
                               'reestablishMe',
-                              'flushQueue',
-                              'serverRestart',
-                              'serverShutDown')
+                              'flushQueue')
 
         self._client = None
         self._host = None
@@ -81,14 +80,7 @@ class _ClientProxy(object):
 
     def __getattr__(self, key):
 
-        if key == 'launch_local':
-            if self.online is False and self.local:
-                self._logger.info("Launching new local server")
-                return lambda: Popen(["scan-o-matic_server"])
-            else:
-                return lambda: self._logger.warning("Can't launch because server is {0}".format(['not local', 'online'][self.online]))
-
-        elif key in self._allowedMethods():
+        if key in self._allowedMethods():
             m = self._userIDdecorator(getattr(self._client, key))
             m.__doc__ = (self._client.system.methodHelp(key) +
                          ["", "\n\nNOTE: userID is already supplied"][
