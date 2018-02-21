@@ -4,15 +4,11 @@ import uuid
 import requests
 
 
-def test_scanner_is_listed_after_added(scanomatic, browser):
+def test_added_scanner_gets_a_name(scanomatic):
     scannerid = create_scanner(scanomatic)
-    response = requests.get(scanomatic + '/api/scanners')
-    scanners = response.json()
-    scanner = [
-        scanner for scanner in scanners if scanner['identifier'] == scannerid
-    ]
-    assert len(scanner) == 1
-    scanner = scanner[0]
+    response = requests.get(scanomatic + '/api/scanners/' + scannerid)
+    response.raise_for_status()
+    scanner = response.json()
     name = scanner['name']
     assert len(name.split(' ', 2)) == 3
     assert name.split(' ', 2)[0] == 'The'
