@@ -2229,7 +2229,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         )
 
         if undoable:
-            self._add_undo(plate, positions, phenotype, previous_state)
+            self._add_undo(id_plate, positions, phenotype, previous_state)
 
     def _add_undo(self, plate, position_list, phenotype, previous_state):
 
