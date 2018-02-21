@@ -76,17 +76,17 @@ function getBaseLog(base, value) {
     return Math.log(value) / Math.log(base);
 }
 
-function modalMessage(msg, allowClose) {
-    $("#divLoading")
-        .html(`<p>${msg}</p>`)
-        .modal({ escapeClose: !!allowClose, clickClose: !!allowClose, showClose: false });
-}
-
 function wait() {
     $("#divLoading")
         .html('<p>Talking to server...</p>')
         .modal({ escapeClose: false, clickClose: false, showClose: false });
     spinner.spin(spinTarget);
+}
+
+function modalMessage(msg, allowClose) {
+    $('#divLoading')
+        .html(`<p>${msg}</p>`)
+        .modal({ escapeClose: !!allowClose, clickClose: !!allowClose, showClose: false });
 }
 
 function getLock(callback) {
@@ -239,7 +239,7 @@ function createMarkButtons() {
     createMarkButton("#btnMarkNoGrowth", plateMetaDataType.NoGrowth);
 }
 
-function projectSlelectionStage(level) {
+function projectSelectionStage(level) {
     switch (level) {
         case "project":
             $("#displayArea").hide();
@@ -365,7 +365,7 @@ function drawReferenceOffsetSelecton() {
 
 //draw run phenotypes selection
 function drawRunPhenotypeSelection(path) {
-    projectSlelectionStage("Phenotypes");
+    projectSelectionStage("Phenotypes");
     console.log("Phenotypes path: " + path);
     var lockKey = getLock_key();
     GetRunPhenotypes(path, lockKey, function (runPhenotypes) {
@@ -381,7 +381,7 @@ function drawRunPhenotypeSelection(path) {
         options.text(function (d) { return d.name; });
         selPhen.on("change", drawPhenotypePlatesSelection);
         $("#" + selRunPhenotypesName).selectedIndex = 0;
-        drawPhenotypePlatesSelection();
+        //drawPhenotypePlatesSelection();
     });
 };
 
@@ -412,7 +412,7 @@ function drawPhenotypePlatesSelection() {
     var path = isNormalized ? selectedNromPhen : selectedPhen;
     if (!path)
         return;
-    projectSlelectionStage("Plates");
+    projectSelectionStage("Plates");
     console.log("plates: " + path);
     var lockKey = getLock_key();
     GetPhenotypesPlates(path, lockKey, function (phenotypePlates) {
@@ -440,7 +440,7 @@ function drawPhenotypePlatesSelection() {
         var plateIdx = $("#currentSelection").data("plateIdx");
         var plateId = "btnPlate0";
         if (plateIdx) plateId = "btnPlate" + plateIdx;
-        $("#"+plateId).focus();
+        //$("#"+plateId).focus();
         document.getElementById(plateId).click();
     });
 };
