@@ -4,7 +4,7 @@ function getURLParam(uri, name) {
     return results && decodeURI(results[1]);
 }
 
-function setQCProjectFromURL()  {
+function setQCProjectFromURL() {
     const uri = window.location.href;
     const analysisDirectory = getURLParam(uri, 'analysisdirectory');
     if (analysisDirectory) {
