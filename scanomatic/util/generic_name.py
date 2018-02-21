@@ -24,7 +24,7 @@ def get_adjective_list():
 def get_adjective(bird):
     adjectives = get_adjective_list()
     starts = [word[0].lower() for word in bird.split(' ')]
-    alliterations = filter(lambda adj: adj[0] in starts, adjectives)
+    alliterations = [adj for adj in adjectives if adj[0] in starts]
     if alliterations:
         return random.choice(alliterations)
     return random.choice(adjectives)
