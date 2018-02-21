@@ -381,7 +381,6 @@ function drawRunPhenotypeSelection(path) {
         options.text(function (d) { return d.name; });
         selPhen.on("change", drawPhenotypePlatesSelection);
         $("#" + selRunPhenotypesName).selectedIndex = 0;
-        //drawPhenotypePlatesSelection();
     });
 };
 
@@ -440,7 +439,6 @@ function drawPhenotypePlatesSelection() {
         var plateIdx = $("#currentSelection").data("plateIdx");
         var plateId = "btnPlate0";
         if (plateIdx) plateId = "btnPlate" + plateIdx;
-        //$("#"+plateId).focus();
         document.getElementById(plateId).click();
     });
 };
