@@ -13,7 +13,7 @@ function setQCProjectFromURL()  {
                 $('#btnBrowseProject-box').hide();
                 window.projectSelectionStage('project');
                 if (!r.is_project) {
-                    modalMessage('<strong>Error</strong>: No analyis found!');
+                    window.modalMessage('<strong>Error</strong>: No analyis found!');
                     return Promise.resolve();
                 }
                 const analysisInfo = Object.assign({}, r);
