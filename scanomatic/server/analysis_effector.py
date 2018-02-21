@@ -255,18 +255,6 @@ Scan-o-Matic""", self._analysis_job)
                         self._analysis_job.output_directory))
                 raise StopIteration
 
-        if self._redirect_logging:
-            self._logger.info(
-                "{0} is setting up, output will be directed to {1}".format(
-                    self._analysis_job, Paths().analysis_run_log))
-
-            log_path = os.path.join(
-                self._analysis_job.output_directory, Paths().analysis_run_log)
-            self._logger.set_output_target(
-                log_path, catch_stdout=True, catch_stderr=True, buffering=0)
-            self._logger.surpress_prints = False
-            self._log_file_path = log_path
-
         self.setup_pinning(len(self._first_pass_results.plates))
 
         AnalysisModelFactory.serializer.dump(
