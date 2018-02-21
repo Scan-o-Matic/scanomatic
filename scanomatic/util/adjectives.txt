@@ -3,9 +3,11 @@ adventurous
 affectionate
 ambitious
 amiable
+arbitrary
 beautiful
 brave
 brilliant
+chaotic
 compassionate
 considerate
 courageous
@@ -25,6 +27,7 @@ generous
 gregarious
 gentle
 helpful
+habitual
 impartial
 intuitive
 inventive
@@ -33,6 +36,7 @@ jovial
 joyous
 keen
 kind
+lawful
 lively
 local
 lovable
@@ -42,15 +46,18 @@ meticulous
 musical
 motivated
 nervous
+neutral
 orderly
 outgoing
 passionate
+parsimonious
 persistent
 philosophical
 practical
 playful
 polite
 pretty
+pulchritudinous
 quick
 quiet
 rational
@@ -67,6 +74,7 @@ tactful
 thoughtful
 tranquil
 unassuming
+understanding
 vigilant
 versatile
 warm
