@@ -16,6 +16,8 @@ module.exports = function(config) {
         "js/external/jquery.modal.js",
         "js/external/jquery.treetable.js",
         "js/external/jquery-ui.js",
+        "js/qc2.js",
+        'js/qc_normHelper.js',
         { pattern: 'js/specs/**/*.spec.@(js|jsx)', watched: false },
     ],
 
