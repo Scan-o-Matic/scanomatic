@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 
 import uuid
-from time import sleep
-
 import requests
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 def test_compile_with_given_directory(scanomatic, browser):
@@ -35,7 +36,9 @@ def test_qc_with_given_directory(scanomatic, browser):
     browser.find_element_by_id('job-' + scanjobid).find_element_by_link_text(
         "QC project".format(scanjobname)
     ).click()
-    sleep(2)
+    WebDriverWait(browser, 2).until(
+        EC.presence_of_element_located((By.ID, 'divLoading'))
+    )
     modal = browser.find_element_by_id('divLoading')
     assert modal.text == 'Error: No analysis found!'
 
