@@ -209,6 +209,7 @@ if len(sys.argv) > 1:
                 'ui_server_data/templates/*',
                 'images/*',
                 'util/birds.txt',
+                'util/adjectives.txt',
             ]
         },
 
