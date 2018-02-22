@@ -37,3 +37,4 @@ setproctitle==1.1.10
 six==1.10.0               # via flask-cors, flask-restful, matplotlib, python-dateutil, scikit-image
 subprocess32==3.2.7       # via matplotlib
 werkzeug==0.12.1          # via flask
+xlrd==1.0.0

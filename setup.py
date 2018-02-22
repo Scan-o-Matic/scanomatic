@@ -34,6 +34,7 @@ package_dependencies = [
     'scikit-image',
     'scipy',
     'setproctitle',
+    'xlrd',
 ]
 
 scripts = [
