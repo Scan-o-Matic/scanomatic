@@ -27,6 +27,7 @@ pandas==0.20.1
 pillow==4.1.1
 prometheus-client==0.1.1
 psutil==5.2.2
+psycopg2-binary==2.7.4
 pyparsing==2.2.0          # via matplotlib
 python-dateutil==2.6.0    # via aniso8601, matplotlib, pandas
 pytz==2017.2
@@ -37,6 +38,7 @@ scipy==0.19.0
 setproctitle==1.1.10
 sh==1.12.13
 six==1.10.0               # via flask-cors, flask-restful, matplotlib, python-dateutil, scikit-image
+sqlalchemy==1.2.3
 subprocess32==3.2.7       # via matplotlib
 uuid==1.30
 werkzeug==0.12.1          # via flask

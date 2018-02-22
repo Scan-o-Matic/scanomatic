@@ -11,11 +11,13 @@ pandas
 pillow
 prometheus-client
 psutil
+psycopg2-binary
 pytz
 requests
 scikit-image
 scipy
 setproctitle
 sh
+sqlalchemy
 uuid
 xlrd
