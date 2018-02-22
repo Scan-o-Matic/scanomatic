@@ -31,7 +31,10 @@ COPY setup_tools.py /tmp/setup_tools.py
 COPY get_installed_version.py /tmp/get_installed_version.py
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/ccc.js /tmp/scanomatic/ui_server_data/js/ccc.js
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/scanning.js /tmp/scanomatic/ui_server_data/js/scanning.js
-
 RUN cd /tmp && python setup.py install --default
+
+COPY scripts/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 CMD scan-o-matic --no-browser
 EXPOSE 5000
