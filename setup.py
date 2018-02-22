@@ -217,6 +217,7 @@ if len(sys.argv) > 1:
                 'migrations/env.py',
                 'migrations/alembic.ini',
                 'migrations/versions/*.py',
+            ],
         },
 
         scripts=scripts,
