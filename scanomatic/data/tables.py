@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from sqlalchemy import Table, MetaData, Column, Text
 
 metadata = MetaData()

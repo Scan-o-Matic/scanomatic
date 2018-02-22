@@ -90,7 +90,8 @@ def scanner_status_update(scanner):
     )
     args = parser.parse_args(strict=True)
     try:
-        result = update_scanner_status(scannerstore, scanning_store, scanner, **args)
+        result = update_scanner_status(
+            scannerstore, scanning_store, scanner, **args)
     except UpdateScannerStatusError as error:
         return json_abort(INTERNAL_SERVER_ERROR, reason=str(error))
     status_code = CREATED if result.new_scanner else OK

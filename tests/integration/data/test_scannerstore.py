@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pytest
 
 import sqlalchemy as sa
@@ -10,6 +11,7 @@ from scanomatic.models.scanner import Scanner
 @pytest.fixture
 def dbconnection(database):
     return sa.create_engine(database)
+
 
 @pytest.fixture
 def store(dbconnection):

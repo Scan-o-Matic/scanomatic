@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from flask import Flask
 from mock import patch, MagicMock
 import pytest
