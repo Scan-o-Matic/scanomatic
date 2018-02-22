@@ -1,6 +1,7 @@
 import threading
 import time
 import logging
+import re
 
 
 class Logger(logging.Logger):
@@ -9,7 +10,7 @@ class Logger(logging.Logger):
     def __init__(self, name):
         super(Logger, self).__init__(name)
         self._custom_formatter = logging.Formatter(
-            fmt="%(asctime)s -- %(levelname)s\t**%(name)s** %(message)s\n",
+            fmt="%(asctime)s -- %(levelname)s\t**%(name)s** %(message)s",
             datefmt='%Y-%m-%d %H:%M:%S',
         )
         h = logging.StreamHandler()
@@ -30,6 +31,11 @@ class Logger(logging.Logger):
         self.addHandler(fh)
 
 
+PARSE_PATTERN = re.compile(
+    r'^(\d{4}-\d{1,2}-\d{1,2}) (\d{1,2}:\d{1,2}:\d{1,2}) -- (\w+)\t\*{2}(.+)\*{2} (.*)$'
+)
+
+
 def parse_log_file(path, seek=0, max_records=-1, filter_status=None):
 
     with open(path, 'r') as fh:
@@ -38,7 +44,6 @@ def parse_log_file(path, seek=0, max_records=-1, filter_status=None):
             fh.seek(seek)
 
         n = 0
-        pattern = Logger.LOG_PARSING_EXPRESSION
 
         records = []
         tell = fh.tell()
@@ -54,13 +59,9 @@ def parse_log_file(path, seek=0, max_records=-1, filter_status=None):
             else:
                 tell = fh.tell()
 
-            match = pattern.match(line)
+            match = PARSE_PATTERN.match(line)
 
             if match:
-
-                if record and (filter_status is None or record['status'] in filter_status):
-                    records.append(record)
-                    n += 1
                 groups = match.groups()
                 record = {
                     'date': groups[0],
@@ -69,10 +70,15 @@ def parse_log_file(path, seek=0, max_records=-1, filter_status=None):
                     'source': groups[3],
                     'message': groups[4].strip()
                 }
-            elif record:
-                record['message'] += '\n{0}'.format(line.rstrip())
-            else:
-                garbage.append(line.rstrip())
+
+                if filter_status is None or record['status'] in filter_status:
+                    records.append(record)
+                    n += 1
+            elif line:
+                if record:
+                    record['message'] += '\n{0}'.format(line.rstrip())
+                else:
+                    garbage.append(line.rstrip())
 
         return {
             'file': path,
