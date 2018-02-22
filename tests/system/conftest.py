@@ -25,7 +25,7 @@ def scanomatic(docker_ip, docker_services):
 
     url = 'http://{}:{}'.format(
         docker_ip,
-        docker_services.port_for('scanomatic-backend', 5000),
+        docker_services.port_for('scanomatic-frontend', 5000),
     )
     docker_services.wait_until_responsive(
         timeout=30, pause=0.1,
