@@ -10,6 +10,14 @@ services:
       - scan-o-matic-home:/root/.scan-o-matic
       - somprojects:/somprojects
       - /dev/bus/usb:/dev/bus/usb
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db/scanomatic
+
+  db:
+    image: postgres:10
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=scanomatic
 
 volumes:
   scan-o-matic-home: {}
