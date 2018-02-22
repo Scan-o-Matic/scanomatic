@@ -7,26 +7,32 @@ from flask import Flask
 
 from scanomatic.io.imagestore import ImageStore
 from scanomatic.io.scanning_store import ScanningStore
+from scanomatic.io.scannerstore import ScannerStore
 from scanomatic.models.scanner import Scanner
 from scanomatic.ui_server import scan_jobs_api
 from scanomatic.ui_server import scanners_api
 from scanomatic.ui_server import scans_api
+import scanomatic.ui_server.database as db
 
 
 @pytest.fixture
-def app(tmpdir):
+def app(tmpdir, database):
     app = Flask(__name__)
     app.register_blueprint(scanners_api.blueprint, url_prefix="/scanners")
     app.register_blueprint(scan_jobs_api.blueprint, url_prefix="/scan-jobs")
     app.register_blueprint(scans_api.blueprint, url_prefix="/scans")
+    app.config['DATABASE_URL'] = database
+    db.setup(app)
     app.config['scanning_store'] = ScanningStore()
-    app.config['scanning_store'].add(
-        Scanner('Scanner one', '9a8486a6f9cb11e7ac660050b68338ac')
-    )
-    app.config['scanning_store'].add(
-        Scanner('Scanner two', '350986224086888954')
-    )
     app.config['imagestore'] = ImageStore(str(tmpdir))
+    with app.app_context():
+        scannerstore = ScannerStore(db.connect())
+        scannerstore.add(
+            Scanner('Scanner one', '9a8486a6f9cb11e7ac660050b68338ac')
+        )
+        scannerstore.add(
+            Scanner('Scanner two', '350986224086888954')
+        )
     return app
 
 

@@ -18,6 +18,7 @@ from scanomatic.io.backup import backup_file
 from scanomatic.io.imagestore import ImageStore
 from scanomatic.io.scanning_store import ScanningStore
 
+from . import database
 from . import qc_api
 from . import analysis_api
 from . import compilation_api
@@ -59,6 +60,8 @@ def launch_server(host, port, debug):
     prom = Prometheus(app)
     prom.start_server(9999)
     app.config['imagestore'] = ImageStore(Config().paths.projects_root)
+    app.config['DATABASE_URL'] = os.getenv('DATABASE_URL')
+    database.setup(app)
 
     rpc_client = get_client(admin=True)
 

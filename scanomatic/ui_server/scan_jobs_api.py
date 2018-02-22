@@ -9,10 +9,12 @@ import pytz
 from werkzeug.exceptions import NotFound
 
 from scanomatic.io.scanning_store import DuplicateIdError, UnknownIdError
+from scanomatic.io.scannerstore import ScannerStore
 from scanomatic.models.scanjob import ScanJob
 from scanomatic.models.scanner import Scanner
 from .general import json_abort
 from .serialization import job2json
+from . import database
 
 
 blueprint = Blueprint('scan_jobs_api', __name__)
@@ -26,6 +28,7 @@ MINIMUM_INTERVAL = timedelta(minutes=5)
 def scan_jobs_add():
     data_object = request.get_json()
     scanning_store = current_app.config['scanning_store']
+    scannerstore = ScannerStore(database.connect())
     name = data_object.get('name', None)
     if not name:
         return json_abort(BAD_REQUEST, reason="No name supplied")
@@ -57,7 +60,7 @@ def scan_jobs_add():
     scanner = data_object.get('scannerId', None)
     if scanner is None:
         return json_abort(BAD_REQUEST, reason="Scanner not supplied")
-    if not scanning_store.exists(Scanner, scanner):
+    if not scannerstore.has_scanner_with_id(scanner):
         return json_abort(
             BAD_REQUEST,
             reason="Scanner '{}' unknown".format(scanner)
