@@ -5,7 +5,6 @@ import pytz
 
 from scanomatic.models.scan import Scan
 from scanomatic.models.scanjob import ScanJob
-from scanomatic.models.scanner import Scanner
 from scanomatic.models.scannerstatus import ScannerStatus
 
 
@@ -34,7 +33,6 @@ class ScanningStore:
         self._stores = {
             Scan: {},
             ScanJob: {},
-            Scanner: {},
             ScannerStatus: defaultdict(list),
         }
 
@@ -49,11 +47,6 @@ class ScanningStore:
         store = self._get_store(klass)
         if item.identifier in store:
             raise DuplicateIdError(klass, item.identifier)
-        if klass is Scanner and self.exists(Scanner, name=item.name):
-            raise DuplicateNameError(
-                "Cannot add duplicate scanner with name '{}'".format(
-                    item.name)
-            )
         if klass is Scan and not self.exists(ScanJob, item.scanjob_id):
             raise UnknownIdError(ScanJob, item.scanjob_id)
         store[item.identifier] = item
@@ -94,10 +87,7 @@ class ScanningStore:
         return self.get_current_scanjob(scanner_id, timepoint) is not None
 
     def get_scanner_status_list(self, scanner_id):
-        if self.exists(Scanner, scanner_id):
-            return self._get_store(ScannerStatus)[scanner_id]
-        else:
-            raise UnknownIdError(Scanner, scanner_id)
+        return self._get_store(ScannerStatus)[scanner_id]
 
     def get_latest_scanner_status(self, scanner_id):
         try:
