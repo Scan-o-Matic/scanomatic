@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import pytest
 from mock import patch, MagicMock
 import os
+from collections import namedtuple
 
 from scanomatic.server.analysis_effector import AnalysisEffector
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
@@ -50,7 +51,7 @@ def test_first_iteration_sets_pinning_formats(
     project_image_mock, serializer_dump,
     mkdirs_mock, analysis_effector,
 ):
-    analysis_effector.setup(analysis_effector._job, redirect_logging=False)
+    analysis_effector.setup(analysis_effector._job, save_log=False)
 
     with patch.object(
         analysis_effector, "_remove_files_from_previous_analysis"

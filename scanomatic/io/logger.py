@@ -1,5 +1,3 @@
-import threading
-import time
 import logging
 import re
 
@@ -10,8 +8,8 @@ class Logger(logging.Logger):
     def __init__(self, name):
         super(Logger, self).__init__(name)
         self._custom_formatter = logging.Formatter(
-            fmt="%(asctime)s -- %(levelname)s\t**%(name)s** %(message)s",
-            datefmt='%Y-%m-%d %H:%M:%S%Z',
+            fmt="%(asctime)s -- %(levelname)s **%(name)s** %(message)s",
+            datefmt='%Y-%m-%d %H:%M:%S %Z',
         )
         h = logging.StreamHandler()
         h.formatter = self._custom_formatter
@@ -32,7 +30,7 @@ class Logger(logging.Logger):
 
 
 PARSE_PATTERN = re.compile(
-    r'^(\d{4}-\d{1,2}-\d{1,2}) (\d{1,2}:\d{1,2}:\d{1,2}\w*) -- (\w+)\t\*{2}(.+)\*{2} (.*)$'
+    r'^(\d{4}-\d{1,2}-\d{1,2}) (\d{1,2}:\d{1,2}:\d{1,2} \w*) -- (\w+) \*{2}(.+)\*{2} (.*)$'
 )
 
 

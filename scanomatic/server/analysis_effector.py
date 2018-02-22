@@ -63,7 +63,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         super(AnalysisEffector, self).__init__(job, logger_name="Analysis Effector")
         self._config = None
         self._job_label = get_label_from_analysis_model(job.content_model, job.id)
-
+        self._save_log = True
         self._specific_statuses['total'] = 'total'
         self._specific_statuses['current_image_index'] = 'current_image_index'
 
@@ -254,10 +254,11 @@ Scan-o-Matic""", self._analysis_job)
                         self._analysis_job.output_directory))
                 raise StopIteration
 
-        log_path = os.path.join(
-            self._analysis_job.output_directory, Paths().analysis_run_log
-        )
-        self._logger.log_to_file(log_path)
+        if self._save_log:
+            log_path = os.path.join(
+                self._analysis_job.output_directory, Paths().analysis_run_log
+            )
+            self._logger.log_to_file(log_path)
 
         self.setup_pinning(len(self._first_pass_results.plates))
 
@@ -340,11 +341,13 @@ Scan-o-Matic""", self._analysis_job)
 
         remove_state_from_path(self._analysis_job.output_directory)
 
-    def setup(self, job):
+    def setup(self, job, save_log=True):
 
         if self._running:
             self.add_message("Cannot change settings while running")
             return
+
+        self._save_log = save_log
 
         if not self._analysis_job.output_directory:
             AnalysisModelFactory.set_default(self._analysis_job, [self._analysis_job.FIELD_TYPES.output_directory])
