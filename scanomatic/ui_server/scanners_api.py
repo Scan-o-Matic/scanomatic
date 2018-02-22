@@ -14,7 +14,7 @@ from scanomatic.scanning.update_scanner_status import (
     update_scanner_status, UpdateScannerStatusError,
 )
 from scanomatic.models.scanner import Scanner
-from scanomatic.io.scannerstore import ScannerStore
+from scanomatic.data.scannerstore import ScannerStore
 
 blueprint = Blueprint("scanners_api", __name__)
 SCANNER_TIMEOUT = timedelta(minutes=5)

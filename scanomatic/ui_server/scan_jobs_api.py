@@ -9,7 +9,7 @@ import pytz
 from werkzeug.exceptions import NotFound
 
 from scanomatic.io.scanning_store import DuplicateIdError, UnknownIdError
-from scanomatic.io.scannerstore import ScannerStore
+from scanomatic.data.scannerstore import ScannerStore
 from scanomatic.models.scanjob import ScanJob
 from scanomatic.models.scanner import Scanner
 from .general import json_abort

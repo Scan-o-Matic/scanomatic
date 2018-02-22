@@ -7,7 +7,7 @@ from flask import Flask
 
 from scanomatic.io.imagestore import ImageStore
 from scanomatic.io.scanning_store import ScanningStore
-from scanomatic.io.scannerstore import ScannerStore
+from scanomatic.data.scannerstore import ScannerStore
 from scanomatic.models.scanner import Scanner
 from scanomatic.ui_server import scan_jobs_api
 from scanomatic.ui_server import scanners_api
