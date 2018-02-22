@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from scanomatic.io.logger import Logger, parse_log_file
 import os
 
