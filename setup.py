@@ -36,6 +36,7 @@ packages = [
     "scanomatic.qc",
     "scanomatic.server",
     "scanomatic.image_analysis",
+    "scanomatic.data",
     "scanomatic.data_processing",
     "scanomatic.data_processing.phases",
     "scanomatic.scanning",
