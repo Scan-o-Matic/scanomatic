@@ -48,13 +48,13 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         self._compile_job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0].content_model
         self._job.content_model = self._compile_job
 
+        log_path = Paths().get_project_compile_log_path_from_compile_model(
+            self._compile_job
+        )
+        self._logger.log_to_file(log_path)
+
         if self._compile_job.images is None:
             self._compile_job.images = tuple()
-
-        log_path = Paths().get_project_compile_log_path_from_compile_model(self._compile_job)
-        self._logger.set_output_target(log_path, catch_stdout=True, catch_stderr=True)
-        self._logger.surpress_prints = True
-        self._log_file_path = log_path
 
         self._logger.info("Doing setup")
         self._logger.info("Action {0}".format(self._compile_job.compile_action))

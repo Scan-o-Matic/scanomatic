@@ -63,13 +63,12 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         super(AnalysisEffector, self).__init__(job, logger_name="Analysis Effector")
         self._config = None
         self._job_label = get_label_from_analysis_model(job.content_model, job.id)
-
+        self._save_log = True
         self._specific_statuses['total'] = 'total'
         self._specific_statuses['current_image_index'] = 'current_image_index'
 
         self._allowed_calls['setup'] = self.setup
 
-        self._redirect_logging = True
         self._reference_compilation_image_model = None
 
         if job.content_model:
@@ -255,17 +254,11 @@ Scan-o-Matic""", self._analysis_job)
                         self._analysis_job.output_directory))
                 raise StopIteration
 
-        if self._redirect_logging:
-            self._logger.info(
-                "{0} is setting up, output will be directed to {1}".format(
-                    self._analysis_job, Paths().analysis_run_log))
-
+        if self._save_log:
             log_path = os.path.join(
-                self._analysis_job.output_directory, Paths().analysis_run_log)
-            self._logger.set_output_target(
-                log_path, catch_stdout=True, catch_stderr=True, buffering=0)
-            self._logger.surpress_prints = False
-            self._log_file_path = log_path
+                self._analysis_job.output_directory, Paths().analysis_run_log
+            )
+            self._logger.log_to_file(log_path)
 
         self.setup_pinning(len(self._first_pass_results.plates))
 
@@ -348,13 +341,13 @@ Scan-o-Matic""", self._analysis_job)
 
         remove_state_from_path(self._analysis_job.output_directory)
 
-    def setup(self, job, redirect_logging=True):
+    def setup(self, job, save_log=True):
 
         if self._running:
             self.add_message("Cannot change settings while running")
             return
 
-        self._redirect_logging = redirect_logging
+        self._save_log = save_log
 
         if not self._analysis_job.output_directory:
             AnalysisModelFactory.set_default(self._analysis_job, [self._analysis_job.FIELD_TYPES.output_directory])

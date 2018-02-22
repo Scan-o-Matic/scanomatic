@@ -211,12 +211,12 @@ if len(sys.argv) > 1:
                 'ui_server_data/templates/*',
                 'images/*',
                 'util/birds.txt',
+                'util/adjectives.txt',
             ],
             'scanomatic.data': [
                 'migrations/env.py',
                 'migrations/alembic.ini',
                 'migrations/versions/*.py',
-            ],
         },
 
         scripts=scripts,

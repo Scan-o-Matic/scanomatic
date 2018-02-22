@@ -3,7 +3,6 @@ var baseUrl = "";
 var BrowseRootPath = baseUrl+"/api/results/browse";
 var NormalizeRefOffsets = baseUrl+"/api/results/normalize/reference/offsets";
 var NormalizeProjectUrl = baseUrl+"/api/results/normalize";
-var branchSymbol = "¤";
 
 var lock;
 
@@ -50,7 +49,7 @@ function BrowsePath(url, callback) {
             }
             var projectDetails="";
             if (isProject) {
-                projectDetails = { 
+                projectDetails = {
                     analysis_date: json.analysis_date,
                     analysis_instructions: json.analysis_instructions,
                     change_date: json.change_date,

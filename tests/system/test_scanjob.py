@@ -1,8 +1,10 @@
 from __future__ import absolute_import
 
 import uuid
-
 import requests
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 def test_compile_with_given_directory(scanomatic, browser):
@@ -14,14 +16,31 @@ def test_compile_with_given_directory(scanomatic, browser):
     post_scan(scanomatic, scanjobid)
 
     browser.get(scanomatic + '/experiment')
-    browser.find_element_by_link_text(
-        "Compile project {}".format(scanjobname)
+    browser.find_element_by_id('job-' + scanjobid).find_element_by_link_text(
+        "Compile project".format(scanjobname)
     ).click()
     input = browser.find_element_by_id('project-directory')
     assert input.get_attribute('value') == 'root/{}'.format(scanjobid)
     browser.find_element_by_id('manual-selection').click()
     images = browser.find_elements_by_class_name('image-list-label')
     assert len(images) == 1
+
+
+def test_qc_with_given_directory(scanomatic, browser):
+    scanjobname = 'Scan job {}'.format(uuid.uuid4().hex)
+
+    scannerid = create_scanner(scanomatic)
+    scanjobid = create_scanjob(scanomatic, scannerid, scanjobname)
+
+    browser.get(scanomatic + '/experiment')
+    browser.find_element_by_id('job-' + scanjobid).find_element_by_link_text(
+        "QC project".format(scanjobname)
+    ).click()
+    WebDriverWait(browser, 2).until(
+        EC.presence_of_element_located((By.ID, 'divLoading'))
+    )
+    modal = browser.find_element_by_id('divLoading')
+    assert modal.text == 'Error: No analysis found!'
 
 
 def create_scanner(scanomatic):

@@ -80,14 +80,6 @@ def test_help(scanomatic):
      '<h1><a id="installing">Something confusing or wrong?</a></h1>' in r.text)
 
 
-def test_maintain(scanomatic):
-    uri = '/maintain'
-    r = requests.get(scanomatic + uri)
-    r.raise_for_status()
-    assert r.text and len(r.text), '{} is empty'.format(uri)
-    assert "<h2>Logs</h2>" in r.text
-
-
 def test_qc_norm(scanomatic):
     uri = '/qc_norm'
     r = requests.get(scanomatic + uri)
@@ -110,15 +102,3 @@ def test_settings(scanomatic):
     r.raise_for_status()
     assert r.text and len(r.text), '{} is empty'.format(uri)
     assert "<h1>Settings</h1>" in r.text
-
-
-def test_system_logs(scanomatic):
-    uri = '/logs/system/{}'
-
-    for log in ('server', 'ui_server'):
-        r = requests.get(scanomatic + uri.format(log))
-        r.raise_for_status()
-        assert r.text and len(r.text), '{} is empty'.format(uri)
-        assert "<h1>{}</h1>".format(
-            log.replace('_', ' ').capitalize(),
-        ) in r.text
