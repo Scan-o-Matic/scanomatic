@@ -23,6 +23,7 @@ package_dependencies = [
 scripts = [
     os.path.join("scripts", p) for p in [
         "scan-o-matic",
+        "scan-o-matic_migrate",
         "scan-o-matic_server",
     ]
 ]
@@ -210,7 +211,12 @@ if len(sys.argv) > 1:
                 'ui_server_data/templates/*',
                 'images/*',
                 'util/birds.txt',
-            ]
+            ],
+            'scanomatic.data': [
+                'migrations/env.py',
+                'migrations/alembic.ini',
+                'migrations/versions/*.py',
+            ],
         },
 
         scripts=scripts,
