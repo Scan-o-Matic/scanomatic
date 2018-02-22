@@ -194,7 +194,7 @@ if len(sys.argv) > 1:
     # INSTALLING SCAN-O-MATIC
     #
 
-    from distutils.core import setup
+    from setuptools import setup
     from scanomatic.__init__ import get_version
     _logger.info("Setting up Scan-o-Matic on the system")
 
@@ -240,7 +240,7 @@ if len(sys.argv) > 1:
             'Programming Language :: Python :: 2.7',
             'Topic :: Scientific/Engineering :: Bio-Informatics'
         ],
-        requires=package_dependencies
+        install_requires=package_dependencies
     )
 
     if set(v.lower() for v in sys.argv).intersection(('--help', '--help-commands')):
