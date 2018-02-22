@@ -174,7 +174,7 @@ class Config(SingeltonOneInit):
                 "Could not read from '{0}',".format(self._paths.config_rpc) +
                 "though local settings were indicated to exist")
 
-        self._settings.rpc_server.host = 'scanomatic-server'
+        self._settings.rpc_server.host = 'scanomatic-backend'
         self._settings.rpc_server.port = 12451
 
         try:
