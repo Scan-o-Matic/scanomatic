@@ -50,7 +50,7 @@ def test_first_iteration_sets_pinning_formats(
     project_image_mock, serializer_dump,
     mkdirs_mock, analysis_effector,
 ):
-    analysis_effector.setup(analysis_effector._job, redirect_logging=False)
+    analysis_effector.setup(analysis_effector._job, save_log=False)
 
     with patch.object(
         analysis_effector, "_remove_files_from_previous_analysis"

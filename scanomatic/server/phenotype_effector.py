@@ -56,6 +56,12 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         self._feature_job = job.content_model
         self._job.content_model = self._feature_job
 
+        log_path = os.path.join(
+            self._feature_job.analysis_directory,
+            paths.Paths().phenotypes_extraction_log,
+        )
+        self._logger.log_to_file(log_path)
+
         if feature_factory.FeaturesFactory.validate(self._feature_job) is True:
             feature_factory.FeaturesFactory.serializer.dump(
                 self._feature_job,
@@ -67,12 +73,6 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         else:
             self._logger.warning("Can't setup, instructions don't validate")
             return False
-
-        log_path = os.path.join(self._feature_job.analysis_directory, paths.Paths().phenotypes_extraction_log)
-        self._logger.set_output_target(log_path, catch_stdout=True, catch_stderr=True)
-        self._log_file_path = log_path
-
-        self._logger.surpress_prints = False
 
         self._logger.info("Loading files image data from '{0}'".format(
             self._feature_job.analysis_directory))

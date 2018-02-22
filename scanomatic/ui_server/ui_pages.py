@@ -23,10 +23,6 @@ def add_routes(app):
     def _ccc():
         return send_from_directory(Paths().ui_root, Paths().ui_ccc_file)
 
-    @app.route("/maintain")
-    def _maintain():
-        return send_from_directory(Paths().ui_root, Paths().ui_maintain_file)
-
     @app.route("/settings")
     def _settings():
 
@@ -80,24 +76,6 @@ def add_routes(app):
             'projectdirectory_readonly': projectdir is not None,
         }
         return render_template(Paths().ui_compile_file, **context)
-
-    @app.route("/logs/system/<log>")
-    def _logs(log):
-        """
-        Args:
-            log: The log-type to be returned {'server' or 'ui_server'}.
-
-        Returns: html-document (or json on invalid log-parameter).
-
-        """
-        if log == 'server':
-            log_path = Paths().log_server
-        elif log == "ui_server":
-            log_path = Paths().log_ui_server
-        else:
-            abort(404)
-
-        return serve_log_as_html(log_path, log.replace("_", " ").capitalize())
 
     @app.route("/logs/project/<path:project>")
     def _project_logs(project):

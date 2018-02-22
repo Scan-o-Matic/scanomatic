@@ -40,7 +40,7 @@ def proj1_analysis(proj1, tmpdir):
 @pytest.mark.slow
 def test_colony_sizes(proj1, proj1_analysis):
     analysis_effector = AnalysisEffector(proj1_analysis.job)
-    analysis_effector.setup(proj1_analysis.job, False)
+    analysis_effector.setup(proj1_analysis.job)
     for _ in analysis_effector:
         pass
 
@@ -53,7 +53,7 @@ def test_colony_sizes(proj1, proj1_analysis):
 @pytest.mark.slow
 def test_grid_plate(proj1, proj1_analysis):
     analysis_effector = AnalysisEffector(proj1_analysis.job)
-    analysis_effector.setup(proj1_analysis.job, False)
+    analysis_effector.setup(proj1_analysis.job)
     for _ in analysis_effector:
         pass
 
@@ -66,7 +66,7 @@ def test_grid_plate(proj1, proj1_analysis):
 @pytest.mark.slow
 def test_grid_size(proj1, proj1_analysis):
     analysis_effector = AnalysisEffector(proj1_analysis.job)
-    analysis_effector.setup(proj1_analysis.job, False)
+    analysis_effector.setup(proj1_analysis.job)
     for _ in analysis_effector:
         pass
 
