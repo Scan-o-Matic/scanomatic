@@ -16,9 +16,24 @@ import json
 #
 
 package_dependencies = [
-    'argparse', 'matplotlib', 'multiprocessing', 'odfpy',
-    'numpy', 'sh', 'nmap', 'configparse', 'skimage',
-    'uuid', 'PIL', 'scipy', 'setproctitle', 'psutil', 'flask', 'requests', 'pandas']
+    'chardet',
+    'enum34',
+    'flask',
+    'flask-restful',
+    'flask_cors',
+    'future',
+    'matplotlib',
+    'numpy',
+    'pandas',
+    'pillow',
+    'prometheus-client',
+    'psutil',
+    'pytz',
+    'requests',
+    'scikit-image',
+    'scipy',
+    'setproctitle',
+]
 
 scripts = [
     os.path.join("scripts", p) for p in [
