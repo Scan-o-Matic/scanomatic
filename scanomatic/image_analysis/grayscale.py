@@ -40,7 +40,7 @@ GRAYSCALES = {
 
 def getGrayscales():
 
-    return GRAYSCALES.keys()
+    return list(GRAYSCALES.keys())
 
 
 def getDefualtGrayscale():
