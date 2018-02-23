@@ -23,7 +23,6 @@ def setup(app):
 
 
 def connect():
-    global x
     if 'dbstate' not in g:
         connection = current_app.config['dbengine'].connect()
         g.dbstate = DBState(connection, connection.begin())
