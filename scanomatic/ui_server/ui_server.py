@@ -16,6 +16,7 @@ from scanomatic.io.paths import Paths
 from scanomatic.io.rpc_client import get_client
 from scanomatic.io.imagestore import ImageStore
 from scanomatic.io.scanning_store import ScanningStore
+from scanomatic.data.util import get_database_url
 
 from . import database
 from . import qc_api
@@ -48,7 +49,7 @@ def launch_server(host, port, debug):
     prom = Prometheus(app)
     prom.start_server(9999)
     app.config['imagestore'] = ImageStore(Config().paths.projects_root)
-    app.config['DATABASE_URL'] = os.getenv('DATABASE_URL')
+    app.config['DATABASE_URL'] = get_database_url()
     database.setup(app)
 
     rpc_client = get_client(admin=True)

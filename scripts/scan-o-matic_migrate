@@ -5,6 +5,7 @@ import alembic
 from alembic.config import Config as AlembicConfig
 
 import scanomatic.data
+from scanomatic.data.util import get_database_url
 
 
 CONFIG_PATH = os.path.join(
@@ -20,4 +21,4 @@ def migrate(dburl):
 
 
 if __name__ == '__main__':
-    migrate(os.getenv('DATABASE_URL'))
+    migrate(get_database_url())

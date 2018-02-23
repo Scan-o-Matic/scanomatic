@@ -11,12 +11,13 @@ services:
       - somprojects:/somprojects
       - /dev/bus/usb:/dev/bus/usb
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db/scanomatic
+      - PGHOST=db
+      - PGUSER=postgres
+      - PGDATABASE=scanomatic
 
   db:
     image: postgres:10
     environment:
-      - POSTGRES_PASSWORD=password
       - POSTGRES_DB=scanomatic
 
 volumes:
