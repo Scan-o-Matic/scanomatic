@@ -1,4 +1,4 @@
-__author__ = 'martin'
+from __future__ import absolute_import
 import os
 
 
