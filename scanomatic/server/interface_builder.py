@@ -1,7 +1,6 @@
 import socket
 import sys
 import os
-from time import sleep
 from functools import wraps
 
 from scanomatic.io.app_config import Config
@@ -9,7 +8,6 @@ from scanomatic.generics.singleton import SingeltonOneInit
 import scanomatic.io.logger as logger
 from scanomatic.server.server import Server
 from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
-import scanomatic.generics.decorators as decorators
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory

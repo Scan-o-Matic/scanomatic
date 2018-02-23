@@ -16,7 +16,6 @@ import scanomatic.io.logger as logger
 # METHODS
 #
 
-socket.setdefaulttimeout(3)
 
 def sanitize_communication(obj):
 

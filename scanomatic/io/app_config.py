@@ -174,8 +174,11 @@ class Config(SingeltonOneInit):
                 "Could not read from '{0}',".format(self._paths.config_rpc) +
                 "though local settings were indicated to exist")
 
-        self._settings.rpc_server.host = 'scanomatic-backend'
-        self._settings.rpc_server.port = 12451
+        self._settings.rpc_server.host = os.environ.get(
+            "SOM_BACKEND_HOST", '0.0.0.0')
+        self._settings.rpc_server.port = int(os.environ.get(
+            "SOM_BACKEND_PORT", 12451
+        ))
 
         try:
             self._settings.rpc_server.admin = open(

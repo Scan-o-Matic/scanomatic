@@ -16,8 +16,6 @@ from scanomatic.io.resource_status import Resource_Status
 import scanomatic.generics.decorators as decorators
 import scanomatic.models.rpc_job_models as rpc_job_models
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
-from scanomatic.io.paths import Paths
-from scanomatic.io.backup import backup_file
 
 #
 # CLASSES
