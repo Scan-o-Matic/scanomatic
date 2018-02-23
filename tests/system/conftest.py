@@ -44,7 +44,7 @@ def browser(request):
     try:
         driver = request.param()
     except Exception as e:
-        warnings.warn(e)
+        warnings.warn(str(e))
         driver = request.param()
     yield driver
     driver.close()
