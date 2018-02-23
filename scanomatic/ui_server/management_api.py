@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from flask import jsonify
 from scanomatic import get_version
 from scanomatic.io.mail import can_get_server_with_current_settings
-from scanomatic.io.source import parse_version, get_source_information
+from scanomatic.io.source import parse_version
 from .general import json_abort
 
 
@@ -14,7 +14,6 @@ def add_routes(app, rpc_client):
         return jsonify(
             version=get_version(),
             version_ints=parse_version(get_version()),
-            source_information=get_source_information(test_info=True)
         )
 
     @app.route("/api/job/<job_id>/<job_command>")
