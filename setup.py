@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import absolute_import
 
 
 #
@@ -16,9 +17,28 @@ import json
 #
 
 package_dependencies = [
-    'argparse', 'matplotlib', 'multiprocessing', 'odfpy',
-    'numpy', 'sh', 'nmap', 'configparse', 'skimage',
-    'uuid', 'PIL', 'scipy', 'setproctitle', 'psutil', 'flask', 'requests', 'pandas']
+    'alembic',
+    'chardet',
+    'enum34',
+    'flask',
+    'flask-restful',
+    'flask_cors',
+    'future',
+    'matplotlib',
+    'numpy',
+    'pandas',
+    'pillow',
+    'prometheus-client',
+    'psutil',
+    'psycopg2-binary',
+    'pytz',
+    'requests',
+    'scikit-image',
+    'scipy',
+    'setproctitle',
+    'sqlalchemy',
+    'xlrd',
+]
 
 scripts = [
     os.path.join("scripts", p) for p in [
@@ -92,43 +112,6 @@ if len(sys.argv) > 1:
         sys.exit()
 
     _logger = MiniLogger()
-    _logger.info("Checking non-python dependencies")
-
-    #
-    # INSTALLING NON-PYTHONIC PROGRAMS
-    #
-
-    program_dependencies = ('nmap',)
-    PROGRAM_NOT_FOUND = 32512
-    install_dependencies = []
-
-    for dep in program_dependencies:
-        try:
-            p = Popen(dep, stdout=PIPE, stderr=PIPE)
-            p.communicate()
-        except OSError:
-            install_dependencies.append(dep)
-
-    if len(install_dependencies) > 0:
-
-        if os.name == 'posix':
-
-            if os.system("gksu apt-get install {0}".format(
-                    " ".join(install_dependencies))) != 0:
-
-                _logger.warning("Could not install: {0}".format(
-                    install_dependencies))
-
-        else:
-
-            _logger.warning(
-                "Scan-o-Matic is only designed to be run on Linux. "
-                "Setup will try to continue but you are on your own from now on. "
-                "The following programs were not found: {0}".format(
-                    install_dependencies))
-
-
-    _logger.info("Non python dependencies done")
     _logger.info("Preparing setup parameters")
     from setup_tools import update_init_file
 
@@ -181,7 +164,7 @@ if len(sys.argv) > 1:
     # INSTALLING SCAN-O-MATIC
     #
 
-    from distutils.core import setup
+    from setuptools import setup
     from scanomatic.__init__ import get_version
     _logger.info("Setting up Scan-o-Matic on the system")
 
@@ -232,7 +215,7 @@ if len(sys.argv) > 1:
             'Programming Language :: Python :: 2.7',
             'Topic :: Scientific/Engineering :: Bio-Informatics'
         ],
-        requires=package_dependencies
+        install_requires=package_dependencies
     )
 
     if set(v.lower() for v in sys.argv).intersection(('--help', '--help-commands')):
