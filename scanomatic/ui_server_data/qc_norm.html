@@ -12,10 +12,11 @@
         <script src="js/external/bootstrap-toggle.js"></script>
         <script src="js/external/spin.js"></script>
 
-        <script src="js/qc_normHelper.js?ver=1.0.0"></script>
-        <script src="js/qc_normDrawPlate.js?ver=1.0.0"></script>
-        <script src="js/qc_normDrawCurves.js?ver=1.0.0"></script>
-        <script src="js/qc_normAPIHelper.js?ver=1.0.0"></script>
+        <script src="js/qc_normHelper.js"></script>
+        <script src="js/qc_normDrawPlate.js"></script>
+        <script src="js/qc_normDrawCurves.js"></script>
+        <script src="js/qc_normAPIHelper.js"></script>
+        <script src="js/qc2.js"></script>
 
         <link href="style/qc_norm.css" rel="stylesheet"/>
         <link href="style/bootstrap.css" rel="stylesheet"/>
@@ -51,6 +52,32 @@
 
                 createMarkButtons();
                 spinner.stop();
+                setQCProjectFromURL()
+                  .then(() => {}, () => {
+                    //draw Project selection
+                    BrowseProjectsRoot(function (browseData) {
+                        if (browseData === null) {
+                            alert("ERROR: There was a problem with the API!");
+                            return;
+                        }
+                        projectSelectionStage("project");
+                        var selProjects = d3.select("#divProjectsSelector").append("table").attr("id", "tblProjects");
+                        $(browseData)
+                            .each(function (idx, elem) {
+                                selProjects.append("tr")
+                                    .attr("data-tt-id", elem.url)
+                                    .attr("data-tt-branch", true)
+                                    .append("td")
+                                    .text(elem.name);
+                            });
+                        $("#tblProjects")
+                            .treetable({
+                                expandable: true,
+                                onNodeExpand: nodeExpand,
+                                onNodeCollapse: nodeCollapse
+                            });
+                    });
+                  });
 
                 $("#divLockRemoving").hide();
                 $("#ckMarkExperiments").change(function () {
@@ -178,30 +205,6 @@
                     }
                     e.preventDefault();
                 });
-                //draw Project selection
-                BrowseProjectsRoot(function (browseData) {
-                    if (browseData === null) {
-                        alert("ERROR: There was a problem with the API!");
-                        return;
-                    }
-                    projectSlelectionStage("project");
-                    var selProjects = d3.select("#divProjectsSelector").append("table").attr("id", "tblProjects");
-                    $(browseData)
-                        .each(function (idx, elem) {
-                            selProjects.append("tr")
-                                .attr("data-tt-id", elem.url)
-                                .attr("data-tt-branch", true)
-                                .append("td")
-                                .text(elem.name);
-                        });
-                    $("#tblProjects")
-                        .treetable({
-                            expandable: true,
-                            onNodeExpand: nodeExpand,
-                            onNodeCollapse: nodeCollapse
-                        });
-                });
-
             });
     </script>
 
@@ -214,7 +217,7 @@
         <div class="section-frame">
             <div class="row">
                 <div class="col-md-12 loProjectSelection " style="height: 100%; width: 100%">
-                    <div class="floating-box" style="width: 20%; horiz-align: center">
+                    <div id="btnBrowseProject-box" class="floating-box" style="width: 20%; horiz-align: center">
                         <a id="btnBrowseProject" class="btn " role="button" data-toggle="collapse" href="#selectProject" aria-expanded="false" aria-controls="selectProject">
                             <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
                             Select a project

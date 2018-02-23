@@ -31,7 +31,6 @@ class Server(object):
 
         self.logger = logger.Logger("Server")
         self._cycle_log_time = 0
-        self._init_logging()
 
         self.admin = config.rpc_server.admin
         self._running = False
@@ -41,20 +40,6 @@ class Server(object):
 
         self._jobs = jobs.Jobs()
         self._queue = queue.Queue(self._jobs)
-
-    @property
-    def _is_time_to_cycle_log(self):
-        # self.logger.info(time.time() - self._cycle_log_time)
-        return time.time() - self._cycle_log_time > logger.LOG_RECYCLE_TIME
-
-    def _init_logging(self):
-
-        backup_file(Paths().log_server)
-        self.logger.set_output_target(
-            Paths().log_server,
-            catch_stdout=True, catch_stderr=True)
-        self.logger.surpress_prints = True
-        self._cycle_log_time = time.time()
 
     @property
     def queue(self):
@@ -148,8 +133,6 @@ class Server(object):
                 self._attempt_job_creation()
             else:
                 self._jobs.sync()
-                if self._is_time_to_cycle_log:
-                    self._init_logging()
 
             time.sleep(sleep)
             i += 1

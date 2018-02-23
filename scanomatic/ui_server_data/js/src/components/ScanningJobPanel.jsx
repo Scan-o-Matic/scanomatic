@@ -56,7 +56,7 @@ export default function ScanningJobPanel(props) {
         );
     }
     return (
-        <div className="panel panel-default job-listing">
+        <div className="panel panel-default job-listing" id={`job-${props.identifier}`}>
             <div className="panel-heading">
                 <h3 className="panel-title">{props.name}</h3>
             </div>
@@ -68,7 +68,10 @@ export default function ScanningJobPanel(props) {
             </div>
             <div className="text-right">
                 <a href={`/compile?projectdirectory=root/${props.identifier}`}>
-                    Compile project {props.name}
+                    Compile project
+                </a>
+                <a href={`/qc_norm?analysisdirectory=${encodeURI(props.identifier)}/analysis&project=${encodeURI(props.name)}`}>
+                    QC project
                 </a>
             </div>
         </div>

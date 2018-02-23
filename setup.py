@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import absolute_import
 
 import os
 import sys
@@ -7,9 +8,25 @@ import json
 from logging import getLogger
 
 package_dependencies = [
-    'argparse', 'matplotlib', 'multiprocessing', 'odfpy',
-    'numpy', 'sh', 'configparse', 'skimage',
-    'uuid', 'PIL', 'scipy', 'setproctitle', 'psutil', 'flask', 'requests', 'pandas']
+    'chardet',
+    'enum34',
+    'flask',
+    'flask-restful',
+    'flask_cors',
+    'future',
+    'matplotlib',
+    'numpy',
+    'pandas',
+    'pillow',
+    'prometheus-client',
+    'psutil',
+    'pytz',
+    'requests',
+    'scikit-image',
+    'scipy',
+    'setproctitle',
+    'xlrd',
+]
 
 scripts = [
     os.path.join("scripts", p) for p in [
@@ -44,7 +61,7 @@ if len(sys.argv) > 1:
     _logger = getLogger("setup")
     _logger.info("Preparing setup parameters")
 
-    from distutils.core import setup
+    from setuptools import setup
     from scanomatic.__init__ import get_version
     _logger.info("Setting up Scan-o-Matic on the system")
 
@@ -74,6 +91,7 @@ if len(sys.argv) > 1:
                 'ui_server_data/templates/*',
                 'images/*',
                 'util/birds.txt',
+                'util/adjectives.txt',
             ]
         },
 
@@ -89,7 +107,7 @@ if len(sys.argv) > 1:
             'Programming Language :: Python :: 2.7',
             'Topic :: Scientific/Engineering :: Bio-Informatics'
         ],
-        requires=package_dependencies
+        install_requires=package_dependencies
     )
 
     _logger.info("Scan-o-Matic is setup on system")

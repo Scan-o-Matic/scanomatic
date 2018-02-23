@@ -1,0 +1,3 @@
+---
+ignore:
+  - "scanomatic/ui_server_data/js/specs"
