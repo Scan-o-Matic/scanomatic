@@ -5,7 +5,6 @@ import pytest
 from pytz import utc
 import sqlalchemy as sa
 
-from scanomatic.data import tables
 from scanomatic.models.scan import Scan
 from scanomatic.models.scanjob import ScanJob
 from scanomatic.models.scanner import Scanner
@@ -79,10 +78,10 @@ def scan02(scanjob01):
 
 
 @pytest.fixture
-def insert_test_scanners(dbconnection, scanner01, scanner02):
+def insert_test_scanners(dbconnection, dbmetadata, scanner01, scanner02):
     for scanner in [scanner01, scanner02]:
         dbconnection.execute(
-            tables.scanners.insert().values(
+            dbmetadata.tables['scanners'].insert().values(
                 name=scanner.name,
                 id=scanner.identifier,
             )
@@ -91,11 +90,11 @@ def insert_test_scanners(dbconnection, scanner01, scanner02):
 
 @pytest.fixture
 def insert_test_scanjobs(
-    dbconnection, scanjob01, scanjob02, insert_test_scanners
+    dbconnection, dbmetadata, scanjob01, scanjob02, insert_test_scanners
 ):
     for scanjob in [scanjob01, scanjob02]:
         dbconnection.execute(
-            tables.scanjobs.insert().values(
+            dbmetadata.tables['scanjobs'].insert().values(
                 duration=scanjob.duration,
                 id=scanjob.identifier,
                 interval=scanjob.interval,

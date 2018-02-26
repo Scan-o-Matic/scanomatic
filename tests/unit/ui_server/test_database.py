@@ -15,10 +15,7 @@ def engine():
 def app(engine):
     app = Flask('mytestapp')
     app.config['DATABASE_URL'] = 'mydb://...'
-    with patch(
-        'scanomatic.ui_server.database.create_engine',
-        return_value=engine,
-    ):
+    with patch('sqlalchemy.create_engine', return_value=engine):
         database.setup(app)
     return app
 
