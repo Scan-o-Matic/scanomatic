@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from pytz import utc
 import sqlalchemy as sa
 from sqlalchemy.sql import and_

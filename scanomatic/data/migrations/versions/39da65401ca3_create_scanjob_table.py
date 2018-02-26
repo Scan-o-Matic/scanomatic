@@ -5,6 +5,7 @@ Revises: 6736f58587af
 Create Date: 2018-02-26 11:29:24.432510
 
 """
+from __future__ import absolute_import
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ExcludeConstraint
