@@ -50,9 +50,6 @@ def launch_server(host, port, debug):
 
     rpc_client = get_client(admin=True)
 
-    if rpc_client.local and rpc_client.online is False:
-        rpc_client.launch_local()
-
     if port is None:
         port = Config().ui_server.port
     if host is None:
