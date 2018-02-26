@@ -31,6 +31,7 @@ class TestConnect(object):
 
     def test_cache_connection(self, app, engine):
         with app.app_context():
+            engine.connect.reset_mock()
             conn1 = database.connect()
             conn2 = database.connect()
             assert conn1 is conn2

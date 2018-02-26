@@ -26,8 +26,8 @@ def job2json(job):
 def scan2json(scan):
     return {
         'id': scan.id,
-        'startTime': scan.start_time.strftime(DATETIME_FORMAT),
-        'endTime': scan.end_time.strftime(DATETIME_FORMAT),
+        'startTime': datetime2json(scan.start_time),
+        'endTime': datetime2json(scan.end_time),
         'scanJobId': scan.scanjob_id,
         'digest': scan.digest,
     }

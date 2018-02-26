@@ -6,28 +6,22 @@ from io import BytesIO
 from flask import Blueprint, current_app, send_file
 from flask_restful import Api, Resource, reqparse, inputs
 from werkzeug.datastructures import FileStorage
-from werkzeug.exceptions import NotFound
 
 from . import database
 from .general import json_abort
 from .serialization import scan2json
-from scanomatic.data.scanjobstore import ScanJobStore
-from scanomatic.io.scanning_store import UnknownIdError
 from scanomatic.models.scan import Scan
 from scanomatic.util.scanid import generate_scan_id
 
 
 class ScanCollection(Resource):
     def get(self):
-        db = current_app.config['scanning_store']
-        try:
-            return [scan2json(md) for md in db.find(Scan)]
-        except UnknownIdError:
-            raise NotFound
+        scanstore = database.getscanstore()
+        return [scan2json(md) for md in scanstore.get_all_scans()]
 
     def post(self):
-        db = current_app.config['scanning_store']
-        scanjobstore = ScanJobStore(database.connect())
+        scanjobstore = database.getscanjobstore()
+        scanstore = database.getscanstore()
         imagestore = current_app.config['imagestore']
         parser = reqparse.RequestParser()
         parser.add_argument(
@@ -78,16 +72,16 @@ class ScanCollection(Resource):
         # the scan whereas the image is not there. (I.e. the source of truth
         # is the database).
         imagestore.put(args.image.read(), scan)
-        db.add(scan)
+        scanstore.add_scan(scan)
         return {'identifier': scan.id}, HTTPStatus.CREATED
 
 
 class ScanDocument(Resource):
     def get(self, scanid):
-        db = current_app.config['scanning_store']
+        scanstore = database.getscanstore()
         try:
-            return scan2json(db.get(Scan, scanid))
-        except UnknownIdError:
+            return scan2json(scanstore.get_scan_by_id(scanid))
+        except KeyError:
             return json_abort(
                 HTTPStatus.NOT_FOUND, message='No scan with this id',
             )
@@ -95,11 +89,11 @@ class ScanDocument(Resource):
 
 class ScanImage(Resource):
     def get(self, scanid):
-        db = current_app.config['scanning_store']
+        scanstore = database.getscanstore()
         imagestore = current_app.config['imagestore']
         try:
-            scan = db.get(Scan, scanid)
-        except UnknownIdError:
+            scan = scanstore.get_scan_by_id(scanid)
+        except KeyError:
             return json_abort(
                 HTTPStatus.NOT_FOUND, message='No scan with this id',
             )

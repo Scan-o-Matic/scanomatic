@@ -8,8 +8,6 @@ from flask_restful import Api, Resource
 import pytz
 from werkzeug.exceptions import NotFound
 
-from scanomatic.data.scannerstore import ScannerStore
-from scanomatic.data.scanjobstore import ScanJobStore
 from scanomatic.models.scanjob import ScanJob
 from .general import json_abort
 from .serialization import job2json
@@ -26,8 +24,8 @@ MINIMUM_INTERVAL = timedelta(minutes=5)
 @blueprint.route("", methods=['POST'])
 def scan_jobs_add():
     data_object = request.get_json()
-    scanjobstore = ScanJobStore(database.connect())
-    scannerstore = ScannerStore(database.connect())
+    scanjobstore = database.getscanjobstore()
+    scannerstore = database.getscannerstore()
     name = data_object.get('name', None)
     if not name:
         return json_abort(BAD_REQUEST, reason="No name supplied")
@@ -79,7 +77,7 @@ def scan_jobs_add():
 
 @blueprint.route("", methods=['GET'])
 def scan_jobs_list():
-    scanjobstore = ScanJobStore(database.connect())
+    scanjobstore = database.getscanjobstore()
     return jsonify([
         job2json(job) for job in scanjobstore.get_all_scanjobs()
     ])
@@ -87,7 +85,7 @@ def scan_jobs_list():
 
 class ScanJobDocument(Resource):
     def get(self, scanjobid):
-        scanjobstore = ScanJobStore(database.connect())
+        scanjobstore = database.getscanjobstore()
         try:
             job = scanjobstore.get_scanjob_by_id(scanjobid)
         except KeyError:
@@ -97,7 +95,7 @@ class ScanJobDocument(Resource):
 
 class ScanJobStartController(Resource):
     def post(self, scanjobid):
-        scanjobstore = ScanJobStore(database.connect())
+        scanjobstore = database.getscanjobstore()
         try:
             job = scanjobstore.get_scanjob_by_id(scanjobid)
         except KeyError:

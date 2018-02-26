@@ -13,8 +13,6 @@ from .serialization import job2json, scanner_status2json, scanner2json
 from scanomatic.scanning.update_scanner_status import (
     update_scanner_status, UpdateScannerStatusError,
 )
-from scanomatic.data.scanjobstore import ScanJobStore
-from scanomatic.data.scannerstore import ScannerStore
 
 blueprint = Blueprint("scanners_api", __name__)
 SCANNER_TIMEOUT = timedelta(minutes=5)
@@ -34,7 +32,7 @@ def _scanner_is_online(scanner_id, scanning_store):
 
 @blueprint.route("", methods=['GET'])
 def scanners_get():
-    scannerstore = ScannerStore(database.connect())
+    scannerstore = database.getscannerstore()
     scanning_store = current_app.config['scanning_store']
     scanners = scannerstore.get_all()
     return jsonify([
@@ -47,7 +45,7 @@ def scanners_get():
 
 @blueprint.route("/<scanner>", methods=['GET'])
 def scanner_get(scanner):
-    scannerstore = ScannerStore(database.connect())
+    scannerstore = database.getscannerstore()
     scanning_store = current_app.config['scanning_store']
     try:
         return jsonify(scanner2json(
@@ -63,7 +61,7 @@ def scanner_get(scanner):
 @blueprint.route("/<scanner>/status", methods=['PUT'])
 def scanner_status_update(scanner):
     scanning_store = current_app.config['scanning_store']
-    scannerstore = ScannerStore(database.connect())
+    scannerstore = database.getscannerstore()
     parser = reqparse.RequestParser()
     parser.add_argument('job')
     parser.add_argument(
@@ -101,7 +99,7 @@ def scanner_status_update(scanner):
 @blueprint.route("/<scanner>/status", methods=['GET'])
 def scanner_status_get(scanner):
     scanning_store = current_app.config['scanning_store']
-    scannerstore = ScannerStore(database.connect())
+    scannerstore = database.getscannerstore()
     if not scannerstore.has_scanner_with_id(scanner):
         return json_abort(
             NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
@@ -114,8 +112,8 @@ def scanner_status_get(scanner):
 
 class ScannerJob(Resource):
     def get(self, scannerid):
-        scanjobstore = ScanJobStore(database.connect())
-        scannerstore = ScannerStore(database.connect())
+        scanjobstore = database.getscanjobstore()
+        scannerstore = database.getscannerstore()
         if not scannerstore.has_scanner_with_id(scannerid):
             raise NotFound
         job = scanjobstore.get_current_scanjob_for_scanner(

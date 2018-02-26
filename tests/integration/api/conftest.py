@@ -26,7 +26,7 @@ def app(tmpdir, database):
     app.config['scanning_store'] = ScanningStore()
     app.config['imagestore'] = ImageStore(str(tmpdir))
     with app.app_context():
-        scannerstore = ScannerStore(db.connect())
+        scannerstore = db.getscannerstore()
         scannerstore.add(
             Scanner('Scanner one', '9a8486a6f9cb11e7ac660050b68338ac')
         )
