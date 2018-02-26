@@ -1,11 +1,8 @@
 from __future__ import absolute_import
-from datetime import datetime
 
 import pytest
-from pytz import utc
 
 from scanomatic.data.scanstore import ScanStore
-from scanomatic.models.scan import Scan
 
 
 pytestmark = pytest.mark.usefixtures("insert_test_scanjobs")
