@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from datetime import datetime, timedelta
 from httplib import NOT_FOUND, OK, CREATED, INTERNAL_SERVER_ERROR
 
-from flask import request, jsonify, Blueprint, current_app
+from flask import jsonify, Blueprint, current_app
 from flask_restful import Api, Resource, reqparse, inputs
 import pytz
 from werkzeug.exceptions import NotFound
@@ -13,7 +13,7 @@ from .serialization import job2json, scanner_status2json, scanner2json
 from scanomatic.scanning.update_scanner_status import (
     update_scanner_status, UpdateScannerStatusError,
 )
-from scanomatic.models.scanner import Scanner
+from scanomatic.data.scanjobstore import ScanJobStore
 from scanomatic.data.scannerstore import ScannerStore
 
 blueprint = Blueprint("scanners_api", __name__)
@@ -114,11 +114,12 @@ def scanner_status_get(scanner):
 
 class ScannerJob(Resource):
     def get(self, scannerid):
-        db = current_app.config['scanning_store']
+        scanjobstore = ScanJobStore(database.connect())
         scannerstore = ScannerStore(database.connect())
         if not scannerstore.has_scanner_with_id(scannerid):
             raise NotFound
-        job = db.get_current_scanjob(scannerid, datetime.now(pytz.utc))
+        job = scanjobstore.get_current_scanjob_for_scanner(
+            scannerid, datetime.now(pytz.utc))
         if job:
             return job2json(job)
 

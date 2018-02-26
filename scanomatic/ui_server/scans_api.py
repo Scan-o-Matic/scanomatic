@@ -8,11 +8,12 @@ from flask_restful import Api, Resource, reqparse, inputs
 from werkzeug.datastructures import FileStorage
 from werkzeug.exceptions import NotFound
 
+from . import database
 from .general import json_abort
 from .serialization import scan2json
+from scanomatic.data.scanjobstore import ScanJobStore
 from scanomatic.io.scanning_store import UnknownIdError
 from scanomatic.models.scan import Scan
-from scanomatic.models.scanjob import ScanJob
 from scanomatic.util.scanid import generate_scan_id
 
 
@@ -26,6 +27,7 @@ class ScanCollection(Resource):
 
     def post(self):
         db = current_app.config['scanning_store']
+        scanjobstore = ScanJobStore(database.connect())
         imagestore = current_app.config['imagestore']
         parser = reqparse.RequestParser()
         parser.add_argument(
@@ -56,8 +58,8 @@ class ScanCollection(Resource):
         )
         args = parser.parse_args(strict=True)
         try:
-            scanjob = db.get(ScanJob, args.scanjob_id)
-        except UnknownIdError:
+            scanjob = scanjobstore.get_scanjob_by_id(args.scanjob_id)
+        except KeyError:
             return json_abort(
                 HTTPStatus.BAD_REQUEST,
                 message='Unknown scan job',
