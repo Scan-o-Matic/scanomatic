@@ -8,6 +8,7 @@ import json
 from logging import getLogger
 
 package_dependencies = [
+    'alembic',
     'chardet',
     'enum34',
     'flask',
@@ -20,17 +21,20 @@ package_dependencies = [
     'pillow',
     'prometheus-client',
     'psutil',
+    'psycopg2-binary',
     'pytz',
     'requests',
     'scikit-image',
     'scipy',
     'setproctitle',
+    'sqlalchemy',
     'xlrd',
 ]
 
 scripts = [
     os.path.join("scripts", p) for p in [
         "scan-o-matic",
+        "scan-o-matic_migrate",
         "scan-o-matic_server",
     ]
 ]
@@ -44,6 +48,7 @@ packages = [
     "scanomatic.qc",
     "scanomatic.server",
     "scanomatic.image_analysis",
+    "scanomatic.data",
     "scanomatic.data_processing",
     "scanomatic.data_processing.phases",
     "scanomatic.scanning",
@@ -92,7 +97,12 @@ if len(sys.argv) > 1:
                 'images/*',
                 'util/birds.txt',
                 'util/adjectives.txt',
-            ]
+            ],
+            'scanomatic.data': [
+                'migrations/env.py',
+                'migrations/alembic.ini',
+                'migrations/versions/*.py',
+            ],
         },
 
         scripts=scripts,

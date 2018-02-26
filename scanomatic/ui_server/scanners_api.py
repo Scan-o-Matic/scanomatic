@@ -7,12 +7,14 @@ from flask_restful import Api, Resource, reqparse, inputs
 import pytz
 from werkzeug.exceptions import NotFound
 
+from . import database
 from .general import json_abort
 from .serialization import job2json, scanner_status2json, scanner2json
 from scanomatic.scanning.update_scanner_status import (
     update_scanner_status, UpdateScannerStatusError,
 )
 from scanomatic.models.scanner import Scanner
+from scanomatic.data.scannerstore import ScannerStore
 
 blueprint = Blueprint("scanners_api", __name__)
 SCANNER_TIMEOUT = timedelta(minutes=5)
@@ -32,8 +34,9 @@ def _scanner_is_online(scanner_id, scanning_store):
 
 @blueprint.route("", methods=['GET'])
 def scanners_get():
+    scannerstore = ScannerStore(database.connect())
     scanning_store = current_app.config['scanning_store']
-    scanners = scanning_store.find(Scanner)
+    scanners = scannerstore.get_all()
     return jsonify([
         scanner2json(
             scanner,
@@ -44,22 +47,23 @@ def scanners_get():
 
 @blueprint.route("/<scanner>", methods=['GET'])
 def scanner_get(scanner):
+    scannerstore = ScannerStore(database.connect())
     scanning_store = current_app.config['scanning_store']
-
-    if scanning_store.exists(Scanner, scanner):
+    try:
         return jsonify(scanner2json(
-            scanning_store.get(Scanner, scanner),
+            scannerstore.get_scanner_by_id(scanner),
             _scanner_is_online(scanner, scanning_store)
         ))
-
-    return json_abort(
-        NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
-    )
+    except KeyError:
+        return json_abort(
+            NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
+        )
 
 
 @blueprint.route("/<scanner>/status", methods=['PUT'])
 def scanner_status_update(scanner):
     scanning_store = current_app.config['scanning_store']
+    scannerstore = ScannerStore(database.connect())
     parser = reqparse.RequestParser()
     parser.add_argument('job')
     parser.add_argument(
@@ -86,7 +90,8 @@ def scanner_status_update(scanner):
     )
     args = parser.parse_args(strict=True)
     try:
-        result = update_scanner_status(scanning_store, scanner, **args)
+        result = update_scanner_status(
+            scannerstore, scanning_store, scanner, **args)
     except UpdateScannerStatusError as error:
         return json_abort(INTERNAL_SERVER_ERROR, reason=str(error))
     status_code = CREATED if result.new_scanner else OK
@@ -96,23 +101,22 @@ def scanner_status_update(scanner):
 @blueprint.route("/<scanner>/status", methods=['GET'])
 def scanner_status_get(scanner):
     scanning_store = current_app.config['scanning_store']
-
-    if scanning_store.exists(Scanner, scanner):
-        status = scanning_store.get_latest_scanner_status(scanner)
-
-        if status is None:
-            return jsonify({})
-        return jsonify(scanner_status2json(status))
-
-    return json_abort(
-        NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
-    )
+    scannerstore = ScannerStore(database.connect())
+    if not scannerstore.has_scanner_with_id(scanner):
+        return json_abort(
+            NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
+        )
+    status = scanning_store.get_latest_scanner_status(scanner)
+    if status is None:
+        return jsonify({})
+    return jsonify(scanner_status2json(status))
 
 
 class ScannerJob(Resource):
     def get(self, scannerid):
         db = current_app.config['scanning_store']
-        if not db.exists(Scanner, scannerid):
+        scannerstore = ScannerStore(database.connect())
+        if not scannerstore.has_scanner_with_id(scannerid):
             raise NotFound
         job = db.get_current_scanjob(scannerid, datetime.now(pytz.utc))
         if job:

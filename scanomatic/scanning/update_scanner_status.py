@@ -54,6 +54,7 @@ UpdateScannerStatusResult = namedtuple('UpdateScannerStatusResult', [
 
 
 def update_scanner_status(
+    scannerstore,
     db,
     scanner_id,
     job,
@@ -62,8 +63,8 @@ def update_scanner_status(
     images_to_send,
     devices,
 ):
-    if not db.exists(Scanner, scanner_id):
-        _add_scanner(db, scanner_id)
+    if not scannerstore.has_scanner_with_id(scanner_id):
+        _add_scanner(scannerstore, scanner_id)
         new_scanner = True
     else:
         new_scanner = False
@@ -87,10 +88,10 @@ def update_scanner_status(
     return UpdateScannerStatusResult(new_scanner=new_scanner)
 
 
-def _add_scanner(db, scanner_id):
+def _add_scanner(scannerstore, scanner_id):
     try:
         name = get_generic_name()
-        db.add(Scanner(name, scanner_id))
+        scannerstore.add(Scanner(name, scanner_id))
     except DuplicateNameError:
         UpdateScannerStatusError(
             "Failed to create scanner, please try again",

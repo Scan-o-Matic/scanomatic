@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+import os
+
+import alembic
+from alembic.config import Config as AlembicConfig
+
+import scanomatic.data
+from scanomatic.data.util import get_database_url
+
+
+CONFIG_PATH = os.path.join(
+    os.path.dirname(scanomatic.data.__file__), 'migrations', 'alembic.ini',
+)
+
+
+def migrate(dburl):
+    alembic_cfg = AlembicConfig(CONFIG_PATH)
+    alembic_cfg.set_main_option('sqlalchemy.url', dburl)
+    alembic.command.upgrade(alembic_cfg, "head")
+    return dburl
+
+
+if __name__ == '__main__':
+    migrate(get_database_url())

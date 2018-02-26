@@ -20,7 +20,12 @@ COPY setup.py /tmp/setup.py
 
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/ccc.js /tmp/scanomatic/ui_server_data/js/ccc.js
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/scanning.js /tmp/scanomatic/ui_server_data/js/scanning.js
-
 RUN cd /tmp && python setup.py install --default
+
+COPY scripts/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENV PGPASSFILE=/etc/scanomatic/pgpass
+ENTRYPOINT ["/entrypoint.sh"]
 CMD scan-o-matic --no-browser
 

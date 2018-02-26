@@ -32,11 +32,18 @@ def db():
     return mock.MagicMock()
 
 
+@pytest.fixture
+def scannerstore():
+    return mock.MagicMock()
+
+
 class TestMetrics:
     @pytest.mark.parametrize('job, value', [('job001', 1), (None, 0)])
-    def test_scanner_current_jobs(self, db, scanner, update, job, value):
+    def test_scanner_current_jobs(
+        self, scannerstore, db, scanner, update, job, value
+    ):
         update['job'] = job
-        update_scanner_status(db, scanner, **update)
+        update_scanner_status(scannerstore, db, scanner, **update)
         assert REGISTRY.get_sample_value(
             'scanner_current_jobs', labels={'scanner': scanner}) == value
 
@@ -46,9 +53,11 @@ class TestMetrics:
         ('scanner_last_status_update_time_seconds', 499137660.0),
         ('scanner_status_updates_total', 1),
     ])
-    def test_other_metrics(self, db, scanner, update, metric, value):
+    def test_other_metrics(
+        self, scannerstore, db, scanner, update, metric, value
+    ):
         with freeze_time(datetime(1985, 10, 26, 1, 21, tzinfo=utc)):
-            update_scanner_status(db, scanner, **update)
+            update_scanner_status(scannerstore, db, scanner, **update)
         assert REGISTRY.get_sample_value(
             metric, labels={'scanner': scanner}) == value
 
@@ -58,8 +67,10 @@ class TestMetrics:
         (['a'], 1),
         (['a', 'b'], 2),
     ])
-    def test_current_devices(self, db, scanner, update, devices, value):
+    def test_current_devices(
+        self, scannerstore, db, scanner, update, devices, value
+    ):
         update['devices'] = devices
-        update_scanner_status(db, scanner, **update)
+        update_scanner_status(scannerstore, db, scanner, **update)
         assert REGISTRY.get_sample_value(
             'scanner_current_devices', labels={'scanner': scanner}) == value

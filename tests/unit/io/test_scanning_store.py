@@ -36,64 +36,17 @@ SCANNER_ONE = Scanner(
     '9a8486a6f9cb11e7ac660050b68338ac',
 )
 
-SCANNER_TWO = Scanner(
-    'Scanner two',
-    '350986224086888954',
-)
-
 
 @pytest.fixture(scope='function')
 def scanning_store():
     store = ScanningStore()
-    store.add(SCANNER_ONE)
-    store.add(SCANNER_TWO)
     return store
-
-
-class TestScanners:
-    def test_has_test_scanner(self, scanning_store):
-        assert scanning_store.exists(Scanner, SCANNER_ONE.identifier)
-
-    def test_not_having_unknown_scanner(self, scanning_store):
-        assert scanning_store.exists(Scanner, "Unknown") is False
-
-    @pytest.mark.parametrize('scanner', (SCANNER_ONE, SCANNER_TWO))
-    def test_getting_scanner(self, scanning_store, scanner):
-        assert scanning_store.get(Scanner, scanner.identifier) == scanner
-
-    def test_add_scanner(self, scanning_store):
-        scanner = Scanner("Deep Thought", "42")
-        scanning_store.add(scanner)
-        assert set(scanning_store.find(Scanner)) == {
-            scanner, SCANNER_ONE, SCANNER_TWO}
-
-    def test_no_add_scanner_duplicate_id(self, scanning_store):
-        with pytest.raises(DuplicateIdError):
-            scanning_store.add(SCANNER_ONE)
-
-    def test_no_add_scanner_duplicate_name(self, scanning_store):
-        scanner = Scanner("Scanner two", "2")
-        with pytest.raises(DuplicateNameError):
-            scanning_store.add(scanner)
-
-    def test_get_scanner(self, scanning_store):
-        assert (
-            scanning_store.get(Scanner, SCANNER_ONE.identifier) == SCANNER_ONE
-        )
-
-    def test_no_get_scanner_by_unknown_id(self, scanning_store):
-        with pytest.raises(UnknownIdError):
-            assert scanning_store.get(Scanner, "42")
 
 
 class TestScannerStatus:
     def test_get_scanner_status_list(self, scanning_store):
         assert scanning_store.get_scanner_status_list(
             SCANNER_ONE.identifier) == []
-
-    def test_no_get_scanner_status_list_unknown(self, scanning_store):
-        with pytest.raises(UnknownIdError):
-            scanning_store.get_scanner_status_list("42")
 
     def test_get_lastest_scanner_status_empty(self, scanning_store):
         assert scanning_store.get_latest_scanner_status(
