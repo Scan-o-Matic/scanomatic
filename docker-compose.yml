@@ -1,19 +1,31 @@
 version: '2'
 
 services:
-  scanomatic:
+  scanomatic-frontend:
     image: phenomique/scanomatic:latest
-    privileged: true
     build: .
     ports: ["5000"]
     volumes:
       - scan-o-matic-home:/root/.scan-o-matic
       - somprojects:/somprojects
-      - /dev/bus/usb:/dev/bus/usb
+    command: scan-o-matic --no-browser
+    environment:
+      - SOM_BACKEND_HOST=scanomatic-backend
+      - PGHOST=db
+      - PGUSER=postgres
+      - PGDATABASE=scanomatic
+
+  scanomatic-backend:
+    image: phenomique/scanomatic:latest
+    build: .
     environment:
       - PGHOST=db
       - PGUSER=postgres
       - PGDATABASE=scanomatic
+    volumes:
+      - scan-o-matic-home:/root/.scan-o-matic
+      - somprojects:/somprojects
+    command: scan-o-matic_server
 
   db:
     image: postgres:10

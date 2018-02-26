@@ -1,7 +1,6 @@
 import socket
 import sys
 import os
-from time import sleep
 from functools import wraps
 
 from scanomatic.io.app_config import Config
@@ -9,7 +8,6 @@ from scanomatic.generics.singleton import SingeltonOneInit
 import scanomatic.io.logger as logger
 from scanomatic.server.server import Server
 from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
-import scanomatic.generics.decorators as decorators
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
@@ -92,7 +90,6 @@ class InterfaceBuilder(SingeltonOneInit):
                 "Sever is already running or the " +
                 "port {0} is in use by other program".format(
                     port))
-            self._remove_som_server(False)
             sys.exit(1)
 
         _RPC_SERVER.register_introspection_functions()
@@ -105,74 +102,6 @@ class InterfaceBuilder(SingeltonOneInit):
                 _RPC_SERVER.register_function(getattr(self, m), m[8:])
 
         _RPC_SERVER.serve_forever()
-
-    @decorators.threaded
-    def _remove_rpc_server(self):
-
-        global _RPC_SERVER
-        global _SOM_SERVER
-
-        if _RPC_SERVER:
-            _RPC_SERVER.stop()
-        else:
-            self.logger.warning("Trying to stop a server that is not running")
-        _RPC_SERVER = None
-
-        if _SOM_SERVER:
-            logger_instance = _SOM_SERVER.logger
-        else:
-            logger_instance = self.logger
-
-        logger_instance.info("Server no longer accepting requests")
-
-    @staticmethod
-    def _remove_som_server(wait_for_jobs_to_stop):
-
-        global _SOM_SERVER
-        if wait_for_jobs_to_stop:
-            successful_stop = _SOM_SERVER.shutdown()
-        else:
-            successful_stop = _SOM_SERVER.safe_shutdown()
-
-        return successful_stop
-
-    @_verify_admin
-    def _server_shutdown(self, user_id, wait_for_jobs_to_stop=False):
-
-        self._remove_rpc_server()
-
-        val = self._remove_som_server(wait_for_jobs_to_stop=wait_for_jobs_to_stop)
-
-        if val:
-            self.logger.info("Server is shutting down")
-        else:
-            self.logger.error("Unknown error shutting down Scan-o-Matic server")
-
-        return sanitize_communication(val)
-
-    @_verify_admin
-    def _server_restart(self, user_id, wait_for_jobs_to_stop=False):
-
-        self._remove_rpc_server()
-
-        self._restart_server_thread(wait_for_jobs_to_stop)
-
-        return True
-
-    @decorators.threaded
-    def _restart_server_thread(self, wait_for_jobs_to_stop):
-
-        global _SOM_SERVER
-        self._remove_som_server(wait_for_jobs_to_stop=wait_for_jobs_to_stop)
-
-        while _SOM_SERVER.serving:
-            sleep(0.1)
-
-        del _SOM_SERVER
-        _SOM_SERVER = None
-
-        self._start_som_server()
-        self._start_rpc_server()
 
     @staticmethod
     def _server_get_status(user_id=None):

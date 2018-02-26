@@ -1,4 +1,5 @@
 import pytest
+import warnings
 import requests
 from selenium import webdriver
 
@@ -25,7 +26,7 @@ def scanomatic(docker_ip, docker_services):
 
     url = 'http://{}:{}'.format(
         docker_ip,
-        docker_services.port_for('scanomatic', 5000),
+        docker_services.port_for('scanomatic-frontend', 5000),
     )
     docker_services.wait_until_responsive(
         timeout=30, pause=0.1,
@@ -40,6 +41,10 @@ def scanomatic(docker_ip, docker_services):
     params=[webdriver.Chrome, webdriver.Firefox],
 )
 def browser(request):
-    driver = request.param()
+    try:
+        driver = request.param()
+    except Exception as e:
+        warnings.warn(str(e))
+        driver = request.param()
     yield driver
     driver.close()
