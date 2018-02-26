@@ -1,10 +1,7 @@
 from __future__ import absolute_import
 from collections import defaultdict
-from datetime import datetime
-import pytz
 
 from scanomatic.models.scan import Scan
-from scanomatic.models.scanjob import ScanJob
 from scanomatic.models.scannerstatus import ScannerStatus
 
 
@@ -32,7 +29,6 @@ class ScanningStore:
     def __init__(self):
         self._stores = {
             Scan: {},
-            ScanJob: {},
             ScannerStatus: defaultdict(list),
         }
 
@@ -47,8 +43,6 @@ class ScanningStore:
         store = self._get_store(klass)
         if item.identifier in store:
             raise DuplicateIdError(klass, item.identifier)
-        if klass is Scan and not self.exists(ScanJob, item.scanjob_id):
-            raise UnknownIdError(ScanJob, item.scanjob_id)
         store[item.identifier] = item
 
     def get(self, klass, id_):
@@ -77,14 +71,6 @@ class ScanningStore:
         if not self.exists(type(item), item.identifier):
             raise UnknownIdError(type(item), item.identifier)
         self._get_store(type(item))[item.identifier] = item
-
-    def get_current_scanjob(self, scanner_id, timepoint):
-        for job in self.find(ScanJob, scanner_id=scanner_id):
-            if job.is_active(timepoint):
-                return job
-
-    def has_current_scanjob(self, scanner_id, timepoint):
-        return self.get_current_scanjob(scanner_id, timepoint) is not None
 
     def get_scanner_status_list(self, scanner_id):
         return self._get_store(ScannerStatus)[scanner_id]
