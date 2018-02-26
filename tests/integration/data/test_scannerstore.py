@@ -2,13 +2,12 @@ from __future__ import absolute_import
 import pytest
 
 from scanomatic.data.scannerstore import ScannerStore
-from scanomatic.data import tables
 from scanomatic.models.scanner import Scanner
 
 
 @pytest.fixture
-def store(dbconnection):
-    return ScannerStore(dbconnection)
+def store(dbconnection, dbmetadata):
+    return ScannerStore(dbconnection, dbmetadata)
 
 
 class TestAdd:
@@ -19,7 +18,6 @@ class TestAdd:
         ]
 
     def test_add_duplicate_id(self, store, scanner01, dbconnection):
-        store = ScannerStore(dbconnection)
         store.add(scanner01)
         scanner01bis = Scanner(
             identifier=scanner01.identifier,
@@ -29,7 +27,6 @@ class TestAdd:
             store.add(scanner01bis)
 
     def test_add_duplicate_name(self, store, scanner01, dbconnection):
-        store = ScannerStore(dbconnection)
         store.add(scanner01)
         scanner001 = Scanner(
             identifier='scnr001',
