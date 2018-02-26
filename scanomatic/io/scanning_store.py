@@ -28,7 +28,6 @@ class UnknownIdError(ValueError):
 class ScanningStore:
     def __init__(self):
         self._stores = {
-            Scan: {},
             ScannerStatus: defaultdict(list),
         }
 
