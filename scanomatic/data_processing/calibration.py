@@ -551,6 +551,8 @@ def calculate_sizes(data, poly):
 
 def validate_polynomial(slope, p_value, stderr):
 
+    # return CalibrationValidation.OK
+
     if abs(1.0 - slope) > 0.1:
         _logger.error("Bad slope for polynomial: {0}".format(slope))
         return CalibrationValidation.BadSlope
@@ -614,8 +616,30 @@ def get_calibration_optimization_function(degree=5):
 
 def get_calibration_polynomial_residuals(
         guess, colony_sum_function, data_store):
+    """
+    Instead of
 
-    return data_store.target_value - colony_sum_function(data_store, *guess)
+        return data_store.target_value - colony_sum_function(data_store, *guess)
+
+    calculate residual divided by measured value, to capture assumption that
+    uncertainty in measurement is proportional to the measured cell count,
+    rather than constant.
+
+    A similar approach is
+
+        return (
+            np.log(data_store.target_value)
+            - np.log(colony_sum_function(data_store, *guess))
+        )
+
+    but that seems to be less stable and is perhaps also less intuitive. Best
+    would be to have uncertainty estimates for each cell count measurement, and
+    to use that by dividing the simple residual by this.
+    """
+
+    return (
+        data_store.target_value - colony_sum_function(data_store, *guess)
+    ) / data_store.target_value
 
 
 def get_calibration_polynomial(coefficients_array):
