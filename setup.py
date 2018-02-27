@@ -20,7 +20,7 @@ setup(
     for yeast colony analysis from scanned images.
     """,
     author="Martin Zackrisson",
-    author_email="martin.zackrisson@gu.se",
+    author_email="martin.zackrisson@molflow.com",
     url="www.gitorious.org/scannomatic",
     packages=find_packages(include=['scanomatic*']),
     package_data={
