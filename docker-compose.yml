@@ -20,7 +20,7 @@ services:
     build: .
     environment:
       - PGHOST=db
-      - PGUSER=postgres
+      - PGUSER=scanomatic
       - PGDATABASE=scanomatic
     volumes:
       - scan-o-matic-home:/root/.scan-o-matic
