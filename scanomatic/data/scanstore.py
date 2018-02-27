@@ -9,9 +9,9 @@ class ScanStore(object):
     class IntegrityError(Exception):
         pass
 
-    def __init__(self, connection, metadata):
+    def __init__(self, connection, dbmetadata):
         self._connection = connection
-        self._table = metadata.tables['scans']
+        self._table = dbmetadata.tables['scans']
 
     def add_scan(self, scan):
         try:

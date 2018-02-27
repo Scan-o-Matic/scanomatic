@@ -11,9 +11,9 @@ class ScanJobStore(object):
     class IntegrityError(Exception):
         pass
 
-    def __init__(self, connection, metadata):
+    def __init__(self, connection, dbmetadata):
         self._connection = connection
-        self._table = metadata.tables['scanjobs']
+        self._table = dbmetadata.tables['scanjobs']
 
     def add_scanjob(self, scanjob):
         try:
