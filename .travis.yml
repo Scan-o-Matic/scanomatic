@@ -23,11 +23,11 @@ jobs:
             - python-scipy
             - python-matplotlib
       before_install:
-         - sudo pip install tox codecov
+        - sudo pip install tox codecov
       script:
-         - tox -e py27
+        - tox -e py27
       after_success:
-         - codecov
+        - codecov
     - stage: "Docker build & system tests"
       python: "2.7"
       services: ["docker"]
