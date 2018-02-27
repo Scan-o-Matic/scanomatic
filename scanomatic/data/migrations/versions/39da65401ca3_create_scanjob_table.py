@@ -20,7 +20,6 @@ depends_on = None
 
 
 def upgrade():
-    op.execute('CREATE EXTENSION btree_gist;')
     op.create_table(
         'scanjobs',
         sa.Column('id', sa.Text(), primary_key=True),
