@@ -21,7 +21,7 @@ setup(
     """,
     author="Martin Zackrisson",
     author_email="martin.zackrisson@molflow.com",
-    url="www.gitorious.org/scannomatic",
+    url="https://github.com/Scan-o-Matic/scanomatic",
     packages=find_packages(include=['scanomatic*']),
     package_data={
         "scanomatic": [
