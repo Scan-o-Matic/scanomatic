@@ -12,7 +12,7 @@ services:
     environment:
       - SOM_BACKEND_HOST=scanomatic-backend
       - PGHOST=db
-      - PGUSER=postgres
+      - PGUSER=scanomatic
       - PGDATABASE=scanomatic
 
   scanomatic-backend:
@@ -20,7 +20,7 @@ services:
     build: .
     environment:
       - PGHOST=db
-      - PGUSER=postgres
+      - PGUSER=scanomatic
       - PGDATABASE=scanomatic
     volumes:
       - scan-o-matic-home:/root/.scan-o-matic
@@ -29,8 +29,8 @@ services:
 
   db:
     image: postgres:10
-    environment:
-      - POSTGRES_DB=scanomatic
+    volumes:
+      - "./scripts/setupdb.sh:/docker-entrypoint-initdb.d/setupdb.sh:ro"
 
 volumes:
   scan-o-matic-home: {}

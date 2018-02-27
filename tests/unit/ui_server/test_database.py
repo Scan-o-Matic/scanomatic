@@ -15,10 +15,7 @@ def engine():
 def app(engine):
     app = Flask('mytestapp')
     app.config['DATABASE_URL'] = 'mydb://...'
-    with patch(
-        'scanomatic.ui_server.database.create_engine',
-        return_value=engine,
-    ):
+    with patch('sqlalchemy.create_engine', return_value=engine):
         database.setup(app)
     return app
 
@@ -31,6 +28,7 @@ class TestConnect(object):
 
     def test_cache_connection(self, app, engine):
         with app.app_context():
+            engine.connect.reset_mock()
             conn1 = database.connect()
             conn2 = database.connect()
             assert conn1 is conn2

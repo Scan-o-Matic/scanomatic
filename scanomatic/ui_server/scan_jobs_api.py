@@ -1,17 +1,14 @@
 from __future__ import absolute_import
 from datetime import datetime, timedelta
-from httplib import BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, CREATED, OK
+from httplib import BAD_REQUEST, CONFLICT, CREATED, OK
 from uuid import uuid1
 
-from flask import request, jsonify, Blueprint, current_app
+from flask import request, jsonify, Blueprint
 from flask_restful import Api, Resource
 import pytz
 from werkzeug.exceptions import NotFound
 
-from scanomatic.io.scanning_store import DuplicateIdError, UnknownIdError
-from scanomatic.data.scannerstore import ScannerStore
 from scanomatic.models.scanjob import ScanJob
-from scanomatic.models.scanner import Scanner
 from .general import json_abort
 from .serialization import job2json
 from . import database
@@ -27,12 +24,12 @@ MINIMUM_INTERVAL = timedelta(minutes=5)
 @blueprint.route("", methods=['POST'])
 def scan_jobs_add():
     data_object = request.get_json()
-    scanning_store = current_app.config['scanning_store']
-    scannerstore = ScannerStore(database.connect())
+    scanjobstore = database.getscanjobstore()
+    scannerstore = database.getscannerstore()
     name = data_object.get('name', None)
     if not name:
         return json_abort(BAD_REQUEST, reason="No name supplied")
-    if scanning_store.exists(ScanJob, name=name):
+    if scanjobstore.has_scanjob_with_name(name):
         return json_abort(
             CONFLICT,
             reason="Name '{}' duplicated".format(name)
@@ -67,51 +64,48 @@ def scan_jobs_add():
         )
 
     identifier = uuid1().hex
-    try:
-        scanning_store.add(ScanJob(
-            identifier=identifier,
-            name=name,
-            duration=duration,
-            interval=interval,
-            scanner_id=scanner
-        ))
-    except DuplicateIdError:
-        return json_abort(INTERNAL_SERVER_ERROR, reason="Identifier collision")
+    scanjobstore.add_scanjob(ScanJob(
+        identifier=identifier,
+        name=name,
+        duration=duration,
+        interval=interval,
+        scanner_id=scanner
+    ))
 
     return jsonify(identifier=identifier), CREATED
 
 
 @blueprint.route("", methods=['GET'])
 def scan_jobs_list():
-    scanning_store = current_app.config['scanning_store']
+    scanjobstore = database.getscanjobstore()
     return jsonify([
-        job2json(job) for job in scanning_store.find(ScanJob)
+        job2json(job) for job in scanjobstore.get_all_scanjobs()
     ])
 
 
 class ScanJobDocument(Resource):
     def get(self, scanjobid):
-        db = current_app.config['scanning_store']
+        scanjobstore = database.getscanjobstore()
         try:
-            job = db.get(ScanJob, scanjobid)
-        except UnknownIdError:
+            job = scanjobstore.get_scanjob_by_id(scanjobid)
+        except KeyError:
             raise NotFound
         return job2json(job)
 
 
 class ScanJobStartController(Resource):
     def post(self, scanjobid):
-        db = current_app.config['scanning_store']
+        scanjobstore = database.getscanjobstore()
         try:
-            job = db.get(ScanJob, scanjobid)
-        except UnknownIdError:
+            job = scanjobstore.get_scanjob_by_id(scanjobid)
+        except KeyError:
             raise NotFound
         now = datetime.now(pytz.utc)
         if job.start_time is not None:
             return json_abort(CONFLICT, reason='Scanning Job already started')
-        if db.has_current_scanjob(job.scanner_id, now):
+        if scanjobstore.get_current_scanjob_for_scanner(job.scanner_id, now):
             return json_abort(CONFLICT, reason='Scanner busy')
-        db.update(job._replace(start_time=now))
+        scanjobstore.set_scanjob_start_time(scanjobid, now)
         return '', OK
 
 
