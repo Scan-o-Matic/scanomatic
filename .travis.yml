@@ -1,43 +1,58 @@
-language: python
-python:
-    - "2.7"
+language: generic
+sudo: required # Needed for chrome: https://github.com/travis-ci/travis-ci/issues/8836
+dist: trusty
 
-services:
-  - docker
-
-addons:
-  apt:
-    packages:
-      - docker-ce
-      - postgresql
-      - python-numpy
-      - python-scipy
-      - python-matplotlib
-  chrome: stable
-  firefox: latest
-
-before_install:
-    - pip install tox coveralls codecov
-    - gem install coveralls-lcov
-    - wget -N http://chromedriver.storage.googleapis.com/2.30/chromedriver_linux64.zip -P ~/
-    - unzip ~/chromedriver_linux64.zip -d ~/
-    - rm ~/chromedriver_linux64.zip
-    - sudo mv -f ~/chromedriver /usr/local/share/
-    - sudo chmod +x /usr/local/share/chromedriver
-    - sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
-    - wget -O- 'https://github.com/mozilla/geckodriver/releases/download/v0.19.0/geckodriver-v0.19.0-linux64.tar.gz' | sudo tar -C /usr/local/bin -xz
-    - npm install
-before_script:
-    - export DISPLAY=':99.0'
-    - sh -e /etc/init.d/xvfb start
-    - sleep 3
-script:
-    - npm test
-    - docker-compose --verbose build --no-cache --force-rm
-    - tox
-after_success:
-    - codecov
-    - coveralls-lcov -v -n scanomatic/ui_server_data/coverage/report-lcov/lcov.info > js-coverage.json
-    - coveralls --merge=js-coverage.json
-    - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"; docker-compose push; fi
-    - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then curl "https://jenkins.molflow.com/buildByToken/buildWithParameters?job=INFRA&token=${JENKINS_TOKEN}"; fi
+jobs:
+  include:
+    - node_js: "6"
+      addons:
+        chrome: stable
+      before_install:
+        - npm install
+        - npm install codecov
+      script:
+        - xvfb-run npm test
+      after_success:
+        - ./node_modules/.bin/codecov
+    - python: "2.7"
+      addons:
+        apt:
+          packages:
+            - postgresql
+            - python-numpy
+            - python-scipy
+            - python-matplotlib
+      before_install:
+         - sudo pip install tox codecov
+      script:
+         - tox -e py27
+      after_success:
+         - codecov
+    - stage: "Docker build & system tests"
+      python: "2.7"
+      services: ["docker"]
+      addons:
+        apt:
+          packages:
+            - docker-ce
+        chrome: stable
+        firefox: latest
+      before_install:
+        - sudo pip install tox
+        - wget -N http://chromedriver.storage.googleapis.com/2.30/chromedriver_linux64.zip -P ~/
+        - unzip ~/chromedriver_linux64.zip -d ~/
+        - rm ~/chromedriver_linux64.zip
+        - sudo mv -f ~/chromedriver /usr/local/share/
+        - sudo chmod +x /usr/local/share/chromedriver
+        - sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
+        - wget -O- 'https://github.com/mozilla/geckodriver/releases/download/v0.19.0/geckodriver-v0.19.0-linux64.tar.gz' | sudo tar -C /usr/local/bin -xz
+      before_script:
+        - export DISPLAY=':99.0'
+        - sh -e /etc/init.d/xvfb start
+        - sleep 3
+      script:
+        - docker-compose build
+        - tox -e system-tests
+      after_success:
+        - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"; docker-compose push; fi
+        - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then curl "https://jenkins.molflow.com/buildByToken/buildWithParameters?job=INFRA&token=${JENKINS_TOKEN}"; fi
