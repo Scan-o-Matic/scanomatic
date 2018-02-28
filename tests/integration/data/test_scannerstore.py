@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytest
 from pytz import utc
+import sqlalchemy as sa
 
 from scanomatic.data.scannerstore import ScannerStore
 from scanomatic.models.scanner import Scanner
@@ -37,6 +38,22 @@ class TestAdd:
         )
         with pytest.raises(ScannerStore.IntegrityError):
             store.add(scanner001)
+
+
+@pytest.mark.usefixtures('insert_test_scanners')
+class TestUpdateScannerStatus:
+    def test_update(self, store, scanner01, dbconnection):
+        last_seen = datetime(1985, 10, 26, 1, 24, tzinfo=utc)
+        store.update_scanner_status(scanner01.identifier, last_seen=last_seen)
+        assert list(dbconnection.execute(
+            sa.sql.text('SELECT last_seen from scanners WHERE id = :id'),
+            id=scanner01.identifier
+        )) == [(last_seen, )]
+
+    def test_update_unknown_scanner(self, store):
+        dt = datetime(1985, 10, 26, 1, 24, tzinfo=utc)
+        with pytest.raises(KeyError):
+            store.update_scanner_status('unknown', last_seen=dt)
 
 
 @pytest.mark.usefixtures('insert_test_scanners')

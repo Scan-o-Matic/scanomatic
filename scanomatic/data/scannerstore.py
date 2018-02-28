@@ -53,3 +53,12 @@ class ScannerStore(object):
             self._table.select().where(self._table.c.id == id_)
         ).select()
         return self._connection.execute(query).scalar()
+
+    def update_scanner_status(self, id_, last_seen):
+        result = self._connection.execute(
+            self._table.update().where(self._table.c.id == id_).values(
+                last_seen=last_seen,
+            )
+        )
+        if result.rowcount == 0:
+            raise KeyError(id_)
