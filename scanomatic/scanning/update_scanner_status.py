@@ -69,8 +69,10 @@ def update_scanner_status(
         new_scanner = True
     else:
         new_scanner = False
+    now = datetime.now(pytz.utc)
+    scannerstore.update_scanner_status(scanner_id, last_seen=now)
     status = ScannerStatus(
-        server_time=datetime.now(pytz.utc),
+        server_time=now,
         job=job,
         start_time=start_time,
         next_scheduled_scan=next_scheduled_scan,

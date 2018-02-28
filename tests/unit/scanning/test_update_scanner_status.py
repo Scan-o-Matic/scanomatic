@@ -40,6 +40,13 @@ def scannerstore():
     return mock.MagicMock()
 
 
+def test_update_status_in_store(scannerstore, db, scanner, update):
+    now = datetime(1985, 10, 26, 1, 21, tzinfo=utc)
+    with freeze_time(now):
+        update_scanner_status(scannerstore, db, scanner, **update)
+    scannerstore.update_scanner_status.assert_called_with(scanner, last_seen=now)
+
+
 def test_duplicate_scanner_name(scannerstore, db, scanner, update):
     scannerstore.has_scanner_with_id.return_value = False
     scannerstore.add.side_effect = ScannerStore.IntegrityError
