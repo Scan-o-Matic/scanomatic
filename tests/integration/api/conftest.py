@@ -6,7 +6,6 @@ import pytest
 from flask import Flask
 
 from scanomatic.io.imagestore import ImageStore
-from scanomatic.io.scanning_store import ScanningStore
 from scanomatic.data.scannerstore import ScannerStore
 from scanomatic.models.scanner import Scanner
 from scanomatic.ui_server import scan_jobs_api
@@ -23,7 +22,6 @@ def app(tmpdir, database):
     app.register_blueprint(scans_api.blueprint, url_prefix="/scans")
     app.config['DATABASE_URL'] = database
     db.setup(app)
-    app.config['scanning_store'] = ScanningStore()
     app.config['imagestore'] = ImageStore(str(tmpdir))
     with app.app_context():
         scannerstore = db.getscannerstore()
