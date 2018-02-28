@@ -49,7 +49,6 @@ def scanner_get(scannerid):
 
 @blueprint.route("/<scanner>/status", methods=['PUT'])
 def scanner_status_update(scanner):
-    scanning_store = current_app.config['scanning_store']
     scannerstore = database.getscannerstore()
     parser = reqparse.RequestParser()
     parser.add_argument('job')
@@ -77,8 +76,7 @@ def scanner_status_update(scanner):
     )
     args = parser.parse_args(strict=True)
     try:
-        result = update_scanner_status(
-            scannerstore, scanning_store, scanner, **args)
+        result = update_scanner_status(scannerstore, scanner, **args)
     except UpdateScannerStatusError as error:
         return json_abort(INTERNAL_SERVER_ERROR, reason=str(error))
     status_code = CREATED if result.new_scanner else OK

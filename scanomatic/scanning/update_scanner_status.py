@@ -6,9 +6,7 @@ from prometheus_client import Gauge, Counter
 import pytz
 
 from scanomatic.data.scannerstore import ScannerStore
-from scanomatic.io.scanning_store import DuplicateNameError
 from scanomatic.models.scanner import Scanner
-from scanomatic.models.scannerstatus import ScannerStatus
 from scanomatic.util.datetime import timestamp
 from scanomatic.util.generic_name import get_generic_name
 
@@ -56,7 +54,6 @@ UpdateScannerStatusResult = namedtuple('UpdateScannerStatusResult', [
 
 def update_scanner_status(
     scannerstore,
-    db,
     scanner_id,
     job,
     start_time,
@@ -71,15 +68,6 @@ def update_scanner_status(
         new_scanner = False
     now = datetime.now(pytz.utc)
     scannerstore.update_scanner_status(scanner_id, last_seen=now)
-    status = ScannerStatus(
-        server_time=now,
-        job=job,
-        start_time=start_time,
-        next_scheduled_scan=next_scheduled_scan,
-        images_to_send=images_to_send,
-        devices=devices,
-    )
-    db.add_scanner_status(scanner_id, status)
     labels = {'scanner': scanner_id}
     SCANNER_CURRENT_JOBS.labels(**labels).set(job is not None)
     SCANNER_QUEUED_UPLOADS.labels(**labels).set(images_to_send)
