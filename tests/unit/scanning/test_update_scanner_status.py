@@ -8,7 +8,10 @@ from prometheus_client import REGISTRY
 import pytest
 from pytz import utc
 
-from scanomatic.scanning.update_scanner_status import update_scanner_status
+from scanomatic.data.scannerstore import ScannerStore
+from scanomatic.scanning.update_scanner_status import (
+    update_scanner_status, UpdateScannerStatusError
+)
 
 
 @pytest.fixture
@@ -35,6 +38,13 @@ def db():
 @pytest.fixture
 def scannerstore():
     return mock.MagicMock()
+
+
+def test_duplicate_scanner_name(scannerstore, db, scanner, update):
+    scannerstore.has_scanner_with_id.return_value = False
+    scannerstore.add.side_effect = ScannerStore.IntegrityError
+    with pytest.raises(UpdateScannerStatusError):
+        update_scanner_status(scannerstore, db, scanner, **update)
 
 
 class TestMetrics:

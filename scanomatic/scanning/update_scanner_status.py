@@ -5,6 +5,7 @@ from datetime import datetime
 from prometheus_client import Gauge, Counter
 import pytz
 
+from scanomatic.data.scannerstore import ScannerStore
 from scanomatic.io.scanning_store import DuplicateNameError
 from scanomatic.models.scanner import Scanner
 from scanomatic.models.scannerstatus import ScannerStatus
@@ -44,7 +45,7 @@ SCANNER_CURRENT_DEVICES = Gauge(
 )
 
 
-def UpdateScannerStatusError(Exception):
+class UpdateScannerStatusError(Exception):
     pass
 
 
@@ -92,7 +93,7 @@ def _add_scanner(scannerstore, scanner_id):
     try:
         name = get_generic_name()
         scannerstore.add(Scanner(name, scanner_id))
-    except DuplicateNameError:
-        UpdateScannerStatusError(
+    except ScannerStore.IntegrityError:
+        raise UpdateScannerStatusError(
             "Failed to create scanner, please try again",
         )
