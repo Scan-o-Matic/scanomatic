@@ -37,7 +37,6 @@ class ScannerStore(object):
 
     def _get_scanners(self, query):
         for row in self._connection.execute(query):
-            print(row)
             if row['last_seen'] is not None:
                 last_seen = row['last_seen'].astimezone(utc)
             else:
