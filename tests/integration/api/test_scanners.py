@@ -94,17 +94,9 @@ class TestScannerStatus:
             assert response.status_code == HTTPStatus.OK
 
             response = client.get(
-                self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
+                self.URI + "/9a8486a6f9cb11e7ac660050b68338ac")
             assert response.status_code == HTTPStatus.OK
-            assert response.json["job"] == jsonstatus['job']
-            assert response.json["imagesToSend"] == jsonstatus['imagesToSend']
-            assert response.json["startTime"] == jsonstatus['startTime']
-            assert response.json["serverTime"] == "1985-10-26T01:20:00Z"
-            assert (
-                response.json["nextScheduledScan"]
-                == jsonstatus['nextScheduledScan']
-            )
-            assert response.json["devices"] == jsonstatus['devices']
+            assert response.json["power"] is True
 
     @pytest.mark.parametrize('status', [
         {
@@ -127,12 +119,6 @@ class TestScannerStatus:
             headers={'Content-Type': 'application/json'}
         )
         assert response.status_code == HTTPStatus.OK
-
-        response = client.get(
-            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
-        assert response.status_code == HTTPStatus.OK
-        assert 'job' not in response.json
-        assert 'nextScheduledScan' not in response.json
 
     @pytest.mark.parametrize('property, value', [
         ('imagesToSend', 'x'),
@@ -157,16 +143,6 @@ class TestScannerStatus:
             headers={'Content-Type': 'application/json'}
         )
         assert response.status_code == HTTPStatus.BAD_REQUEST
-
-    def test_get_empty_scanner_status(self, client):
-        response = client.get(
-            self.URI + "/9a8486a6f9cb11e7ac660050b68338ac/status")
-        assert response.status_code == HTTPStatus.OK
-        assert response.json == {}
-
-    def test_get_unknown_scanner_status_fails(self, client):
-        response = client.get(self.URI + "/42/status")
-        assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_add_bad_scanner_status_fails(self, client):
         response = client.put(

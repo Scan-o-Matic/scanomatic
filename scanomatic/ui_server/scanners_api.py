@@ -85,20 +85,6 @@ def scanner_status_update(scanner):
     return "", status_code
 
 
-@blueprint.route("/<scanner>/status", methods=['GET'])
-def scanner_status_get(scanner):
-    scanning_store = current_app.config['scanning_store']
-    scannerstore = database.getscannerstore()
-    if not scannerstore.has_scanner_with_id(scanner):
-        return json_abort(
-            NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
-        )
-    status = scanning_store.get_latest_scanner_status(scanner)
-    if status is None:
-        return jsonify({})
-    return jsonify(scanner_status2json(status))
-
-
 class ScannerJob(Resource):
     def get(self, scannerid):
         scanjobstore = database.getscanjobstore()
