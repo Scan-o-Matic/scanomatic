@@ -18,44 +18,33 @@ blueprint = Blueprint("scanners_api", __name__)
 SCANNER_TIMEOUT = timedelta(minutes=5)
 
 
-def _scanner_is_online(scanner_id, scanning_store):
-    try:
-        return (
-            datetime.now(pytz.utc)
-            - scanning_store.get_latest_scanner_status(
-                scanner_id).server_time
-            < SCANNER_TIMEOUT
-        )
-    except AttributeError:
-        return False
+def _scanner_is_online(scanner):
+    return (
+        scanner.last_seen is not None
+        and datetime.now(pytz.utc) - scanner.last_seen < SCANNER_TIMEOUT
+    )
 
 
 @blueprint.route("", methods=['GET'])
 def scanners_get():
     scannerstore = database.getscannerstore()
-    scanning_store = current_app.config['scanning_store']
     scanners = scannerstore.get_all()
     return jsonify([
-        scanner2json(
-            scanner,
-            _scanner_is_online(scanner.identifier, scanning_store)
-        ) for scanner in scanners
+        scanner2json( scanner, _scanner_is_online(scanner))
+        for scanner in scanners
     ])
 
 
-@blueprint.route("/<scanner>", methods=['GET'])
-def scanner_get(scanner):
+@blueprint.route("/<scannerid>", methods=['GET'])
+def scanner_get(scannerid):
     scannerstore = database.getscannerstore()
-    scanning_store = current_app.config['scanning_store']
     try:
-        return jsonify(scanner2json(
-            scannerstore.get_scanner_by_id(scanner),
-            _scanner_is_online(scanner, scanning_store)
-        ))
+        scanner = scannerstore.get_scanner_by_id(scannerid)
     except KeyError:
         return json_abort(
-            NOT_FOUND, reason="Scanner '{}' unknown".format(scanner)
+            NOT_FOUND, reason="Scanner '{}' unknown".format(scannerid)
         )
+    return jsonify(scanner2json(scanner, _scanner_is_online(scanner)))
 
 
 @blueprint.route("/<scanner>/status", methods=['PUT'])
