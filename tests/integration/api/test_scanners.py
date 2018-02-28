@@ -66,7 +66,7 @@ class TestScannerStatus:
         assert response.json['reason'] == "Scanner 'Unknown' unknown"
 
     @pytest.fixture
-    def jsonstatus(app):
+    def jsonstatus(self):
         return {
             'job': 'curr3ntj0b',
             'imagesToSend': 2,
