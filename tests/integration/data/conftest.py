@@ -24,12 +24,19 @@ def dbmetadata(dbconnection):
 
 @pytest.fixture
 def scanner01():
-    return Scanner(identifier='scnr01', name='My First Scanner')
+    return Scanner(
+        identifier='scnr01',
+        name='My First Scanner',
+        last_seen=datetime(1955, 11, 12, 22, 4, tzinfo=utc),
+    )
 
 
 @pytest.fixture
 def scanner02():
-    return Scanner(identifier='scnr02', name='My Second Scanner')
+    return Scanner(
+        identifier='scnr02',
+        name='My Second Scanner',
+    )
 
 
 @pytest.fixture
@@ -84,6 +91,7 @@ def insert_test_scanners(dbconnection, dbmetadata, scanner01, scanner02):
             dbmetadata.tables['scanners'].insert().values(
                 name=scanner.name,
                 id=scanner.identifier,
+                last_seen=scanner.last_seen,
             )
         )
 

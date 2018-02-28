@@ -1,5 +1,8 @@
 from __future__ import absolute_import
+from datetime import datetime
+
 import pytest
+from pytz import utc
 
 from scanomatic.data.scannerstore import ScannerStore
 from scanomatic.models.scanner import Scanner
@@ -13,9 +16,9 @@ def store(dbconnection, dbmetadata):
 class TestAdd:
     def test_add_one(self, store, scanner01, dbconnection):
         store.add(scanner01)
-        assert list(dbconnection.execute('SELECT id, name from scanners')) == [
-            ('scnr01', 'My First Scanner'),
-        ]
+        assert list(dbconnection.execute(
+            'SELECT id, name, last_seen from scanners'
+        )) == [(scanner01.identifier, scanner01.name, scanner01.last_seen)]
 
     def test_add_duplicate_id(self, store, scanner01, dbconnection):
         store.add(scanner01)
