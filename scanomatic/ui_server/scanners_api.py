@@ -30,7 +30,7 @@ def scanners_get():
     scannerstore = database.getscannerstore()
     scanners = scannerstore.get_all()
     return jsonify([
-        scanner2json( scanner, _scanner_is_online(scanner))
+        scanner2json(scanner, _scanner_is_online(scanner))
         for scanner in scanners
     ])
 

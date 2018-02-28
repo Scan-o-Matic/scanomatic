@@ -39,7 +39,9 @@ def test_update_status_in_store(scannerstore, scanner, update):
     now = datetime(1985, 10, 26, 1, 21, tzinfo=utc)
     with freeze_time(now):
         update_scanner_status(scannerstore, scanner, **update)
-    scannerstore.update_scanner_status.assert_called_with(scanner, last_seen=now)
+    scannerstore.update_scanner_status.assert_called_with(
+        scanner, last_seen=now
+    )
 
 
 def test_duplicate_scanner_name(scannerstore, scanner, update):
