@@ -15,7 +15,6 @@ from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
 from scanomatic.io.rpc_client import get_client
 from scanomatic.io.imagestore import ImageStore
-from scanomatic.io.scanning_store import ScanningStore
 from scanomatic.data.util import get_database_url
 
 from . import database
@@ -61,7 +60,6 @@ def launch_server(host, port, debug):
 
     _URL = "http://{host}:{port}".format(host=host, port=port)
 
-    add_configs(app)
     add_resource_routes(app, rpc_client)
 
     ui_pages.add_routes(app)
@@ -108,10 +106,6 @@ def launch_server(host, port, debug):
             " (see `scan-o-matic --help` for instructions).")
         return False
     return True
-
-
-def add_configs(app):
-    app.config['scanning_store'] = ScanningStore()
 
 
 def add_resource_routes(app, rpc_client):
