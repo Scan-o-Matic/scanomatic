@@ -8,7 +8,10 @@ from prometheus_client import REGISTRY
 import pytest
 from pytz import utc
 
-from scanomatic.scanning.update_scanner_status import update_scanner_status
+from scanomatic.data.scannerstore import ScannerStore
+from scanomatic.scanning.update_scanner_status import (
+    update_scanner_status, UpdateScannerStatusError
+)
 
 
 @pytest.fixture
@@ -28,22 +31,33 @@ def update():
 
 
 @pytest.fixture
-def db():
-    return mock.MagicMock()
-
-
-@pytest.fixture
 def scannerstore():
     return mock.MagicMock()
+
+
+def test_update_status_in_store(scannerstore, scanner, update):
+    now = datetime(1985, 10, 26, 1, 21, tzinfo=utc)
+    with freeze_time(now):
+        update_scanner_status(scannerstore, scanner, **update)
+    scannerstore.update_scanner_status.assert_called_with(
+        scanner, last_seen=now
+    )
+
+
+def test_duplicate_scanner_name(scannerstore, scanner, update):
+    scannerstore.has_scanner_with_id.return_value = False
+    scannerstore.add.side_effect = ScannerStore.IntegrityError
+    with pytest.raises(UpdateScannerStatusError):
+        update_scanner_status(scannerstore, scanner, **update)
 
 
 class TestMetrics:
     @pytest.mark.parametrize('job, value', [('job001', 1), (None, 0)])
     def test_scanner_current_jobs(
-        self, scannerstore, db, scanner, update, job, value
+        self, scannerstore, scanner, update, job, value
     ):
         update['job'] = job
-        update_scanner_status(scannerstore, db, scanner, **update)
+        update_scanner_status(scannerstore, scanner, **update)
         assert REGISTRY.get_sample_value(
             'scanner_current_jobs', labels={'scanner': scanner}) == value
 
@@ -54,10 +68,10 @@ class TestMetrics:
         ('scanner_status_updates_total', 1),
     ])
     def test_other_metrics(
-        self, scannerstore, db, scanner, update, metric, value
+        self, scannerstore, scanner, update, metric, value
     ):
         with freeze_time(datetime(1985, 10, 26, 1, 21, tzinfo=utc)):
-            update_scanner_status(scannerstore, db, scanner, **update)
+            update_scanner_status(scannerstore, scanner, **update)
         assert REGISTRY.get_sample_value(
             metric, labels={'scanner': scanner}) == value
 
@@ -68,9 +82,9 @@ class TestMetrics:
         (['a', 'b'], 2),
     ])
     def test_current_devices(
-        self, scannerstore, db, scanner, update, devices, value
+        self, scannerstore, scanner, update, devices, value
     ):
         update['devices'] = devices
-        update_scanner_status(scannerstore, db, scanner, **update)
+        update_scanner_status(scannerstore, scanner, **update)
         assert REGISTRY.get_sample_value(
             'scanner_current_devices', labels={'scanner': scanner}) == value

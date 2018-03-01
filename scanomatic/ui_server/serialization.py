@@ -49,8 +49,11 @@ def scanner_status2json(status):
 
 
 def scanner2json(scanner, power=False, owner=None):
-    obj = scanner._asdict()
-    obj['power'] = power
+    obj = {
+        'identifier': scanner.identifier,
+        'name': scanner.name,
+        'power': power,
+    }
     if owner is not None:
         obj['owner'] = owner
     return obj

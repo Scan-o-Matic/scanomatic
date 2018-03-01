@@ -5,9 +5,8 @@ from datetime import datetime
 from prometheus_client import Gauge, Counter
 import pytz
 
-from scanomatic.io.scanning_store import DuplicateNameError
+from scanomatic.data.scannerstore import ScannerStore
 from scanomatic.models.scanner import Scanner
-from scanomatic.models.scannerstatus import ScannerStatus
 from scanomatic.util.datetime import timestamp
 from scanomatic.util.generic_name import get_generic_name
 
@@ -44,7 +43,7 @@ SCANNER_CURRENT_DEVICES = Gauge(
 )
 
 
-def UpdateScannerStatusError(Exception):
+class UpdateScannerStatusError(Exception):
     pass
 
 
@@ -55,7 +54,6 @@ UpdateScannerStatusResult = namedtuple('UpdateScannerStatusResult', [
 
 def update_scanner_status(
     scannerstore,
-    db,
     scanner_id,
     job,
     start_time,
@@ -68,15 +66,8 @@ def update_scanner_status(
         new_scanner = True
     else:
         new_scanner = False
-    status = ScannerStatus(
-        server_time=datetime.now(pytz.utc),
-        job=job,
-        start_time=start_time,
-        next_scheduled_scan=next_scheduled_scan,
-        images_to_send=images_to_send,
-        devices=devices,
-    )
-    db.add_scanner_status(scanner_id, status)
+    now = datetime.now(pytz.utc)
+    scannerstore.update_scanner_status(scanner_id, last_seen=now)
     labels = {'scanner': scanner_id}
     SCANNER_CURRENT_JOBS.labels(**labels).set(job is not None)
     SCANNER_QUEUED_UPLOADS.labels(**labels).set(images_to_send)
@@ -92,7 +83,7 @@ def _add_scanner(scannerstore, scanner_id):
     try:
         name = get_generic_name()
         scannerstore.add(Scanner(name, scanner_id))
-    except DuplicateNameError:
-        UpdateScannerStatusError(
+    except ScannerStore.IntegrityError:
+        raise UpdateScannerStatusError(
             "Failed to create scanner, please try again",
         )
