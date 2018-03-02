@@ -28,12 +28,12 @@ class Paths(SingeltonOneInit):
             os.environ.get("SCANOMATIC_DATA",
             os.path.join(os.path.expanduser("~"), ".scan-o-matic")))
 
-        Paths._make_directory(self.root)
+        make_directory(self.root)
 
         self.config = os.path.join(self.root, "config")
-        Paths._make_directory(self.config)
+        make_directory(self.config)
         self.fixtures = os.path.join(self.config, "fixtures")
-        Paths._make_directory(self.fixtures)
+        make_directory(self.fixtures)
         self.images = os.path.join(
             scanomatic.get_location(), "images")
 
@@ -89,7 +89,7 @@ class Paths(SingeltonOneInit):
             self.fixture_image_file_pattern.format(".tmp")
 
         self.log = os.path.join(self.root, "logs")
-        Paths._make_directory(self.log)
+        make_directory(self.log)
         self.log_ui_server = os.path.join(self.log, "ui_server.log")
         self.log_server = os.path.join(self.log, "server.log")
 
@@ -100,7 +100,7 @@ class Paths(SingeltonOneInit):
             self.config, "grayscales.cfg")
 
         self.ccc_folder = os.path.join(self.config, "ccc")
-        Paths._make_directory(self.ccc_folder)
+        make_directory(self.ccc_folder)
         self.ccc_file_pattern = os.path.join(self.ccc_folder, "{0}.ccc")
         self.ccc_image_pattern = os.path.join(self.ccc_folder, "{0}.{1}.tiff")
         self.ccc_image_plate_slice_pattern = os.path.join(
@@ -153,13 +153,6 @@ class Paths(SingeltonOneInit):
 
         self.scan_project_file_pattern = "{0}.scan.instructions"
         self.scan_log_file_pattern = "{0}.scan.log"
-
-    @staticmethod
-    def _make_directory(path):
-
-        if not os.path.isdir(path):
-
-            os.makedirs(path)
 
     def join(self, attr, *other):
 
@@ -283,3 +276,11 @@ class Paths(SingeltonOneInit):
             return self.fixture_conf_file_pattern.format(fixture_name)
         else:
             return self.fixture_image_file_pattern.format(fixture_name)
+
+
+def make_directory(path):
+    try:
+        os.makedirs(path)
+    except OSError:
+        if not os.path.isdir(path):
+            raise
