@@ -509,7 +509,7 @@ class TestGettingActiveCCCs:
         with mock.patch(
             'scanomatic.data_processing.calibration.save_ccc_to_disk',
             return_value=True
-        ) as my_mock:
+        ):
             ccc1 = calibration.get_empty_ccc(store, 'Cylon', 'Boomer')
             self._ccc_id1 = ccc1[calibration.CellCountCalibration.identifier]
             ccc1[calibration.CellCountCalibration.polynomial] = {

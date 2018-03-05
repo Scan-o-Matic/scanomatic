@@ -424,7 +424,8 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
-        if model.cell_count_calibration_id in get_active_cccs(CalibrationStore()):
+        cccs = get_active_cccs(CalibrationStore())
+        if model.cell_count_calibration_id in cccs:
             return True
         return model.FIELD_TYPES.cell_count_calibration
 
