@@ -67,6 +67,8 @@ Data structure for CCC-jsons
 }
 
 """
+from __future__ import absolute_import
+
 from enum import Enum
 from glob import iglob
 import json
