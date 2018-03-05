@@ -10,6 +10,7 @@ import requests
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 
+from scanomatic.data_processing.calibration import CalibrationStore
 from scanomatic.io.app_config import Config
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
@@ -47,6 +48,7 @@ def launch_server(host, port, debug):
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
     prom = Prometheus(app)
     prom.start_server(9999)
+    app.config['calibrationstore'] = CalibrationStore()
     app.config['imagestore'] = ImageStore(Config().paths.projects_root)
     app.config['DATABASE_URL'] = get_database_url()
     database.setup(app)
