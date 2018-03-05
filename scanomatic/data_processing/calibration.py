@@ -667,21 +667,6 @@ def calculate_polynomial(data_store, degree=5):
     return poly_vals
 
 
-def _get_all_grid_shapes(ccc):
-
-    plates = []
-    cells = []
-
-    for image in ccc[CellCountCalibration.images]:
-        for key in sorted(image[CCCImage.plates].keys()):
-            plate = image[CCCImage.plates][key]
-            if plate[CCCPlate.grid_shape]:
-                plates.append(plate[CCCPlate.grid_shape])
-                cells.append(plate[CCCPlate.compressed_ccc_data])
-
-    return plates, cells
-
-
 @_validate_ccc_edit_request
 def construct_polynomial(identifier, power):
 
