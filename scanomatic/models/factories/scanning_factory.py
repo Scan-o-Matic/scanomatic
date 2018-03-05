@@ -3,15 +3,19 @@ import re
 import string
 from types import StringTypes
 
+from scanomatic.data_processing.calibration import (
+    CalibrationStore, get_active_cccs
+)
 from scanomatic.generics.abstract_model_factory import (
-    AbstractModelFactory, email_serializer)
-from scanomatic.models.scanning_model import (
-    ScanningModel, ScannerModel, ScanningAuxInfoModel, PlateDescription,
-    CULTURE_SOURCE, PLATE_STORAGE, ScannerOwnerModel)
-import scanomatic.io.fixtures as fixtures
+    AbstractModelFactory, email_serializer
+)
 import scanomatic.io.app_config as app_config
+import scanomatic.io.fixtures as fixtures
 from scanomatic.models.rpc_job_models import RPCjobModel
-from scanomatic.data_processing.calibration import get_active_cccs
+from scanomatic.models.scanning_model import (
+    CULTURE_SOURCE, PLATE_STORAGE, PlateDescription, ScannerModel,
+    ScannerOwnerModel, ScanningAuxInfoModel, ScanningModel
+)
 
 
 class PlateDescriptionFactory(AbstractModelFactory):
@@ -420,7 +424,7 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
-        if model.cell_count_calibration_id in get_active_cccs():
+        if model.cell_count_calibration_id in get_active_cccs(CalibrationStore()):
             return True
         return model.FIELD_TYPES.cell_count_calibration
 

@@ -1,13 +1,16 @@
 from __future__ import absolute_import
-import pytest
-import mock
-import numpy as np
+
 import os
 
-from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.analysis_model import AnalysisModel
+import mock
+import numpy as np
+import pytest
+
 from scanomatic.data_processing.calibration import (
-    get_polynomial_coefficients_from_ccc)
+    CalibrationStore, get_polynomial_coefficients_from_ccc
+)
+from scanomatic.models.analysis_model import AnalysisModel
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 
 
 @pytest.fixture(scope='function')
@@ -52,7 +55,8 @@ class TestAnalysisModels:
 
     def test_can_create_using_default_ccc(self, analysis_model):
 
-        default = get_polynomial_coefficients_from_ccc('default')
+        default = get_polynomial_coefficients_from_ccc(
+            CalibrationStore(), 'default')
 
         np.testing.assert_allclose(
             analysis_model.cell_count_calibration, default)

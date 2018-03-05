@@ -1,10 +1,13 @@
 import os
-from types import StringTypes, ListType, DictType
-from scanomatic.generics.abstract_model_factory import (
-    AbstractModelFactory, rename_setting, email_serializer)
-import scanomatic.models.analysis_model as analysis_model
+from types import DictType, ListType, StringTypes
+
 from scanomatic.data_processing.calibration import (
-    get_polynomial_coefficients_from_ccc, get_active_cccs)
+    CalibrationStore, get_active_cccs, get_polynomial_coefficients_from_ccc
+)
+from scanomatic.generics.abstract_model_factory import (
+    AbstractModelFactory, email_serializer, rename_setting
+)
+import scanomatic.models.analysis_model as analysis_model
 
 
 class GridModelFactory(AbstractModelFactory):
@@ -110,6 +113,7 @@ class AnalysisModelFactory(AbstractModelFactory):
 
             settings['cell_count_calibration'] = \
                 get_polynomial_coefficients_from_ccc(
+                    CalibrationStore(),
                     settings['cell_count_calibration_id'])
 
         return super(cls, AnalysisModelFactory).create(**settings)
@@ -291,7 +295,8 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.AnalysisModel
         """
-        if model.cell_count_calibration_id in get_active_cccs():
+        active_cccs = get_active_cccs(CalibrationStore())
+        if model.cell_count_calibration_id in active_cccs:
             return True
         return model.FIELD_TYPES.cell_count_calibration_id
 
