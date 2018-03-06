@@ -9,7 +9,7 @@ from ConfigParser import Error as ConfigError
 
 from scanomatic.data_processing import phenotyper
 from scanomatic.data_processing.calibration import (
-    CalibrationStore, get_polynomial_coefficients_from_ccc)
+    get_polynomial_coefficients_from_ccc)
 
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
@@ -49,6 +49,10 @@ from .general import (
 
 
 _logger = Logger("Data API")
+
+
+def getcalibrationstore():
+    return current_app.config['calibrationstore']
 
 
 def _depth(arr, lvl=1):
@@ -804,7 +808,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         gc = GridCell(
             identifier,
             get_polynomial_coefficients_from_ccc(
-                CalibrationStore(), 'default'),
+                getcalibrationstore(), 'default'),
             save_extra_data=False)
 
         gc.source = image.astype(np.float64)
@@ -860,7 +864,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         gc = GridCell(
             identifier,
             get_polynomial_coefficients_from_ccc(
-                CalibrationStore(), 'default'),
+                getcalibrationstore(), 'default'),
             save_extra_data=False)
 
         gc.source = image.astype(np.float64)
@@ -924,7 +928,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         gc.set_new_data_source_space(
             space=VALUES.Cell_Estimates, bg_sub_source=background_filter,
             polynomial_coeffs=get_polynomial_coefficients_from_ccc(
-                CalibrationStore(), 'default')
+                getcalibrationstore(), 'default')
         )
 
         return jsonify(
