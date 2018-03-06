@@ -23,7 +23,11 @@ from scanomatic.ui_server.calibration_api import (
 
 @pytest.fixture
 def store():
-    return calibration.CalibrationStore()
+    with mock.patch(
+        'scanomatic.data_processing.calibration.save_ccc',
+        return_value=True,
+    ) as save_ccc:
+        yield calibration.CalibrationStore()
 
 
 def _fixture_load_ccc(store, rel_path):

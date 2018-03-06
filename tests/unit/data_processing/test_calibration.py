@@ -640,7 +640,7 @@ class TestSaving:
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    def test_add_image_to_ccc(self, validator_mock, save_ccc, store, ccc):
+    def test_set_image_info(self, validator_mock, save_ccc, store, ccc):
         save_ccc.reset_mock()
         assert calibration.set_image_info(
             store,

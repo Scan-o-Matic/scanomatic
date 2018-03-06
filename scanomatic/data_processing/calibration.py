@@ -156,7 +156,6 @@ def add_ccc(store, ccc):
         not store.has_calibration_with_id(ccc[CellCountCalibration.identifier])
     ):
         store.add_calibration(ccc)
-        save_ccc_to_disk(store, ccc)
         return True
     else:
         _logger.error(
@@ -180,28 +179,20 @@ def has_valid_polynomial(ccc):
 
 @_validate_ccc_edit_request
 def activate_ccc(store, identifier):
-
     ccc = store.get_calibration_by_id(identifier)
     try:
         has_valid_polynomial(ccc)
     except ActivationError:
         return False
-
-    ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
-    ccc[CellCountCalibration.edit_access_token] = uuid1().hex
-
-    return save_ccc_to_disk(store, ccc)
+    store.set_calibration_status(identifier, CalibrationEntryStatus.Active)
+    return True
 
 
 @_validate_ccc_edit_request
 def delete_ccc(store, identifier):
-
     ccc = store.get_calibration_by_id(identifier)
-
-    ccc[CellCountCalibration.status] = CalibrationEntryStatus.Deleted
-    ccc[CellCountCalibration.edit_access_token] = uuid1().hex
-
-    return save_ccc_to_disk(store, ccc)
+    store.set_calibration_status(identifier, CalibrationEntryStatus.Deleted)
+    return True
 
 
 def save_ccc_to_disk(store, ccc):
@@ -630,13 +621,9 @@ def construct_polynomial(store, identifier, power):
     validation = validate_polynomial(slope, p_value, stderr)
 
     if validation is CalibrationValidation.OK:
-        ccc[CellCountCalibration.polynomial] = get_polynomal_entry(
-            power, poly_coeffs,
+        store.set_calibration_polynomial(
+            identifier, get_polynomal_entry(power, poly_coeffs)
         )
-
-        if not save_ccc_to_disk(store, ccc):
-            return False
-
     return {
         'polynomial_coefficients': poly_coeffs,
         'measured_sizes': data_store.target_value.tolist(),
@@ -711,6 +698,17 @@ class CalibrationStore(object):
 
     def add_calibration(self, ccc):
         self._CCC[ccc[CellCountCalibration.identifier]] = ccc
+        save_ccc(ccc)
+
+    def set_calibration_status(self, id_, status):
+        ccc = self._CCC[id_]
+        ccc[CellCountCalibration.status] = status
+        save_ccc(ccc)
+
+    def set_calibration_polynomial(self, id_, polynomial):
+        ccc = self._CCC[id_]
+        ccc[CellCountCalibration.polynomial] = polynomial
+        save_ccc(ccc)
 
     def has_calibration_with_id(self, id_):
         return id_ in self._CCC
