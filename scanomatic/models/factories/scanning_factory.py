@@ -5,7 +5,10 @@ import re
 import string
 from types import StringTypes
 
-from scanomatic.data_processing.calibration import get_active_cccs
+
+from scanomatic.data_processing.calibration import (
+    CalibrationStore, get_active_cccs
+)
 from scanomatic.generics.abstract_model_factory import (
     AbstractModelFactory, email_serializer
 )
@@ -424,7 +427,8 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
-        if model.cell_count_calibration_id in get_active_cccs():
+        cccs = get_active_cccs(CalibrationStore())
+        if model.cell_count_calibration_id in cccs:
             return True
         return model.FIELD_TYPES.cell_count_calibration
 

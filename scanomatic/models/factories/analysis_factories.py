@@ -4,7 +4,7 @@ import os
 from types import DictType, ListType, StringTypes
 
 from scanomatic.data_processing.calibration import (
-    get_active_cccs, get_polynomial_coefficients_from_ccc
+    CalibrationStore, get_active_cccs, get_polynomial_coefficients_from_ccc
 )
 from scanomatic.generics.abstract_model_factory import (
     AbstractModelFactory, email_serializer, rename_setting
@@ -115,6 +115,7 @@ class AnalysisModelFactory(AbstractModelFactory):
 
             settings['cell_count_calibration'] = \
                 get_polynomial_coefficients_from_ccc(
+                    CalibrationStore(),
                     settings['cell_count_calibration_id'])
 
         return super(cls, AnalysisModelFactory).create(**settings)
@@ -296,7 +297,8 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.AnalysisModel
         """
-        if model.cell_count_calibration_id in get_active_cccs():
+        active_cccs = get_active_cccs(CalibrationStore())
+        if model.cell_count_calibration_id in active_cccs:
             return True
         return model.FIELD_TYPES.cell_count_calibration_id
 

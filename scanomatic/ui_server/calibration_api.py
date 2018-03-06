@@ -3,24 +3,29 @@ from __future__ import absolute_import, division
 from itertools import product
 from types import StringTypes
 
-from flask import jsonify, request, send_file, Blueprint, current_app
+from flask import Blueprint, current_app, jsonify, request, send_file
 import numpy as np
 
-from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.analysis_model import COMPARTMENTS
-from scanomatic.image_analysis.grid_cell import GridCell
-from scanomatic.image_analysis.grid_array import GridArray
-from scanomatic.image_analysis.grayscale import getGrayscale
-from scanomatic.image_analysis.image_grayscale import (
-    get_grayscale_image_analysis)
-from scanomatic.io.paths import Paths
-from scanomatic.io.fixtures import Fixtures
 from scanomatic.data_processing import calibration
 from scanomatic.data_processing.calibration import delete_ccc
-from .general import (
-    serve_numpy_as_image, get_grayscale_is_valid, valid_array_dimensions,
-    json_abort
+from scanomatic.image_analysis.grayscale import getGrayscale
+from scanomatic.image_analysis.grid_array import GridArray
+from scanomatic.image_analysis.grid_cell import GridCell
+from scanomatic.image_analysis.image_grayscale import (
+    get_grayscale_image_analysis
 )
+from scanomatic.io.fixtures import Fixtures
+from scanomatic.io.paths import Paths
+from scanomatic.models.analysis_model import COMPARTMENTS
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from .general import (
+    get_grayscale_is_valid, json_abort, serve_numpy_as_image,
+    valid_array_dimensions
+)
+
+
+def getcalibrationstore():
+    return current_app.config['calibrationstore']
 
 
 def get_int_tuple(data):
@@ -43,7 +48,7 @@ def get_active_calibrations():
             'reference':
                 ccc[calibration.CellCountCalibration.reference],
         }
-        for ccc in calibration.get_active_cccs().values()
+        for ccc in calibration.get_active_cccs(getcalibrationstore()).values()
     ]
 
     return jsonify(cccs=cccs)
@@ -54,7 +59,9 @@ def get_under_construction_calibrations():
 
     try:
         identifiers, cccs = zip(
-            *calibration.get_under_construction_cccs().iteritems())
+            *calibration.get_under_construction_cccs(
+                getcalibrationstore()
+            ).iteritems())
         return jsonify(
             identifiers=identifiers,
             species=[
@@ -80,14 +87,14 @@ def initiate_new_ccc():
 
     species = data_object.get("species")
     reference = data_object.get("reference")
-    ccc = calibration.get_empty_ccc(species, reference)
+    ccc = calibration.get_empty_ccc(getcalibrationstore(), species, reference)
     if ccc is None:
         return json_abort(
             400,
             reason="Combination of species and reference not unique"
         )
 
-    success = calibration.add_ccc(ccc)
+    success = calibration.add_ccc(getcalibrationstore(), ccc)
 
     if not success:
         return json_abort(
@@ -118,6 +125,7 @@ def upload_ccc_image(ccc_identifier):
         )
 
     image_identifier = calibration.add_image_to_ccc(
+        getcalibrationstore(),
         ccc_identifier, image, access_token=data_object.get("access_token")
     )
 
@@ -133,7 +141,8 @@ def upload_ccc_image(ccc_identifier):
 @blueprint.route("/<ccc_identifier>/image_list", methods=['GET'])
 def list_ccc_images(ccc_identifier):
 
-    image_list = calibration.get_image_identifiers_in_ccc(ccc_identifier)
+    image_list = calibration.get_image_identifiers_in_ccc(
+        getcalibrationstore(), ccc_identifier)
     if image_list is False:
         return json_abort(
             400,
@@ -207,7 +216,7 @@ def set_ccc_image_data(ccc_identifier, image_identifier):
                         fixture_settings.model.grayscale.name
 
     success = calibration.set_image_info(
-        ccc_identifier,
+        getcalibrationstore(), ccc_identifier,
         image_identifier,
         access_token=data_object.get("access_token"),
         **data_update
@@ -228,7 +237,7 @@ def set_ccc_image_data(ccc_identifier, image_identifier):
 def get_ccc_image_data(ccc_identifier, image_identifier):
 
     data = calibration.get_image_json_from_ccc(
-        ccc_identifier, image_identifier)
+        getcalibrationstore(), ccc_identifier, image_identifier)
     if data is None:
         return json_abort(
             400,
@@ -251,7 +260,7 @@ def slice_ccc_image(ccc_identifier, image_identifier):
         data_object = request.values
 
     data = calibration.get_local_fixture_for_image(
-        ccc_identifier, image_identifier)
+        getcalibrationstore(), ccc_identifier, image_identifier)
     if data is None:
         return json_abort(
             400,
@@ -260,7 +269,7 @@ def slice_ccc_image(ccc_identifier, image_identifier):
         )
 
     success = calibration.save_image_slices(
-        ccc_identifier, image_identifier,
+        getcalibrationstore(), ccc_identifier, image_identifier,
         grayscale_slice=data["grayscale"],
         plate_slices=data['plates'],
         access_token=data_object.get("access_token"))
@@ -312,7 +321,7 @@ def analyse_ccc_image_grayscale(ccc_identifier, image_identifier):
     gs_image = calibration.get_grayscale_slice(
         ccc_identifier, image_identifier)
     image_data = calibration.get_image_json_from_ccc(
-        ccc_identifier, image_identifier)
+        getcalibrationstore(), ccc_identifier, image_identifier)
     try:
         gs_name = image_data[calibration.CCCImage.grayscale_name]
     except TypeError:
@@ -332,7 +341,7 @@ def analyse_ccc_image_grayscale(ccc_identifier, image_identifier):
         )
 
     success = calibration.set_image_info(
-        ccc_identifier, image_identifier,
+        getcalibrationstore(), ccc_identifier, image_identifier,
         grayscale_source_values=values,
         grayscale_target_values=grayscale_object['targets'],
         access_token=data_object.get("access_token")
@@ -364,7 +373,7 @@ def transform_ccc_image_plate(ccc_identifier, image_identifier, plate):
         data_object = request.values
 
     success = calibration.transform_plate_slice(
-        ccc_identifier,
+        getcalibrationstore(), ccc_identifier,
         image_identifier,
         plate,
         access_token=data_object.get("access_token")
@@ -412,7 +421,7 @@ def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
         return xy1, xy2
 
     image_data = calibration.get_image_json_from_ccc(
-        ccc_identifier, image_identifier)
+        getcalibrationstore(), ccc_identifier, image_identifier)
     if image_data is None:
         return json_abort(
             400,
@@ -463,7 +472,7 @@ def grid_ccc_image_plate(ccc_identifier, image_identifier, plate):
     )
 
     success = calibration.set_plate_grid_info(
-        ccc_identifier, image_identifier, plate,
+        getcalibrationstore(), ccc_identifier, image_identifier, plate,
         grid_shape=pinning_format,
         grid_cell_size=grid_array.grid_cell_size,
         access_token=data_object.get("access_token"))
@@ -540,7 +549,7 @@ def detect_colony(ccc_identifier, image_identifier, plate, x, y):
         )
 
     image_json = calibration.get_image_json_from_ccc(
-        ccc_identifier, image_identifier)
+        getcalibrationstore(), ccc_identifier, image_identifier)
 
     if not image_json or plate not in \
             image_json[calibration.CCCImage.plates]:
@@ -601,7 +610,7 @@ def compress_calibration(ccc_identifier, image_identifier, plate, x, y):
         data_object = request.values
 
     image_data = calibration.get_image_json_from_ccc(
-        ccc_identifier, image_identifier)
+        getcalibrationstore(), ccc_identifier, image_identifier)
     if image_data is None:
         return json_abort(
             400,
@@ -685,6 +694,7 @@ def compress_calibration(ccc_identifier, image_identifier, plate, x, y):
             400, reason="cell_count should be greater or equal than zero")
 
     if calibration.set_colony_compressed_data(
+            getcalibrationstore(),
             ccc_identifier, image_identifier, plate, x, y, cell_count,
             image=image, blob_filter=blob_filter,
             background_filter=background_filter,
@@ -708,7 +718,7 @@ def delete_non_deployed_calibration(ccc_identifier):
         data_object = request.values
 
     if not calibration.is_valid_edit_request(
-            ccc_identifier,
+            getcalibrationstore(), ccc_identifier,
             access_token=data_object.get("access_token")):
 
         return json_abort(
@@ -716,6 +726,7 @@ def delete_non_deployed_calibration(ccc_identifier):
             reason="Invalid access token or CCC not under construction")
 
     if delete_ccc(
+            getcalibrationstore(),
             ccc_identifier,
             access_token=data_object.get("access_token")):
 
@@ -737,7 +748,7 @@ def construct_calibration(ccc_identifier, power):
         data_object = request.values
 
     if not calibration.is_valid_edit_request(
-            ccc_identifier,
+            getcalibrationstore(), ccc_identifier,
             access_token=data_object.get("access_token")):
 
         return json_abort(
@@ -746,12 +757,13 @@ def construct_calibration(ccc_identifier, power):
         )
 
     response = calibration.construct_polynomial(
-        ccc_identifier,
+        getcalibrationstore(), ccc_identifier,
         power,
         access_token=data_object.get("access_token")
     )
 
-    response["colonies"] = calibration.get_all_colony_data(ccc_identifier)
+    response["colonies"] = calibration.get_all_colony_data(
+        getcalibrationstore(), ccc_identifier)
 
     if response["validation"] == "OK":
         return jsonify(
@@ -785,7 +797,7 @@ def finalize_calibration(ccc_identifier):
         data_object = request.values
 
     if not calibration.is_valid_edit_request(
-            ccc_identifier,
+            getcalibrationstore(), ccc_identifier,
             access_token=data_object.get("access_token")):
 
         return json_abort(
@@ -794,7 +806,7 @@ def finalize_calibration(ccc_identifier):
         )
 
     if calibration.activate_ccc(
-            ccc_identifier,
+            getcalibrationstore(), ccc_identifier,
             access_token=data_object.get("access_token")):
         return jsonify()
     else:

@@ -52,6 +52,10 @@ from .general import (
 _logger = Logger("Data API")
 
 
+def getcalibrationstore():
+    return current_app.config['calibrationstore']
+
+
 def _depth(arr, lvl=1):
 
     if isinstance(arr, ListType) and len(arr) and isinstance(arr[0], ListType):
@@ -804,7 +808,8 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         gc = GridCell(
             identifier,
-            get_polynomial_coefficients_from_ccc('default'),
+            get_polynomial_coefficients_from_ccc(
+                getcalibrationstore(), 'default'),
             save_extra_data=False)
 
         gc.source = image.astype(np.float64)
@@ -859,7 +864,8 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         gc = GridCell(
             identifier,
-            get_polynomial_coefficients_from_ccc('default'),
+            get_polynomial_coefficients_from_ccc(
+                getcalibrationstore(), 'default'),
             save_extra_data=False)
 
         gc.source = image.astype(np.float64)
@@ -922,7 +928,9 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         gc.set_new_data_source_space(
             space=VALUES.Cell_Estimates, bg_sub_source=background_filter,
-            polynomial_coeffs=get_polynomial_coefficients_from_ccc('default'))
+            polynomial_coeffs=get_polynomial_coefficients_from_ccc(
+                getcalibrationstore(), 'default')
+        )
 
         return jsonify(
             success=True, image=gc.source.tolist(),

@@ -4,8 +4,9 @@ import glob
 import os
 import re
 
-from scanomatic.data_processing.calibration import get_active_cccs
-from scanomatic.generics.abstract_model_factory import (
+from scanomatic.data_processing.calibration import (
+    CalibrationStore, get_active_cccs
+)from scanomatic.generics.abstract_model_factory import (
     AbstractModelFactory, email_serializer
 )
 from scanomatic.io.fixtures import Fixtures
@@ -202,7 +203,9 @@ class CompileProjectFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
-        if model.cell_count_calibration_id in get_active_cccs():
+        if model.cell_count_calibration_id in get_active_cccs(
+            CalibrationStore()
+        ):
             return True
         return model.FIELD_TYPES.cell_count_calibration
 
