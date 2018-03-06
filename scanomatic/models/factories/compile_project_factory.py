@@ -6,7 +6,8 @@ import re
 
 from scanomatic.data_processing.calibration import (
     CalibrationStore, get_active_cccs
-)from scanomatic.generics.abstract_model_factory import (
+)
+from scanomatic.generics.abstract_model_factory import (
     AbstractModelFactory, email_serializer
 )
 from scanomatic.io.fixtures import Fixtures
