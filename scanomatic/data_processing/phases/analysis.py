@@ -1,12 +1,16 @@
-import numpy as np
+from __future__ import absolute_import
+
 from enum import Enum
+
+import numpy as np
 from scipy.ndimage import label
 from scipy.stats import linregress
 
 from scanomatic.data_processing import growth_phenotypes
-
-from scanomatic.data_processing.phases.segmentation import CurvePhases, DEFAULT_THRESHOLDS, segment, \
-    get_data_needed_for_segmentation, is_detected_non_linear, is_detected_linear, is_undetermined
+from scanomatic.data_processing.phases.segmentation import (
+    DEFAULT_THRESHOLDS, CurvePhases, get_data_needed_for_segmentation,
+    is_detected_linear, is_detected_non_linear, is_undetermined, segment
+)
 
 
 class CurvePhasePhenotypes(Enum):

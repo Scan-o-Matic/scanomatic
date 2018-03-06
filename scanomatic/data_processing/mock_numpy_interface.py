@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from types import StringTypes
 
 # TODO: Clean up use?

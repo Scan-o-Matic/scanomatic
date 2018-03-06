@@ -1,8 +1,12 @@
+from __future__ import absolute_import
+
 from enum import Enum
+from itertools import izip
+
 import numpy as np
 from scipy.optimize import leastsq
-from itertools import izip
 from scipy.stats import linregress
+
 from scanomatic.io.logger import Logger
 
 _logger = Logger("Growth Phenotypes")

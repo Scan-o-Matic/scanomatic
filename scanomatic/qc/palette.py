@@ -1,5 +1,7 @@
-import random
+from __future__ import absolute_import
+
 from itertools import permutations
+import random
 
 try:
     from matplotlib import colors as mplColors

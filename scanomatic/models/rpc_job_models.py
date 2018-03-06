@@ -1,8 +1,12 @@
-import scanomatic.generics.model as model
+from __future__ import absolute_import
+
+from enum import Enum
+
+import numpy as np
+
 import scanomatic.generics.decorators as decorators
 from scanomatic.generics.enums import CycleEnum
-from enum import Enum
-import numpy as np
+import scanomatic.generics.model as model
 
 
 class JOB_TYPE(CycleEnum):

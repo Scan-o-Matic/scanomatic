@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+
 from enum import Enum
 from math import floor
 
-from decorators import class_property
+from .decorators import class_property
+
 
 class DefaultEnum(Enum):
 

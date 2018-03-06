@@ -1,5 +1,8 @@
-import requests
+from __future__ import absolute_import
+
 import json
+
+import requests
 
 
 def post_json(url, payload):

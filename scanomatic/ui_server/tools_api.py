@@ -1,14 +1,17 @@
-from flask import request, Flask, jsonify
-from itertools import product, chain
-import os
+from __future__ import absolute_import
+
 import glob
+from itertools import chain, product
+import os
 from urllib import unquote
 
-from scanomatic.ui_server.general import safe_directory_name
+from flask import Flask, jsonify, request
+
+from scanomatic.data_processing.phenotyper import path_has_saved_project_state
 from scanomatic.io.app_config import Config
 from scanomatic.io.logger import Logger, parse_log_file
 from scanomatic.io.paths import Paths
-from scanomatic.data_processing.phenotyper import path_has_saved_project_state
+from scanomatic.ui_server.general import safe_directory_name
 from .general import convert_url_to_path, json_response, serve_zip_file
 
 _logger = Logger("Tools API")

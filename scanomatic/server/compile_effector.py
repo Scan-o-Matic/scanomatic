@@ -1,16 +1,21 @@
+from __future__ import absolute_import
+
 import os
 import time
-import proc_effector
-from scanomatic.models.compile_project_model import FIXTURE, COMPILE_ACTION
+
+from . import proc_effector
+from scanomatic.image_analysis import first_pass
+from scanomatic.io.app_config import Config as AppConfig
 from scanomatic.io.fixtures import Fixtures, FixtureSettings
 from scanomatic.io.paths import Paths
-from scanomatic.image_analysis import first_pass
-from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
+import scanomatic.io.rpc_client as rpc_client
+from scanomatic.models.compile_project_model import COMPILE_ACTION, FIXTURE
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.factories.compile_project_factory import (
+    CompileImageAnalysisFactory, CompileProjectFactory
+)
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.rpc_job_models import JOB_TYPE
-import scanomatic.io.rpc_client as rpc_client
-from scanomatic.io.app_config import Config as AppConfig
-from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 
 
 class CompileProjectEffector(proc_effector.ProcessEffector):

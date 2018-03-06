@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import pytest
 
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory

@@ -1,8 +1,11 @@
-import scanomatic.io.logger as logger
-from scanomatic.models.factories.fixture_factories import FixtureFactory
-from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
-from scanomatic.image_analysis.first_pass_image import FixtureImage
+from __future__ import absolute_import
 
+from scanomatic.image_analysis.first_pass_image import FixtureImage
+import scanomatic.io.logger as logger
+from scanomatic.models.factories.compile_project_factory import (
+    CompileImageAnalysisFactory
+)
+from scanomatic.models.factories.fixture_factories import FixtureFactory
 
 #
 # GLOBALS

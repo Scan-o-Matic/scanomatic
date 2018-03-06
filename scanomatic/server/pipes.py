@@ -1,6 +1,9 @@
+from __future__ import absolute_import
+
 import os
-import time
 from subprocess import Popen
+import time
+
 #
 # INTERNAL DEPENDENCIES
 #
@@ -157,12 +160,12 @@ class _PipeEffector(object):
                     self._failSend(cN, a, kw)
                     break
 
-        success = self._send(callName, *args, **kwargs) 
+        success = self._send(callName, *args, **kwargs)
 
         if not success and not self._hasContact:
 
             self._failSend(callName, *args, **kwargs)
-             
+
         return success
 
     def _send(self, callName, *args, **kwargs):

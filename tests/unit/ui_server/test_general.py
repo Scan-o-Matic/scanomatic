@@ -1,6 +1,7 @@
-import pytest
+from __future__ import absolute_import
 
 from flask import Flask
+import pytest
 
 from scanomatic.ui_server import general
 

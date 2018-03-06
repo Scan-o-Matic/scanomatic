@@ -3,9 +3,13 @@
 http://matplotlib.org/examples/animation/moviewriter.html
 """
 
-import numpy as np
+from __future__ import absolute_import
+
 import time
-from  scanomatic.generics.purge_importing import ExpiringModule
+
+import numpy as np
+
+from scanomatic.generics.purge_importing import ExpiringModule
 
 
 class MovieWriter(object):

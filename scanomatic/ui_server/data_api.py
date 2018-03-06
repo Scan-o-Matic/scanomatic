@@ -1,33 +1,34 @@
-from flask import request, Flask, jsonify, send_from_directory, abort
-from types import ListType, DictType, StringTypes
-import numpy as np
-import os
-import glob
-import shutil
-from enum import Enum
+from __future__ import absolute_import
+
 from ConfigParser import Error as ConfigError
+from enum import Enum
+import glob
+import os
+import shutil
+from types import DictType, ListType, StringTypes
+
+from flask import Flask, abort, jsonify, request, send_from_directory
+import numpy as np
 
 from scanomatic.data_processing import phenotyper
 from scanomatic.data_processing.calibration import (
-    get_polynomial_coefficients_from_ccc)
-
-from scanomatic.io.paths import Paths
-from scanomatic.io.logger import Logger
-from scanomatic.io.fixtures import Fixtures
-
-from scanomatic.image_analysis.support import save_image_as_png
-from scanomatic.image_analysis.image_grayscale import get_grayscale
-from scanomatic.image_analysis.image_basics import Image_Transpose
-from scanomatic.image_analysis.grid_cell import GridCell
-from scanomatic.image_analysis.grayscale import getGrayscales, getGrayscale
+    get_polynomial_coefficients_from_ccc
+)
 from scanomatic.image_analysis.first_pass_image import FixtureImage
-
-from scanomatic.models.factories.fixture_factories import FixtureFactory
-from scanomatic.models.fixture_models import GrayScaleAreaModel
+from scanomatic.image_analysis.grayscale import getGrayscale, getGrayscales
+from scanomatic.image_analysis.grid_cell import GridCell
+from scanomatic.image_analysis.image_basics import Image_Transpose
+from scanomatic.image_analysis.image_grayscale import get_grayscale
+from scanomatic.image_analysis.support import save_image_as_png
+from scanomatic.io.fixtures import Fixtures
+from scanomatic.io.logger import Logger
+from scanomatic.io.paths import Paths
 from scanomatic.models.analysis_model import COMPARTMENTS, VALUES
 from scanomatic.models.factories.analysis_factories import (
-    AnalysisFeaturesFactory)
-
+    AnalysisFeaturesFactory
+)
+from scanomatic.models.factories.fixture_factories import FixtureFactory
+from scanomatic.models.fixture_models import GrayScaleAreaModel
 from .general import (
     get_fixture_image_by_name,
     usable_markers,

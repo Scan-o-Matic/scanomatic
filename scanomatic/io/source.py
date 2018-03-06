@@ -1,14 +1,17 @@
-from subprocess import call, PIPE, Popen
+from __future__ import absolute_import
+
+from StringIO import StringIO
+import json
 import os
+from subprocess import PIPE, Popen, call
+import tempfile
+import zipfile
+
+import requests
 
 from scanomatic import get_version
-from .paths import Paths
 from .logger import Logger
-import requests
-import tempfile
-from StringIO import StringIO
-import zipfile
-import json
+from .paths import Paths
 
 _logger = Logger("Source Checker")
 

@@ -1,12 +1,15 @@
+from __future__ import absolute_import
+
+import os
+
 from flask import (
     send_from_directory, render_template, redirect, abort, request
 )
-import os
 
-from scanomatic.io.paths import Paths
-from scanomatic.io.app_config import Config
 from scanomatic.data_processing import phenotyper
-from .general import serve_log_as_html, convert_url_to_path
+from scanomatic.io.app_config import Config
+from scanomatic.io.paths import Paths
+from .general import convert_url_to_path, serve_log_as_html
 
 
 def add_routes(app):

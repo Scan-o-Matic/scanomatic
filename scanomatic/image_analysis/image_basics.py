@@ -1,5 +1,7 @@
 """Resource module for handling basic images operations."""
 
+from __future__ import absolute_import
+
 import numpy as np
 import scanomatic.io.logger as logger
 from scipy.ndimage import zoom

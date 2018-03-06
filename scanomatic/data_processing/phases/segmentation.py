@@ -1,12 +1,14 @@
-import operator
+from __future__ import absolute_import
+
+from enum import Enum
 from itertools import izip
+import operator
 
 import numpy as np
-from enum import Enum
 from scipy import signal
-from scipy.ndimage import label, generic_filter, binary_closing
-from scanomatic.models.phases_models import SegmentationModel
+from scipy.ndimage import binary_closing, generic_filter, label
 
+from scanomatic.models.phases_models import SegmentationModel
 
 __EMPTY_FILT = np.array([]).astype(bool)
 

@@ -1,14 +1,17 @@
+from __future__ import absolute_import
+
+import glob
 import os
 import re
-import glob
 
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory, email_serializer
-from scanomatic.models import compile_project_model
-from scanomatic.models import fixture_models
-from scanomatic.models.factories import fixture_factories
-from scanomatic.io.paths import Paths
-from scanomatic.io.fixtures import Fixtures
 from scanomatic.data_processing.calibration import get_active_cccs
+from scanomatic.generics.abstract_model_factory import (
+    AbstractModelFactory, email_serializer
+)
+from scanomatic.io.fixtures import Fixtures
+from scanomatic.io.paths import Paths
+from scanomatic.models import compile_project_model, fixture_models
+from scanomatic.models.factories import fixture_factories
 
 
 class CompileImageFactory(AbstractModelFactory):

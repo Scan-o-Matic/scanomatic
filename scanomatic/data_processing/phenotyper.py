@@ -1,41 +1,51 @@
-import csv
-import glob
-import os
+from __future__ import absolute_import
 
-from collections import deque
-from itertools import izip, product, chain
-from types import StringTypes
-import cPickle as pickle
-import numpy as np
-from enum import Enum
-from scipy.ndimage import median_filter
-from scipy.stats import norm
-from scipy.signal import convolve
-import zipfile
 from StringIO import StringIO
-from scanomatic.io.pickler import unpickle, unpickle_with_unpickler
+import cPickle as pickle
+from collections import deque
+import csv
+from enum import Enum
+import glob
+from itertools import chain, izip, product
+import os
+from types import StringTypes
+import zipfile
+
+import numpy as np
+from scipy.ndimage import median_filter
+from scipy.signal import convolve
+from scipy.stats import norm
 
 #
 #   INTERNAL DEPENDENCIES
 #
 
+from . import mock_numpy_interface
+from scanomatic.data_processing.growth_phenotypes import (
+    Phenotypes, get_chapman_richards_4parameter_extended_curve, get_derivative,
+    get_preprocessed_data_for_phenotypes
+)
+from scanomatic.data_processing.norm import (
+    Offsets, get_normalized_data, get_reference_positions, norm_by_diff,
+    norm_by_log2_diff, norm_by_log2_diff_corr_scaled, norm_by_signal_to_noise
+)
+from scanomatic.data_processing.phases.analysis import get_phase_analysis
+from scanomatic.data_processing.phases.features import (
+    CurvePhaseMetaPhenotypes, VectorPhenotypes, extract_phenotypes
+)
+from scanomatic.data_processing.phenotypes import (
+    PhenotypeDataType, infer_phenotype_from_name
+)
+from scanomatic.data_processing.strain_selector import StrainSelector
+from scanomatic.generics.phenotype_filter import Filter, FilterArray
+import scanomatic.io.image_data as image_data
+import scanomatic.io.logger as logger
+from scanomatic.io.meta_data import MetaData2 as MetaData
+import scanomatic.io.paths as paths
+from scanomatic.io.pickler import unpickle, unpickle_with_unpickler
+
 # TODO: Something is wrong with phase features again
 
-import mock_numpy_interface
-import scanomatic.io.logger as logger
-import scanomatic.io.paths as paths
-import scanomatic.io.image_data as image_data
-from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes, \
-    get_derivative, get_chapman_richards_4parameter_extended_curve
-from scanomatic.data_processing.phases.features import extract_phenotypes, \
-    CurvePhaseMetaPhenotypes, VectorPhenotypes
-from scanomatic.data_processing.phases.analysis import get_phase_analysis
-from scanomatic.data_processing.phenotypes import PhenotypeDataType, infer_phenotype_from_name
-from scanomatic.generics.phenotype_filter import FilterArray, Filter
-from scanomatic.io.meta_data import MetaData2 as MetaData
-from scanomatic.data_processing.strain_selector import StrainSelector
-from scanomatic.data_processing.norm import Offsets, get_normalized_data, get_reference_positions, norm_by_log2_diff, \
-    norm_by_signal_to_noise, norm_by_log2_diff_corr_scaled, norm_by_diff
 
 
 _logger = logger.Logger("Phenotyper")

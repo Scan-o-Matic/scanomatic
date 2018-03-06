@@ -1,26 +1,29 @@
-import numpy as np
+from __future__ import absolute_import
+
+from collections import namedtuple
 from enum import Enum
 from itertools import izip
-from scipy.optimize import leastsq
-from scipy.stats import linregress
 import re
 from uuid import uuid1
-from collections import namedtuple
 
+import numpy as np
+from scipy.optimize import leastsq
+from scipy.stats import linregress
 
 from scanomatic.generics.maths import mid50_mean
-from scanomatic.io.logger import Logger
-from scanomatic.io.paths import Paths
-from scanomatic.io.fixtures import Fixtures
-from scanomatic.image_analysis.image_basics import (
-    load_image_to_numpy, Image_Transpose)
 from scanomatic.image_analysis.first_pass_image import FixtureImage
+from scanomatic.image_analysis.image_basics import (
+    Image_Transpose, load_image_to_numpy
+)
 from scanomatic.io.ccc_data import (
     CCCImage, CCCPlate, CCCPolynomial, CCCMeasurement, CellCountCalibration,
     CalibrationEntryStatus, get_empty_ccc_entry, load_cccs,
     get_polynomal_entry, get_empty_image_entry, save_ccc,
     validate_polynomial_format,
 )
+from scanomatic.io.fixtures import Fixtures
+from scanomatic.io.logger import Logger
+from scanomatic.io.paths import Paths
 
 __CCC = {}
 _logger = Logger("CCC")

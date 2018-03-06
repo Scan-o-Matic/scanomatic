@@ -1,11 +1,13 @@
-import scanomatic.io.logger as logger
+from __future__ import absolute_import
 
-import time
 import datetime
-import multiprocessing
-from inspect import ismethod
-from threading import Thread
 from functools import wraps
+from inspect import ismethod
+import multiprocessing
+from threading import Thread
+import time
+
+import scanomatic.io.logger as logger
 
 
 class UnknownLock(KeyError):

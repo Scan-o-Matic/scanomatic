@@ -1,28 +1,30 @@
+from __future__ import absolute_import
+
+from StringIO import StringIO
+import base64
 import glob
+import io
+from itertools import chain
 import os
 import re
-from StringIO import StringIO
-import io
-from scipy.misc import imread
-from itertools import chain
-from flask import (
-    send_file, jsonify, render_template)
-from werkzeug.datastructures import FileStorage
-import numpy as np
-import zipfile
-from urllib import unquote, quote
 from types import StringTypes
-import base64
+from urllib import quote, unquote
+import zipfile
 
-from scanomatic.io.app_config import Config
-from scanomatic.io.paths import Paths
-from scanomatic.io.logger import Logger, parse_log_file
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory
-from scipy.misc import toimage
+from flask import jsonify, render_template, send_file
+import numpy as np
+from scipy.misc import imread, toimage
+from werkzeug.datastructures import FileStorage
+
 from scanomatic.image_analysis.first_pass_image import FixtureImage
-from scanomatic.models.fixture_models import (
-    GrayScaleAreaModel, FixturePlateModel)
 from scanomatic.image_analysis.image_grayscale import is_valid_grayscale
+from scanomatic.io.app_config import Config
+from scanomatic.io.logger import Logger, parse_log_file
+from scanomatic.io.paths import Paths
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.models.fixture_models import (
+    FixturePlateModel, GrayScaleAreaModel
+)
 
 _safe_dir = re.compile(
     r"^[A-Za-z_0-9.%/ \\]*$" if os.sep == "\\" else r"^[A-Za-z_0-9.%/ ]*$")

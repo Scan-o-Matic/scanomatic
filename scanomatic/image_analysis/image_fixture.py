@@ -1,14 +1,18 @@
+from __future__ import absolute_import
+
 import os
+
 import numpy as np
-from scipy.signal import fftconvolve
 from scipy.ndimage import center_of_mass
+from scipy.signal import fftconvolve
 
 #
 # INTERNAL DEPENDENCIES
 #
-from image_basics import load_image_to_numpy
+
+from . import image_basics
+from .image_basics import load_image_to_numpy
 import scanomatic.io.logger as logger
-import image_basics
 
 #
 # CLASSES

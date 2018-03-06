@@ -67,13 +67,15 @@ Data structure for CCC-jsons
 }
 
 """
-from types import StringTypes
+from __future__ import absolute_import
+
 from enum import Enum
-from uuid import uuid1
+from glob import iglob
+import json
 import os
 import re
-import json
-from glob import iglob
+from types import StringTypes
+from uuid import uuid1
 
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths

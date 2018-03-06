@@ -1,17 +1,18 @@
-import types
-from types import GeneratorType
-import copy
-import warnings
-import os
-from numbers import Real
+from __future__ import absolute_import
+
+from ConfigParser import ConfigParser, NoSectionError
 import cPickle
 from collections import defaultdict
-from ConfigParser import ConfigParser, NoSectionError
-
+import copy
 from enum import Enum
+from numbers import Real
+import os
+import types
+from types import GeneratorType
+import warnings
 
-from scanomatic.generics.model import Model
 import scanomatic.generics.decorators as decorators
+from scanomatic.generics.model import Model
 from scanomatic.io.logger import Logger
 
 

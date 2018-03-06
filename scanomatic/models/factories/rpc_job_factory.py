@@ -1,14 +1,21 @@
-import scanomatic.models.rpc_job_models as rpc_job_models
+from __future__ import absolute_import
+
+from types import StringTypes
+
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 from scanomatic.generics.model import Model
-from scanomatic.models.factories.scanning_factory import ScanningModel, ScanningModelFactory
-from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import AnalysisModel
-from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.compile_project_model import CompileInstructionsModel
-from scanomatic.models.features_model import FeaturesModel
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.factories.compile_project_factory import (
+    CompileProjectFactory
+)
 from scanomatic.models.factories.features_factory import FeaturesFactory
-from types import StringTypes
+from scanomatic.models.factories.scanning_factory import (
+    ScanningModel, ScanningModelFactory
+)
+from scanomatic.models.features_model import FeaturesModel
+import scanomatic.models.rpc_job_models as rpc_job_models
 
 
 class RPC_Job_Model_Factory(AbstractModelFactory):

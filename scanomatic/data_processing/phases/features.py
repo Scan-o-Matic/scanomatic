@@ -1,11 +1,18 @@
-import numpy as np
+from __future__ import absolute_import
+
 from enum import Enum
 from itertools import izip
 
+import numpy as np
+
 from scanomatic.data_processing import growth_phenotypes
+from scanomatic.data_processing.phases.analysis import (
+    CurvePhasePhenotypes, get_phenotypes_tuple, number_of_phenotypes
+)
+from scanomatic.data_processing.phases.segmentation import (
+    CurvePhases, is_detected_non_linear
+)
 from scanomatic.io.logger import Logger
-from scanomatic.data_processing.phases.analysis import CurvePhasePhenotypes, number_of_phenotypes, get_phenotypes_tuple
-from scanomatic.data_processing.phases.segmentation import CurvePhases, is_detected_non_linear
 
 _l = Logger("Curve Phase Meta Phenotyping")
 

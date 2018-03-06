@@ -1,19 +1,23 @@
+from __future__ import absolute_import
+
+import itertools
 import time
 import traceback
-import itertools
+
 import numpy as np
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-from scanomatic.io.logger import Logger
+from . import image_basics
+from . import image_fixture
+from . import image_grayscale
+from .image_basics import load_image_to_numpy
 from scanomatic.io.fixtures import FixtureSettings
+from scanomatic.io.logger import Logger
 from scanomatic.models.factories.fixture_factories import FixturePlateFactory
-from image_basics import load_image_to_numpy
-import image_basics
-import image_fixture
-import image_grayscale
+
 
 
 def _get_coords_sorted(coords):

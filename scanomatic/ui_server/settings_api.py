@@ -1,7 +1,10 @@
-from flask import request, jsonify
+from __future__ import absolute_import
+
+from flask import jsonify, request
 
 from scanomatic.io.app_config import Config
 from .general import json_abort
+
 
 def add_routes(app):
 

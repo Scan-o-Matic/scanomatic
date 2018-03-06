@@ -1,18 +1,22 @@
+from __future__ import absolute_import
+
+from functools import wraps
+import os
 import socket
 import sys
-import os
-from functools import wraps
 
-from scanomatic.io.app_config import Config
 from scanomatic.generics.singleton import SingeltonOneInit
+from scanomatic.io.app_config import Config
 import scanomatic.io.logger as logger
+from scanomatic.io.rpc_client import sanitize_communication
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.factories.compile_project_factory import (
+    CompileProjectFactory
+)
+from scanomatic.models.factories.features_factory import FeaturesFactory
+import scanomatic.models.rpc_job_models as rpc_job_models
 from scanomatic.server.server import Server
 from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
-from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.factories.features_factory import FeaturesFactory
-from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
-import scanomatic.models.rpc_job_models as rpc_job_models
-from scanomatic.io.rpc_client import sanitize_communication
 
 _SOM_SERVER = None
 """:type : scanomatic.server.server.Server"""

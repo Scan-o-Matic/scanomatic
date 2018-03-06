@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+
 from enum import Enum
-import scanomatic.generics.model as model
-import scanomatic
 import re
+
+import scanomatic
+import scanomatic.generics.model as model
 
 DEFAULT_PINNING_FORMAT = (32, 48)
 

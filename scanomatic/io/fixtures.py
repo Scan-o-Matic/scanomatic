@@ -1,14 +1,15 @@
+from __future__ import absolute_import
+
+import ConfigParser
 import os
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-from paths import Paths
-from scanomatic.models.factories.fixture_factories import FixtureFactory
+from .paths import Paths
 from scanomatic.io.logger import Logger
-import ConfigParser
-
+from scanomatic.models.factories.fixture_factories import FixtureFactory
 
 #
 # CLASSES

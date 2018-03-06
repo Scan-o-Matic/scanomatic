@@ -1,15 +1,19 @@
-import numpy as np
-import os
+from __future__ import absolute_import
+
 import glob
+import os
 import re
+
+import numpy as np
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
+import scanomatic.io.paths as paths
 from scanomatic.io.pickler import unpickle_with_unpickler
+
 #
 #
 #

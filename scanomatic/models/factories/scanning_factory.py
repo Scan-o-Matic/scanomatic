@@ -1,17 +1,21 @@
+from __future__ import absolute_import
+
 import os
 import re
 import string
 from types import StringTypes
 
-from scanomatic.generics.abstract_model_factory import (
-    AbstractModelFactory, email_serializer)
-from scanomatic.models.scanning_model import (
-    ScanningModel, ScannerModel, ScanningAuxInfoModel, PlateDescription,
-    CULTURE_SOURCE, PLATE_STORAGE, ScannerOwnerModel)
-import scanomatic.io.fixtures as fixtures
-import scanomatic.io.app_config as app_config
-from scanomatic.models.rpc_job_models import RPCjobModel
 from scanomatic.data_processing.calibration import get_active_cccs
+from scanomatic.generics.abstract_model_factory import (
+    AbstractModelFactory, email_serializer
+)
+import scanomatic.io.app_config as app_config
+import scanomatic.io.fixtures as fixtures
+from scanomatic.models.rpc_job_models import RPCjobModel
+from scanomatic.models.scanning_model import (
+    CULTURE_SOURCE, PLATE_STORAGE, PlateDescription, ScannerModel,
+    ScannerOwnerModel, ScanningAuxInfoModel, ScanningModel
+)
 
 
 class PlateDescriptionFactory(AbstractModelFactory):

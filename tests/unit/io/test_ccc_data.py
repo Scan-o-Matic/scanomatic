@@ -1,6 +1,9 @@
-import pytest
+from __future__ import absolute_import
+
 import json
 from types import StringTypes
+
+import pytest
 
 from scanomatic.io import ccc_data
 

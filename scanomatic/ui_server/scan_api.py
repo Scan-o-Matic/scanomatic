@@ -1,12 +1,17 @@
-import os
-from itertools import chain
-from flask import jsonify
-from scanomatic.ui_server.general import (
-    convert_url_to_path, convert_path_to_url, get_search_results, json_response
-)
-from scanomatic.io.paths import Paths
+from __future__ import absolute_import
+
 from glob import glob
+from itertools import chain
+import os
+
+from flask import jsonify
+
+from scanomatic.io.paths import Paths
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.ui_server.general import (
+    convert_path_to_url, convert_url_to_path, get_search_results,
+    json_response
+)
 
 
 def add_routes(app):

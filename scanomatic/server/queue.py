@@ -1,9 +1,11 @@
-import scanomatic.io.paths as paths
-import scanomatic.io.logger as logger
-from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
-import scanomatic.models.rpc_job_models as rpc_job_models
+from __future__ import absolute_import
+
 import scanomatic.generics.decorators as decorators
 from scanomatic.generics.singleton import SingeltonOneInit
+import scanomatic.io.logger as logger
+import scanomatic.io.paths as paths
+from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
+import scanomatic.models.rpc_job_models as rpc_job_models
 
 #
 # CLASSES

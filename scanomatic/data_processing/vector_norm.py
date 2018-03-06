@@ -1,7 +1,10 @@
-from scipy.signal import gaussian
-import numpy as np
+from __future__ import absolute_import
+
 from enum import Enum
 import itertools
+
+import numpy as np
+from scipy.signal import gaussian
 
 
 class PositionOffset(Enum):

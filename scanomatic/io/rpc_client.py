@@ -1,9 +1,10 @@
-import xmlrpclib
+from __future__ import absolute_import
+
 import enum
-from subprocess import Popen
 import socket
-from types import StringTypes
-from types import GeneratorType, TypeType
+from subprocess import Popen
+from types import GeneratorType, StringTypes, TypeType
+import xmlrpclib
 
 #
 # INTERNAL DEPENDENCIES

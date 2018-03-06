@@ -1,23 +1,31 @@
-import os
-import time
+from __future__ import absolute_import
+
 from datetime import datetime
-from dateutil import tz
-from flask import request, Flask, jsonify, send_from_directory
-from werkzeug.datastructures import FileStorage
-from itertools import chain, product
-from subprocess import call
-import uuid
 from enum import Enum
 from glob import glob
+from itertools import chain, product
+import os
 import re
+from subprocess import call
+import time
+import uuid
+
+from dateutil import tz
+from flask import Flask, jsonify, request, send_from_directory
+from werkzeug.datastructures import FileStorage
+
 from scanomatic.data_processing import phenotyper
-from scanomatic.data_processing.phenotypes import get_sort_order, PhenotypeDataType, infer_phenotype_from_name
-from scanomatic.data_processing.norm import infer_offset, Offsets
+from scanomatic.data_processing.norm import Offsets, infer_offset
+from scanomatic.data_processing.phenotypes import (
+    PhenotypeDataType, get_sort_order, infer_phenotype_from_name
+)
 from scanomatic.generics.phenotype_filter import Filter
-from scanomatic.io.paths import Paths
 from scanomatic.io.app_config import Config
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, \
-    get_project_name, json_response, serve_zip_file
+from scanomatic.io.paths import Paths
+from scanomatic.ui_server.general import (
+    convert_path_to_url, convert_url_to_path, get_project_name,
+    get_search_results, json_response, serve_zip_file
+)
 
 RESERVATION_TIME = 60 * 5
 FILM_TYPES = {'colony': 'animate_colony_growth("{save_target}", {pos}, "{path}")',

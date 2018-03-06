@@ -1,15 +1,17 @@
-import os
-import json
+from __future__ import absolute_import
+
 from collections import namedtuple
-import mock
+import json
+import os
 import tempfile
 
+import mock
 import numpy as np
 import pytest
 
 from scanomatic.data_processing import calibration
-from scanomatic.io.paths import Paths
 from scanomatic.io import ccc_data
+from scanomatic.io.paths import Paths
 
 # The curve fitting is done with coefficients as e^x, some tests
 # want to have that expression to be zero while still real.

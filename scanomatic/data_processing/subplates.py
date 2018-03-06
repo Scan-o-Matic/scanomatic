@@ -1,11 +1,14 @@
-import numpy as np
+from __future__ import absolute_import
+
 import itertools
+
+import numpy as np
 
 #
 #   INTERNAL DEPENDENCIES
 #
 
-import mock_numpy_interface
+from . import mock_numpy_interface
 
 
 class SubPlates(mock_numpy_interface.NumpyArrayInterface):

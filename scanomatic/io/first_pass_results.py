@@ -1,10 +1,15 @@
+from __future__ import absolute_import
+
 from enum import Enum
-from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from glob import glob
+import os
+
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
-import os
-from glob import glob
+from scanomatic.models.factories.compile_project_factory import (
+    CompileImageAnalysisFactory, CompileProjectFactory
+)
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
 FIRST_PASS_SORTING = Enum("FIRST_PASS_SORTING", names=("Index", "Time"))
 

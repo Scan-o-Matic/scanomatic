@@ -1,18 +1,22 @@
+from __future__ import absolute_import
+
+import os
+
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
-from scipy.signal import convolve2d
 from scipy.ndimage import gaussian_filter1d
-import os
+from scipy.signal import convolve2d
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.io.logger as logger
-from grayscale import getGrayscale
-import signal
+from . import signal
+from .grayscale import getGrayscale
 from scanomatic.generics.maths import mid50_mean as iqr_mean
+import scanomatic.io.logger as logger
 from scanomatic.io.paths import Paths
+
 
 #
 # GOBALS

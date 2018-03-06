@@ -1,5 +1,7 @@
-from scanomatic.io.paths import Paths
+from __future__ import absolute_import
+
 from scanomatic.io.app_config import Config
+from scanomatic.io.paths import Paths
 
 
 class PathUser(object):
