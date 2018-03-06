@@ -1,28 +1,29 @@
-import numpy as np
+from __future__ import absolute_import
+
+from collections import namedtuple
 from enum import Enum
 from itertools import izip
-from scipy.optimize import leastsq
-from scipy.stats import linregress
 import re
 from uuid import uuid1
-from collections import namedtuple
 
+import numpy as np
+from scipy.optimize import leastsq
+from scipy.stats import linregress
 
 from scanomatic.generics.maths import mid50_mean
+from scanomatic.image_analysis.first_pass_image import FixtureImage
+from scanomatic.image_analysis.image_basics import (
+    Image_Transpose, load_image_to_numpy
+)
+from scanomatic.io.ccc_data import (
+    CalibrationEntryStatus, CCCImage, CCCMeasurement, CCCPlate, CCCPolynomial,
+    CellCountCalibration, get_empty_ccc_entry, get_empty_image_entry,
+    get_polynomal_entry, load_cccs, save_ccc, validate_polynomial_format
+)
+from scanomatic.io.fixtures import Fixtures
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
-from scanomatic.io.fixtures import Fixtures
-from scanomatic.image_analysis.image_basics import (
-    load_image_to_numpy, Image_Transpose)
-from scanomatic.image_analysis.first_pass_image import FixtureImage
-from scanomatic.io.ccc_data import (
-    CCCImage, CCCPlate, CCCPolynomial, CCCMeasurement, CellCountCalibration,
-    CalibrationEntryStatus, get_empty_ccc_entry, load_cccs,
-    get_polynomal_entry, get_empty_image_entry, save_ccc,
-    validate_polynomial_format,
-)
 
-__CCC = {}
 _logger = Logger("CCC")
 
 CalibrationData = namedtuple(
@@ -52,11 +53,11 @@ class CalibrationValidation(Enum):
     BadData = 4
 
 
-def _ccc_edit_validator(identifier, **kwargs):
+def _ccc_edit_validator(store, identifier, **kwargs):
 
-    if identifier in __CCC:
+    if identifier in store:
 
-        ccc = __CCC[identifier]
+        ccc = store[identifier]
 
         if ("access_token" in kwargs and
                 ccc[CellCountCalibration.edit_access_token] ==
@@ -92,40 +93,40 @@ def _ccc_edit_validator(identifier, **kwargs):
 
 def _validate_ccc_edit_request(f):
 
-    def wrapped(identifier, *args, **kwargs):
+    def wrapped(store, identifier, *args, **kwargs):
 
-        if _ccc_edit_validator(identifier, **kwargs):
+        if _ccc_edit_validator(store, identifier, **kwargs):
             del kwargs["access_token"]
-            return f(identifier, *args, **kwargs)
+            return f(store, identifier, *args, **kwargs)
 
     return wrapped
 
 
 @_validate_ccc_edit_request
-def is_valid_edit_request(identifier):
+def is_valid_edit_request(store, identifier):
     return True
 
 
-def get_empty_ccc(species, reference):
-    ccc_id = _get_ccc_identifier(species, reference)
+def get_empty_ccc(store, species, reference):
+    ccc_id = _get_ccc_identifier(store, species, reference)
     if ccc_id is None:
         return None
     return get_empty_ccc_entry(ccc_id, species, reference)
 
 
-def _get_ccc_identifier(species, reference):
+def _get_ccc_identifier(store, species, reference):
 
     if not species or not reference:
         return None
 
-    if any(True for ccc in __CCC.itervalues() if
+    if any(True for ccc in store.itervalues() if
            ccc[CellCountCalibration.species] == species and
            ccc[CellCountCalibration.reference] == reference):
         return None
 
     candidate = re.sub(r'[^A-Z]', r'', species.upper())[:6]
 
-    while any(True for ccc in __CCC.itervalues()
+    while any(True for ccc in store.itervalues()
               if ccc[CellCountCalibration.identifier] == candidate):
 
         candidate += "qwxz"[np.random.randint(0, 4)]
@@ -133,9 +134,10 @@ def _get_ccc_identifier(species, reference):
     return candidate
 
 
-def _insert_default_ccc():
+def _insert_default_ccc(store):
 
     ccc = get_empty_ccc(
+        store,
         species='S. cerevisiae',
         reference='Zackrisson et. al. 2016',
     )
@@ -148,59 +150,41 @@ def _insert_default_ccc():
     ccc[CellCountCalibration.edit_access_token] = None
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
 
-    __CCC[ccc[CellCountCalibration.identifier]] = ccc
+    store[ccc[CellCountCalibration.identifier]] = ccc
 
 
-def reload_cccs():
-
-    __CCC.clear()
-    _insert_default_ccc()
-
-    for ccc in load_cccs():
-        if ccc[CellCountCalibration.identifier] in __CCC:
-
-            _logger.error(
-                "Duplicated identifier {0} is not allowed!".format(
-                    ccc[CellCountCalibration.identifier])
-            )
-
-        else:
-
-            __CCC[ccc[CellCountCalibration.identifier]] = ccc
-
-
-def get_active_cccs():
+def get_active_cccs(store):
 
     return {
-        identifier: ccc for identifier, ccc in __CCC.iteritems()
+        identifier: ccc for identifier, ccc in store.iteritems()
         if ccc[CellCountCalibration.status] == CalibrationEntryStatus.Active}
 
 
-def get_polynomial_coefficients_from_ccc(identifier):
+def get_polynomial_coefficients_from_ccc(store, identifier):
 
-    ccc = __CCC[identifier]
+    ccc = store[identifier]
     if ccc[CellCountCalibration.status] != CalibrationEntryStatus.Active:
         raise KeyError
 
     return ccc[CellCountCalibration.polynomial][CCCPolynomial.coefficients]
 
 
-def get_under_construction_cccs():
+def get_under_construction_cccs(store):
 
     return {
-        identifier: ccc for identifier, ccc in __CCC.iteritems()
+        identifier: ccc for identifier, ccc in store.iteritems()
         if ccc[CellCountCalibration.status] ==
         CalibrationEntryStatus.UnderConstruction}
 
 
-def add_ccc(ccc):
+def add_ccc(store, ccc):
 
     if (ccc[CellCountCalibration.identifier] and
-            ccc[CellCountCalibration.identifier] not in __CCC):
+            ccc[CellCountCalibration.identifier] not in store):
 
-        __CCC[ccc[CellCountCalibration.identifier]] = ccc
+        store[ccc[CellCountCalibration.identifier]] = ccc
 
-        save_ccc_to_disk(ccc)
+        save_ccc_to_disk(store, ccc)
         return True
 
     else:
@@ -225,9 +209,9 @@ def has_valid_polynomial(ccc):
 
 
 @_validate_ccc_edit_request
-def activate_ccc(identifier):
+def activate_ccc(store, identifier):
 
-    ccc = __CCC[identifier]
+    ccc = store[identifier]
     try:
         has_valid_polynomial(ccc)
     except ActivationError:
@@ -236,53 +220,53 @@ def activate_ccc(identifier):
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
     ccc[CellCountCalibration.edit_access_token] = uuid1().hex
 
-    return save_ccc_to_disk(ccc)
+    return save_ccc_to_disk(store, ccc)
 
 
 @_validate_ccc_edit_request
-def delete_ccc(identifier):
+def delete_ccc(store, identifier):
 
-    ccc = __CCC[identifier]
+    ccc = store[identifier]
 
     ccc[CellCountCalibration.status] = CalibrationEntryStatus.Deleted
     ccc[CellCountCalibration.edit_access_token] = uuid1().hex
 
-    return save_ccc_to_disk(ccc)
+    return save_ccc_to_disk(store, ccc)
 
 
-def save_ccc_to_disk(ccc):
+def save_ccc_to_disk(store, ccc):
 
-    if ccc[CellCountCalibration.identifier] in __CCC:
+    if ccc[CellCountCalibration.identifier] in store:
 
         return save_ccc(ccc)
 
     else:
 
         _logger.error("Unknown CCC identifier {0} ({1})".format(
-            ccc[CellCountCalibration.identifier], __CCC.keys()))
+            ccc[CellCountCalibration.identifier], store.keys()))
         return False
 
 
 @_validate_ccc_edit_request
-def add_image_to_ccc(identifier, image):
+def add_image_to_ccc(store, identifier, image):
 
-    ccc = __CCC[identifier]
+    ccc = store[identifier]
     im_json = get_empty_image_entry(ccc)
     im_identifier = im_json[CCCImage.identifier]
     image.save(Paths().ccc_image_pattern.format(identifier, im_identifier))
 
     ccc[CellCountCalibration.images].append(im_json)
-    if not save_ccc_to_disk(ccc):
+    if not save_ccc_to_disk(store, ccc):
         return False
 
     return im_identifier
 
 
-def get_image_identifiers_in_ccc(identifier):
+def get_image_identifiers_in_ccc(store, identifier):
 
-    if identifier in __CCC:
+    if identifier in store:
 
-        ccc = __CCC[identifier]
+        ccc = store[identifier]
 
         return [
             im_json[CCCImage.identifier] for im_json in
@@ -293,10 +277,9 @@ def get_image_identifiers_in_ccc(identifier):
 
 
 @_validate_ccc_edit_request
-def set_image_info(identifier, image_identifier, **kwargs):
-
-    ccc = __CCC[identifier]
-    im_json = get_image_json_from_ccc(identifier, image_identifier)
+def set_image_info(store, identifier, image_identifier, **kwargs):
+    ccc = store[identifier]
+    im_json = get_image_json_from_ccc(store, identifier, image_identifier)
 
     for key in kwargs:
 
@@ -309,16 +292,16 @@ def set_image_info(identifier, image_identifier, **kwargs):
             _logger.error("{0} is not a known property of images".format(key))
             return False
 
-    return save_ccc_to_disk(ccc)
+    return save_ccc_to_disk(store, ccc)
 
 
 @_validate_ccc_edit_request
 def set_plate_grid_info(
-        identifier, image_identifier, plate,
+        store, identifier, image_identifier, plate,
         grid_shape=None, grid_cell_size=None, **kwargs):
 
-    ccc = __CCC[identifier]
-    im_json = get_image_json_from_ccc(identifier, image_identifier)
+    ccc = store[identifier]
+    im_json = get_image_json_from_ccc(store, identifier, image_identifier)
     if plate in im_json[CCCImage.plates]:
         plate_json = im_json[CCCImage.plates][plate]
         if plate_json[CCCPlate.compressed_ccc_data]:
@@ -334,14 +317,14 @@ def set_plate_grid_info(
     plate_json[CCCPlate.grid_cell_size] = grid_cell_size
     plate_json[CCCPlate.grid_shape] = grid_shape
 
-    return save_ccc_to_disk(ccc)
+    return save_ccc_to_disk(store, ccc)
 
 
-def get_image_json_from_ccc(identifier, image_identifier):
+def get_image_json_from_ccc(store, identifier, image_identifier):
 
-    if identifier in __CCC:
+    if identifier in store:
 
-        ccc = __CCC[identifier]
+        ccc = store[identifier]
 
         for im_json in ccc[CellCountCalibration.images]:
 
@@ -351,9 +334,9 @@ def get_image_json_from_ccc(identifier, image_identifier):
     return None
 
 
-def get_local_fixture_for_image(identifier, image_identifier):
+def get_local_fixture_for_image(store, identifier, image_identifier):
 
-    im_json = get_image_json_from_ccc(identifier, image_identifier)
+    im_json = get_image_json_from_ccc(store, identifier, image_identifier)
     if im_json is None:
         return None
 
@@ -379,7 +362,8 @@ def get_local_fixture_for_image(identifier, image_identifier):
 
 @_validate_ccc_edit_request
 def save_image_slices(
-        identifier, image_identifier, grayscale_slice=None, plate_slices=None):
+        store, identifier, image_identifier, grayscale_slice=None,
+        plate_slices=None):
 
     im = load_image_to_numpy(
         Paths().ccc_image_pattern.format(identifier, image_identifier),
@@ -453,9 +437,9 @@ def get_plate_slice(
 
 
 @_validate_ccc_edit_request
-def transform_plate_slice(identifier, image_identifier, plate_id):
+def transform_plate_slice(store, identifier, image_identifier, plate_id):
 
-    im_json = get_image_json_from_ccc(identifier, image_identifier)
+    im_json = get_image_json_from_ccc(store, identifier, image_identifier)
     if not im_json:
         _logger.error(
             "CCC {0} Image {1} has not been setup, you must first add the image before working on it.".format(
@@ -502,10 +486,10 @@ def transform_plate_slice(identifier, image_identifier, plate_id):
 
 @_validate_ccc_edit_request
 def set_colony_compressed_data(
-        identifier, image_identifier, plate_id, x, y, cell_count,
+        store, identifier, image_identifier, plate_id, x, y, cell_count,
         image, blob_filter, background_filter):
 
-    ccc = __CCC[identifier]
+    ccc = store[identifier]
     background = mid50_mean(image[background_filter].ravel())
     if np.isnan(background):
         _logger.error(
@@ -523,7 +507,7 @@ def set_colony_compressed_data(
             "Counting mismatch between compressed format and blob filter")
         return False
 
-    image_data = get_image_json_from_ccc(identifier, image_identifier)
+    image_data = get_image_json_from_ccc(store, identifier, image_identifier)
     plate = image_data[CCCImage.plates][plate_id]
 
     plate[CCCPlate.compressed_ccc_data][(x, y)] = {
@@ -532,7 +516,7 @@ def set_colony_compressed_data(
         CCCMeasurement.cell_count: cell_count,
     }
 
-    return save_ccc_to_disk(ccc)
+    return save_ccc_to_disk(store, ccc)
 
 
 def calculate_sizes(data, poly):
@@ -668,9 +652,9 @@ def calculate_polynomial(data_store, degree=5):
 
 
 @_validate_ccc_edit_request
-def construct_polynomial(identifier, power):
+def construct_polynomial(store, identifier, power):
 
-    ccc = __CCC[identifier]
+    ccc = store[identifier]
     data_store = _collect_all_included_data(ccc)
     try:
         poly_coeffs = calculate_polynomial(data_store, power).tolist()
@@ -691,7 +675,7 @@ def construct_polynomial(identifier, power):
             power, poly_coeffs,
         )
 
-        if not save_ccc_to_disk(ccc):
+        if not save_ccc_to_disk(store, ccc):
             return False
 
     return {
@@ -708,8 +692,8 @@ def construct_polynomial(identifier, power):
     }
 
 
-def get_all_colony_data(identifier):
-    ccc = __CCC[identifier]
+def get_all_colony_data(store, identifier):
+    ccc = store[identifier]
     data_store = _collect_all_included_data(ccc)
     if data_store.source_values:
         min_values = min(min(vector) for vector in data_store.source_values)
@@ -733,5 +717,37 @@ def get_all_colony_data(identifier):
     }
 
 
-if not __CCC:
-    reload_cccs()
+class CalibrationStore(object):
+    def __init__(self):
+        self._CCC = {}
+        self._reload_cccs()
+
+    def _reload_cccs(self):
+        self._CCC.clear()
+        _insert_default_ccc(self._CCC)
+        for ccc in load_cccs():
+            if ccc[CellCountCalibration.identifier] in self._CCC:
+                _logger.error(
+                    "Duplicated identifier {0} is not allowed!".format(
+                        ccc[CellCountCalibration.identifier])
+                )
+            else:
+                self._CCC[ccc[CellCountCalibration.identifier]] = ccc
+
+    def keys(self):
+        return self._CCC.keys()
+
+    def itervalues(self):
+        return self._CCC.itervalues()
+
+    def __iter__(self):
+        return iter(self._CCC)
+
+    def __getitem__(self, key):
+        return self._CCC[key]
+
+    def __setitem__(self, key, value):
+        self._CCC[key] = value
+
+    def iteritems(self):
+        return self._CCC.iteritems()

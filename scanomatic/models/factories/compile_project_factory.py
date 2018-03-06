@@ -8,7 +8,9 @@ from scanomatic.models import fixture_models
 from scanomatic.models.factories import fixture_factories
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
-from scanomatic.data_processing.calibration import get_active_cccs
+from scanomatic.data_processing.calibration import (
+    CalibrationStore, get_active_cccs
+)
 
 
 class CompileImageFactory(AbstractModelFactory):
@@ -199,7 +201,9 @@ class CompileProjectFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
-        if model.cell_count_calibration_id in get_active_cccs():
+        if model.cell_count_calibration_id in get_active_cccs(
+            CalibrationStore()
+        ):
             return True
         return model.FIELD_TYPES.cell_count_calibration
 

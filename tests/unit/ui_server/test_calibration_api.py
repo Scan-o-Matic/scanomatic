@@ -1,77 +1,80 @@
 from __future__ import absolute_import
-import os
-import json
 
-import pytest
+from itertools import product
+import json
+import os
+
+from flask import Flask
 import mock
 import numpy as np
-from scipy.stats import norm
+import pytest
 from scipy.ndimage import center_of_mass
-from flask import Flask
-from itertools import product
+from scipy.stats import norm
 
+from scanomatic.data_processing import calibration
+from scanomatic.io.ccc_data import parse_ccc
+from scanomatic.io.paths import Paths
 from scanomatic.models.analysis_model import COMPARTMENTS
 from scanomatic.ui_server import calibration_api
-from scanomatic.io.paths import Paths
-from scanomatic.io.ccc_data import parse_ccc
-from scanomatic.data_processing import calibration
 from scanomatic.ui_server.calibration_api import (
     get_bounding_box_for_colony, get_colony_detection
 )
 
 
-def _fixture_load_ccc(rel_path):
+@pytest.fixture
+def store():
+    return calibration.CalibrationStore()
+
+
+def _fixture_load_ccc(store, rel_path):
     parent = os.path.dirname(__file__)
     with open(os.path.join(parent, rel_path), 'rb') as fh:
         data = json.load(fh)
     _ccc = parse_ccc(data)
     if _ccc:
-        calibration.__CCC[
+        store[
             _ccc[calibration.CellCountCalibration.identifier]] = _ccc
         return _ccc
     raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
 
 
 @pytest.fixture(scope='function')
-def edit_ccc():
-    _ccc = _fixture_load_ccc('data/test_good.ccc')
+def edit_ccc(store):
+    _ccc = _fixture_load_ccc(store, 'data/test_good.ccc')
     _ccc[calibration.CellCountCalibration.polynomial] = None
     yield _ccc
-    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
 @pytest.fixture(scope='function')
-def finalizable_ccc():
-    _ccc = _fixture_load_ccc('data/test_good.ccc')
+def finalizable_ccc(store):
+    _ccc = _fixture_load_ccc(store, 'data/test_good.ccc')
     yield _ccc
-    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
 @pytest.fixture(scope='function')
-def active_ccc():
-    _ccc = _fixture_load_ccc('data/test_good.ccc')
+def active_ccc(store):
+    _ccc = _fixture_load_ccc(store, 'data/test_good.ccc')
     _ccc[
         calibration.CellCountCalibration.status
     ] = calibration.CalibrationEntryStatus.Active
     yield _ccc
-    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
 @pytest.fixture(scope='function')
-def deleted_ccc():
-    _ccc = _fixture_load_ccc('data/test_good.ccc')
+def deleted_ccc(store):
+    _ccc = _fixture_load_ccc(store, 'data/test_good.ccc')
     _ccc[
         calibration.CellCountCalibration.status
     ] = calibration.CalibrationEntryStatus.Deleted
     yield _ccc
-    calibration.__CCC.pop(_ccc[calibration.CellCountCalibration.identifier])
 
 
 @pytest.fixture(scope="function")
-def test_app():
+def test_app(store):
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
     app.register_blueprint(calibration_api.blueprint)
     app.testing = True
+    app.config['calibrationstore'] = store
     return app.test_client()
 
 
@@ -395,11 +398,13 @@ class TestCompressCalibration:
             'access_token': 'XXX'
         }
 
-    def test_valid_params(self, test_app, set_colony_compressed_data, params):
+    def test_valid_params(
+        self, store, test_app, set_colony_compressed_data, params
+    ):
         response = test_app.post(self.url, data=json.dumps(params))
         assert response.status_code == 200
         args, kwargs = set_colony_compressed_data.call_args
-        assert args == ('ccc0', 'img0', 0, 0, 0, 42)
+        assert args == (store, 'ccc0', 'img0', 0, 0, 0, 42)
         assert kwargs['access_token'] == 'XXX'
         assert np.array_equal(
             kwargs['background_filter'],
