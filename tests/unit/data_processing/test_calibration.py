@@ -941,38 +941,13 @@ class TestGetAllColonyData:
         assert colonies['target_values'][-1] == 42000000.0
 
 
-class TestAddCCC:
-    def test_valid_ccc(self):
-        store = MagicMock(calibration.CalibrationStore)
-        store.has_calibration_with_id.return_value = False
-        ccc = calibration.get_empty_ccc(store, 'Bogus schmogus', 'Dr Lus')
-        assert calibration.add_ccc(store, ccc) is True
-        store.add_calibration.assert_called_with(ccc)
-
-    def test_none_id(self):
-        store = MagicMock(calibration.CalibrationStore)
-        store.has_calibration_with_id.return_value = False
-        ccc = calibration.get_empty_ccc(store, 'Bogus schmogus', 'Dr Lus')
-        ccc[CellCountCalibration.identifier] = None
-        assert calibration.add_ccc(store, ccc) is False
-        store.add_calibration.assert_not_called()
-
-    def test_duplicate_id(self):
-        store = MagicMock(calibration.CalibrationStore)
-        store.has_calibration_with_id.return_value = False
-        ccc = calibration.get_empty_ccc(store, 'Bogus schmogus', 'Dr Lus')
-        store.has_calibration_with_id.return_value = True
-        calibration.add_ccc(store, ccc)
-        assert store.add_calibration.called_with(ccc)
-
-
 def make_calibration(
     identifier='ccc000',
     polynomial=None,
     access_token='password',
     active=False,
 ):
-    ccc = ccc_data.get_empty_ccc_entry(identifier, 'S. Kombuchae', 'xyz 1987')
+    ccc = ccc_data.get_empty_ccc_entry(identifier, 'Bogus schmogus', 'Dr Lus')
     if polynomial is not None:
         ccc[CellCountCalibration.polynomial] = (
             ccc_data.get_polynomal_entry(len(polynomial) - 1, polynomial)
@@ -985,6 +960,29 @@ def make_calibration(
             CalibrationEntryStatus.UnderConstruction
             )
     return ccc
+
+
+class TestAddCCC:
+    def test_valid_ccc(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        ccc = make_calibration()
+        assert calibration.add_ccc(store, ccc) is True
+        store.add_calibration.assert_called_with(ccc)
+
+    def test_none_id(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        ccc = make_calibration(identifier=None)
+        assert calibration.add_ccc(store, ccc) is False
+        store.add_calibration.assert_not_called()
+
+    def test_duplicate_id(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        ccc = make_calibration()
+        calibration.add_ccc(store, ccc)
+        assert store.add_calibration.called_with(ccc)
 
 
 class TestActivateCCC:
