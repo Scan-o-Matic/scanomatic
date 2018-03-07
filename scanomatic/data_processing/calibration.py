@@ -495,21 +495,15 @@ def validate_polynomial(slope, p_value, stderr):
     return CalibrationValidation.OK
 
 
-def _collect_all_included_data(ccc):
+def _collect_all_included_data(store, calibrationid):
     source_values = []
     source_value_counts = []
     target_value = []
 
-    for id_image, image_data in enumerate(ccc[CellCountCalibration.images]):
-
-        for id_plate, plate in image_data[CCCImage.plates].items():
-
-            for colony_data in plate[CCCPlate.compressed_ccc_data].values():
-
-                source_value_counts.append(
-                    colony_data[CCCMeasurement.source_value_counts])
-                source_values.append(colony_data[CCCMeasurement.source_values])
-                target_value.append(colony_data[CCCMeasurement.cell_count])
+    for measurement in store.get_measurements_for_calibration(calibrationid):
+        source_value_counts.append(measurement[CCCMeasurement.source_value_counts])
+        source_values.append(measurement[CCCMeasurement.source_values])
+        target_value.append(measurement[CCCMeasurement.cell_count])
 
     sort_order = np.argsort(target_value)
     source_values = [source_values[colony] for colony in sort_order]
@@ -604,8 +598,7 @@ def calculate_polynomial(data_store, degree=5):
 @_validate_ccc_edit_request
 def construct_polynomial(store, identifier, power):
 
-    ccc = store.get_calibration_by_id(identifier)
-    data_store = _collect_all_included_data(ccc)
+    data_store = _collect_all_included_data(store, identifier)
     try:
         poly_coeffs = calculate_polynomial(data_store, power).tolist()
     except CCCConstructionError:
@@ -639,8 +632,7 @@ def construct_polynomial(store, identifier, power):
 
 
 def get_all_colony_data(store, identifier):
-    ccc = store.get_calibration_by_id(identifier)
-    data_store = _collect_all_included_data(ccc)
+    data_store = _collect_all_included_data(store, identifier)
     if data_store.source_values:
         min_values = min(min(vector) for vector in data_store.source_values)
         max_values = max(max(vector) for vector in data_store.source_values)
@@ -719,3 +711,10 @@ class CalibrationStore(object):
     def get_all_calibrations(self):
         for id_ in self._CCC:
             yield self._CCC[id_]
+
+    def get_measurements_for_calibration(self, calibrationid):
+        ccc = self._CCC[calibrationid]
+        for image in ccc[CellCountCalibration.images]:
+            for plate in image[CCCImage.plates].values():
+                for measurement in plate[CCCPlate.compressed_ccc_data].values():
+                    yield measurement

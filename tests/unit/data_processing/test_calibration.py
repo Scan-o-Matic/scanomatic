@@ -6,11 +6,16 @@ import os
 import tempfile
 
 import mock
+from mock import MagicMock, Mock
 import numpy as np
 import pytest
 
 from scanomatic.data_processing import calibration
 from scanomatic.io import ccc_data
+from scanomatic.io.ccc_data import (
+    CalibrationEntryStatus, CCCImage, CCCMeasurement, CCCPlate, CCCPolynomial,
+    CellCountCalibration
+)
 from scanomatic.io.paths import Paths
 
 # The curve fitting is done with coefficients as e^x, some tests
@@ -178,8 +183,10 @@ def deleted_ccc(store):
 
 
 @pytest.fixture(scope='function')
-def data_store_bad_ccc(edit_bad_slope_ccc):
-    return calibration._collect_all_included_data(edit_bad_slope_ccc)
+def data_store_bad_ccc(store, edit_bad_slope_ccc):
+    return calibration._collect_all_included_data(
+        store, edit_bad_slope_ccc[CellCountCalibration.identifier]
+    )
 
 
 class TestEditCCC:
@@ -932,3 +939,241 @@ class TestGetAllColonyData:
             116, 348, 1265, 2900, 4655, 9718, 1982, 2171, 770, 1,
         ]
         assert colonies['target_values'][-1] == 42000000.0
+
+
+class TestAddCCC:
+    def test_valid_ccc(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        ccc = calibration.get_empty_ccc(store, 'Bogus schmogus', 'Dr Lus')
+        assert calibration.add_ccc(store, ccc) is True
+        store.add_calibration.assert_called_with(ccc)
+
+    def test_none_id(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        ccc = calibration.get_empty_ccc(store, 'Bogus schmogus', 'Dr Lus')
+        ccc[CellCountCalibration.identifier] = None
+        assert calibration.add_ccc(store, ccc) is False
+        store.add_calibration.assert_not_called()
+
+    def test_duplicate_id(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        ccc = calibration.get_empty_ccc(store, 'Bogus schmogus', 'Dr Lus')
+        store.has_calibration_with_id.return_value = True
+        calibration.add_ccc(store, ccc)
+        assert store.add_calibration.called_with(ccc)
+
+
+def make_calibration(
+    identifier='ccc000',
+    polynomial=None,
+    access_token='password',
+    active=False,
+):
+    ccc = ccc_data.get_empty_ccc_entry(identifier, 'S. Kombuchae', 'xyz 1987')
+    if polynomial is not None:
+        ccc[CellCountCalibration.polynomial] = (
+            ccc_data.get_polynomal_entry(len(polynomial) - 1, polynomial)
+        )
+    ccc[CellCountCalibration.edit_access_token] = access_token
+    if active:
+        ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
+    else:
+        ccc[CellCountCalibration.status] = (
+            CalibrationEntryStatus.UnderConstruction
+            )
+    return ccc
+
+
+class TestActivateCCC:
+    def test_activate(self):
+        store = MagicMock(calibration.CalibrationStore)
+        ccc = make_calibration(
+            identifier='ccc001',
+            polynomial=[1, 2, 3],
+            access_token='password',
+            active=False,
+        )
+        store.get_calibration_by_id.return_value = ccc
+        assert (
+            calibration.activate_ccc(store, 'ccc001', access_token='password')
+        )
+        store.set_calibration_status.assert_called_with(
+            'ccc001', CalibrationEntryStatus.Active
+        )
+
+    def test_invalid_polynomial(self):
+        store = MagicMock(calibration.CalibrationStore)
+        ccc = make_calibration(
+            identifier='ccc001',
+            polynomial=None,
+            access_token='password',
+            active=False,
+        )
+        store.get_calibration_by_id.return_value = ccc
+        assert not (
+            calibration.activate_ccc(store, 'ccc001', access_token='password')
+        )
+        store.set_calibration_status.assert_not_called()
+
+    def test_unknown_ccc(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        assert not (
+            calibration.activate_ccc(store, 'ccc001', access_token='password')
+        )
+        store.set_calibration_status.assert_not_called()
+
+    def test_already_activated(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.get_calibration_by_id.return_value = make_calibration(
+            identifier='ccc001',
+            polynomial=[1, 2, 3],
+            access_token='password',
+            active=True,
+        )
+        assert not (
+            calibration.activate_ccc(store, 'ccc001', access_token='password')
+        )
+        store.set_calibration_status.assert_not_called()
+
+
+class TestDeleteCCC:
+    def test_delete(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.get_calibration_by_id.return_value = make_calibration(
+            identifier='ccc001',
+            access_token='password',
+            active=False,
+        )
+        assert (
+            calibration.delete_ccc(store, 'ccc001', access_token='password')
+        )
+        store.set_calibration_status.assert_called_with(
+            'ccc001', CalibrationEntryStatus.Deleted
+        )
+
+    def test_unknown_ccc(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        assert not (
+            calibration.delete_ccc(store, 'ccc001', access_token='password')
+        )
+        store.set_calibration_status.assert_not_called()
+
+    def test_already_activated(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.get_calibration_by_id.return_value = make_calibration(
+            identifier='ccc001',
+            access_token='password',
+            active=True,
+        )
+        assert not (
+            calibration.delete_ccc(store, 'ccc001', access_token='password')
+        )
+        store.set_calibration_status.assert_not_called()
+
+
+class TestConstructPolynomial:
+    def test_unknown_ccc(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        assert not calibration.construct_polynomial(
+            store, 'ccc001', power=5, access_token='password',
+        )
+        store.set_calibration_polynomial.assert_not_called()
+
+    def test_already_activated(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.get_calibration_by_id.return_value = make_calibration(
+            identifier='ccc001',
+            access_token='password',
+            active=True,
+        )
+        assert not calibration.construct_polynomial(
+            store, 'ccc001', power=5, access_token='password',
+        )
+
+        store.set_calibration_status.assert_not_called()
+
+    @pytest.fixture
+    def bad_measurements(self, edit_bad_slope_ccc):
+        return [
+            measurement
+            for image in edit_bad_slope_ccc[CellCountCalibration.images]
+            for plate in image[CCCImage.plates].values()
+            for measurement in plate[CCCPlate.compressed_ccc_data].values()
+        ]
+
+    def test_construct_bad_polynomial(self, bad_measurements):
+        store = MagicMock(calibration.CalibrationStore)
+        store.get_calibration_by_id.return_value = make_calibration(
+            identifier='ccc001',
+            access_token='password',
+            active=False,
+        )
+        store.get_measurements_for_calibration.return_value = bad_measurements
+        response = calibration.construct_polynomial(
+            store, 'ccc001', power=5, access_token='password',
+        )
+        assert response['validation'] == 'BadSlope'
+        assert all(coeff >= 0 for coeff in response['polynomial_coefficients'])
+        assert len(response['calculated_sizes']) == 30
+        assert len(response['measured_sizes']) == 30
+        assert response['correlation']['p_value'] == pytest.approx(1)
+        store.set_calibration_polynomial.assert_not_called()
+
+    @pytest.fixture
+    def good_measurements(self, full_ccc):
+        return [
+            measurement
+            for image in full_ccc[CellCountCalibration.images]
+            for plate in image[CCCImage.plates].values()
+            for measurement in plate[CCCPlate.compressed_ccc_data].values()
+        ]
+
+    def test_construct_good_polynomial(self, good_measurements):
+        store = MagicMock(calibration.CalibrationStore)
+        store.get_calibration_by_id.return_value = make_calibration(
+            identifier='ccc001',
+            access_token='password',
+            active=False,
+        )
+        store.get_measurements_for_calibration.return_value = good_measurements
+        response = calibration.construct_polynomial(
+            store, 'ccc001', power=5, access_token='password',
+        )
+        assert response['validation'] == 'OK'
+        assert all(coeff >= 0 for coeff in response['polynomial_coefficients'])
+        assert len(response['calculated_sizes']) == 62
+        assert response['measured_sizes'] == list(sorted(
+            measurement[CCCMeasurement.cell_count]
+            for measurement in good_measurements
+        ))
+
+        assert response['correlation']['slope'] == pytest.approx(1, abs=0.02)
+        assert response['correlation']['intercept'] == pytest.approx(
+            71000, rel=0.5
+        )
+        assert response['correlation']['stderr'] == pytest.approx(
+            0.015, rel=0.1
+        )
+        assert response['correlation']['p_value'] == pytest.approx(0)
+        np.testing.assert_allclose(
+            response['polynomial_coefficients'],
+            [
+                5.263000000000004e-05,
+                0.004012000000000001,
+                0.03962,
+                0.9684,
+                2.008000000000001e-06,
+                0.0,
+            ],
+            rtol=0.01,
+        )
+        store.set_calibration_polynomial.assert_called_with('ccc001', {
+            CCCPolynomial.coefficients: response['polynomial_coefficients'],
+            CCCPolynomial.power: 5,
+        })
