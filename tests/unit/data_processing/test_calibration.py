@@ -25,6 +25,20 @@ Paths().ccc_file_pattern = os.path.join(
     Paths().ccc_folder, '{0}.ccc')
 
 
+@pytest.fixture(autouse=True)
+def save_ccc():
+    def fakesave(ccc):
+        print("Saving ccc {} (not realy)".format(
+            ccc[calibration.CellCountCalibration.identifier]
+        ))
+        return True
+    with mock.patch(
+        'scanomatic.data_processing.calibration.save_ccc',
+        side_effect=fakesave,
+    ) as save_ccc:
+        yield save_ccc
+
+
 @pytest.fixture
 def store():
     return calibration.CalibrationStore()
@@ -33,7 +47,7 @@ def store():
 @pytest.fixture(scope='function')
 def ccc(store):
     _ccc = calibration.get_empty_ccc(store, 'test-ccc', 'pytest')
-    store[_ccc[calibration.CellCountCalibration.identifier]] = _ccc
+    store.add_calibration(_ccc)
     return _ccc
 
 
@@ -116,7 +130,7 @@ def _fixture_load_ccc(store, rel_path):
         data = json.load(fh)
     _ccc = ccc_data.parse_ccc(data)
     if _ccc:
-        store[_ccc[calibration.CellCountCalibration.identifier]] = _ccc
+        store.add_calibration(_ccc)
         return _ccc
     raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
 
@@ -506,27 +520,23 @@ class TestGettingActiveCCCs:
 
     @pytest.fixture(scope='function', autouse=True)
     def setup(self, store):
-        with mock.patch(
-            'scanomatic.data_processing.calibration.save_ccc_to_disk',
-            return_value=True
-        ):
-            ccc1 = calibration.get_empty_ccc(store, 'Cylon', 'Boomer')
-            self._ccc_id1 = ccc1[calibration.CellCountCalibration.identifier]
-            ccc1[calibration.CellCountCalibration.polynomial] = {
-                calibration.CCCPolynomial.power: 5,
-                calibration.CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
-            }
-            ccc1[calibration.CellCountCalibration.status] = \
-                calibration.CalibrationEntryStatus.Active
-            calibration.add_ccc(store, ccc1)
+        ccc1 = calibration.get_empty_ccc(store, 'Cylon', 'Boomer')
+        self._ccc_id1 = ccc1[calibration.CellCountCalibration.identifier]
+        ccc1[calibration.CellCountCalibration.polynomial] = {
+            calibration.CCCPolynomial.power: 5,
+            calibration.CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
+        }
+        ccc1[calibration.CellCountCalibration.status] = \
+            calibration.CalibrationEntryStatus.Active
+        calibration.add_ccc(store, ccc1)
 
-            ccc2 = calibration.get_empty_ccc(store, 'Deep Ones', 'Stross')
-            self._ccc_id2 = ccc2[calibration.CellCountCalibration.identifier]
-            ccc2[calibration.CellCountCalibration.polynomial] = {
-                calibration.CCCPolynomial.power: 5,
-                calibration.CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
-            }
-            calibration.add_ccc(store, ccc2)
+        ccc2 = calibration.get_empty_ccc(store, 'Deep Ones', 'Stross')
+        self._ccc_id2 = ccc2[calibration.CellCountCalibration.identifier]
+        ccc2[calibration.CellCountCalibration.polynomial] = {
+            calibration.CCCPolynomial.power: 5,
+            calibration.CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
+        }
+        calibration.add_ccc(store, ccc2)
 
     def test_exists_default_ccc_polynomial(self, store):
 
@@ -559,85 +569,85 @@ class TestSaving:
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
-    def test_save_ccc(self, save_mock, validator_mock, store, ccc):
+    def test_save_ccc(self, validator_mock, save_ccc, store, ccc):
+        save_ccc.reset_mock()
         assert calibration.save_ccc_to_disk(store, ccc)
         assert not validator_mock.called
-        assert save_mock.called
+        assert save_ccc.called
 
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
-    def test_add_existing_ccc(self, save_mock, validator_mock, store, ccc):
+    def test_add_existing_ccc(self, validator_mock, save_ccc, store, ccc):
+        save_ccc.reset_mock()
         assert not calibration.add_ccc(store, ccc)
         assert not validator_mock.called
-        assert not save_mock.called
+        assert not save_ccc.called
 
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
-    def test_add_ccc(self, save_mock, validator_mock, store):
+    def test_add_ccc(self, validator_mock, save_ccc, store):
+        save_ccc.reset_mock()
         ccc = calibration.get_empty_ccc(store, 'Bogus schmogus', 'Dr Lus')
         assert calibration.add_ccc(store, ccc)
         assert not validator_mock.called
-        assert save_mock.called
+        assert save_ccc.called
 
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
     @mock.patch(
         'scanomatic.data_processing.calibration.has_valid_polynomial',
         return_value=True)
     def test_activate_ccc(
-            self, poly_validator_mock, save_mock, validator_mock, store, ccc):
+            self, poly_validator_mock, validator_mock, save_ccc, store, ccc):
+        save_ccc.reset_mock()
         assert calibration.activate_ccc(
             store,
             ccc[calibration.CellCountCalibration.identifier],
             access_token='not used, but needed')
         assert validator_mock.called
-        assert save_mock.called
+        assert save_ccc.called
         assert poly_validator_mock.called
 
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
-    def test_delete_ccc(self, save_mock, validator_mock, store, ccc):
+    def test_delete_ccc(self, validator_mock, save_ccc, store, ccc):
+        save_ccc.reset_mock()
         assert calibration.delete_ccc(
             store,
             ccc[calibration.CellCountCalibration.identifier],
             access_token='not used, but needed')
         assert validator_mock.called
-        assert save_mock.called
+        assert save_ccc.called
 
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
-    def test_add_image_to_ccc(self, save_mock, validator_mock, store, ccc):
+    def test_add_image_to_ccc(self, validator_mock, save_ccc, store, ccc):
+        save_ccc.reset_mock()
         image_mock = mock.Mock()
         assert calibration.add_image_to_ccc(
             store,
             ccc[calibration.CellCountCalibration.identifier], image_mock,
             access_token='not used, but needed')
         assert validator_mock.called
-        assert save_mock.called
+        assert save_ccc.called
         assert image_mock.save.called
 
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    @mock.patch('scanomatic.data_processing.calibration.save_ccc')
-    def test_add_image_to_ccc(self, save_mock, validator_mock, store, ccc):
+    def test_set_image_info(self, validator_mock, save_ccc, store, ccc):
+        save_ccc.reset_mock()
         assert calibration.set_image_info(
             store,
             ccc[calibration.CellCountCalibration.identifier], 0,
             access_token='not used, but needed')
         assert validator_mock.called
-        assert save_mock.called
+        assert save_ccc.called
 
 
 class TestCCCEditValidator:
@@ -671,14 +681,6 @@ class TestCCCEditValidator:
 
 
 class TestSetColonyCompressedData:
-
-    @pytest.fixture(autouse=True)
-    def save_ccc_to_disk(self):
-        with mock.patch(
-            'scanomatic.data_processing.calibration.save_ccc_to_disk',
-            return_value=True
-        ):
-            yield
 
     @pytest.fixture
     def measurement(self, store, ccc):

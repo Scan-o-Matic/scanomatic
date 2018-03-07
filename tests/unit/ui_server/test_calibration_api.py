@@ -23,7 +23,11 @@ from scanomatic.ui_server.calibration_api import (
 
 @pytest.fixture
 def store():
-    return calibration.CalibrationStore()
+    with mock.patch(
+        'scanomatic.data_processing.calibration.save_ccc',
+        return_value=True,
+    ) as save_ccc:
+        yield calibration.CalibrationStore()
 
 
 def _fixture_load_ccc(store, rel_path):
@@ -32,8 +36,7 @@ def _fixture_load_ccc(store, rel_path):
         data = json.load(fh)
     _ccc = parse_ccc(data)
     if _ccc:
-        store[
-            _ccc[calibration.CellCountCalibration.identifier]] = _ccc
+        store.add_calibration(_ccc)
         return _ccc
     raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
 
