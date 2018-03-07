@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+
 import re
 
-from scanomatic.models.fixture_models import FixtureModel, FixturePlateModel
 from scanomatic.generics.abstract_model_factory import (
-    AbstractModelFactory, rename_setting, float_list_serializer
+    AbstractModelFactory, float_list_serializer, rename_setting
 )
 from scanomatic.models import fixture_models
+from scanomatic.models.fixture_models import FixtureModel, FixturePlateModel
 
 
 class FixturePlateFactory(AbstractModelFactory):

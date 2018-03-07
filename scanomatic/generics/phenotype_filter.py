@@ -1,7 +1,10 @@
-import numpy as np
-from operator import or_, eq
-from itertools import imap, repeat
+from __future__ import absolute_import
+
 from enum import Enum
+from itertools import imap, repeat
+from operator import eq, or_
+
+import numpy as np
 
 
 def fold(f, iterable):

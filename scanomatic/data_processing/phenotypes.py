@@ -1,8 +1,12 @@
+from __future__ import absolute_import
+
 from enum import Enum
 from itertools import chain
 
-from growth_phenotypes import Phenotypes
-from scanomatic.data_processing.phases.features import VectorPhenotypes, CurvePhaseMetaPhenotypes
+from scanomatic.data_processing.phases.features import (
+    CurvePhaseMetaPhenotypes, VectorPhenotypes
+)
+from .growth_phenotypes import Phenotypes
 
 
 class PhenotypeDataType(Enum):

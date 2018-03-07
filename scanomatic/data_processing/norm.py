@@ -2,11 +2,16 @@
 #   DEPENDENCIES
 #
 
+from __future__ import absolute_import
+
 from enum import Enum
-import numpy as np
 from types import StringTypes
+
+import numpy as np
 from scipy.interpolate import griddata
-from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_filter, median_filter
+from scipy.ndimage import (
+    convolve, gaussian_filter, generic_filter, laplace, median_filter, sobel
+)
 from scipy.stats import pearsonr
 
 #

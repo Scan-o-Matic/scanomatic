@@ -2,21 +2,26 @@
 # DEPENDENCIES
 #
 
-import numpy as np
-import operator
+from __future__ import absolute_import
+
 from enum import Enum
+import operator
+
+import numpy as np
 from scipy.ndimage import (
     binary_erosion, center_of_mass, label, gaussian_filter)
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import scanomatic.image_analysis.histogram as histogram
+from scanomatic.generics.maths import mid50_mean as iqr_mean
+from scanomatic.generics.maths import quantiles_stable
 import scanomatic.image_analysis.blob as blob
-from scanomatic.models.factories.analysis_factories import (
-    AnalysisFeaturesFactory)
+import scanomatic.image_analysis.histogram as histogram
 from scanomatic.models.analysis_model import MEASURES
-from scanomatic.generics.maths import mid50_mean as iqr_mean, quantiles_stable
+from scanomatic.models.factories.analysis_factories import (
+    AnalysisFeaturesFactory
+)
 
 #
 # FUNCTIONS

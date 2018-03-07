@@ -1,18 +1,21 @@
-import time
+from __future__ import absolute_import
+
 import os
-from types import StringTypes
 import socket
+from threading import Thread
+import time
+from types import StringTypes
+
 #
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.io.logger as logger
-import scanomatic.models.rpc_job_models as rpc_job_models
+from .pipes import ChildPipeEffector
 import scanomatic.generics.decorators as decorators
-from pipes import ChildPipeEffector
 from scanomatic.io import mail
 from scanomatic.io.app_config import Config as AppConfig
-from threading import Thread
+import scanomatic.io.logger as logger
+import scanomatic.models.rpc_job_models as rpc_job_models
 
 #
 # CLASSES

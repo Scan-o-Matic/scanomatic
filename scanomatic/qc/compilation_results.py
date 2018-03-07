@@ -1,15 +1,19 @@
-from scanomatic.io.movie_writer import MovieWriter
+from __future__ import absolute_import
 
-from types import StringTypes
-import numpy as np
-from matplotlib import pyplot as plt
 import glob
+from itertools import izip
 import os
 import re
-from itertools import izip
 import time
+from types import StringTypes
 
-from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
+from matplotlib import pyplot as plt
+import numpy as np
+
+from scanomatic.io.movie_writer import MovieWriter
+from scanomatic.models.factories.compile_project_factory import (
+    CompileImageAnalysisFactory
+)
 
 _img_pattern = re.compile(r".*_[0-9]{4}_[0-9.]+\.tiff$")
 _time_pattern = re.compile(r'[0-9]+\.[0-9]*')

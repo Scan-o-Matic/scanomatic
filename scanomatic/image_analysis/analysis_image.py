@@ -1,21 +1,27 @@
+from __future__ import absolute_import
+
 import os
-import numpy as np
-from time import sleep
-from threading import Thread
 from subprocess import call
+from threading import Thread
+from time import sleep
+
+import numpy as np
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import grid_array
-from image_grayscale import is_valid_grayscale
-from grayscale import getGrayscale
-from image_basics import load_image_to_numpy
+from . import grid_array
+from .grayscale import getGrayscale
+from .image_basics import load_image_to_numpy
+from .image_grayscale import is_valid_grayscale
 from scanomatic.io.logger import Logger
-from scanomatic.models.analysis_model import IMAGE_ROTATIONS
-from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 from scanomatic.io.paths import Paths
+from scanomatic.models.analysis_model import IMAGE_ROTATIONS
+from scanomatic.models.factories.analysis_factories import (
+    AnalysisFeaturesFactory
+)
+
 
 #
 # CLASS Project_Image

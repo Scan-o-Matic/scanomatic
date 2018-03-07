@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from time import sleep
 

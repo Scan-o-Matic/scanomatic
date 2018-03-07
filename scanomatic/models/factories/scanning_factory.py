@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+
 import os
 import re
 import string
 from types import StringTypes
+
 
 from scanomatic.data_processing.calibration import (
     CalibrationStore, get_active_cccs

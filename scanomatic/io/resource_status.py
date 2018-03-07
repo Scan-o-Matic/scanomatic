@@ -1,11 +1,12 @@
+from __future__ import absolute_import
+
 import psutil
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import logger
-import app_config
+from . import app_config, logger
 
 #
 # CLASSES

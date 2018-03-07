@@ -1,8 +1,11 @@
-import scanomatic.generics.model as model
-from scanomatic.generics.enums import MinorMajorStepEnum
-from scanomatic.generics.decorators import class_property
-import scanomatic
+from __future__ import absolute_import
+
 from enum import Enum
+
+import scanomatic
+from scanomatic.generics.decorators import class_property
+from scanomatic.generics.enums import MinorMajorStepEnum
+import scanomatic.generics.model as model
 
 
 class SCAN_CYCLE(MinorMajorStepEnum):

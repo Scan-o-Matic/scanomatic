@@ -1,15 +1,17 @@
-from subprocess import Popen, PIPE
-import re
-import os
+from __future__ import absolute_import
+
 import copy
-import time
-import json
-from itertools import chain
 from enum import Enum
+from itertools import chain
+import json
+import os
+import re
+from subprocess import PIPE, Popen
+import time
 from types import StringTypes
 
-from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
+from scanomatic.io.paths import Paths
 
 _logger = Logger("SANE module")
 #

@@ -1,12 +1,16 @@
-import csv
-from collections import defaultdict
-import numpy as np
-import chardet
-import unicodedata
+from __future__ import absolute_import
+
 import codecs
-from itertools import izip
-from scanomatic.data_processing.phenotyper import Phenotyper
+from collections import defaultdict
+import csv
 from enum import Enum
+from itertools import izip
+import unicodedata
+
+import chardet
+import numpy as np
+
+from scanomatic.data_processing.phenotyper import Phenotyper
 
 
 class Preprocessing(Enum):

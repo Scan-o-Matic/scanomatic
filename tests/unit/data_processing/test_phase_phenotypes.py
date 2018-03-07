@@ -1,13 +1,16 @@
+from __future__ import absolute_import
+
+import numpy as np
 import pytest
+
 from scanomatic.data_processing.phases.analysis import (
     _locate_segment, get_data_needed_for_segmentation, DEFAULT_THRESHOLDS,
     segment, _phenotype_phases, CurvePhasePhenotypes,
     assign_linear_phase_phenotypes, assign_common_phase_phenotypes,
     assign_non_linear_phase_phenotypes
 )
-
 from scanomatic.data_processing.phenotyper import Phenotyper
-import numpy as np
+
 
 """
 @pytest.fixture(scope='session')

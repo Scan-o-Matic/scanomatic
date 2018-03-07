@@ -1,26 +1,33 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
+from __future__ import absolute_import
+
 from functools import wraps
-from types import StringTypes
 from itertools import chain, izip, product
 import re
+from types import StringTypes
 
+import pandas as pd
 import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.lines import Line2D
-from matplotlib.font_manager import FontProperties
 from matplotlib import patches as mpatches
-from scipy.ndimage import label
+from matplotlib.font_manager import FontProperties
+from matplotlib.lines import Line2D
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import numpy as np
 import scipy.cluster.hierarchy as sch
+from scipy.ndimage import label
 
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
-from scanomatic.data_processing.phases.segmentation import CurvePhases, Thresholds, DEFAULT_THRESHOLDS, \
-    get_data_needed_for_segmentation, get_curve_classification_in_steps, get_linear_non_flat_extension_per_position, \
-    classifier_flat, get_barad_dur_towers
-from scanomatic.data_processing.phases.features import get_phase_assignment_frequencies, CurvePhasePhenotypes, \
+from scanomatic.data_processing.phases.features import (
+    CurvePhasePhenotypes, get_phase_assignment_frequencies,
     get_variance_decomposition_by_phase
+)
+from scanomatic.data_processing.phases.segmentation import (
+    DEFAULT_THRESHOLDS, CurvePhases, Thresholds, classifier_flat,
+    get_barad_dur_towers, get_curve_classification_in_steps,
+    get_data_needed_for_segmentation,
+    get_linear_non_flat_extension_per_position
+)
 from scanomatic.data_processing.phenotyper import Phenotyper
 from scanomatic.io.logger import Logger
 from scanomatic.io.movie_writer import MovieWriter

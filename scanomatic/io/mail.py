@@ -1,10 +1,14 @@
-import scanomatic.io.logger as logger
-from scanomatic.io.app_config import Config as AppConfig
-from types import StringTypes
+from __future__ import absolute_import
+
 import smtplib
 import socket
-import requests
 from struct import unpack
+from types import StringTypes
+
+import requests
+
+from scanomatic.io.app_config import Config as AppConfig
+import scanomatic.io.logger as logger
 
 try:
     from email import MIMEText, MIMEMultipart

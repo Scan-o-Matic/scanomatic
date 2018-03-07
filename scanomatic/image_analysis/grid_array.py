@@ -2,24 +2,27 @@
 # DEPENDENCIES
 #
 
-import numpy as np
+from __future__ import absolute_import
+
 import os
 
+import numpy as np
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import grid
-from grid_cell import GridCell
-import scanomatic.io.paths as paths
-import scanomatic.io.logger as logger
-from scanomatic.io.pickler import unpickle_with_unpickler
-import image_basics
-from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.image_analysis.grayscale import getGrayscale
-from scanomatic.models.factories.analysis_factories import \
+import scanomatic.io.logger as logger
+import scanomatic.io.paths as paths
+from scanomatic.io.pickler import unpickle_with_unpickler
+from scanomatic.models.analysis_model import IMAGE_ROTATIONS
+from scanomatic.models.factories.analysis_factories import (
     AnalysisFeaturesFactory
+)
+from . import grid, image_basics
+from .grid_cell import GridCell
+
 
 #
 # EXCEPTIONS

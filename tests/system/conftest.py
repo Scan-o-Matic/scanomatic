@@ -1,9 +1,11 @@
-import pytest
+from __future__ import absolute_import
+
 import warnings
-import requests
-from selenium import webdriver
 
 import py.path
+import pytest
+import requests
+from selenium import webdriver
 
 
 @pytest.fixture(scope='session')

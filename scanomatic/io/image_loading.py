@@ -1,12 +1,17 @@
+from __future__ import absolute_import
+
 import glob
-import numpy as np
 import os
 
-from scanomatic.io.paths import Paths
-from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
-from scanomatic.io import logger
-from scanomatic.io.pickler import unpickle_with_unpickler
+import numpy as np
+
 from scanomatic.image_analysis.image_basics import load_image_to_numpy
+from scanomatic.io import logger
+from scanomatic.io.paths import Paths
+from scanomatic.io.pickler import unpickle_with_unpickler
+from scanomatic.models.factories.compile_project_factory import (
+    CompileImageAnalysisFactory
+)
 
 _logger = logger.Logger("Image loader")
 

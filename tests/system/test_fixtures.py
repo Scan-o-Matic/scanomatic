@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+
+
 def test_new_fixture_name(scanomatic, browser):
     """ Regression test for issue #173 """
     browser.get(scanomatic + '/fixtures')

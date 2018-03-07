@@ -1,16 +1,21 @@
-import os
-from itertools import chain
+from __future__ import absolute_import
+
 from glob import glob
+from itertools import chain
+import os
 
 from flask import Flask, jsonify
 
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response, \
-    serve_numpy_as_image
-
-from scanomatic.io.paths import Paths
-from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
-from scanomatic.io import image_loading
 from scanomatic.data_processing import phenotyper
+from scanomatic.io import image_loading
+from scanomatic.io.paths import Paths
+from scanomatic.models.factories.compile_project_factory import (
+    CompileProjectFactory
+)
+from scanomatic.ui_server.general import (
+    convert_path_to_url, convert_url_to_path, get_search_results,
+    json_response, serve_numpy_as_image
+)
 
 
 def add_routes(app):

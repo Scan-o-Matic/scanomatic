@@ -1,17 +1,20 @@
+from __future__ import absolute_import
+
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
-import uuid
 import os
+import uuid
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import paths
-import logger
+from . import logger, paths
 from scanomatic.generics.singleton import SingeltonOneInit
-import scanomatic.models.scanning_model as scanning_model
 from scanomatic.models.factories.settings_factories import (
-    ApplicationSettingsFactory)
+    ApplicationSettingsFactory
+)
+import scanomatic.models.scanning_model as scanning_model
+
 
 #
 # CLASSES

@@ -1,16 +1,20 @@
+from __future__ import absolute_import
+
 from multiprocessing import Process
+import os
 from threading import Thread
 from time import sleep
+
 import psutil
-import os
 import setproctitle
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.server.pipes as pipes
 import scanomatic.io.logger as logger
+import scanomatic.server.pipes as pipes
+
 
 #
 # CLASSES
@@ -93,7 +97,7 @@ class RpcJob(Process, Fake):
 
         pipe_effector = pipes.ChildPipeEffector(
             self._childPipe, self._job_effector(self._job))
-        
+
         setproctitle.setproctitle("SoM {0}".format(
             pipe_effector.procEffector.TYPE.name))
 

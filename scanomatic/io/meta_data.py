@@ -1,7 +1,10 @@
-from types import StringTypes
-from itertools import izip
-import numpy as np
+from __future__ import absolute_import
+
 import csv
+from itertools import izip
+from types import StringTypes
+
+import numpy as np
 
 #
 #   OPTIONAL IMPORT

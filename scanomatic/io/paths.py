@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 import re
 
@@ -5,9 +7,9 @@ import re
 # INTERNAL DEPENDENCIES
 #
 
-import logger
-from scanomatic.generics.singleton import SingeltonOneInit
+from . import logger
 import scanomatic
+from scanomatic.generics.singleton import SingeltonOneInit
 
 #
 # CLASSES

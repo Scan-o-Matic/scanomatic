@@ -1,9 +1,12 @@
-import numpy as np
-from itertools import product, izip
-from scipy.signal import gaussian
-from matplotlib import pyplot as plt
-import scipy.cluster.hierarchy as sch
+from __future__ import absolute_import
+
+from itertools import izip, product
 import operator
+
+from matplotlib import pyplot as plt
+import numpy as np
+import scipy.cluster.hierarchy as sch
+from scipy.signal import gaussian
 
 from scanomatic.data_processing.growth_phenotypes import Phenotypes
 

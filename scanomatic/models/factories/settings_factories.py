@@ -1,5 +1,7 @@
-import scanomatic.models.settings_models as settings_models
+from __future__ import absolute_import
+
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
+import scanomatic.models.settings_models as settings_models
 
 
 class VersionChangeFactory(AbstractModelFactory):

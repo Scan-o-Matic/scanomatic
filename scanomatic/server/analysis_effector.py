@@ -1,7 +1,4 @@
 from __future__ import absolute_import
-#
-# DEPENDENCIES
-#
 
 import os
 import time
@@ -10,21 +7,21 @@ import time
 # INTERNAL DEPENDENCIES
 #
 
-from . import proc_effector
+from scanomatic.data_processing.phenotyper import remove_state_from_path
+import scanomatic.image_analysis.analysis_image as analysis_image
+from scanomatic.io.app_config import Config as AppConfig
+import scanomatic.io.first_pass_results as first_pass_results
 import scanomatic.io.image_data as image_data
 from scanomatic.io.paths import Paths
-from scanomatic.io.app_config import Config as AppConfig
-import scanomatic.image_analysis.analysis_image as analysis_image
-from scanomatic.models.rpc_job_models import JOB_TYPE
-from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.factories.fixture_factories import (
-    GrayScaleAreaModelFactory, FixturePlateFactory
-)
-from scanomatic.models.factories.features_factory import FeaturesFactory
-from scanomatic.models.analysis_model import DEFAULT_PINNING_FORMAT
-import scanomatic.io.first_pass_results as first_pass_results
 import scanomatic.io.rpc_client as rpc_client
-from scanomatic.data_processing.phenotyper import remove_state_from_path
+from scanomatic.models.analysis_model import DEFAULT_PINNING_FORMAT
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.factories.features_factory import FeaturesFactory
+from scanomatic.models.factories.fixture_factories import (
+    FixturePlateFactory, GrayScaleAreaModelFactory
+)
+from scanomatic.models.rpc_job_models import JOB_TYPE
+from . import proc_effector
 
 
 def get_label_from_analysis_model(analysis_model, id_hash):

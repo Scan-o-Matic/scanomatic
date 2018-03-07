@@ -1,7 +1,9 @@
 __author__ = 'martin'
 
-import os
+from __future__ import absolute_import
+
 import glob
+import os
 import re
 
 import scanomatic.io.logger as logger

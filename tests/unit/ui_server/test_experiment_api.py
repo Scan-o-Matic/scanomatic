@@ -1,13 +1,16 @@
+from __future__ import absolute_import
+
 from StringIO import StringIO
 from datetime import timedelta
 from hashlib import sha256
 import httplib as HTTPStatus
 import json
 import os
-import pytest
 from types import MethodType
+
 from flask import Flask, url_for
 from mock import MagicMock, patch
+import pytest
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths

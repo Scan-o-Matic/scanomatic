@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+
 import numpy as np
 
 #
 #   INTERNAL DEPENDENCIES
 #
 
-import mock_numpy_interface
+from . import mock_numpy_interface
 
 
 class Data_Bridge(mock_numpy_interface.NumpyArrayInterface):

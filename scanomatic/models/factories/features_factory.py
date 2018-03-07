@@ -1,7 +1,11 @@
+from __future__ import absolute_import
+
 import os
 from types import StringTypes
 
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory, email_serializer
+from scanomatic.generics.abstract_model_factory import (
+    AbstractModelFactory, email_serializer
+)
 import scanomatic.models.features_model as features_model
 
 

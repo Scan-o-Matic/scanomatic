@@ -3,8 +3,11 @@
 # DEPENDENCIES
 #
 
-import numpy as np
+from __future__ import absolute_import
+
 import types
+
+import numpy as np
 
 #
 # CLASSES
