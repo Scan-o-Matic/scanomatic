@@ -647,11 +647,12 @@ class TestSaving:
     @mock.patch(
         'scanomatic.data_processing.calibration._ccc_edit_validator',
         return_value=True)
-    def test_set_image_info(self, validator_mock, save_ccc, store, ccc):
+    def test_set_image_info(self, validator_mock, save_ccc, store, full_ccc):
         save_ccc.reset_mock()
         assert calibration.set_image_info(
             store,
-            ccc[calibration.CellCountCalibration.identifier], 0,
+            full_ccc[CellCountCalibration.identifier],
+            full_ccc[CellCountCalibration.images][0][CCCImage.identifier],
             access_token='not used, but needed')
         assert validator_mock.called
         assert save_ccc.called
@@ -688,7 +689,6 @@ class TestCCCEditValidator:
 
 
 class TestSetColonyCompressedData:
-
     @pytest.fixture
     def measurement(self, store, ccc):
         identifier = ccc[calibration.CellCountCalibration.identifier]
@@ -1175,3 +1175,346 @@ class TestConstructPolynomial:
             CCCPolynomial.coefficients: response['polynomial_coefficients'],
             CCCPolynomial.power: 5,
         })
+
+
+class TestAddImageToCCC:
+    def test_unknown_ccc(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        image = MagicMock()
+        assert not (
+            calibration.add_image_to_ccc(
+                store, 'ccc001', image, access_token='password',
+            )
+        )
+
+    def test_already_activated(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            identifier='ccc001',
+            active=True,
+            access_token='password',
+        )
+        image = MagicMock()
+        assert not (
+            calibration.add_image_to_ccc(
+                store, 'ccc001', image, access_token='password',
+            )
+        )
+
+    def test_add_image(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            identifier='ccc001',
+            active=False,
+            access_token='password',
+        )
+        store.count_images_for_calibration.return_value = 5
+        image = MagicMock()
+        assert (
+            calibration.add_image_to_ccc(
+                store, 'ccc001', image, access_token='password',
+            )
+        )
+        image.save.assert_called()
+        store.add_image_to_calibration.assert_called_with('ccc001', {
+            CCCImage.identifier: 'CalibIm_5',
+            CCCImage.plates: {},
+            CCCImage.grayscale_name: None,
+            CCCImage.grayscale_source_values: None,
+            CCCImage.grayscale_target_values: None,
+            CCCImage.marker_x: None,
+            CCCImage.marker_y: None,
+            CCCImage.fixture: None,
+        })
+
+
+    @mock.patch(
+        'scanomatic.data_processing.calibration._ccc_edit_validator',
+        return_value=True)
+    def test_add_image_to_ccc(self, validator_mock, save_ccc, store, ccc):
+        save_ccc.reset_mock()
+        image_mock = mock.Mock()
+        assert calibration.add_image_to_ccc(
+            store,
+            ccc[calibration.CellCountCalibration.identifier], image_mock,
+            access_token='not used, but needed')
+        assert validator_mock.called
+        assert save_ccc.called
+        assert image_mock.save.called
+
+
+def make_image_metadata(identifier='CalibIm_3'):
+    return calibration.get_empty_image_entry(identifier)
+
+
+class TestGetImageIdentifiersInCCC:
+    def test_unknown_ccc(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        assert not (
+            calibration.get_image_identifiers_in_ccc(store, 'unknown')
+        )
+
+    def test_get_identifiers(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_images_for_calibration.return_value = [
+            make_image_metadata(identifier='CalibIm_0'),
+            make_image_metadata(identifier='CalibIm_5'),
+        ]
+        assert (
+            calibration.get_image_identifiers_in_ccc(store, 'unknown')
+            == ['CalibIm_0', 'CalibIm_5']
+        )
+
+
+class TestSetImageInfo:
+    def test_unknown_ccc(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        assert not calibration.set_image_info(
+            store,
+            'unknown',
+            'CalibIm_2',
+            access_token='password',
+            fixture='newFixture',
+        )
+        store.update_calibration_image_with_id.assert_not_called()
+
+    def test_already_activated(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            active=True,
+            access_token='password',
+        )
+        assert not calibration.set_image_info(
+            store,
+            'ccc001',
+            'CalibIm_X',
+            access_token='password',
+            fixture='newFixture',
+        )
+        store.update_calibration_image_with_id.assert_not_called()
+
+    def test_unknown_image(self):
+        store = MagicMock(spec=calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            active=False,
+            access_token='password',
+        )
+        store.has_calibration_image_with_id.return_value = False
+        assert not calibration.set_image_info(
+            store,
+            'ccc001',
+            'CalibIm_1',
+            access_token='password',
+            fixture='newFixture',
+        )
+        store.update_calibration_image_with_id.assert_not_called()
+
+    def test_update_invalid_info(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            active=False,
+            access_token='password',
+        )
+        store.has_calibration_image_with_id.return_value = True
+        assert not calibration.set_image_info(
+            store,
+            'ccc001',
+            'CalibIm_2',
+            access_token='password',
+            foobar='new foobar',
+        )
+        store.update_calibration_image_with_id.assert_not_called()
+
+    def test_update_fixture(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            active=False,
+            access_token='password',
+        )
+        store.has_calibration_image_with_id.return_value = True
+        assert calibration.set_image_info(
+            store,
+            'ccc001',
+            'CalibIm_2',
+            access_token='password',
+            fixture='newFixture',
+        )
+        store.update_calibration_image_with_id.assert_called_with(
+            'ccc001',
+            'CalibIm_2',
+            {CCCImage.fixture: 'newFixture'},
+        )
+
+
+class TestSetPlateGridInfo:
+    def test_unknown_ccc(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        assert not calibration.set_plate_grid_info(
+            store,
+            'unknown',
+            'CalibIm_2',
+            1,
+            access_token='password',
+            grid_shape=(12, 32),
+            grid_cell_size=(100, 200),
+        )
+
+    def test_already_activated(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            active=True,
+            access_token='password',
+        )
+        store.has_calibration_image_with_id.return_value = True
+        store.has_plate_with_id.return_value = True
+        assert not calibration.set_plate_grid_info(
+            store,
+            'unknown',
+            'CalibIm_2',
+            1,
+            access_token='password',
+            grid_shape=(12, 32),
+            grid_cell_size=(100, 200),
+        )
+
+    def test_unknown_image(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            active=False,
+            access_token='password',
+        )
+        store.has_calibration_image_with_id.return_value = False
+        store.has_plate_with_id.return_value = False
+        assert not calibration.set_plate_grid_info(
+            store,
+            'unknown',
+            'CalibIm_2',
+            1,
+            access_token='password',
+            grid_shape=(12, 32),
+            grid_cell_size=(100, 200),
+        )
+
+    def test_add_new_plate(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            active=False,
+            access_token='password',
+        )
+        store.has_calibration_image_with_id.return_value = True
+        store.has_plate_with_id.return_value = False
+        store.has_measurements_for_plate.return_value = False
+        assert calibration.set_plate_grid_info(
+            store,
+            'ccc000',
+            'CalibIm_2',
+            1,
+            access_token='password',
+            grid_shape=(12, 32),
+            grid_cell_size=(100, 200),
+        )
+        store.add_plate.assert_called_with('ccc000', 'CalibIm_2', 1, {
+            CCCPlate.grid_cell_size: (100, 200),
+            CCCPlate.grid_shape: (12, 32),
+            CCCPlate.compressed_ccc_data: {},
+        })
+        store.update_plate_with_id.assert_not_called()
+
+    def test_update_existing_plate(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            active=False,
+            access_token='password',
+        )
+        store.has_calibration_image_with_id.return_value = True
+        store.has_plate_with_id.return_value = True
+        store.has_measurements_for_plate.return_value = False
+        assert calibration.set_plate_grid_info(
+            store,
+            'ccc000',
+            'CalibIm_2',
+            1,
+            access_token='password',
+            grid_shape=(12, 32),
+            grid_cell_size=(100, 200),
+        )
+        store.update_plate_with_id.assert_called_with('ccc000', 'CalibIm_2', 1, {
+            CCCPlate.grid_cell_size: (100, 200),
+            CCCPlate.grid_shape: (12, 32),
+        })
+        store.add_plate.assert_not_called()
+
+    def test_plate_has_measurements(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            active=False,
+            access_token='password',
+        )
+        img = make_image_metadata(identifier='CalibIm_2')
+        img[CCCImage.plates][1] = {
+            CCCPlate.grid_cell_size: None,
+            CCCPlate.grid_shape: None,
+            CCCPlate.compressed_ccc_data: True
+        }
+        store.has_calibration_image_with_id.return_value = True
+        store.has_plate_with_id.return_value = True
+        store.has_measurements_for_plate.return_value = True
+        assert not calibration.set_plate_grid_info(
+            store,
+            'ccc000',
+            'CalibIm_2',
+            1,
+            access_token='password',
+            grid_shape=(12, 32),
+            grid_cell_size=(100, 200),
+        )
+        store.update_plate_with_id.assert_not_called()
+        store.add_plate.assert_not_called()
+
+
+class TestGetImageJSONFromCCC:
+    def test_unknown_calibration(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        assert (
+            calibration.get_image_json_from_ccc(store, 'ccc000', 'CalibIm0')
+            is None
+        )
+
+    def test_unknown_image(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_images_for_calibration.return_value = [
+            make_image_metadata(identifier='NotCalibIm0'),
+        ]
+        assert (
+            calibration.get_image_json_from_ccc(store, 'ccc000', 'CalibIm0')
+            is None
+        )
+
+    def test_existing_image(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.has_calibration_image_with_id.return_value = True
+        image = make_image_metadata(identifier='CalibIm0')
+        store.get_images_for_calibration.return_value = [image]
+        assert (
+            calibration.get_image_json_from_ccc(store, 'ccc000', 'CalibIm0')
+            == image
+        )
