@@ -958,7 +958,7 @@ def make_calibration(
     else:
         ccc[CellCountCalibration.status] = (
             CalibrationEntryStatus.UnderConstruction
-            )
+        )
     return ccc
 
 
