@@ -48,5 +48,6 @@ def browser(request):
     except Exception as e:
         warnings.warn(str(e))
         driver = request.param()
+    driver.set_page_load_timeout(120)
     yield driver
     driver.close()
