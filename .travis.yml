@@ -39,7 +39,7 @@ jobs:
         firefox: latest
       before_install:
         - sudo pip install tox
-        - wget -N http://chromedriver.storage.googleapis.com/2.30/chromedriver_linux64.zip -P ~/
+        - wget -N http://chromedriver.storage.googleapis.com/2.36/chromedriver_linux64.zip -P ~/
         - unzip ~/chromedriver_linux64.zip -d ~/
         - rm ~/chromedriver_linux64.zip
         - sudo mv -f ~/chromedriver /usr/local/share/
