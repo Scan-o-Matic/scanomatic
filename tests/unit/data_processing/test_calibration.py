@@ -981,8 +981,8 @@ class TestAddCCC:
         store = MagicMock(calibration.CalibrationStore)
         store.has_calibration_with_id.return_value = True
         ccc = make_calibration()
-        calibration.add_ccc(store, ccc)
-        assert store.add_calibration.called_with(ccc)
+        assert not calibration.add_ccc(store, ccc)
+        store.add_calibration.assert_not_called()
 
 
 class TestActivateCCC:
