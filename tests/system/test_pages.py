@@ -96,11 +96,3 @@ def test_status(scanomatic):
     r.raise_for_status()
     assert r.text and len(r.text), '{} is empty'.format(uri)
     assert "<h1>Status</h1>" in r.text
-
-
-def test_settings(scanomatic):
-    uri = '/settings'
-    r = requests.get(scanomatic + uri)
-    r.raise_for_status()
-    assert r.text and len(r.text), '{} is empty'.format(uri)
-    assert "<h1>Settings</h1>" in r.text

@@ -18,7 +18,6 @@ class TestCommonResources:
             'qc_normDrawCurves.js',
             'qc_normHelper.js',
             'scanners.js',
-            'settings.js',
             'simple_graphs.js',
             'status.js',
         ):
