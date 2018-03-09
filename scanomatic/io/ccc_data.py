@@ -200,15 +200,10 @@ def validate_polynomial_format(polynomial):
         raise ValueError(err.message)
 
 
-def _get_new_image_identifier(ccc):
-
-    return "CalibIm_{0}".format(len(ccc[CellCountCalibration.images]))
-
-
-def get_empty_image_entry(ccc):
+def get_empty_image_entry(identifier):
 
     return {
-        CCCImage.identifier: _get_new_image_identifier(ccc),
+        CCCImage.identifier: identifier,
         CCCImage.plates: {},
         CCCImage.grayscale_name: None,
         CCCImage.grayscale_source_values: None,
