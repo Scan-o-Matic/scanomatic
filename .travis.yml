@@ -35,16 +35,9 @@ jobs:
         apt:
           packages:
             - docker-ce
-        chrome: stable
         firefox: latest
       before_install:
         - sudo pip install tox
-        - wget -N http://chromedriver.storage.googleapis.com/2.36/chromedriver_linux64.zip -P ~/
-        - unzip ~/chromedriver_linux64.zip -d ~/
-        - rm ~/chromedriver_linux64.zip
-        - sudo mv -f ~/chromedriver /usr/local/share/
-        - sudo chmod +x /usr/local/share/chromedriver
-        - sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
         - wget -O- 'https://github.com/mozilla/geckodriver/releases/download/v0.19.0/geckodriver-v0.19.0-linux64.tar.gz' | sudo tar -C /usr/local/bin -xz
       before_script:
         - export DISPLAY=':99.0'
