@@ -495,12 +495,12 @@ def validate_polynomial(slope, p_value, stderr):
     return CalibrationValidation.OK
 
 
-def _collect_all_included_data(store, calibrationid):
+def _collect_all_included_data(store, identifier):
     source_values = []
     source_value_counts = []
     target_value = []
 
-    for measurement in store.get_measurements_for_calibration(calibrationid):
+    for measurement in store.get_measurements_for_calibration(identifier):
         source_value_counts.append(measurement[CCCMeasurement.source_value_counts])
         source_values.append(measurement[CCCMeasurement.source_values])
         target_value.append(measurement[CCCMeasurement.cell_count])
