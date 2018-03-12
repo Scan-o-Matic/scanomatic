@@ -1491,7 +1491,7 @@ class TestSetPlateGridInfo:
 class TestGetImageJSONFromCCC:
     def test_unknown_calibration(self):
         store = MagicMock(calibration.CalibrationStore)
-        store.has_calibration_with_id.return_value = True
+        store.has_calibration_with_id.return_value = False
         assert (
             calibration.get_image_json_from_ccc(store, 'ccc000', 'CalibIm0')
             is None
