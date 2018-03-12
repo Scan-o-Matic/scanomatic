@@ -753,6 +753,12 @@ class CalibrationStore(object):
         plate.update(values)
         save_ccc(ccc)
 
+    def get_plate_grid_cell_size(self, calibrationid, imageid, plateid):
+        ccc = self._CCC[calibrationid]
+        image = self._get_image_dict(ccc, imageid)
+        plate = image[CCCImage.plates][plateid]
+        return plate[CCCPlate.grid_cell_size]
+
     def has_plate_with_id(self, calibrationid, imageid, plateid):
         ccc = self._CCC[calibrationid]
         image = self._get_image_dict(ccc, imageid)
