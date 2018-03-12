@@ -35,16 +35,9 @@ jobs:
         apt:
           packages:
             - docker-ce
-        chrome: stable
         firefox: latest
       before_install:
         - sudo pip install tox
-        - wget -N http://chromedriver.storage.googleapis.com/2.36/chromedriver_linux64.zip -P ~/
-        - unzip ~/chromedriver_linux64.zip -d ~/
-        - rm ~/chromedriver_linux64.zip
-        - sudo mv -f ~/chromedriver /usr/local/share/
-        - sudo chmod +x /usr/local/share/chromedriver
-        - sudo ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver
         - wget -O- 'https://github.com/mozilla/geckodriver/releases/download/v0.19.0/geckodriver-v0.19.0-linux64.tar.gz' | sudo tar -C /usr/local/bin -xz
       before_script:
         - export DISPLAY=':99.0'
@@ -52,7 +45,7 @@ jobs:
         - sleep 3
       script:
         - docker-compose build
-        - tox -e system-tests
+        - tox -e system-tests -- --browser firefox
       after_success:
         - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"; docker-compose push; fi
         - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then curl "https://jenkins.molflow.com/buildByToken/buildWithParameters?job=INFRA&token=${JENKINS_TOKEN}"; fi
