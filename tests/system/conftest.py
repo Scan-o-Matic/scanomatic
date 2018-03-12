@@ -37,17 +37,14 @@ def scanomatic(docker_ip, docker_services):
     return url
 
 
-@pytest.fixture(
-    'function',
-    ids=['chrome', 'firefox'],
-    params=[webdriver.Chrome, webdriver.Firefox],
-)
+@pytest.fixture()
 def browser(request):
-    try:
-        driver = request.param()
-    except Exception as e:
-        warnings.warn(str(e))
-        driver = request.param()
-    driver.set_page_load_timeout(120)
+    browser = request.config.getoption('--browser')
+    if browser == 'firefox':
+        driver = webdriver.Firefox()
+    elif browser == 'chrome':
+        driver = webdriver.Chrome()
+    else:
+        raise ValueError('Unknown browser {}'.format(browser))
     yield driver
     driver.close()

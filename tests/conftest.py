@@ -9,6 +9,12 @@ def pytest_addoption(parser):
         default=False,
         help="skip tests marked as slow"
     )
+    parser.addoption(
+        '--browser',
+        action='store',
+        choices=['firefox', 'chrome'],
+        default='firefox',
+    )
 
 
 def pytest_collection_modifyitems(config, items):
