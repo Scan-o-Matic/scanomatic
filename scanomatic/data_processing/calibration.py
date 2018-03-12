@@ -495,21 +495,15 @@ def validate_polynomial(slope, p_value, stderr):
     return CalibrationValidation.OK
 
 
-def _collect_all_included_data(ccc):
+def _collect_all_included_data(store, identifier):
     source_values = []
     source_value_counts = []
     target_value = []
 
-    for id_image, image_data in enumerate(ccc[CellCountCalibration.images]):
-
-        for id_plate, plate in image_data[CCCImage.plates].items():
-
-            for colony_data in plate[CCCPlate.compressed_ccc_data].values():
-
-                source_value_counts.append(
-                    colony_data[CCCMeasurement.source_value_counts])
-                source_values.append(colony_data[CCCMeasurement.source_values])
-                target_value.append(colony_data[CCCMeasurement.cell_count])
+    for measurement in store.get_measurements_for_calibration(identifier):
+        source_value_counts.append(measurement[CCCMeasurement.source_value_counts])
+        source_values.append(measurement[CCCMeasurement.source_values])
+        target_value.append(measurement[CCCMeasurement.cell_count])
 
     sort_order = np.argsort(target_value)
     source_values = [source_values[colony] for colony in sort_order]
@@ -536,20 +530,20 @@ def get_calibration_optimization_function(degree=5):
 
     coeffs = np.zeros((degree + 1,), np.float)
 
-    def poly(data_store, *guess):
+    def poly(measurements, *guess):
         coeffs[:-1] = np.exp(guess)
         return tuple(
             (np.polyval(coeffs, values) * counts).sum()
             for values, counts in
-            zip(data_store.source_values, data_store.source_value_counts))
+            zip(measurements.source_values, measurements.source_value_counts))
 
     return poly
 
 
 def get_calibration_polynomial_residuals(
-        guess, colony_sum_function, data_store):
+        guess, colony_sum_function, measurements):
 
-    return data_store.target_value - colony_sum_function(data_store, *guess)
+    return measurements.target_value - colony_sum_function(measurements, *guess)
 
 
 def get_calibration_polynomial(coefficients_array):
@@ -567,7 +561,7 @@ def poly_as_text(poly):
     return "y = {0}".format(" + ".join(coeffs()))
 
 
-def calculate_polynomial(data_store, degree=5):
+def calculate_polynomial(measurements, degree=5):
 
     fit_function = get_calibration_optimization_function(degree)
 
@@ -586,7 +580,7 @@ def calculate_polynomial(data_store, degree=5):
         poly_vals, _ = leastsq(
             get_calibration_polynomial_residuals,
             p0,
-            args=(fit_function, data_store)
+            args=(fit_function, measurements)
         )
     except TypeError:
         raise CCCConstructionError("Invalid data (probably too little)")
@@ -604,19 +598,18 @@ def calculate_polynomial(data_store, degree=5):
 @_validate_ccc_edit_request
 def construct_polynomial(store, identifier, power):
 
-    ccc = store.get_calibration_by_id(identifier)
-    data_store = _collect_all_included_data(ccc)
+    measurements = _collect_all_included_data(store, identifier)
     try:
-        poly_coeffs = calculate_polynomial(data_store, power).tolist()
+        poly_coeffs = calculate_polynomial(measurements, power).tolist()
     except CCCConstructionError:
         return {
             'validation': CalibrationValidation.BadData
         }
     poly = get_calibration_polynomial(poly_coeffs)
 
-    calculated_sizes = calculate_sizes(data_store, poly)
+    calculated_sizes = calculate_sizes(measurements, poly)
     slope, intercept, _, p_value, stderr = linregress(
-        data_store.target_value, calculated_sizes)
+        measurements.target_value, calculated_sizes)
 
     validation = validate_polynomial(slope, p_value, stderr)
 
@@ -626,7 +619,7 @@ def construct_polynomial(store, identifier, power):
         )
     return {
         'polynomial_coefficients': poly_coeffs,
-        'measured_sizes': data_store.target_value.tolist(),
+        'measured_sizes': measurements.target_value.tolist(),
         'calculated_sizes': calculated_sizes,
         'validation': validation.name,
         'correlation': {
@@ -639,24 +632,23 @@ def construct_polynomial(store, identifier, power):
 
 
 def get_all_colony_data(store, identifier):
-    ccc = store.get_calibration_by_id(identifier)
-    data_store = _collect_all_included_data(ccc)
-    if data_store.source_values:
-        min_values = min(min(vector) for vector in data_store.source_values)
-        max_values = max(max(vector) for vector in data_store.source_values)
+    measurements = _collect_all_included_data(store, identifier)
+    if measurements.source_values:
+        min_values = min(min(vector) for vector in measurements.source_values)
+        max_values = max(max(vector) for vector in measurements.source_values)
     else:
         min_values = 0
         max_values = 0
-    if data_store.source_value_counts:
+    if measurements.source_value_counts:
         max_counts = max(
-            max(vector) for vector in data_store.source_value_counts
+            max(vector) for vector in measurements.source_value_counts
         )
     else:
         max_counts = 0
     return {
-        'source_values': data_store.source_values,
-        'source_value_counts': data_store.source_value_counts,
-        'target_values': data_store.target_value.tolist(),
+        'source_values': measurements.source_values,
+        'source_value_counts': measurements.source_value_counts,
+        'target_values': measurements.target_value.tolist(),
         'min_source_values': min_values,
         'max_source_values': max_values,
         'max_source_counts': max_counts,
@@ -719,3 +711,10 @@ class CalibrationStore(object):
     def get_all_calibrations(self):
         for id_ in self._CCC:
             yield self._CCC[id_]
+
+    def get_measurements_for_calibration(self, calibrationid):
+        ccc = self._CCC[calibrationid]
+        for image in ccc[CellCountCalibration.images]:
+            for plate in image[CCCImage.plates].values():
+                for measurement in plate[CCCPlate.compressed_ccc_data].values():
+                    yield measurement
