@@ -21,10 +21,13 @@ export default class ScanningRootContainer extends React.Component {
     }
 
     componentDidMount() {
-        this.getJobStatusRequests();
+        this.getJobStatusRequests(true);
     }
 
-    getJobStatusRequests() {
+    getJobStatusRequests(monitor) {
+        if (monitor) {
+            setTimeout(() => this.getJobStatusRequests(true), 10000);
+        }
         getScanningJobs()
             .then(jobs => this.setState({ jobs }))
             .catch(reason => this.setState({ error: `Error requesting jobs: ${reason}` }));
