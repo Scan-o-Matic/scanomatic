@@ -55,10 +55,17 @@ export default function ScanningJobPanel(props) {
             </div>
         );
     }
+    let labelStyle = 'label label-default';
+    if (props.status === 'Running') {
+        labelStyle = 'label label-info';
+    } else if (props.status === 'Completed') {
+        labelStyle = 'label label-success';
+    }
     return (
         <div className="panel panel-default job-listing" id={`job-${props.identifier}`}>
             <div className="panel-heading">
                 <h3 className="panel-title">{props.name}</h3>
+                <span className={labelStyle}>{props.status}</span>
             </div>
             {showStart}
             <div className="job-description">
@@ -85,6 +92,7 @@ ScanningJobPanel.propTypes = {
         minutes: PropTypes.number.isRequired,
     }).isRequired,
     scanner: SoMPropTypes.scannerType,
+    status: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     interval: PropTypes.number.isRequired,
     startTime: PropTypes.string,

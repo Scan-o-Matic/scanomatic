@@ -15,6 +15,14 @@ div.panel button {
   margin: 0.25em;
 }
 
+div.panel-heading h3 {
+  display: inline-block;
+}
+
+div.panel-heading .label {
+  float: right;
+}
+
 button.new-job {
   display: inline-block;
   margin-bottom: 0.5em;
