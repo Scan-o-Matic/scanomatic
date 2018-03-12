@@ -17,6 +17,7 @@ div.panel button {
 
 div.panel-heading h3 {
   display: inline-block;
+  font-weight: bold;
 }
 
 div.panel-heading .label {
@@ -37,7 +38,14 @@ button.new-job {
   vertical-align: middle;
 }
 
-.job-status {
-  display: inline-block;
-  font-weight: bold;
+.job-description .progress {
+  margin-bottom: 0;
+}
+
+table.job-stats {
+  margin: 0.5em 0 0 0;
+}
+
+table.job-stats tr td:first-child {
+  background-color: #f5f5f5;
 }

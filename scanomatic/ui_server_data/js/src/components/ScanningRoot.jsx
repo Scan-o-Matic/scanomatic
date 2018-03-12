@@ -2,14 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import NewScanningJobContainer from '../containers/NewScanningJobContainer';
 import SoMPropTypes from '../prop-types';
-import ScanningJobPanel from './ScanningJobPanel';
-
-export function duration2milliseconds(duration) {
-    if (duration) {
-        return (duration.minutes * 60000) + (duration.hours * 3600000) + (duration.days * 86400000);
-    }
-    return 0;
-}
+import ScanningJobPanel, { duration2milliseconds } from './ScanningJobPanel';
 
 export function getStatus(startTime, duration, now) {
     const endTime = new Date(startTime) - -duration2milliseconds(duration);
@@ -17,14 +10,11 @@ export function getStatus(startTime, duration, now) {
         return 'Planned';
     } else if (endTime > now - 0) {
         return 'Running';
-    } else if (endTime > now - 3600000) {
-        return 'Completed';
     }
-    return null;
+    return 'Completed';
 }
 
 export function jobSorter(a, b) {
-    console.log(a, b);
     if (a.status === 'Planned' && b.status !== 'Planned') {
         return -1;
     } else if (b.status === 'Planned' && a.status !== 'Planned') {
@@ -72,7 +62,7 @@ export default function ScanningRoot(props) {
             });
         jobList = (
             <div className="jobs-list">
-                {jobs.sort(jobSorter)}
+                {jobs}
             </div>
         );
     }
