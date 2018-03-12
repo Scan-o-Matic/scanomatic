@@ -436,7 +436,6 @@ def set_colony_compressed_data(
         store, identifier, image_identifier, plate_id, x, y, cell_count,
         image, blob_filter, background_filter):
 
-    ccc = store.get_calibration_by_id(identifier)
     background = mid50_mean(image[background_filter].ravel())
     if np.isnan(background):
         _logger.error(
@@ -453,17 +452,14 @@ def set_colony_compressed_data(
         _logger.error(
             "Counting mismatch between compressed format and blob filter")
         return False
-
-    image_data = get_image_json_from_ccc(store, identifier, image_identifier)
-    plate = image_data[CCCImage.plates][plate_id]
-
-    plate[CCCPlate.compressed_ccc_data][(x, y)] = {
+    measurement = {
         CCCMeasurement.source_value_counts: counts,
         CCCMeasurement.source_values: values,
         CCCMeasurement.cell_count: cell_count,
     }
-
-    return save_ccc_to_disk(store, ccc)
+    store.set_measurement(
+        identifier, image_identifier, plate_id, x, y, measurement)
+    return True
 
 
 def calculate_sizes(data, poly):
@@ -767,3 +763,10 @@ class CalibrationStore(object):
         image = self._get_image_dict(ccc, imageid)
         plate = image[CCCImage.plates][plateid]
         return bool(plate[CCCPlate.compressed_ccc_data])
+
+    def set_measurement(self, calibrationid, imageid, plateid, col, row, measurement):
+        ccc = self._CCC[calibrationid]
+        image = self._get_image_dict(ccc, imageid)
+        plate = image[CCCImage.plates][plateid]
+        plate[CCCPlate.compressed_ccc_data][(col, row)] = measurement
+        save_ccc(ccc)
