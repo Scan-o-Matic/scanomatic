@@ -31,13 +31,8 @@ export default function ScanningJobPanel(props) {
     const { scanner } = props;
     let showStart = null;
     let status = null;
-    const jobDuration = (
-        <tr>
-            <td>Duration</td>
-            <td>{duration.join(' ')}</td>
-        </tr>
-    );
     let scanFrequency;
+    let links;
     if (props.status === 'Running') {
         const progress = getProgress(props).toFixed(1);
         status = (
@@ -55,21 +50,31 @@ export default function ScanningJobPanel(props) {
             </div>
         );
         scanFrequency = (
-            <tr>
+            <tr className="job-info job-interval">
                 <td>Frequency</td>
                 <td>Scanning every {props.interval} minutes</td>
             </tr>
         );
     } else if (props.status === 'Completed') {
         scanFrequency = (
-            <tr>
+            <tr className="job-info job-interval">
                 <td>Frequency</td>
                 <td>Scanned every {props.interval} minutes</td>
             </tr>
         );
+        links = (
+            <div className="text-right job-links">
+                <a href={`/compile?projectdirectory=root/${props.identifier}`}>
+                    Compile project
+                </a>
+                <a href={`/qc_norm?analysisdirectory=${encodeURI(props.identifier)}/analysis&project=${encodeURI(props.name)}`}>
+                    QC project
+                </a>
+            </div>
+        );
     } else if (props.disableStart || !scanner || scanner.owned || !scanner.power) {
         scanFrequency = (
-            <tr>
+            <tr className="job-info job-interval">
                 <td>Frequency</td>
                 <td>Scan every {props.interval} minutes</td>
             </tr>
@@ -81,7 +86,7 @@ export default function ScanningJobPanel(props) {
         );
     } else {
         scanFrequency = (
-            <tr>
+            <tr className="job-info job-interval">
                 <td>Frequency</td>
                 <td>Scan every {props.interval} minutes</td>
             </tr>
@@ -92,19 +97,25 @@ export default function ScanningJobPanel(props) {
             </button>
         );
     }
+    const jobDuration = (
+        <tr className="job-info job-duration">
+            <td>Duration</td>
+            <td>{duration.join(' ')}</td>
+        </tr>
+    );
     let jobScanner;
     if (props.status === 'Completed') {
         jobScanner = null;
     } else if (scanner) {
         jobScanner = (
-            <tr>
+            <tr className="job-info job-scanner">
                 <td>Scanner</td>
                 <td>{scanner.name} ({scanner.power ? 'online' : 'offline'}, {scanner.owned ? 'occupied' : 'free'})</td>
             </tr>
         );
     } else {
         jobScanner = (
-            <tr>
+            <tr className="job-info job-scanner">
                 <td>Scanner</td>
                 <td>Retrieving scanner status...</td>
             </tr>
@@ -114,21 +125,21 @@ export default function ScanningJobPanel(props) {
     let jobEnd;
     if (props.startTime) {
         jobStart = (
-            <tr>
+            <tr className="job-info job-start">
                 <td>Started</td>
                 <td>{`${new Date(props.startTime)}`}</td>
             </tr>
         );
         if (props.status === 'Completed') {
             jobEnd = (
-                <tr>
+                <tr className="job-info job-end">
                     <td>Ended</td>
                     <td>{`${new Date(new Date(props.startTime) - -duration2milliseconds(props.duration))}`}</td>
                 </tr>
             );
         } else {
             jobEnd = (
-                <tr>
+                <tr className="job-info job-end">
                     <td>Will end</td>
                     <td>{`${new Date(new Date(props.startTime) - -duration2milliseconds(props.duration))}`}</td>
                 </tr>
@@ -160,14 +171,7 @@ export default function ScanningJobPanel(props) {
                     </tbody>
                 </table>
             </div>
-            <div className="text-right">
-                <a href={`/compile?projectdirectory=root/${props.identifier}`}>
-                    Compile project
-                </a>
-                <a href={`/qc_norm?analysisdirectory=${encodeURI(props.identifier)}/analysis&project=${encodeURI(props.name)}`}>
-                    QC project
-                </a>
-            </div>
+            {links}
         </div>
     );
 }
