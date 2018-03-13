@@ -19,7 +19,7 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table(
+    calibrations_table = op.create_table(
         'calibrations',
         sa.Column('id', sa.Text(), primary_key=True),
         sa.Column('species', sa.Text(), nullable=False),
@@ -94,6 +94,15 @@ def upgrade():
             name='fk_calibration_measurements_plate_key',
         ),
     )
+    op.bulk_insert(calibrations_table, [{
+        'id': 'default',
+        'species': 'S. cerevisiae',
+        'reference': 'Zackrisson et. al. 2016',
+        'polynomial': [
+            3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.
+        ],
+        'status': 'active',
+    }])
 
 
 def downgrade():
