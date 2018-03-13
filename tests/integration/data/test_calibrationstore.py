@@ -223,7 +223,7 @@ class TestSetCalibrationStatus:
     def test_activate_unknown(self, store):
         with pytest.raises(LookupError):
             store.set_calibration_status(
-                    'unknown', CalibrationEntryStatus.Active)
+                'unknown', CalibrationEntryStatus.Active)
 
 
 class TestAddImageToCalibration:
@@ -254,9 +254,9 @@ class TestAddImageToCalibration:
 
     def test_add_same_id_different_calibration(self, store, dbconnection):
         store.add_calibration(
-                make_calibration(identifier='ccc001', species='x'))
+            make_calibration(identifier='ccc001', species='x'))
         store.add_calibration(
-                make_calibration(identifier='ccc002', species='y'))
+            make_calibration(identifier='ccc002', species='y'))
         store.add_image_to_calibration('ccc001', 'image001')
         store.add_image_to_calibration('ccc002', 'image001')
         assert list(dbconnection.execute('''
@@ -304,9 +304,9 @@ class TestCountImagesForCalibration:
 
     def test_multiple_calibrations(self, store):
         store.add_calibration(
-                make_calibration(identifier='ccc001', species='x'))
+            make_calibration(identifier='ccc001', species='x'))
         store.add_calibration(
-                make_calibration(identifier='ccc002', species='y'))
+            make_calibration(identifier='ccc002', species='y'))
         store.add_image_to_calibration('ccc001', 'image001')
         store.add_image_to_calibration('ccc001', 'image002')
         store.add_image_to_calibration('ccc002', 'image003')
@@ -316,9 +316,9 @@ class TestCountImagesForCalibration:
 class TestGetImagesForCalibration:
     def test_get_images(self, store):
         store.add_calibration(
-                make_calibration(identifier='ccc001', species='x'))
+            make_calibration(identifier='ccc001', species='x'))
         store.add_calibration(
-                make_calibration(identifier='ccc002', species='y'))
+            make_calibration(identifier='ccc002', species='y'))
         store.add_image_to_calibration('ccc001', 'image001')
         store.add_image_to_calibration('ccc001', 'image002')
         store.add_image_to_calibration('ccc002', 'image003')
@@ -551,9 +551,9 @@ class TestHasMeasurementsForPlate:
 class TestGetMeasurementsForCalibration:
     def test_get(self, store):
         store.add_calibration(
-                make_calibration(identifier='ccc001', species='x'))
+            make_calibration(identifier='ccc001', species='x'))
         store.add_calibration(
-                make_calibration(identifier='ccc002', species='y'))
+            make_calibration(identifier='ccc002', species='y'))
         store.add_image_to_calibration('ccc001', 'img001')
         store.add_image_to_calibration('ccc002', 'img002')
         store.add_plate('ccc001', 'img001', 1, make_plate())

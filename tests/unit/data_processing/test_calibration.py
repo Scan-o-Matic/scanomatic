@@ -91,6 +91,106 @@ class TestGetCalibrationOptimizationFunction:
             calc == target for calc, target in zip(sums, data.target_value)
         )
 
+    @pytest.fixture(scope='session')
+    def poly2(self):
+        return calibration.get_calibration_optimization_function(2)
+
+    @pytest.fixture(scope='session')
+    def poly4(self):
+        return calibration.get_calibration_optimization_function(4)
+
+    @pytest.mark.parametrize("calibration_data,coeffs,expected", (
+        (
+            calibration.CalibrationData([[2], [3]], [[1], [1]], []),
+            (0, 0),
+            (6, 12),
+        ),
+        (
+            calibration.CalibrationData([[2], [2]], [[1], [2]], []),
+            (np.log(2), EVAL_AS_ZERO),
+            (8, 16),
+        ),
+        (
+            calibration.CalibrationData([[2], [1]], [[1], [1]], []),
+            (EVAL_AS_ZERO, np.log(2)),
+            (4, 2),
+        ),
+    ))
+    def test_calibration_curve_fit_polynomial_function_many_colonies(
+        self, calibration_data, coeffs, expected, poly2
+    ):
+        assert poly2(calibration_data, *coeffs) == expected
+
+    @pytest.mark.parametrize("calibration_data,coeffs,expected", (
+        (
+            calibration.CalibrationData([[1]], [[1]], []),
+            (np.log(2), EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO),
+            (2,),
+        ),
+        (
+            calibration.CalibrationData([[1]], [[1]], []),
+            (EVAL_AS_ZERO, np.log(2), EVAL_AS_ZERO, EVAL_AS_ZERO),
+            (2,),
+        ),
+        (
+            calibration.CalibrationData([[1]], [[1]], []),
+            (EVAL_AS_ZERO, EVAL_AS_ZERO, np.log(2), EVAL_AS_ZERO),
+            (2,),
+        ),
+        (
+            calibration.CalibrationData([[1]], [[1]], []),
+            (EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO, np.log(2)),
+            (2,),
+        ),
+        (
+            calibration.CalibrationData([[2]], [[1]], []),
+            (0, EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO),
+            (16,),
+        ),
+        (
+            calibration.CalibrationData([[2]], [[1]], []),
+            (EVAL_AS_ZERO, 0, EVAL_AS_ZERO, EVAL_AS_ZERO),
+            (8,),
+        ),
+        (
+            calibration.CalibrationData([[2]], [[1]], []),
+            (EVAL_AS_ZERO, EVAL_AS_ZERO, 0, EVAL_AS_ZERO),
+            (4,),
+        ),
+        (
+            calibration.CalibrationData([[2]], [[1]], []),
+            (EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO, 0),
+            (2,),
+        ),
+    ))
+    def test_calibration_curve_fit_polynomial_function_each_coeff(
+        self, calibration_data, coeffs, expected, poly4
+    ):
+        assert poly4(calibration_data, *coeffs) == pytest.approx(expected)
+
+    @pytest.mark.parametrize('x, coeffs, test_coeffs', (
+        (5, [1, 1, 0], [0, 0]),
+        (
+            6,
+            [42, 0, 0, 7, 0],
+            [np.log(42), EVAL_AS_ZERO, EVAL_AS_ZERO, np.log(7)],
+        ),
+    ))
+    def test_calibration_functions_give_equal_results(
+        self, x, coeffs, test_coeffs
+    ):
+
+        poly_fitter = calibration.get_calibration_optimization_function(
+            len(test_coeffs))
+        poly = calibration.get_calibration_polynomial(coeffs)
+
+        assert poly(x) == pytest.approx(
+            poly_fitter(
+                calibration.CalibrationData([[x]], [[1]], [0]),
+                *test_coeffs)[0])
+
+
+
 
 class TestAccessToken:
     IDENTIFIER = 'foobar'
@@ -434,107 +534,6 @@ class TestGettingActiveCCCs:
         )
         with pytest.raises(KeyError):
             calibration.get_polynomial_coefficients_from_ccc(store, 'ccc000')
-
-
-class TestGetCalibrationOptimizationFunction:
-
-    @pytest.fixture(scope='session')
-    def poly2(self):
-        return calibration.get_calibration_optimization_function(2)
-
-    @pytest.fixture(scope='session')
-    def poly4(self):
-        return calibration.get_calibration_optimization_function(4)
-
-    @pytest.mark.parametrize("calibration_data,coeffs,expected", (
-        (
-            calibration.CalibrationData([[2], [3]], [[1], [1]], []),
-            (0, 0),
-            (6, 12),
-        ),
-        (
-            calibration.CalibrationData([[2], [2]], [[1], [2]], []),
-            (np.log(2), EVAL_AS_ZERO),
-            (8, 16),
-        ),
-        (
-            calibration.CalibrationData([[2], [1]], [[1], [1]], []),
-            (EVAL_AS_ZERO, np.log(2)),
-            (4, 2),
-        ),
-    ))
-    def test_calibration_curve_fit_polynomial_function_many_colonies(
-        self, calibration_data, coeffs, expected, poly2
-    ):
-        assert poly2(calibration_data, *coeffs) == expected
-
-    @pytest.mark.parametrize("calibration_data,coeffs,expected", (
-        (
-            calibration.CalibrationData([[1]], [[1]], []),
-            (np.log(2), EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO),
-            (2,),
-        ),
-        (
-            calibration.CalibrationData([[1]], [[1]], []),
-            (EVAL_AS_ZERO, np.log(2), EVAL_AS_ZERO, EVAL_AS_ZERO),
-            (2,),
-        ),
-        (
-            calibration.CalibrationData([[1]], [[1]], []),
-            (EVAL_AS_ZERO, EVAL_AS_ZERO, np.log(2), EVAL_AS_ZERO),
-            (2,),
-        ),
-        (
-            calibration.CalibrationData([[1]], [[1]], []),
-            (EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO, np.log(2)),
-            (2,),
-        ),
-        (
-            calibration.CalibrationData([[2]], [[1]], []),
-            (0, EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO),
-            (16,),
-        ),
-        (
-            calibration.CalibrationData([[2]], [[1]], []),
-            (EVAL_AS_ZERO, 0, EVAL_AS_ZERO, EVAL_AS_ZERO),
-            (8,),
-        ),
-        (
-            calibration.CalibrationData([[2]], [[1]], []),
-            (EVAL_AS_ZERO, EVAL_AS_ZERO, 0, EVAL_AS_ZERO),
-            (4,),
-        ),
-        (
-            calibration.CalibrationData([[2]], [[1]], []),
-            (EVAL_AS_ZERO, EVAL_AS_ZERO, EVAL_AS_ZERO, 0),
-            (2,),
-        ),
-    ))
-    def test_calibration_curve_fit_polynomial_function_each_coeff(
-        self, calibration_data, coeffs, expected, poly4
-    ):
-        assert poly4(calibration_data, *coeffs) == pytest.approx(expected)
-
-    @pytest.mark.parametrize('x, coeffs, test_coeffs', (
-        (5, [1, 1, 0], [0, 0]),
-        (
-            6,
-            [42, 0, 0, 7, 0],
-            [np.log(42), EVAL_AS_ZERO, EVAL_AS_ZERO, np.log(7)],
-        ),
-    ))
-    def test_calibration_functions_give_equal_results(
-        self, x, coeffs, test_coeffs
-    ):
-
-        poly_fitter = calibration.get_calibration_optimization_function(
-            len(test_coeffs))
-        poly = calibration.get_calibration_polynomial(coeffs)
-
-        assert poly(x) == pytest.approx(
-            poly_fitter(
-                calibration.CalibrationData([[x]], [[1]], [0]),
-                *test_coeffs)[0])
 
 
 class TestCalculatePolynomial:

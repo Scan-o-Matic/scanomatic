@@ -1,26 +1,14 @@
 from __future__ import absolute_import
 
-from itertools import product
 import json
 import os
 
-from flask import Flask
 import mock
 import numpy as np
 import pytest
-from scipy.ndimage import center_of_mass
-from scipy.stats import norm
 
 from scanomatic.data_processing import calibration
-from scanomatic.io.ccc_data import (
-    parse_ccc, CellCountCalibration, CalibrationEntryStatus, CCCPolynomial
-)
-from scanomatic.io.paths import Paths
-from scanomatic.models.analysis_model import COMPARTMENTS
-from scanomatic.ui_server import calibration_api
-from scanomatic.ui_server.calibration_api import (
-    get_bounding_box_for_colony, get_colony_detection
-)
+from scanomatic.io.ccc_data import CellCountCalibration, parse_ccc
 import scanomatic.ui_server.database as db
 
 
@@ -88,7 +76,6 @@ class TestFinalizeEndpoint:
             data={"access_token": token},
             follow_redirects=True
         )
-        print(response.data)
         expected = "Invalid access token or CCC not under construction"
         assert (
             json.loads(response.data)['reason'] == expected
@@ -208,7 +195,7 @@ class TestDeleteEndpoint:
         ), "POST with bad token gave unexpected reason {0} (expected '{1}')".format(
             json.loads(response.data)['reason'], expected)
         assert (
-             response.status_code == 401
+            response.status_code == 401
         ), "POST with bad token gave unexpected response {} (expected 401)".format(
             response.status)
 
@@ -294,13 +281,6 @@ class TestCompressCalibration:
             yield function
 
     @pytest.fixture
-    def set_colony_compressed_data(self):
-        with mock.patch(
-            'scanomatic.ui_server.calibration_api.calibration.set_colony_compressed_data'
-        ) as function:
-            yield function
-
-    @pytest.fixture
     def params(self):
         return {
             "blob": [[0] * 20, [1] * 20],
@@ -368,7 +348,7 @@ class TestConstructCalibration:
         (
             ('XXX', 5, 'heelo', 401),  # Unknown ccc
             ('testgoodedit', 5, 'heelo', 401),  # Bad access_token
-            ('testgoodedit', -1,  'password', 404),  # Bad power
+            ('testgoodedit', -1, 'password', 404),  # Bad power
         )
     )
     def test_fails_with_bad_parameters(
@@ -381,8 +361,6 @@ class TestConstructCalibration:
             data=json.dumps({'acccess_token': access_token}))
         assert response.status_code == expected_status
 
-    # TODO
-    @pytest.mark.skip
     def test_returns_a_polynomial(self, client, finalizable_ccc):
         ccc_identifier = 'testgoodedit'
         power = 5

@@ -82,7 +82,9 @@ def upgrade():
         sa.Column(
             'source_values', pg.ARRAY(sa.Float, dimensions=1), nullable=False),
         sa.Column(
-            'source_value_counts', pg.ARRAY(sa.Integer, dimensions=1), nullable=False),
+            'source_value_counts',
+            pg.ARRAY(sa.Integer, dimensions=1),
+            nullable=False),
         sa.Column('cell_count', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ['calibration_id', 'image_id', 'plate_id'],
