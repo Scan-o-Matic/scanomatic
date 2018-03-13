@@ -17,7 +17,9 @@ MockedGridCell = namedtuple('GridCell', ['xy1', 'xy2'])
 def _get_grid_array_instance(im):
     image_identifier = [42, 1337]
     pinning = (8, 12)
-    analysis_model = AnalysisModelFactory.create()
+    analysis_model = AnalysisModelFactory.create(cell_count_calibration=[
+        3.37979631088055e-05, 0.0, 0.0, 0.0, 48.9906142768851, 0.0
+    ])
     analysis_model.output_directory = ""
     grid_array_instance = grid_array_module.GridArray(
         image_identifier, pinning, analysis_model)

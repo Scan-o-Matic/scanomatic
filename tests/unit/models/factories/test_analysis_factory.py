@@ -7,15 +7,35 @@ import numpy as np
 import pytest
 
 from scanomatic.data_processing.calibration import (
-    CalibrationStore, get_polynomial_coefficients_from_ccc
+    get_polynomial_coefficients_from_ccc
 )
 from scanomatic.models.analysis_model import AnalysisModel
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from tests.factories import mkcalibration
+
+
+@pytest.fixture
+def calibrationstore():
+    return mock.MagicMock()
+
+
+@pytest.fixture(autouse=True)
+def store_from_env(calibrationstore):
+    calibrationstore.get_all_calibrations.return_value = [
+        mkcalibration(identifier='default', active=True),
+    ]
+    calibrationstore.get_calibration_by_id.return_value = (
+        mkcalibration(active=True)
+    )
+    with mock.patch(
+        'scanomatic.models.factories.analysis_factories.store_from_env',
+    ) as store_from_env:
+        store_from_env.return_value.__enter__.return_value = calibrationstore
+        yield
 
 
 @pytest.fixture(scope='function')
-def analysis_model():
-
+def analysis_model(store_from_env):
     return AnalysisModelFactory.create()
 
 
@@ -53,15 +73,15 @@ class TestAnalysisModels:
         assert len(result) == 1
         assert isinstance(result[0], AnalysisModel)
 
-    def test_can_create_using_default_ccc(self, analysis_model):
-
-        default = get_polynomial_coefficients_from_ccc(
-            CalibrationStore(), 'default')
-
+    def test_can_create_using_default_ccc(self, calibrationstore):
+        default = [1, 2, 3, 4]
+        calibrationstore.get_calibration_by_id.return_value = (
+            mkcalibration(polynomial=default, active=True)
+        )
+        model = AnalysisModelFactory.create()
         np.testing.assert_allclose(
-            analysis_model.cell_count_calibration, default)
-
-        assert analysis_model.cell_count_calibration_id == 'default'
+            model.cell_count_calibration, default)
+        assert model.cell_count_calibration_id == 'default'
 
     def test_doesnt_overwrite_poly_coeffs_if_no_ccc_specified(self):
 
@@ -79,9 +99,9 @@ class TestAnalysisModels:
         assert model.cell_count_calibration_id == 'mock'
         np.testing.assert_allclose(model.cell_count_calibration, [1, 3, 9, 27])
 
-    def test_create_with_unknown_ccc_raises_error(self):
-
-        with pytest.raises(KeyError):
+    def test_create_with_unknown_ccc_raises_error(self, calibrationstore):
+        calibrationstore.get_calibration_by_id.side_effect = LookupError
+        with pytest.raises(LookupError):
             AnalysisModelFactory.create(cell_count_calibration_id='BadCCC')
 
     @pytest.mark.parametrize('basename', (
