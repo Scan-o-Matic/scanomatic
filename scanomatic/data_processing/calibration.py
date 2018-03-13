@@ -770,7 +770,9 @@ class CalibrationStore(object):
         plate = image[CCCImage.plates][plateid]
         return bool(plate[CCCPlate.compressed_ccc_data])
 
-    def set_measurement(self, calibrationid, imageid, plateid, col, row, measurement):
+    def set_measurement(
+        self, calibrationid, imageid, plateid, col, row, measurement
+    ):
         ccc = self._CCC[calibrationid]
         image = self._get_image_dict(ccc, imageid)
         plate = image[CCCImage.plates][plateid]

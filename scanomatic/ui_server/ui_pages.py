@@ -7,7 +7,6 @@ from flask import (
 )
 
 from scanomatic.data_processing import phenotyper
-from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
 from .general import convert_url_to_path, serve_log_as_html
 
@@ -25,14 +24,6 @@ def add_routes(app):
     @app.route("/ccc")
     def _ccc():
         return send_from_directory(Paths().ui_root, Paths().ui_ccc_file)
-
-    @app.route("/settings")
-    def _settings():
-
-        app_conf = Config()
-
-        return render_template(
-            Paths().ui_settings_template, **app_conf.model_copy())
 
     @app.route("/fixtures")
     def _fixtures():
