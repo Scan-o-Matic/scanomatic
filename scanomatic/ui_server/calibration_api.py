@@ -22,10 +22,7 @@ from .general import (
     get_grayscale_is_valid, json_abort, serve_numpy_as_image,
     valid_array_dimensions
 )
-
-
-def getcalibrationstore():
-    return current_app.config['calibrationstore']
+from .database import getcalibrationstore
 
 
 def get_int_tuple(data):

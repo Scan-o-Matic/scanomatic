@@ -1,28 +1,23 @@
 from __future__ import absolute_import
+
 from collections import namedtuple
 import warnings
 
-from flask import g, current_app
+from flask import current_app, g
 import sqlalchemy as sa
 
+from scanomatic.data.calibrationstore import CalibrationStore
 from scanomatic.data.scanjobstore import ScanJobStore
 from scanomatic.data.scannerstore import ScannerStore
 from scanomatic.data.scanstore import ScanStore
-
+from scanomatic.data.util import get_database_metadata
 
 DBState = namedtuple('dbstate', ['connection', 'transaction'])
 
 
 def setup(app):
     app.config['dbengine'] = sa.create_engine(app.config['DATABASE_URL'])
-    app.config['dbmetadata'] = sa.MetaData(bind=app.config['dbengine'])
-    with warnings.catch_warnings():
-        # Avoid spurious warnings: sqlalchemy can't reflect some constraints
-        # from the database and emits a warning about this.
-        # This is fine as long as we don't try to recreate the tables
-        # based on the reconstructed schema.
-        warnings.simplefilter("ignore", category=sa.exc.SAWarning)
-        app.config['dbmetadata'].reflect()
+    app.config['dbmetadata'] = get_database_metadata(app.config['dbengine'])
 
     @app.teardown_appcontext
     def close_database_connection(exception):
@@ -53,3 +48,7 @@ def getscanstore():
 
 def getscanjobstore():
     return ScanJobStore(connect(), current_app.config['dbmetadata'])
+
+
+def getcalibrationstore():
+    return CalibrationStore(connect(), current_app.config['dbmetadata'])

@@ -1,0 +1,248 @@
+{
+    "CellCountCalibration.status":
+        "CalibrationEntryStatus.UnderConstruction",
+    "CellCountCalibration.edit_access_token":
+        "password",
+    "CellCountCalibration.species":
+        "Homo ludensis",
+    "CellCountCalibration.reference":
+        "Local Minimum",
+    "CellCountCalibration.identifier":
+        "test",
+    "CellCountCalibration.images": [
+        {
+            "CCCImage.identifier": "image1",
+            "CCCImage.plates": {
+                "1":
+                    {
+                    "CCCPlate.grid_shape": [2, 4],
+                    "CCCPlate.grid_cell_size": [52.5, 53.1],
+                    "CCCPlate.compressed_ccc_data":
+                    {
+                        "(0, 0)":
+                        {
+                            "CCCMeasurement.cell_count": 12300,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(0, 1)":
+                        {
+                            "CCCMeasurement.cell_count": 121258,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(0, 2)":
+                        {
+                            "CCCMeasurement.cell_count": 1241240,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(0, 3)":
+                        {
+                            "CCCMeasurement.cell_count": 141410,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 0)":
+                        {
+                            "CCCMeasurement.cell_count": 12300,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 1)":
+                        {
+                            "CCCMeasurement.cell_count": 121258,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 2)":
+                        {
+                            "CCCMeasurement.cell_count": 1241240,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 3)":
+                        {
+                            "CCCMeasurement.cell_count": 141410,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        }
+                    }
+                },
+                "4": {
+                    "CCCPlate.grid_shape": [2, 4],
+                    "CCCPlate.grid_cell_size": [52.5, 53.1],
+                    "CCCPlate.compressed_ccc_data":
+                    {
+                        "(0, 0)":
+                        {
+                            "CCCMeasurement.cell_count": 12300,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(0, 1)":
+                        {
+                            "CCCMeasurement.cell_count": 121258,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(0, 2)":
+                        {
+                            "CCCMeasurement.cell_count": 1241240,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(0, 3)":
+                        {
+                            "CCCMeasurement.cell_count": 141410,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 0)":
+                        {
+                            "CCCMeasurement.cell_count": 12300,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 1)":
+                        {
+                            "CCCMeasurement.cell_count": 121258,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 2)":
+                        {
+                            "CCCMeasurement.cell_count": 1241240,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 3)":
+                        {
+                            "CCCMeasurement.cell_count": 141410,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        }
+                }
+            }},
+            "CCCImage.grayscale_name": "bogus",
+            "CCCImage.grayscale_source_values":
+                [123, 2.14],
+            "CCCImage.grayscale_target_values":
+                [123, 12412],
+            "CCCImage.fixture": "fake"
+        },
+        {
+            "CCCImage.identifier": "image2",
+            "CCCImage.plates": {
+                "1": {
+                    "CCCPlate.grid_shape": [2, 4],
+                    "CCCPlate.grid_cell_size": [52.5, 53.1],
+                    "CCCPlate.compressed_ccc_data":
+                    {
+                        "(0, 0)":
+                        {
+                            "CCCMeasurement.cell_count": 12300,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(0, 1)":
+                        {
+                            "CCCMeasurement.cell_count": 121258,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(0, 3)":
+                        {
+                            "CCCMeasurement.cell_count": 141410,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 0)":
+                        {
+                            "CCCMeasurement.cell_count": 12300,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 1)":
+                        {
+                            "CCCMeasurement.cell_count": 121258,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 2)":
+                        {
+                            "CCCMeasurement.cell_count": 1241240,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 3)":
+                        {
+                            "CCCMeasurement.cell_count": 141410,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        }
+                    }
+                },
+                "4": {
+                    "CCCPlate.grid_shape": [2, 4],
+                    "CCCPlate.grid_cell_size": [52.5, 53.1],
+                    "CCCPlate.compressed_ccc_data":
+                    {
+                        "(0, 0)":
+                        {
+                            "CCCMeasurement.cell_count": 12300,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(0, 1)":
+                        {
+                            "CCCMeasurement.cell_count": 121258,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(0, 3)":
+                        {
+                            "CCCMeasurement.cell_count": 141410,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 0)":
+                        {
+                            "CCCMeasurement.cell_count": 12300,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 1)":
+                        {
+                            "CCCMeasurement.cell_count": 121258,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 2)":
+                        {
+                            "CCCMeasurement.cell_count": 1241240,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        },
+                        "(1, 3)":
+                        {
+                            "CCCMeasurement.cell_count": 141410,
+                            "CCCMeasurement.source_values": [123.1, 10.4],
+                            "CCCMeasurement.source_value_counts": [100, 1214]
+                        }
+                    }
+                }
+            },
+            "CCCImage.grayscale_name": "bogus",
+            "CCCImage.grayscale_source_values":
+                [123, 2.14],
+            "CCCImage.grayscale_target_values":
+                [123, 12412],
+            "CCCImage.fixture": "fake"
+        }
+    ],
+    "CellCountCalibration.polynomial": {
+        "CCCPolynomial.power": 3,
+        "CCCPolynomial.coefficients": [10, 0, 150, 0]
+    }
+}
