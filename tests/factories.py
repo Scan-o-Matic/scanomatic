@@ -4,9 +4,6 @@ from scanomatic.io import ccc_data
 from scanomatic.io.ccc_data import CalibrationEntryStatus, CellCountCalibration
 
 
-UNSET = object()
-
-
 def make_calibration(
     identifier='ccc000',
     polynomial=[0, 1, 2, 3, 4, 5],

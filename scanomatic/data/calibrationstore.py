@@ -2,8 +2,8 @@ import sqlalchemy as sa
 from sqlalchemy.sql.expression import exists, select
 
 from scanomatic.io.ccc_data import (
-    CalibrationEntryStatus, CCCImage, CCCPolynomial, CellCountCalibration,
-    get_empty_ccc_entry, get_polynomal_entry, CCCPlate, CCCMeasurement
+    CalibrationEntryStatus, CCCImage, CCCMeasurement, CCCPlate, CCCPolynomial,
+    CellCountCalibration, get_empty_ccc_entry, get_polynomal_entry
 )
 
 
@@ -14,9 +14,6 @@ def dump_status(status):
         CalibrationEntryStatus.Deleted: 'deleted',
     }[status]
 
-
-def load_calibration_status():
-    pass
 
 class CalibrationStore(object):
     class IntegrityError(Exception):
@@ -30,36 +27,30 @@ class CalibrationStore(object):
         self._measurements = dbmetadata.tables['calibration_measurements']
 
     def add_calibration(self, calibration):
-        status = {
-            CalibrationEntryStatus.UnderConstruction: 'under construction',
-            CalibrationEntryStatus.Active: 'active',
-            CalibrationEntryStatus.Deleted: 'deleted',
-        }[calibration[CellCountCalibration.status]]
+        status = dump_status(calibration[CellCountCalibration.status])
         cccpolynomial = calibration.get(CellCountCalibration.polynomial)
         if cccpolynomial is not None:
             coefficients = cccpolynomial.get(CCCPolynomial.coefficients)
         else:
             coefficients = None
-        try:
-            self._execute(self._calibrations.insert().values(
-                id=calibration[CellCountCalibration.identifier],
-                species=calibration[CellCountCalibration.species],
-                reference=calibration[CellCountCalibration.reference],
-                status=status,
-                polynomial=coefficients,
-                edit_access_token=(
-                    calibration[CellCountCalibration.edit_access_token]
-                ),
-            ))
-        except sa.exc.IntegrityError as e:
-            raise self.IntegrityError(e)
+        self._execute(self._calibrations.insert().values(
+            id=calibration[CellCountCalibration.identifier],
+            species=calibration[CellCountCalibration.species],
+            reference=calibration[CellCountCalibration.reference],
+            status=status,
+            polynomial=coefficients,
+            edit_access_token=(
+                calibration[CellCountCalibration.edit_access_token]
+            ),
+        ))
 
     def get_all_calibrations(self):
         query = self._calibrations.select().order_by(self._calibrations.c.id)
         return self._get_calibrations(query)
 
     def get_calibration_by_id(self, id_):
-        query = self._calibrations.select().where(self._calibrations.c.id == id_)
+        query = self._calibrations.select().where(
+            self._calibrations.c.id == id_)
         for calibration in self._get_calibrations(query):
             return calibration
         else:
@@ -114,13 +105,10 @@ class CalibrationStore(object):
             raise LookupError(id_)
 
     def add_image_to_calibration(self, calibrationid, imageid):
-        try:
-            self._execute(self._images.insert().values(
-                calibration_id=calibrationid,
-                id=imageid,
-            ))
-        except sa.exc.IntegrityError as e:
-            raise self.IntegrityError(e)
+        self._execute(self._images.insert().values(
+            calibration_id=calibrationid,
+            id=imageid,
+        ))
 
     def update_calibration_image_with_id(self, calibrationid, imageid, values):
         columns = {
@@ -160,8 +148,10 @@ class CalibrationStore(object):
             yield {
                 CCCImage.identifier: row['id'],
                 CCCImage.grayscale_name: row['grayscale_name'],
-                CCCImage.grayscale_source_values: row['grayscale_source_values'],
-                CCCImage.grayscale_target_values: row['grayscale_target_values'],
+                CCCImage.grayscale_source_values:
+                    row['grayscale_source_values'],
+                CCCImage.grayscale_target_values:
+                    row['grayscale_target_values'],
                 CCCImage.fixture: row['fixture'],
                 CCCImage.marker_x: row['marker_x'],
                 CCCImage.marker_y: row['marker_y'],
@@ -230,7 +220,9 @@ class CalibrationStore(object):
             )
         )
 
-    def set_measurement(self, calibrationid, imageid, plateid, col, row, measurement):
+    def set_measurement(
+        self, calibrationid, imageid, plateid, col, row, measurement
+    ):
         where = sa.and_(
             self._measurements.c.calibration_id == calibrationid,
             self._measurements.c.image_id == imageid,
@@ -241,7 +233,9 @@ class CalibrationStore(object):
         if self._exists(self._measurements.select().where(where)):
             self._execute(self._measurements.update().where(where).values(
                 source_values=measurement[CCCMeasurement.source_values],
-                source_value_counts=measurement[CCCMeasurement.source_value_counts],
+                source_value_counts=(
+                    measurement[CCCMeasurement.source_value_counts]
+                ),
                 cell_count=measurement[CCCMeasurement.cell_count],
             ))
         else:
@@ -252,7 +246,9 @@ class CalibrationStore(object):
                 row=row,
                 col=col,
                 source_values=measurement[CCCMeasurement.source_values],
-                source_value_counts=measurement[CCCMeasurement.source_value_counts],
+                source_value_counts=(
+                    measurement[CCCMeasurement.source_value_counts]
+                ),
                 cell_count=measurement[CCCMeasurement.cell_count],
             ))
 

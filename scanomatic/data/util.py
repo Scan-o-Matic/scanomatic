@@ -41,7 +41,5 @@ def store_from_env(store_class):
         raise
     else:
         transaction.commit()
-        pass
     finally:
         connection.close()
-        pass
