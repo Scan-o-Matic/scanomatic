@@ -1,25 +1,28 @@
 from __future__ import absolute_import
+
 import json
 import uuid
 
-import pytest
 from flask import Flask
+import pytest
 
 from scanomatic.io.imagestore import ImageStore
-from scanomatic.data.scannerstore import ScannerStore
 from scanomatic.models.scanner import Scanner
-from scanomatic.ui_server import scan_jobs_api
-from scanomatic.ui_server import scanners_api
-from scanomatic.ui_server import scans_api
+from scanomatic.ui_server import (
+    calibration_api, scan_jobs_api, scanners_api, scans_api
+)
 import scanomatic.ui_server.database as db
 
 
 @pytest.fixture
 def app(tmpdir, database):
     app = Flask(__name__)
+    app.testing = True
     app.register_blueprint(scanners_api.blueprint, url_prefix="/scanners")
     app.register_blueprint(scan_jobs_api.blueprint, url_prefix="/scan-jobs")
     app.register_blueprint(scans_api.blueprint, url_prefix="/scans")
+    app.register_blueprint(
+        calibration_api.blueprint, url_prefix='/calibration')
     app.config['DATABASE_URL'] = database
     db.setup(app)
     app.config['imagestore'] = ImageStore(str(tmpdir))

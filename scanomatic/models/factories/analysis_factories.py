@@ -4,8 +4,10 @@ import os
 from types import DictType, ListType, StringTypes
 
 from scanomatic.data_processing.calibration import (
-    CalibrationStore, get_active_cccs, get_polynomial_coefficients_from_ccc
+    get_active_cccs, get_polynomial_coefficients_from_ccc
 )
+from scanomatic.data.calibrationstore import CalibrationStore
+from scanomatic.data.util import store_from_env
 from scanomatic.generics.abstract_model_factory import (
     AbstractModelFactory, email_serializer, rename_setting
 )
@@ -112,11 +114,12 @@ class AnalysisModelFactory(AbstractModelFactory):
             settings['cell_count_calibration_id'] = 'default'
 
         if (not settings.get('cell_count_calibration', None)):
-
-            settings['cell_count_calibration'] = \
-                get_polynomial_coefficients_from_ccc(
-                    CalibrationStore(),
-                    settings['cell_count_calibration_id'])
+            with store_from_env(CalibrationStore) as calibrationstore:
+                settings['cell_count_calibration'] = (
+                    get_polynomial_coefficients_from_ccc(
+                        calibrationstore,
+                        settings['cell_count_calibration_id'])
+                )
 
         return super(cls, AnalysisModelFactory).create(**settings)
 
@@ -297,7 +300,8 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.AnalysisModel
         """
-        active_cccs = get_active_cccs(CalibrationStore())
+        with store_from_env(CalibrationStore) as calibrationstore:
+            active_cccs = get_active_cccs(calibrationstore)
         if model.cell_count_calibration_id in active_cccs:
             return True
         return model.FIELD_TYPES.cell_count_calibration_id

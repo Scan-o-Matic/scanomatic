@@ -1,13 +1,28 @@
 from __future__ import absolute_import
 
+import mock
 import pytest
 
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from tests.factories import make_calibration
+
+
+@pytest.fixture(autouse=True)
+def store_from_env():
+    calibrationstore = mock.MagicMock()
+    calibrationstore.get_all_calibrations.return_value = [
+        make_calibration(identifier='default', active=True),
+        make_calibration(identifier='foo', active=True),
+    ]
+    with mock.patch(
+        'scanomatic.models.factories.scanning_factory.store_from_env',
+    ) as store_from_env:
+        store_from_env.return_value.__enter__.return_value = calibrationstore
+        yield
 
 
 @pytest.fixture(scope='function')
-def scanning_model():
-
+def scanning_model(store_from_env):
     return ScanningModelFactory.create()
 
 

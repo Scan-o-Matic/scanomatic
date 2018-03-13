@@ -1,12 +1,16 @@
 from __future__ import absolute_import
+
 from collections import namedtuple
 
 import numpy
 import pytest
 
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.server.analysis_effector import AnalysisEffector
-from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+
+# Needs to access the database for calibrations
+pytestmark = pytest.mark.usefixtures("database_environ")
 
 
 @pytest.fixture(scope='session')

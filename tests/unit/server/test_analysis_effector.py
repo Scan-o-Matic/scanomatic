@@ -8,6 +8,27 @@ from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.rpc_job_models import JOB_TYPE, JOB_STATUS
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import DEFAULT_PINNING_FORMAT
+from tests.factories import make_calibration
+
+
+@pytest.fixture
+def calibrationstore():
+    return MagicMock()
+
+
+@pytest.fixture(autouse=True)
+def store_from_env(calibrationstore):
+    calibrationstore.get_all_calibrations.return_value = [
+        make_calibration(identifier='default', active=True),
+    ]
+    calibrationstore.get_calibration_by_id.return_value = (
+        make_calibration(active=True)
+    )
+    with patch(
+        'scanomatic.models.factories.analysis_factories.store_from_env',
+    ) as store_from_env:
+        store_from_env.return_value.__enter__.return_value = calibrationstore
+        yield
 
 
 @pytest.fixture
