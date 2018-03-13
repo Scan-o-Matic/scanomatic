@@ -11,7 +11,7 @@ from scanomatic.data_processing.calibration import (
 )
 from scanomatic.models.analysis_model import AnalysisModel
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from tests.factories import mkcalibration
+from tests.factories import make_calibration
 
 
 @pytest.fixture
@@ -22,10 +22,10 @@ def calibrationstore():
 @pytest.fixture(autouse=True)
 def store_from_env(calibrationstore):
     calibrationstore.get_all_calibrations.return_value = [
-        mkcalibration(identifier='default', active=True),
+        make_calibration(identifier='default', active=True),
     ]
     calibrationstore.get_calibration_by_id.return_value = (
-        mkcalibration(active=True)
+        make_calibration(active=True)
     )
     with mock.patch(
         'scanomatic.models.factories.analysis_factories.store_from_env',
@@ -76,7 +76,7 @@ class TestAnalysisModels:
     def test_can_create_using_default_ccc(self, calibrationstore):
         default = [1, 2, 3, 4]
         calibrationstore.get_calibration_by_id.return_value = (
-            mkcalibration(polynomial=default, active=True)
+            make_calibration(polynomial=default, active=True)
         )
         model = AnalysisModelFactory.create()
         np.testing.assert_allclose(

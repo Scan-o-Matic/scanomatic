@@ -17,6 +17,7 @@ from scanomatic.io.ccc_data import (
 )
 from scanomatic.io.paths import Paths
 from scanomatic.data.calibrationstore import CalibrationStore
+from tests.factories import make_calibration
 
 # The curve fitting is done with coefficients as e^x, some tests
 # want to have that expression to be zero while still real.
@@ -618,27 +619,6 @@ class TestGetAllColonyData:
             'max_source_values': 6.6,
             'max_source_counts': 11,
         }
-
-
-def make_calibration(
-    identifier='ccc000',
-    polynomial=None,
-    access_token='password',
-    active=False,
-):
-    ccc = ccc_data.get_empty_ccc_entry(identifier, 'Bogus schmogus', 'Dr Lus')
-    if polynomial is not None:
-        ccc[CellCountCalibration.polynomial] = (
-            ccc_data.get_polynomal_entry(len(polynomial) - 1, polynomial)
-        )
-    ccc[CellCountCalibration.edit_access_token] = access_token
-    if active:
-        ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
-    else:
-        ccc[CellCountCalibration.status] = (
-            CalibrationEntryStatus.UnderConstruction
-        )
-    return ccc
 
 
 class TestAddCCC:

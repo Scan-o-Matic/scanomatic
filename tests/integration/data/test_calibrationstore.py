@@ -7,34 +7,12 @@ from scanomatic.io.ccc_data import (
     CalibrationEntryStatus, CCCImage, CCCMeasurement, CCCPlate,
     CellCountCalibration, get_empty_ccc_entry, get_polynomal_entry
 )
+from tests.factories import make_calibration
 
 
 @pytest.fixture
 def store(dbconnection, dbmetadata):
     return CalibrationStore(dbconnection, dbmetadata)
-
-
-def make_calibration(
-    identifier='ccc000',
-    species='S. Kombuchae',
-    reference='Anonymous et al., 2020',
-    active=False,
-    polynomial=None,
-    access_token='password',
-):
-    ccc = get_empty_ccc_entry(identifier, species, reference)
-    if polynomial is not None:
-        ccc[CellCountCalibration.polynomial] = (
-            get_polynomal_entry(len(polynomial) - 1, polynomial)
-        )
-    ccc[CellCountCalibration.edit_access_token] = access_token
-    if active:
-        ccc[CellCountCalibration.status] = CalibrationEntryStatus.Active
-    else:
-        ccc[CellCountCalibration.status] = (
-            CalibrationEntryStatus.UnderConstruction
-        )
-    return ccc
 
 
 def make_plate(grid_shape=(16, 24), grid_cell_size=(52.5, 53.1)):

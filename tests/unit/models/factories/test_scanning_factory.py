@@ -4,15 +4,15 @@ import mock
 import pytest
 
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
-from tests.factories import mkcalibration
+from tests.factories import make_calibration
 
 
 @pytest.fixture(autouse=True)
 def store_from_env():
     calibrationstore = mock.MagicMock()
     calibrationstore.get_all_calibrations.return_value = [
-        mkcalibration(identifier='default', active=True),
-        mkcalibration(identifier='foo', active=True),
+        make_calibration(identifier='default', active=True),
+        make_calibration(identifier='foo', active=True),
     ]
     with mock.patch(
         'scanomatic.models.factories.scanning_factory.store_from_env',
