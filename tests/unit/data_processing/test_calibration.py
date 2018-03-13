@@ -5,8 +5,7 @@ import json
 import os
 import tempfile
 
-import mock
-from mock import MagicMock, Mock
+from mock import MagicMock
 import numpy as np
 import pytest
 
@@ -17,6 +16,7 @@ from scanomatic.io.ccc_data import (
     CellCountCalibration
 )
 from scanomatic.io.paths import Paths
+from scanomatic.data.calibrationstore import CalibrationStore
 
 # The curve fitting is done with coefficients as e^x, some tests
 # want to have that expression to be zero while still real.
@@ -30,23 +30,9 @@ Paths().ccc_file_pattern = os.path.join(
     Paths().ccc_folder, '{0}.ccc')
 
 
-@pytest.fixture(autouse=True)
-def save_ccc():
-    def fakesave(ccc):
-        print("Saving ccc {} (not realy)".format(
-            ccc[calibration.CellCountCalibration.identifier]
-        ))
-        return True
-    with mock.patch(
-        'scanomatic.data_processing.calibration.save_ccc',
-        side_effect=fakesave,
-    ) as save_ccc:
-        yield save_ccc
-
-
 @pytest.fixture
 def store():
-    return calibration.CalibrationStore()
+    return MagicMock(CalibrationStore)
 
 
 @pytest.fixture(scope='function')
@@ -106,67 +92,73 @@ class TestGetCalibrationOptimizationFunction:
 
 
 class TestAccessToken:
+    IDENTIFIER = 'foobar'
+    ACCESS_TOKEN = 'password'
 
-    def test_missing_token(self, store, ccc):
+    @pytest.fixture
+    def store(self):
+        store = MagicMock(CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        store.get_calibration_by_id.return_value = make_calibration(
+            identifier=self.IDENTIFIER,
+            active=False,
+            access_token=self.ACCESS_TOKEN,
+        )
+        return store
+
+    def test_missing_token(self, store):
         assert not calibration.is_valid_edit_request(
-            store,
-            ccc[calibration.CellCountCalibration.identifier]
+            store, self.IDENTIFIER
         ), "Edit request worked, despite missing token"
 
-    def test_bad_token(self, store, ccc):
+    def test_bad_token(self, store):
         assert not calibration.is_valid_edit_request(
-            store,
-            ccc[calibration.CellCountCalibration.identifier],
-            access_token='bad'
+            store, self.IDENTIFIER, access_token='bad'
         ), "Edit request worked, despite bad token"
 
-    def test_valid_token(self, store, ccc):
+    def test_valid_token(self, store):
         assert calibration.is_valid_edit_request(
-            store,
-            ccc[calibration.CellCountCalibration.identifier],
-            access_token=ccc[
-                calibration.CellCountCalibration.edit_access_token]
+            store, self.IDENTIFIER, access_token=self.ACCESS_TOKEN,
         ) is True, "Edit request failed, despite valid token."
 
 
-def _fixture_load_ccc(store, rel_path):
+def _fixture_load_ccc(rel_path):
     parent = os.path.dirname(__file__)
     with open(os.path.join(parent, rel_path), 'rb') as fh:
         data = json.load(fh)
     _ccc = ccc_data.parse_ccc(data)
     if _ccc:
-        store.add_calibration(_ccc)
         return _ccc
     raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
 
 
 @pytest.fixture(scope='function')
 def edit_ccc(store):
-    _ccc = _fixture_load_ccc(store, 'data/test_good.ccc')
+    _ccc = _fixture_load_ccc('data/test_good.ccc')
     return _ccc
 
 
 @pytest.fixture(scope='function')
-def edit_bad_slope_ccc(store):
-    _ccc = _fixture_load_ccc(store, 'data/test_badslope.ccc')
+def edit_bad_slope_ccc():
+    _ccc = _fixture_load_ccc('data/test_badslope.ccc')
     return _ccc
 
 
 @pytest.fixture(scope='function')
-def full_ccc(store):
-    _ccc = _fixture_load_ccc(store, 'data/TESTUMz.ccc')
+def full_ccc():
+    _ccc = _fixture_load_ccc('data/TESTUMz.ccc')
     return _ccc
 
 
 @pytest.fixture(scope='function')
-def finalizable_ccc(store):
-    _ccc = _fixture_load_ccc(store, 'data/test_good.ccc')
+def finalizable_ccc():
+    _ccc = _fixture_load_ccc('data/test_good.ccc')
     return _ccc
 
 
 @pytest.fixture(scope='function')
-def active_ccc(store):
-    _ccc = _fixture_load_ccc(store, 'data/test_good.ccc')
+def active_ccc():
+    _ccc = _fixture_load_ccc('data/test_good.ccc')
     _ccc[
         calibration.CellCountCalibration.status
     ] = calibration.CalibrationEntryStatus.Active
@@ -174,8 +166,8 @@ def active_ccc(store):
 
 
 @pytest.fixture(scope='function')
-def deleted_ccc(store):
-    _ccc = _fixture_load_ccc(store, 'data/test_good.ccc')
+def deleted_ccc():
+    _ccc = _fixture_load_ccc('data/test_good.ccc')
     _ccc[
         calibration.CellCountCalibration.status
     ] = calibration.CalibrationEntryStatus.Deleted
@@ -227,125 +219,6 @@ class TestEditCCC:
         values = data_store_bad_ccc.source_values
         counts = data_store_bad_ccc.source_value_counts
         assert all(len(v) == len(c) for v, c in zip(values, counts))
-
-    def test_construct_bad_polynomial(self, edit_bad_slope_ccc, store):
-        # The fixture needs to be included, otherwise test is not correct
-        identifier = edit_bad_slope_ccc[
-            calibration.CellCountCalibration.identifier]
-        power = 5
-        token = 'password'
-
-        response = calibration.construct_polynomial(
-            store, identifier, power, access_token=token)
-
-        assert response['validation'] != 'OK'
-        assert all(coeff >= 0 for coeff in response['polynomial_coefficients'])
-
-        assert len(response['calculated_sizes']) == 30
-        assert len(response['measured_sizes']) == 30
-
-        assert response['correlation']['p_value'] == pytest.approx(1)
-
-    def test_construct_good_polynomial(self, full_ccc, store):
-        # The fixture needs to be included, otherwise test is not correct
-        identifier = full_ccc[calibration.CellCountCalibration.identifier]
-        power = 5
-        token = full_ccc[calibration.CellCountCalibration.edit_access_token]
-        full_ccc[calibration.CellCountCalibration.status] = \
-            calibration.CalibrationEntryStatus.UnderConstruction
-
-        response = calibration.construct_polynomial(
-            store, identifier, power, access_token=token)
-
-        assert response['validation'] == 'OK'
-        assert all(coeff >= 0 for coeff in response['polynomial_coefficients'])
-
-        assert len(response['calculated_sizes']) == 62
-        assert response['measured_sizes'] == [
-            640000,
-            680000,
-            800000,
-            1160000,
-            1320000,
-            1660000,
-            1900000,
-            2060000,
-            2240000,
-            2280000,
-            2360000,
-            3120000,
-            3240000,
-            3260000,
-            4100000,
-            4240000,
-            4460000,
-            4580000,
-            5120000,
-            5380000,
-            5520000,
-            5760000,
-            6600000,
-            7980000,
-            8240000,
-            9200000,
-            9840000,
-            10300000,
-            10380000,
-            10760000,
-            10800000,
-            10960000,
-            11040000,
-            11580000,
-            11920000,
-            12120000,
-            12400000,
-            13160000,
-            13860000,
-            14100000,
-            14160000,
-            14220000,
-            14220000,
-            14440000,
-            14720000,
-            14940000,
-            15120000,
-            15160000,
-            15380000,
-            15660000,
-            15920000,
-            16180000,
-            16440000,
-            16700000,
-            16700000,
-            16820000,
-            17060000,
-            17200000,
-            17700000,
-            17900000,
-            18240000,
-            18340000,
-        ]
-
-        assert response['correlation']['slope'] == pytest.approx(1, abs=0.02)
-        assert response['correlation']['intercept'] == pytest.approx(
-            71000, rel=0.5
-        )
-        assert response['correlation']['stderr'] == pytest.approx(
-            0.015, rel=0.1
-        )
-        assert response['correlation']['p_value'] == pytest.approx(0)
-        np.testing.assert_allclose(
-            response['polynomial_coefficients'],
-            [
-                5.263000000000004e-05,
-                0.004012000000000001,
-                0.03962,
-                0.9684,
-                2.008000000000001e-06,
-                0.0,
-            ],
-            rtol=0.01,
-        )
 
 
 class TestActivateCCC:
@@ -525,170 +398,44 @@ class TestDeleteCCC:
 
 class TestGettingActiveCCCs:
 
-    @pytest.fixture(scope='function', autouse=True)
-    def setup(self, store):
-        ccc1 = calibration.get_empty_ccc(store, 'Cylon', 'Boomer')
-        self._ccc_id1 = ccc1[calibration.CellCountCalibration.identifier]
-        ccc1[calibration.CellCountCalibration.polynomial] = {
-            calibration.CCCPolynomial.power: 5,
-            calibration.CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
-        }
-        ccc1[calibration.CellCountCalibration.status] = \
-            calibration.CalibrationEntryStatus.Active
-        calibration.add_ccc(store, ccc1)
+    def test_unknown_ccc_raises_exception_for_poly(self):
+        store = MagicMock(CalibrationStore)
+        store.get_calibration_by_id.side_effect = LookupError
+        with pytest.raises(LookupError):
+            calibration.get_polynomial_coefficients_from_ccc(store, 'ccc000')
 
-        ccc2 = calibration.get_empty_ccc(store, 'Deep Ones', 'Stross')
-        self._ccc_id2 = ccc2[calibration.CellCountCalibration.identifier]
-        ccc2[calibration.CellCountCalibration.polynomial] = {
-            calibration.CCCPolynomial.power: 5,
-            calibration.CCCPolynomial.coefficients: [10, 0, 0, 0, 150, 0]
-        }
-        calibration.add_ccc(store, ccc2)
+    def test_can_retrive_added_ccc_poly(self):
+        store = MagicMock(CalibrationStore)
+        store.get_calibration_by_id.return_value = (
+            make_calibration(active=True, polynomial=[10, 0, 0, 0, 150, 0])
+        )
+        assert (
+            calibration.get_polynomial_coefficients_from_ccc(store, 'ccc000')
+            == [10, 0, 0, 0, 150, 0]
+        )
 
-    def test_exists_default_ccc_polynomial(self, store):
+    def test_gets_all_active_cccs(self):
+        store = MagicMock(CalibrationStore)
+        calibration0 = make_calibration(identifier='ccc0', active=True)
+        calibration1 = make_calibration(identifier='ccc1', active=True)
+        store.get_all_calibrations.return_value = [
+            calibration0, calibration1, make_calibration(active=False)
+        ]
+        assert (
+            calibration.get_active_cccs(store)
+            == {'ccc0': calibration0, 'ccc1': calibration1}
+        )
 
-        assert calibration.get_polynomial_coefficients_from_ccc(
-            store, 'default')
-
-    @pytest.mark.parametrize('ccc_identifier', [None, 'TheDoctor', 'DEEPON'])
-    def test_invalid_ccc_raises_exception_for_poly(
-        self, store, ccc_identifier
-    ):
+    def test_get_polynomial_for_under_construction_raises(self):
+        store = MagicMock(CalibrationStore)
+        store.get_calibration_by_id.return_value = (
+            make_calibration(active=False)
+        )
         with pytest.raises(KeyError):
-            calibration.get_polynomial_coefficients_from_ccc(
-                store, ccc_identifier)
-
-    def test_can_retrive_added_ccc_poly(self, store):
-        assert calibration.get_polynomial_coefficients_from_ccc(
-            store, self._ccc_id1)
-
-    def test_gets_all_active_cccs(self, store):
-        assert len(calibration.get_active_cccs(store)) == 2
-
-    def test_get_polynomial_for_under_construction_raises(self, store):
-        with pytest.raises(KeyError):
-            calibration.get_polynomial_coefficients_from_ccc(
-                store, self._ccc_id2)
+            calibration.get_polynomial_coefficients_from_ccc(store, 'ccc000')
 
 
-class TestSaving:
-
-    @mock.patch(
-        'scanomatic.data_processing.calibration._ccc_edit_validator',
-        return_value=True)
-    def test_save_ccc(self, validator_mock, save_ccc, store, ccc):
-        save_ccc.reset_mock()
-        assert calibration.save_ccc_to_disk(store, ccc)
-        assert not validator_mock.called
-        assert save_ccc.called
-
-    @mock.patch(
-        'scanomatic.data_processing.calibration._ccc_edit_validator',
-        return_value=True)
-    def test_add_existing_ccc(self, validator_mock, save_ccc, store, ccc):
-        save_ccc.reset_mock()
-        assert not calibration.add_ccc(store, ccc)
-        assert not validator_mock.called
-        assert not save_ccc.called
-
-    @mock.patch(
-        'scanomatic.data_processing.calibration._ccc_edit_validator',
-        return_value=True)
-    def test_add_ccc(self, validator_mock, save_ccc, store):
-        save_ccc.reset_mock()
-        ccc = calibration.get_empty_ccc(store, 'Bogus schmogus', 'Dr Lus')
-        assert calibration.add_ccc(store, ccc)
-        assert not validator_mock.called
-        assert save_ccc.called
-
-    @mock.patch(
-        'scanomatic.data_processing.calibration._ccc_edit_validator',
-        return_value=True)
-    @mock.patch(
-        'scanomatic.data_processing.calibration.has_valid_polynomial',
-        return_value=True)
-    def test_activate_ccc(
-            self, poly_validator_mock, validator_mock, save_ccc, store, ccc):
-        save_ccc.reset_mock()
-        assert calibration.activate_ccc(
-            store,
-            ccc[calibration.CellCountCalibration.identifier],
-            access_token='not used, but needed')
-        assert validator_mock.called
-        assert save_ccc.called
-        assert poly_validator_mock.called
-
-    @mock.patch(
-        'scanomatic.data_processing.calibration._ccc_edit_validator',
-        return_value=True)
-    def test_delete_ccc(self, validator_mock, save_ccc, store, ccc):
-        save_ccc.reset_mock()
-        assert calibration.delete_ccc(
-            store,
-            ccc[calibration.CellCountCalibration.identifier],
-            access_token='not used, but needed')
-        assert validator_mock.called
-        assert save_ccc.called
-
-    @mock.patch(
-        'scanomatic.data_processing.calibration._ccc_edit_validator',
-        return_value=True)
-    def test_add_image_to_ccc(self, validator_mock, save_ccc, store, ccc):
-        save_ccc.reset_mock()
-        image_mock = mock.Mock()
-        assert calibration.add_image_to_ccc(
-            store,
-            ccc[calibration.CellCountCalibration.identifier], image_mock,
-            access_token='not used, but needed')
-        assert validator_mock.called
-        assert save_ccc.called
-        assert image_mock.save.called
-
-    @mock.patch(
-        'scanomatic.data_processing.calibration._ccc_edit_validator',
-        return_value=True)
-    def test_set_image_info(self, validator_mock, save_ccc, store, full_ccc):
-        save_ccc.reset_mock()
-        assert calibration.set_image_info(
-            store,
-            full_ccc[CellCountCalibration.identifier],
-            full_ccc[CellCountCalibration.images][0][CCCImage.identifier],
-            access_token='not used, but needed')
-        assert validator_mock.called
-        assert save_ccc.called
-
-
-class TestCCCEditValidator:
-
-    def test_allowed_knowing_id(self, store, ccc):
-        assert calibration._ccc_edit_validator(
-            store,
-            ccc[calibration.CellCountCalibration.identifier],
-            access_token=ccc[
-                calibration.CellCountCalibration.edit_access_token])
-
-    def test_bad_id_existing_ccc(self, store, ccc):
-        assert not calibration._ccc_edit_validator(
-            store,
-            ccc[calibration.CellCountCalibration.identifier],
-            access_token='Something is wrong')
-
-    def test_non_existing_ccc(self, store):
-        ccc = calibration.get_empty_ccc(
-            store, 'Bogus schmogus leoii', 'Dr Lus')
-        assert not calibration._ccc_edit_validator(
-            store,
-            ccc[calibration.CellCountCalibration.identifier],
-            access_token=ccc[
-                calibration.CellCountCalibration.edit_access_token])
-
-    def test_no_access_(self, store, ccc):
-        assert not calibration._ccc_edit_validator(
-            store,
-            ccc[calibration.CellCountCalibration.identifier])
-
-
-class TestConstructPolynomial:
+class TestGetCalibrationOptimizationFunction:
 
     @pytest.fixture(scope='session')
     def poly2(self):
@@ -697,17 +444,6 @@ class TestConstructPolynomial:
     @pytest.fixture(scope='session')
     def poly4(self):
         return calibration.get_calibration_optimization_function(4)
-
-    @pytest.mark.parametrize("data_store", (
-        calibration.CalibrationData([], [], []),
-        calibration.CalibrationData([1], [[1]], [[1]]),
-        calibration.CalibrationData([1], [[1]], [[6]]),
-        calibration.CalibrationData([1], [[1, 4]], [[6, 2]])
-    ))
-    def test_too_little_data_raises(self, data_store):
-
-        with pytest.raises(calibration.CCCConstructionError):
-            calibration.calculate_polynomial(data_store, 5).tolist()
 
     @pytest.mark.parametrize("calibration_data,coeffs,expected", (
         (
@@ -799,6 +535,19 @@ class TestConstructPolynomial:
                 calibration.CalibrationData([[x]], [[1]], [0]),
                 *test_coeffs)[0])
 
+
+class TestCalculatePolynomial:
+    @pytest.mark.parametrize("data_store", (
+        calibration.CalibrationData([], [], []),
+        calibration.CalibrationData([1], [[1]], [[1]]),
+        calibration.CalibrationData([1], [[1]], [[6]]),
+        calibration.CalibrationData([1], [[1, 4]], [[6, 2]])
+    ))
+    def test_too_little_data_raises(self, data_store):
+
+        with pytest.raises(calibration.CCCConstructionError):
+            calibration.calculate_polynomial(data_store, 5).tolist()
+
     def test_calculate_polynomial(self):
         data_store = calibration.CalibrationData(
             source_values=[
@@ -830,9 +579,10 @@ class TestConstructPolynomial:
 
 class TestGetAllColonyData:
 
-    def test_gets_all_included_colonies_in_empty_ccc(self, store, ccc):
-        ccc_id = ccc[calibration.CellCountCalibration.identifier]
-        colonies = calibration.get_all_colony_data(store, ccc_id)
+    def test_gets_all_included_colonies_in_empty_ccc(self):
+        store = MagicMock(CalibrationStore)
+        store.get_measurements_for_calibration.return_value = []
+        colonies = calibration.get_all_colony_data(store, 'ccc000')
         assert colonies['source_values'] == []
         assert colonies['source_value_counts'] == []
         assert colonies['target_values'] == []
@@ -840,42 +590,34 @@ class TestGetAllColonyData:
         assert colonies['max_source_values'] == 0
         assert colonies['max_source_counts'] == 0
 
-    def test_gets_all_included_colonies_in_ccc(self, store, edit_ccc):
-        ccc_id = edit_ccc[calibration.CellCountCalibration.identifier]
-        colonies = calibration.get_all_colony_data(store, ccc_id)
-        assert len(colonies['source_values']) == 16
-        assert len(colonies['source_value_counts']) == 16
-        assert len(colonies['target_values']) == 16
-        assert colonies['min_source_values'] == 0.21744831955999988
-        assert colonies['max_source_values'] == 30.68582517095
-        assert colonies['max_source_counts'] == 21562
-
-    def test_doesnt_scramble_data_while_sorting(self, store, edit_ccc):
-        ccc_id = edit_ccc[calibration.CellCountCalibration.identifier]
-        colonies = calibration.get_all_colony_data(store, ccc_id)
-        assert colonies['source_values'][0] == [
-            0.79925410930999963, 1.7992541093099996, 2.7992541093099996,
-            3.7992541093099996, 4.7992541093099996,
+    def test_gets_all_included_colonies_in_ccc(self):
+        store = MagicMock(CalibrationStore)
+        store.get_measurements_for_calibration.return_value = [
+            {
+                CCCMeasurement.source_values: [1.1],
+                CCCMeasurement.source_value_counts: [11],
+                CCCMeasurement.cell_count: 500,
+            },
+            {
+                CCCMeasurement.source_values: [2.2, 3.3],
+                CCCMeasurement.source_value_counts: [3, 2],
+                CCCMeasurement.cell_count: 5000,
+            },
+            {
+                CCCMeasurement.source_values: [4.4, 5.5, 6.6],
+                CCCMeasurement.source_value_counts: [6, 5, 4],
+                CCCMeasurement.cell_count: 50,
+            },
         ]
-        assert colonies['source_value_counts'][0] == [
-            5491, 134, 28, 10, 2,
-        ]
-        assert colonies['target_values'][0] == 60000.0
-        assert colonies['source_values'][-1] == [
-            4.6858251709500003, 5.6858251709500003, 6.6858251709500003,
-            7.6858251709500003, 8.6858251709500003, 9.6858251709500003,
-            10.68582517095, 11.68582517095, 12.68582517095, 13.68582517095,
-            14.68582517095, 15.68582517095, 16.68582517095, 17.68582517095,
-            18.68582517095, 19.68582517095, 20.68582517095, 21.68582517095,
-            22.68582517095, 23.68582517095, 24.68582517095, 25.68582517095,
-            26.68582517095, 27.68582517095, 28.68582517095, 29.68582517095,
-            30.68582517095,
-        ]
-        assert colonies['source_value_counts'][-1] == [
-            1, 7, 50, 96, 81, 54, 74, 78, 56, 67, 82, 70, 94, 61, 82, 95, 94,
-            116, 348, 1265, 2900, 4655, 9718, 1982, 2171, 770, 1,
-        ]
-        assert colonies['target_values'][-1] == 42000000.0
+        colonies = calibration.get_all_colony_data(store, 'ccc000')
+        assert colonies == {
+            'source_values': [[4.4, 5.5, 6.6], [1.1], [2.2, 3.3]],
+            'source_value_counts': [[6, 5, 4], [11], [3, 2]],
+            'target_values': [50, 500, 5000],
+            'min_source_values': 1.1,
+            'max_source_values': 6.6,
+            'max_source_counts': 11,
+        }
 
 
 def make_calibration(
@@ -901,21 +643,21 @@ def make_calibration(
 
 class TestAddCCC:
     def test_valid_ccc(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         ccc = make_calibration()
         assert calibration.add_ccc(store, ccc) is True
         store.add_calibration.assert_called_with(ccc)
 
     def test_none_id(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         ccc = make_calibration(identifier=None)
         assert calibration.add_ccc(store, ccc) is False
         store.add_calibration.assert_not_called()
 
     def test_duplicate_id(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         ccc = make_calibration()
         assert not calibration.add_ccc(store, ccc)
@@ -924,7 +666,7 @@ class TestAddCCC:
 
 class TestActivateCCC:
     def test_activate(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         ccc = make_calibration(
             identifier='ccc001',
             polynomial=[1, 2, 3],
@@ -940,7 +682,7 @@ class TestActivateCCC:
         )
 
     def test_invalid_polynomial(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         ccc = make_calibration(
             identifier='ccc001',
             polynomial=None,
@@ -954,7 +696,7 @@ class TestActivateCCC:
         store.set_calibration_status.assert_not_called()
 
     def test_unknown_ccc(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         assert not (
             calibration.activate_ccc(store, 'ccc001', access_token='password')
@@ -962,7 +704,7 @@ class TestActivateCCC:
         store.set_calibration_status.assert_not_called()
 
     def test_already_activated(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.get_calibration_by_id.return_value = make_calibration(
             identifier='ccc001',
             polynomial=[1, 2, 3],
@@ -977,7 +719,7 @@ class TestActivateCCC:
 
 class TestDeleteCCC:
     def test_delete(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.get_calibration_by_id.return_value = make_calibration(
             identifier='ccc001',
             access_token='password',
@@ -991,7 +733,7 @@ class TestDeleteCCC:
         )
 
     def test_unknown_ccc(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         assert not (
             calibration.delete_ccc(store, 'ccc001', access_token='password')
@@ -999,7 +741,7 @@ class TestDeleteCCC:
         store.set_calibration_status.assert_not_called()
 
     def test_already_activated(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.get_calibration_by_id.return_value = make_calibration(
             identifier='ccc001',
             access_token='password',
@@ -1013,7 +755,7 @@ class TestDeleteCCC:
 
 class TestConstructPolynomial:
     def test_unknown_ccc(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         assert not calibration.construct_polynomial(
             store, 'ccc001', power=5, access_token='password',
@@ -1021,7 +763,7 @@ class TestConstructPolynomial:
         store.set_calibration_polynomial.assert_not_called()
 
     def test_already_activated(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.get_calibration_by_id.return_value = make_calibration(
             identifier='ccc001',
             access_token='password',
@@ -1043,7 +785,7 @@ class TestConstructPolynomial:
         ]
 
     def test_construct_bad_polynomial(self, bad_measurements):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.get_calibration_by_id.return_value = make_calibration(
             identifier='ccc001',
             access_token='password',
@@ -1070,7 +812,7 @@ class TestConstructPolynomial:
         ]
 
     def test_construct_good_polynomial(self, good_measurements):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.get_calibration_by_id.return_value = make_calibration(
             identifier='ccc001',
             access_token='password',
@@ -1116,7 +858,7 @@ class TestConstructPolynomial:
 
 class TestAddImageToCCC:
     def test_unknown_ccc(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         image = MagicMock()
         assert not (
@@ -1126,7 +868,7 @@ class TestAddImageToCCC:
         )
 
     def test_already_activated(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             identifier='ccc001',
@@ -1141,7 +883,7 @@ class TestAddImageToCCC:
         )
 
     def test_add_image(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             identifier='ccc001',
@@ -1156,31 +898,8 @@ class TestAddImageToCCC:
             )
         )
         image.save.assert_called()
-        store.add_image_to_calibration.assert_called_with('ccc001', {
-            CCCImage.identifier: 'CalibIm_5',
-            CCCImage.plates: {},
-            CCCImage.grayscale_name: None,
-            CCCImage.grayscale_source_values: None,
-            CCCImage.grayscale_target_values: None,
-            CCCImage.marker_x: None,
-            CCCImage.marker_y: None,
-            CCCImage.fixture: None,
-        })
-
-
-    @mock.patch(
-        'scanomatic.data_processing.calibration._ccc_edit_validator',
-        return_value=True)
-    def test_add_image_to_ccc(self, validator_mock, save_ccc, store, ccc):
-        save_ccc.reset_mock()
-        image_mock = mock.Mock()
-        assert calibration.add_image_to_ccc(
-            store,
-            ccc[calibration.CellCountCalibration.identifier], image_mock,
-            access_token='not used, but needed')
-        assert validator_mock.called
-        assert save_ccc.called
-        assert image_mock.save.called
+        store.add_image_to_calibration.assert_called_with(
+            'ccc001', 'CalibIm_5')
 
 
 def make_image_metadata(identifier='CalibIm_3'):
@@ -1189,14 +908,14 @@ def make_image_metadata(identifier='CalibIm_3'):
 
 class TestGetImageIdentifiersInCCC:
     def test_unknown_ccc(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         assert not (
             calibration.get_image_identifiers_in_ccc(store, 'unknown')
         )
 
     def test_get_identifiers(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_images_for_calibration.return_value = [
             make_image_metadata(identifier='CalibIm_0'),
@@ -1210,7 +929,7 @@ class TestGetImageIdentifiersInCCC:
 
 class TestSetImageInfo:
     def test_unknown_ccc(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         assert not calibration.set_image_info(
             store,
@@ -1222,7 +941,7 @@ class TestSetImageInfo:
         store.update_calibration_image_with_id.assert_not_called()
 
     def test_already_activated(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             active=True,
@@ -1238,7 +957,7 @@ class TestSetImageInfo:
         store.update_calibration_image_with_id.assert_not_called()
 
     def test_unknown_image(self):
-        store = MagicMock(spec=calibration.CalibrationStore)
+        store = MagicMock(spec=CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             active=False,
@@ -1255,7 +974,7 @@ class TestSetImageInfo:
         store.update_calibration_image_with_id.assert_not_called()
 
     def test_update_invalid_info(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             active=False,
@@ -1272,7 +991,7 @@ class TestSetImageInfo:
         store.update_calibration_image_with_id.assert_not_called()
 
     def test_update_fixture(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             active=False,
@@ -1295,7 +1014,7 @@ class TestSetImageInfo:
 
 class TestSetPlateGridInfo:
     def test_unknown_ccc(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         assert not calibration.set_plate_grid_info(
             store,
@@ -1308,7 +1027,7 @@ class TestSetPlateGridInfo:
         )
 
     def test_already_activated(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             active=True,
@@ -1327,7 +1046,7 @@ class TestSetPlateGridInfo:
         )
 
     def test_unknown_image(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             active=False,
@@ -1346,7 +1065,7 @@ class TestSetPlateGridInfo:
         )
 
     def test_add_new_plate(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             active=False,
@@ -1369,10 +1088,10 @@ class TestSetPlateGridInfo:
             CCCPlate.grid_shape: (12, 32),
             CCCPlate.compressed_ccc_data: {},
         })
-        store.update_plate_with_id.assert_not_called()
+        store.update_plate.assert_not_called()
 
     def test_update_existing_plate(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             active=False,
@@ -1390,14 +1109,14 @@ class TestSetPlateGridInfo:
             grid_shape=(12, 32),
             grid_cell_size=(100, 200),
         )
-        store.update_plate_with_id.assert_called_with('ccc000', 'CalibIm_2', 1, {
+        store.update_plate.assert_called_with('ccc000', 'CalibIm_2', 1, {
             CCCPlate.grid_cell_size: (100, 200),
             CCCPlate.grid_shape: (12, 32),
         })
         store.add_plate.assert_not_called()
 
     def test_plate_has_measurements(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_calibration_by_id.return_value = make_calibration(
             active=False,
@@ -1421,13 +1140,13 @@ class TestSetPlateGridInfo:
             grid_shape=(12, 32),
             grid_cell_size=(100, 200),
         )
-        store.update_plate_with_id.assert_not_called()
+        store.update_plate.assert_not_called()
         store.add_plate.assert_not_called()
 
 
 class TestGetImageJSONFromCCC:
     def test_unknown_calibration(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         assert (
             calibration.get_image_json_from_ccc(store, 'ccc000', 'CalibIm0')
@@ -1435,7 +1154,7 @@ class TestGetImageJSONFromCCC:
         )
 
     def test_unknown_image(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.get_images_for_calibration.return_value = [
             make_image_metadata(identifier='NotCalibIm0'),
@@ -1446,7 +1165,7 @@ class TestGetImageJSONFromCCC:
         )
 
     def test_existing_image(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         store.has_calibration_image_with_id.return_value = True
         image = make_image_metadata(identifier='CalibIm0')
@@ -1459,14 +1178,14 @@ class TestGetImageJSONFromCCC:
 
 class TestSetColonyCompressedData:
     def test_unknown_calibration(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = False
         assert not (
             calibration.get_image_json_from_ccc(store, 'ccc000', 'CalibIm0')
         )
 
     def test_set_colony(self):
-        store = MagicMock(calibration.CalibrationStore)
+        store = MagicMock(CalibrationStore)
         store.has_calibration_with_id.return_value = True
         calibrationid = 'ccc000'
         store.get_calibration_by_id.return_value = make_calibration(
