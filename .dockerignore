@@ -2,6 +2,7 @@
 *.log
 .git/
 .tox/
+.travis.yml
 coverage.xml
 node_modules/
 tests/

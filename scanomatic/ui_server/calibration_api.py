@@ -528,7 +528,7 @@ def get_colony_detection(colony_im):
     "/<ccc_identifier>/image/<image_identifier>" +
     "/plate/<int:plate>/detect/colony/<int:x>/<int:y>", methods=["POST"])
 def detect_colony(ccc_identifier, image_identifier, plate, x, y):
-
+    store = getcalibrationstore()
     image = calibration.get_plate_slice(
         ccc_identifier, image_identifier, plate, True)
 
@@ -549,18 +549,20 @@ def detect_colony(ccc_identifier, image_identifier, plate, x, y):
         )
 
     image_json = calibration.get_image_json_from_ccc(
-        getcalibrationstore(), ccc_identifier, image_identifier)
+        store, ccc_identifier, image_identifier)
 
-    if not image_json or plate not in \
-            image_json[calibration.CCCImage.plates]:
-
+    if (
+        not image_json
+        or not store.has_plate_with_id(ccc_identifier, image_identifier, plate)
+    ):
         return json_abort(
             400,
             reason="Image id not known or plate not know"
         )
 
-    plate_json = image_json[calibration.CCCImage.plates][plate]
-    h, w = plate_json[calibration.CCCPlate.grid_cell_size]
+    h, w = store.get_plate_grid_cell_size(
+        ccc_identifier, image_identifier, plate
+    )
     box = get_bounding_box_for_colony(grid, x, y, w, h)
     colony_im = image[
         box['ylow']: box['yhigh'],

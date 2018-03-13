@@ -688,69 +688,6 @@ class TestCCCEditValidator:
             ccc[calibration.CellCountCalibration.identifier])
 
 
-class TestSetColonyCompressedData:
-    @pytest.fixture
-    def measurement(self, store, ccc):
-        identifier = ccc[calibration.CellCountCalibration.identifier]
-        access_token = ccc[calibration.CellCountCalibration.edit_access_token]
-        image_identifier = 'image0'
-        plate_id = 'plate0'
-        colony_data = {}
-        ccc[calibration.CellCountCalibration.images] = [
-            {
-                calibration.CCCImage.identifier: image_identifier,
-                calibration.CCCImage.plates: {
-                    plate_id: {
-                        calibration.CCCPlate.compressed_ccc_data:
-                            {(0, 0): colony_data},
-                    }
-                }
-            }
-        ]
-        x, y = 0, 0
-        image = np.array([
-            [0, 1, 1, 1],
-            [1, 1, 2, 1],
-            [1, 2, 3, 1],
-            [1, 1, 1, 9],
-        ])
-        blob_filter = np.array([
-            [0, 0, 0, 0],
-            [0, 1, 1, 0],
-            [0, 1, 1, 0],
-            [0, 0, 0, 0],
-        ], dtype=bool)
-        background_filter = np.array([
-            [1, 1, 1, 1],
-            [1, 0, 0, 1],
-            [1, 0, 0, 1],
-            [1, 1, 1, 1],
-        ], dtype=bool)
-        cell_count = 1234
-
-        calibration.set_colony_compressed_data(
-            store, identifier, image_identifier, plate_id, x, y, cell_count,
-            image, blob_filter, background_filter, access_token=access_token
-        )
-
-        return (
-            ccc[calibration.CellCountCalibration.images][0]
-            [calibration.CCCImage.plates]['plate0']
-            [calibration.CCCPlate.compressed_ccc_data][(0, 0)]
-        )
-
-    def test_source_values(self, measurement):
-        assert measurement[
-            calibration.CCCMeasurement.source_values] == (0, 1, 2)
-
-    def test_source_value_counts(self, measurement):
-        assert measurement[
-            calibration.CCCMeasurement.source_value_counts] == (1, 2, 1)
-
-    def test_cell_count(self, measurement):
-        assert measurement[calibration.CCCMeasurement.cell_count] == 1234
-
-
 class TestConstructPolynomial:
 
     @pytest.fixture(scope='session')
@@ -1491,7 +1428,7 @@ class TestSetPlateGridInfo:
 class TestGetImageJSONFromCCC:
     def test_unknown_calibration(self):
         store = MagicMock(calibration.CalibrationStore)
-        store.has_calibration_with_id.return_value = True
+        store.has_calibration_with_id.return_value = False
         assert (
             calibration.get_image_json_from_ccc(store, 'ccc000', 'CalibIm0')
             is None
@@ -1517,4 +1454,56 @@ class TestGetImageJSONFromCCC:
         assert (
             calibration.get_image_json_from_ccc(store, 'ccc000', 'CalibIm0')
             == image
+        )
+
+
+class TestSetColonyCompressedData:
+    def test_unknown_calibration(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = False
+        assert not (
+            calibration.get_image_json_from_ccc(store, 'ccc000', 'CalibIm0')
+        )
+
+    def test_set_colony(self):
+        store = MagicMock(calibration.CalibrationStore)
+        store.has_calibration_with_id.return_value = True
+        calibrationid = 'ccc000'
+        store.get_calibration_by_id.return_value = make_calibration(
+            identifier=calibrationid,
+            active=False,
+            access_token='password',
+        )
+        imageid = 'image0'
+        plateid = 'plate0'
+        x, y = 0, 0
+        image = np.array([
+            [0, 1, 1, 1],
+            [1, 1, 2, 1],
+            [1, 2, 3, 1],
+            [1, 1, 1, 9],
+        ])
+        blob_filter = np.array([
+            [0, 0, 0, 0],
+            [0, 1, 1, 0],
+            [0, 1, 1, 0],
+            [0, 0, 0, 0],
+        ], dtype=bool)
+        background_filter = np.array([
+            [1, 1, 1, 1],
+            [1, 0, 0, 1],
+            [1, 0, 0, 1],
+            [1, 1, 1, 1],
+        ], dtype=bool)
+        cell_count = 1234
+        assert calibration.set_colony_compressed_data(
+            store, 'ccc000', imageid, plateid, x, y, cell_count,
+            image, blob_filter, background_filter, access_token='password'
+        )
+        store.set_measurement.assert_called_with(
+            'ccc000', imageid, plateid, x, y, {
+                CCCMeasurement.source_values: (0, 1, 2),
+                CCCMeasurement.source_value_counts: (1, 2, 1),
+                CCCMeasurement.cell_count: 1234,
+            },
         )
