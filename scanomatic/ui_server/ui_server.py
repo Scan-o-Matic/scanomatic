@@ -27,7 +27,6 @@ from . import scan_api
 from . import management_api
 from . import tools_api
 from . import data_api
-from . import settings_api
 from . import experiment_api
 from . import status_api
 from . import ui_pages
@@ -76,7 +75,6 @@ def launch_server(host, port, debug):
     data_api.add_routes(app, rpc_client, debug)
     app.register_blueprint(
         calibration_api.blueprint, url_prefix="/api/calibration")
-    settings_api.add_routes(app)
     experiment_api.add_routes(app, rpc_client)
     app.register_blueprint(
         scan_jobs_api.blueprint, url_prefix="/api/scan-jobs"

@@ -31,11 +31,4 @@ def add_routes(app, rpc_client):
 
         return json_abort(400, reason="Server offline")
 
-    @app.route("/api/settings/mail/possible")
-    def can_possibly_mail():
-
-        return jsonify(
-            can_possibly_mail=can_get_server_with_current_settings()
-        )
-
         # END OF ADDING ROUTES
