@@ -9,14 +9,13 @@ from mock import MagicMock
 import numpy as np
 import pytest
 
+from scanomatic.data.calibrationstore import CalibrationStore
 from scanomatic.data_processing import calibration
 from scanomatic.io import ccc_data
 from scanomatic.io.ccc_data import (
     CalibrationEntryStatus, CCCImage, CCCMeasurement, CCCPlate, CCCPolynomial,
-    CellCountCalibration
 )
 from scanomatic.io.paths import Paths
-from scanomatic.data.calibrationstore import CalibrationStore
 from tests.factories import make_calibration
 
 # The curve fitting is done with coefficients as e^x, some tests
@@ -34,13 +33,6 @@ Paths().ccc_file_pattern = os.path.join(
 @pytest.fixture
 def store():
     return MagicMock(CalibrationStore)
-
-
-@pytest.fixture(scope='function')
-def ccc(store):
-    _ccc = calibration.get_empty_ccc(store, 'test-ccc', 'pytest')
-    store.add_calibration(_ccc)
-    return _ccc
 
 
 def test_get_im_slice():
@@ -190,8 +182,6 @@ class TestGetCalibrationOptimizationFunction:
                 *test_coeffs)[0])
 
 
-
-
 class TestAccessToken:
     IDENTIFIER = 'foobar'
     ACCESS_TOKEN = 'password'
@@ -233,56 +223,7 @@ def _fixture_load_ccc(rel_path):
     raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
 
 
-@pytest.fixture(scope='function')
-def edit_ccc(store):
-    _ccc = _fixture_load_ccc('data/test_good.ccc')
-    return _ccc
-
-
-@pytest.fixture(scope='function')
-def edit_bad_slope_ccc():
-    _ccc = _fixture_load_ccc('data/test_badslope.ccc')
-    return _ccc
-
-
-@pytest.fixture(scope='function')
-def full_ccc():
-    _ccc = _fixture_load_ccc('data/TESTUMz.ccc')
-    return _ccc
-
-
-@pytest.fixture(scope='function')
-def finalizable_ccc():
-    _ccc = _fixture_load_ccc('data/test_good.ccc')
-    return _ccc
-
-
-@pytest.fixture(scope='function')
-def active_ccc():
-    _ccc = _fixture_load_ccc('data/test_good.ccc')
-    _ccc[
-        calibration.CellCountCalibration.status
-    ] = calibration.CalibrationEntryStatus.Active
-    return _ccc
-
-
-@pytest.fixture(scope='function')
-def deleted_ccc():
-    _ccc = _fixture_load_ccc('data/test_good.ccc')
-    _ccc[
-        calibration.CellCountCalibration.status
-    ] = calibration.CalibrationEntryStatus.Deleted
-    return _ccc
-
-
-@pytest.fixture(scope='function')
-def data_store_bad_ccc(store, edit_bad_slope_ccc):
-    return calibration._collect_all_included_data(
-        store, edit_bad_slope_ccc[CellCountCalibration.identifier]
-    )
-
-
-class TestEditCCC:
+class TestValidatePolynomial:
 
     @pytest.mark.parametrize('slope,p_value,stderr,expected', (
         (0.99, 0.01, 0.001, calibration.CalibrationValidation.OK),
@@ -294,207 +235,6 @@ class TestEditCCC:
 
         assert calibration.validate_polynomial(
             slope, p_value, stderr) == expected
-
-    def test_ccc_is_in_edit_mode(self, edit_ccc):
-
-        assert (
-            edit_ccc[calibration.CellCountCalibration.status] is
-            calibration.CalibrationEntryStatus.UnderConstruction
-        ), "Not edit mode"
-
-        assert (
-            edit_ccc[calibration.CellCountCalibration.identifier]
-        ), "Missing Identifier"
-
-    def test_ccc_collect_all_data_has_equal_length(self, data_store_bad_ccc):
-
-        lens = [
-            len(getattr(data_store_bad_ccc, k)) for k in
-            ('target_value', 'source_values', 'source_value_counts')
-        ]
-        assert all(v == lens[0] for v in lens)
-
-    def test_ccc_collect_all_data_entries_has_equal_length(
-            self, data_store_bad_ccc):
-
-        values = data_store_bad_ccc.source_values
-        counts = data_store_bad_ccc.source_value_counts
-        assert all(len(v) == len(c) for v, c in zip(values, counts))
-
-
-class TestActivateCCC:
-    def test_has_selected_polynomial(self, finalizable_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        assert (
-            calibration.has_valid_polynomial(finalizable_ccc) is None
-        ), "CCC does not have valid polynomial"
-
-    def test_activated_status_is_set(self, store, finalizable_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        identifier = finalizable_ccc[
-            calibration.CellCountCalibration.identifier]
-        token = 'password'
-        assert (
-            finalizable_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.UnderConstruction
-        ), "CCC not initialized with UnderConstruction entry status"
-
-        calibration.activate_ccc(store, identifier, access_token=token)
-
-        assert (
-            finalizable_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Active
-        ), "CCC activation failed"
-
-    def test_activated_ccc_not_editable(self, store, active_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        identifier = active_ccc[
-            calibration.CellCountCalibration.identifier]
-        token = 'password'
-
-        assert (
-            active_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Active
-        ), "CCC not initialized with UnderConstruction entry status"
-
-        power = 5
-
-        response = calibration.construct_polynomial(
-            store, identifier, power, access_token=token)
-
-        assert response is None, "Could edit active CCC but shouldn't have"
-
-    def test_activated_status_is_not_set_if_no_poly(self, store, edit_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        identifier = edit_ccc[
-            calibration.CellCountCalibration.identifier]
-        token = 'password'
-
-        assert (
-            edit_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.UnderConstruction
-        ), "CCC not initialized with UnderConstruction entry status"
-
-        edit_ccc[calibration.CellCountCalibration.polynomial] = None
-        calibration.activate_ccc(store, identifier, access_token=token)
-
-        assert (
-            edit_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.UnderConstruction
-        ), "CCC activation worked but shouldn't have"
-
-    def test_activate_active_ccc(self, store, active_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        identifier = active_ccc[
-            calibration.CellCountCalibration.identifier]
-        token = 'password'
-
-        assert (
-            active_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Active
-        ), "CCC not initialized with Active entry status"
-
-        status = calibration.delete_ccc(store, identifier, access_token=token)
-
-        assert (
-            status is None
-        ), "CCC activation returned unexcepted status {}".format(status)
-
-        assert (
-            active_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Active
-        ), "CCC activation worked, but shouldn't have"
-
-    def test_activate_deleted_ccc(self, store, deleted_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        identifier = deleted_ccc[
-            calibration.CellCountCalibration.identifier]
-        token = 'password'
-
-        assert (
-            deleted_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Deleted
-        ), "CCC not initialized with Deleted entry status"
-
-        status = calibration.delete_ccc(store, identifier, access_token=token)
-
-        assert (
-            status is None
-        ), "CCC activation returned {} (expected: {})".format(status, None)
-
-        assert (
-            deleted_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Deleted
-        ), "CCC activation had unforseen consequences"
-
-
-class TestDeleteCCC:
-
-    def test_delete_active_ccc(self, store, active_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        identifier = active_ccc[
-            calibration.CellCountCalibration.identifier]
-        token = 'password'
-
-        assert (
-            active_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Active
-        ), "CCC not initialized with Active entry status"
-
-        status = calibration.delete_ccc(store, identifier, access_token=token)
-
-        assert (
-            status is None
-        ), "CCC deletion returned unexcepted status {}".format(status)
-
-        assert (
-            active_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Active
-        ), "CCC deletion worked, but shouldn't have"
-
-    def test_delete_deleted_ccc(self, store, deleted_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        identifier = deleted_ccc[
-            calibration.CellCountCalibration.identifier]
-        token = 'password'
-
-        assert (
-            deleted_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Deleted
-        ), "CCC not initialized with Deleted entry status"
-
-        status = calibration.delete_ccc(store, identifier, access_token=token)
-
-        assert (
-            status is None
-        ), "CCC deletion returned {} (expected: {})".format(status, None)
-
-        assert (
-            deleted_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Deleted
-        ), "CCC deletion had unforseen consequences"
-
-    def test_delete_editable_ccc(self, store, edit_ccc):
-        # The fixture needs to be included, otherwise test is not correct
-        identifier = edit_ccc[
-            calibration.CellCountCalibration.identifier]
-        token = 'password'
-
-        assert (
-            edit_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.UnderConstruction
-        ), "CCC has wrong status"
-
-        status = calibration.delete_ccc(store, identifier, access_token=token)
-
-        assert (
-            status is True
-        ), "CCC deletion returned {} (expected: {})".format(status, True)
-
-        assert (
-            edit_ccc[calibration.CellCountCalibration.status] ==
-            calibration.CalibrationEntryStatus.Deleted
-        ), "CCC deletion didn't work but it should have"
 
 
 class TestGettingActiveCCCs:
@@ -754,23 +494,20 @@ class TestConstructPolynomial:
 
         store.set_calibration_status.assert_not_called()
 
-    @pytest.fixture
-    def bad_measurements(self, edit_bad_slope_ccc):
-        return [
-            measurement
-            for image in edit_bad_slope_ccc[CellCountCalibration.images]
-            for plate in image[CCCImage.plates].values()
-            for measurement in plate[CCCPlate.compressed_ccc_data].values()
-        ]
-
-    def test_construct_bad_polynomial(self, bad_measurements):
+    def test_construct_bad_polynomial(self, badslope_ccc_measurements):
         store = MagicMock(CalibrationStore)
         store.get_calibration_by_id.return_value = make_calibration(
             identifier='ccc001',
             access_token='password',
             active=False,
         )
-        store.get_measurements_for_calibration.return_value = bad_measurements
+        store.get_measurements_for_calibration.return_value = [
+            {
+                CCCMeasurement.source_values: m['source_values'],
+                CCCMeasurement.source_value_counts: m['source_value_counts'],
+                CCCMeasurement.cell_count: m['cell_count'],
+            } for m in badslope_ccc_measurements
+        ]
         response = calibration.construct_polynomial(
             store, 'ccc001', power=5, access_token='password',
         )
@@ -781,23 +518,21 @@ class TestConstructPolynomial:
         assert response['correlation']['p_value'] == pytest.approx(1)
         store.set_calibration_polynomial.assert_not_called()
 
-    @pytest.fixture
-    def good_measurements(self, full_ccc):
-        return [
-            measurement
-            for image in full_ccc[CellCountCalibration.images]
-            for plate in image[CCCImage.plates].values()
-            for measurement in plate[CCCPlate.compressed_ccc_data].values()
-        ]
-
-    def test_construct_good_polynomial(self, good_measurements):
+    def test_construct_good_polynomial(self, full_ccc_measurements):
         store = MagicMock(CalibrationStore)
         store.get_calibration_by_id.return_value = make_calibration(
             identifier='ccc001',
             access_token='password',
             active=False,
         )
-        store.get_measurements_for_calibration.return_value = good_measurements
+        measurements = [
+            {
+                CCCMeasurement.source_values: m['source_values'],
+                CCCMeasurement.source_value_counts: m['source_value_counts'],
+                CCCMeasurement.cell_count: m['cell_count'],
+            } for m in full_ccc_measurements
+        ]
+        store.get_measurements_for_calibration.return_value = measurements
         response = calibration.construct_polynomial(
             store, 'ccc001', power=5, access_token='password',
         )
@@ -806,7 +541,7 @@ class TestConstructPolynomial:
         assert len(response['calculated_sizes']) == 62
         assert response['measured_sizes'] == list(sorted(
             measurement[CCCMeasurement.cell_count]
-            for measurement in good_measurements
+            for measurement in measurements
         ))
 
         assert response['correlation']['slope'] == pytest.approx(1, abs=0.02)

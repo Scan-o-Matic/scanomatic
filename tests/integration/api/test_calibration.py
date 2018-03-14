@@ -1,62 +1,80 @@
 from __future__ import absolute_import
 
 import json
-import os
 
 import mock
 import numpy as np
 import pytest
 
 from scanomatic.data_processing import calibration
-from scanomatic.io.ccc_data import CellCountCalibration, parse_ccc
+from scanomatic.io.ccc_data import (
+    CCCMeasurement, CCCPlate, CellCountCalibration
+)
 import scanomatic.ui_server.database as db
-
-
-def _fixture_load_ccc(app, rel_path):
-    parent = os.path.dirname(__file__)
-    with open(os.path.join(parent, rel_path), 'rb') as fh:
-        data = json.load(fh)
-    _ccc = parse_ccc(data)
-    if _ccc:
-        with app.app_context():
-            store = db.getcalibrationstore()
-            store.add_calibration(_ccc)
-        return _ccc
-    raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
+from tests.factories import make_calibration
 
 
 @pytest.fixture(scope='function')
 def edit_ccc(app):
-    _ccc = _fixture_load_ccc(app, 'data/test_good.ccc')
+    _ccc = make_calibration(active=False, polynomial=None)
     with app.app_context():
         store = db.getcalibrationstore()
-        store.set_calibration_polynomial(
-            _ccc[CellCountCalibration.identifier], None)
+        store.add_calibration(_ccc)
     return _ccc
 
 
 @pytest.fixture(scope='function')
-def finalizable_ccc(app):
-    _ccc = _fixture_load_ccc(app, 'data/test_good.ccc')
-    yield _ccc
+def finalizable_ccc(app, good_ccc_measurements):
+    _ccc = make_calibration(
+        identifier='testgoodedit',
+        active=False,
+        polynomial=[1, 2, 3],
+        access_token='password',
+    )
+    with app.app_context():
+        store = db.getcalibrationstore()
+        store.add_calibration(_ccc)
+        for imageid in set(m['image_id'] for m in good_ccc_measurements):
+            store.add_image_to_calibration('testgoodedit', imageid)
+        for imageid, plateid in set(
+            (m['image_id'], m['plate_id']) for m in good_ccc_measurements
+        ):
+            store.add_plate('testgoodedit', imageid, plateid, {
+                CCCPlate.grid_cell_size: (50, 50),
+                CCCPlate.grid_shape: (10, 10),
+            })
+        for m in good_ccc_measurements:
+            store.set_measurement(
+                'testgoodedit',
+                m['image_id'],
+                m['plate_id'],
+                m['col'],
+                m['row'],
+                {
+                    CCCMeasurement.source_values: m['source_values'],
+                    CCCMeasurement.source_value_counts:
+                        m['source_value_counts'],
+                    CCCMeasurement.cell_count: m['cell_count'],
+                }
+            )
+    return _ccc
 
 
 @pytest.fixture(scope='function')
 def active_ccc(app):
-    _ccc = _fixture_load_ccc(app, 'data/test_good.ccc')
+    _ccc = make_calibration(active=True)
     with app.app_context():
         store = db.getcalibrationstore()
-        store.set_calibration_status(
-            _ccc[CellCountCalibration.identifier],
-            calibration.CalibrationEntryStatus.Active)
+        store.add_calibration(_ccc)
     return _ccc
 
 
 @pytest.fixture(scope='function')
 def deleted_ccc(app):
-    _ccc = _fixture_load_ccc(app, 'data/test_good.ccc')
+    _ccc = make_calibration(active=False)
     with app.app_context():
         store = db.getcalibrationstore()
+        store.add_calibration(_ccc)
         store.set_calibration_status(
             _ccc[CellCountCalibration.identifier],
             calibration.CalibrationEntryStatus.Deleted)
