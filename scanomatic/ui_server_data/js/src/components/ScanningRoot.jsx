@@ -27,7 +27,7 @@ export function jobSorter(a, b) {
     } else if (b.status === 'Running') {
         return 1;
     }
-    return a.startTime - b.startTime;
+    return b.startTime - a.startTime;
 }
 
 export default function ScanningRoot(props) {

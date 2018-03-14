@@ -177,7 +177,7 @@ describe('jobSorter', () => {
         expect([job2, job3].sort(jobSorter)).toEqual([job3, job2]);
     });
 
-    it('should sort completed jobs so first started comes first', () => {
-        expect([job4, job5].sort(jobSorter)).toEqual([job5, job4]);
+    it('should sort completed jobs so first started comes last', () => {
+        expect([job5, job4].sort(jobSorter)).toEqual([job4, job5]);
     });
 });
