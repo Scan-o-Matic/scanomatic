@@ -47,13 +47,10 @@ from .general import (
     convert_path_to_url,
     get_search_results,
 )
+from .database import getcalibrationstore
 
 
 _logger = Logger("Data API")
-
-
-def getcalibrationstore():
-    return current_app.config['calibrationstore']
 
 
 def _depth(arr, lvl=1):
