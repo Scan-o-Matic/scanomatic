@@ -33,6 +33,7 @@ def test_qc_with_given_directory(scanomatic, browser):
 
     scannerid = create_scanner(scanomatic)
     scanjobid = create_scanjob(scanomatic, scannerid, scanjobname)
+    start_scanjob(scanomatic, scanjobid)
 
     sleep(2)
     browser.get(scanomatic + '/experiment')

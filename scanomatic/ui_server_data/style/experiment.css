@@ -20,7 +20,7 @@ div.panel button {
   font-weight: bold;
 }
 
-div.panel-heading .label {
+.panel-heading .label {
   float: right;
 }
 
