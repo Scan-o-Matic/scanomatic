@@ -127,21 +127,21 @@ export default function ScanningJobPanel(props) {
         jobStart = (
             <tr className="job-info job-start">
                 <td>Started</td>
-                <td>{`${new Date(props.startTime)}`}</td>
+                <td>{`${props.startTime}`}</td>
             </tr>
         );
         if (props.status === 'Completed') {
             jobEnd = (
                 <tr className="job-info job-end">
                     <td>Ended</td>
-                    <td>{`${new Date(new Date(props.startTime) - -duration2milliseconds(props.duration))}`}</td>
+                    <td>{`${props.endTime}`}</td>
                 </tr>
             );
         } else {
             jobEnd = (
                 <tr className="job-info job-end">
                     <td>Will end</td>
-                    <td>{`${new Date(new Date(props.startTime) - -duration2milliseconds(props.duration))}`}</td>
+                    <td>{`${props.endTime}`}</td>
                 </tr>
             );
         }
@@ -186,7 +186,8 @@ ScanningJobPanel.propTypes = {
     status: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     interval: PropTypes.number.isRequired,
-    startTime: PropTypes.string,
+    startTime: PropTypes.instanceOf(Date),
+    endTime: PropTypes.instanceOf(Date),
     onStartJob: PropTypes.func.isRequired,
     disableStart: PropTypes.bool,
     identifier: PropTypes.string.isRequired,
@@ -195,5 +196,6 @@ ScanningJobPanel.propTypes = {
 ScanningJobPanel.defaultProps = {
     scanner: null,
     startTime: null,
+    endTime: null,
     disableStart: false,
 };

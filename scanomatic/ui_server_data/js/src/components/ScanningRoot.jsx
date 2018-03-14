@@ -2,13 +2,12 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import NewScanningJobContainer from '../containers/NewScanningJobContainer';
 import SoMPropTypes from '../prop-types';
-import ScanningJobPanel, { duration2milliseconds } from './ScanningJobPanel';
+import ScanningJobPanel from './ScanningJobPanel';
 
-export function getStatus(startTime, duration, now) {
-    const endTime = new Date(startTime) - -duration2milliseconds(duration);
+export function getStatus(startTime, endTime, now) {
     if (!startTime) {
         return 'Planned';
-    } else if (endTime > now - 0) {
+    } else if (endTime > now) {
         return 'Running';
     }
     return 'Completed';
@@ -22,16 +21,13 @@ export function jobSorter(a, b) {
     } else if (a.status === 'Planned') {
         return 0;
     } else if (a.status === 'Running' && b.status === 'Running') {
-        return new Date(a.startTime) - new Date(b.startTime);
+        return a.endTime - b.endTime;
     } else if (a.status === 'Running') {
         return -1;
     } else if (b.status === 'Running') {
         return 1;
     }
-    return (
-        (new Date(b.startTime) - -duration2milliseconds(b.duration)) -
-        (new Date(a.startTime) - -duration2milliseconds(a.duration))
-    );
+    return a.startTime - b.startTime;
 }
 
 export default function ScanningRoot(props) {
@@ -48,7 +44,7 @@ export default function ScanningRoot(props) {
         const jobs = [];
         const now = new Date();
         props.jobs
-            .map(job => Object.assign({ status: getStatus(job.startTime, job.duration, now) }, job))
+            .map(job => Object.assign({ status: getStatus(job.startTime, job.endTime, now) }, job))
             .filter(job => job.status)
             .sort(jobSorter)
             .forEach((job) => {

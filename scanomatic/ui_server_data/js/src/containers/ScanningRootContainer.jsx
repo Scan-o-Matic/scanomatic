@@ -3,6 +3,7 @@ import React from 'react';
 import { getScanningJobs, startScanningJob } from '../api';
 import { getScannersWithOwned } from '../helpers';
 import ScanningRoot from '../components/ScanningRoot';
+import { duration2milliseconds } from '../components/ScanningJobPanel';
 
 
 export default class ScanningRootContainer extends React.Component {
@@ -29,7 +30,14 @@ export default class ScanningRootContainer extends React.Component {
             setTimeout(() => this.getJobStatusRequests(true), 10000);
         }
         getScanningJobs()
-            .then(jobs => this.setState({ jobs }))
+            .then(jobs => this.setState({
+                jobs: jobs.map(job => Object.assign({}, job, {
+                    startTime: job.startTime ? new Date(job.startTime) : null,
+                    endTime: job.startTime ?
+                        new Date(new Date(job.startTime) - -duration2milliseconds(job.duration)) :
+                        null,
+                })),
+            }))
             .catch(reason => this.setState({ error: `Error requesting jobs: ${reason}` }));
 
         getScannersWithOwned()
@@ -57,10 +65,18 @@ export default class ScanningRootContainer extends React.Component {
 
     handleStartJob(job) {
         const { jobs } = this.state;
-        const jobInQuestion = jobs.filter(j => j.identifier === job.identifier);
-        if (jobInQuestion.length === 1) {
-            jobInQuestion.disableStart = true;
-            this.setState({ jobs });
+        const newJobs = [];
+        let foundJob = false;
+        jobs.forEach((j) => {
+            if (j.identifier === job.identifier) {
+                newJobs.push(Object.assign({}, j, { disableStart: true }));
+                foundJob = true;
+            } else {
+                newJobs.push(job);
+            }
+        });
+        if (foundJob) {
+            this.setState({ jobs: newJobs });
         } else {
             this.setState({ error: `UI lost job '${job.name}'` });
             return;

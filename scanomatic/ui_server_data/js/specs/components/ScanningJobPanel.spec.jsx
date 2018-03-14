@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import ScanningJobPanel from '../../src/components/ScanningJobPanel';
+import ScanningJobPanel, { duration2milliseconds, getProgress } from '../../src/components/ScanningJobPanel';
 
 
 describe('<ScanningJobPanel />', () => {
@@ -172,7 +172,8 @@ describe('<ScanningJobPanel />', () => {
             jasmine.clock().mockDate(new Date('1980-03-24T13:00:00Z'));
             wrapper = shallow(<ScanningJobPanel
                 {...props}
-                startTime="1980-03-23T13:00:00Z"
+                startTime={new Date('1980-03-23T13:00:00Z')}
+                endTime={new Date('1980-03-26T15:51:00Z')}
                 status="Running"
             />);
         });
@@ -216,7 +217,7 @@ describe('<ScanningJobPanel />', () => {
             const desc = wrapper.find('tr.job-end');
             expect(desc.exists()).toBeTruthy();
             expect(desc.find('td').at(0).text()).toEqual('Will end');
-            expect(desc.find('td').at(1).text()).toEqual('Wed Mar 26 1980 16:51:00 GMT+0100 (CET)');
+            expect(desc.find('td').at(1).text()).toEqual(`${new Date('1980-03-26T15:51:00Z')}`);
         });
 
         it('should say scanning frequency', () => {
@@ -255,7 +256,8 @@ describe('<ScanningJobPanel />', () => {
         beforeEach(() => {
             wrapper = shallow(<ScanningJobPanel
                 {...props}
-                startTime="1980-03-23T13:00:00Z"
+                startTime={new Date('1980-03-23T13:00:00Z')}
+                endTime={new Date('1980-03-26T15:51:00Z')}
                 status="Completed"
             />);
         });
@@ -290,14 +292,14 @@ describe('<ScanningJobPanel />', () => {
             const desc = wrapper.find('tr.job-start');
             expect(desc.exists()).toBeTruthy();
             expect(desc.find('td').at(0).text()).toEqual('Started');
-            expect(desc.find('td').at(1).text()).toEqual('Sun Mar 23 1980 14:00:00 GMT+0100 (CET)');
+            expect(desc.find('td').at(1).text()).toEqual(`${new Date('1980-03-23T13:00:00Z')}`);
         });
 
         it('should say when a job ended', () => {
             const desc = wrapper.find('tr.job-end');
             expect(desc.exists()).toBeTruthy();
             expect(desc.find('td').at(0).text()).toEqual('Ended');
-            expect(desc.find('td').at(1).text()).toEqual('Wed Mar 26 1980 16:51:00 GMT+0100 (CET)');
+            expect(desc.find('td').at(1).text()).toEqual(`${new Date('1980-03-26T15:51:00Z')}`);
         });
 
         it('should say scanning frequency', () => {
@@ -342,5 +344,52 @@ describe('<ScanningJobPanel />', () => {
             const desc = wrapper.find('div.job-description');
             expect(desc.find('td').at(1).text()).toEqual('3 days 2 hours');
         });
+    });
+});
+
+describe('duration2milliseconds', () => {
+    it('should convert a minutes to 60000', () => {
+        expect(duration2milliseconds({ minutes: 2, hours: 0, days: 0 }))
+            .toEqual(120000);
+    });
+
+    it('should convert an hour to 3600000', () => {
+        expect(duration2milliseconds({ minutes: 0, hours: 1, days: 0 }))
+            .toEqual(3600000);
+    });
+
+    it('should convert a day to 8.64 x 10^7', () => {
+        expect(duration2milliseconds({ minutes: 0, hours: 0, days: 1 }))
+            .toEqual(86400000);
+    });
+
+    it('should sum it up', () => {
+        expect(duration2milliseconds({ minutes: 1, hours: 1, days: 1 }))
+            .toEqual(90060000);
+    });
+});
+
+describe('getProgress', () => {
+    beforeEach(() => {
+        jasmine.clock().install();
+        jasmine.clock().mockDate(new Date('2040-05-02T12:00:00.000Z'));
+    });
+
+    afterEach(() => {
+        jasmine.clock().uninstall();
+    });
+
+    it('should cap duration at 100', () => {
+        expect(getProgress({
+            startTime: new Date('1024-07-02T00:00:00.000Z'),
+            duration: { days: 666, hours: 66, minutes: 6 },
+        })).toEqual(100);
+    });
+
+    it('should return percent completed', () => {
+        expect(getProgress({
+            startTime: new Date('2040-05-01T12:00:00.000Z'),
+            duration: { days: 2, hours: 0, minutes: 0 },
+        })).toEqual(50);
     });
 });
