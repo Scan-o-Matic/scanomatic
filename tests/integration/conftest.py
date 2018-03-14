@@ -23,4 +23,22 @@ def database(postgresql):
     alembic_cfg = AlembicConfig(CONFIG_PATH)
     alembic_cfg.set_main_option('sqlalchemy.url', dburl)
     alembic.command.upgrade(alembic_cfg, "head")
-    return dburl
+    yield dburl
+
+
+@pytest.fixture
+def database_environ(postgresql, database, monkeypatch):
+    # This is needed for integration tests that use the database using
+    # store_from_env
+    dbparams = postgresql.get_dsn_parameters()
+    monkeypatch.setenv('PGHOST', dbparams['host'])
+    monkeypatch.setenv('PGPORT', dbparams['port'])
+    monkeypatch.setenv('PGUSER', dbparams['user'])
+    monkeypatch.setenv('PGDATABASE', dbparams['dbname'])
+    yield
+    # Here we need to remove the environment variables otherwise we mess
+    # with the pytest-postgresql fixture teardown.
+    monkeypatch.delenv('PGHOST')
+    monkeypatch.delenv('PGPORT')
+    monkeypatch.delenv('PGUSER')
+    monkeypatch.delenv('PGDATABASE')
