@@ -10,6 +10,7 @@ import FakePromise from '../helpers/FakePromise';
 
 describe('<ScanningRootContainer />', () => {
     const job = {
+        identifier: 'job1iamindeed',
         name: 'Test',
         scannerId: 'aha',
         duration: {
@@ -18,6 +19,17 @@ describe('<ScanningRootContainer />', () => {
             minutes: 777,
         },
         interval: 8888,
+    };
+    const job2 = {
+        identifier: 'job2iamevenmore',
+        name: 'Test2',
+        scannerId: 'ahab',
+        duration: {
+            days: 5,
+            hours: 6,
+            minutes: 77,
+        },
+        interval: 88888,
     };
     const scanner = {
         name: 'Kassad',
@@ -99,7 +111,7 @@ describe('<ScanningRootContainer />', () => {
     describe('Jobs and Scanners request resolving', () => {
         beforeEach(() => {
             spyOn(API, 'getScanningJobs').and
-                .returnValue(FakePromise.resolve([job]));
+                .returnValue(FakePromise.resolve([job, job2]));
             spyOn(helpers, 'getScannersWithOwned').and
                 .returnValue(FakePromise.resolve([scanner]));
         });
@@ -107,7 +119,10 @@ describe('<ScanningRootContainer />', () => {
         it('should pass updated jobs', () => {
             const wrapper = shallow(<ScanningRootContainer />);
             expect(wrapper.prop('jobs'))
-                .toEqual([Object.assign({}, job, { startTime: null, endTime: null })]);
+                .toEqual([
+                    Object.assign({}, job, { startTime: null, endTime: null }),
+                    Object.assign({}, job2, { startTime: null, endTime: null }),
+                ]);
         });
 
         it('should pass updated scanners', () => {
@@ -137,7 +152,10 @@ describe('<ScanningRootContainer />', () => {
                 wrapper.update();
                 const startingJob = Object.assign({}, unstarted);
                 startingJob.disableStart = true;
-                expect(wrapper.prop('jobs')).toEqual([startingJob]);
+                expect(wrapper.prop('jobs')).toEqual([
+                    startingJob,
+                    Object.assign({}, job2, { startTime: null, endTime: null }),
+                ]);
             });
         });
 

@@ -63,13 +63,13 @@ export default class ScanningRootContainer extends React.Component {
         this.setState({ newJob: true });
     }
 
-    handleStartJob(job) {
+    handleStartJob(startingJob) {
         const { jobs } = this.state;
         const newJobs = [];
         let foundJob = false;
-        jobs.forEach((j) => {
-            if (j.identifier === job.identifier) {
-                newJobs.push(Object.assign({}, j, { disableStart: true }));
+        jobs.forEach((job) => {
+            if (job.identifier === startingJob.identifier) {
+                newJobs.push(Object.assign({}, job, { disableStart: true }));
                 foundJob = true;
             } else {
                 newJobs.push(job);
@@ -78,11 +78,11 @@ export default class ScanningRootContainer extends React.Component {
         if (foundJob) {
             this.setState({ jobs: newJobs });
         } else {
-            this.setState({ error: `UI lost job '${job.name}'` });
+            this.setState({ error: `UI lost job '${startingJob.name}'` });
             return;
         }
 
-        startScanningJob(job)
+        startScanningJob(startingJob)
             .then(() => {
                 this.getJobsStatus();
             })

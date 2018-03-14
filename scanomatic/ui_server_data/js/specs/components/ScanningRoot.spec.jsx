@@ -171,6 +171,11 @@ describe('jobSorter', () => {
 
     it('should put jobs in Planned, Running, Completed order', () => {
         expect([job2, job4, job1].sort(jobSorter)).toEqual([job1, job2, job4]);
+        expect([job4, job2, job1].sort(jobSorter)).toEqual([job1, job2, job4]);
+        expect([job1, job4, job2].sort(jobSorter)).toEqual([job1, job2, job4]);
+        expect([job1, job2, job4].sort(jobSorter)).toEqual([job1, job2, job4]);
+        expect([job2, job1, job4].sort(jobSorter)).toEqual([job1, job2, job4]);
+        expect([job4, job1, job2].sort(jobSorter)).toEqual([job1, job2, job4]);
     });
 
     it('should sort running jobs so first to complete comes first', () => {
