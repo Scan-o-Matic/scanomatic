@@ -5,6 +5,7 @@ import requests
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from time import sleep
 
 
 def test_compile_with_given_directory(scanomatic, browser):
@@ -15,6 +16,7 @@ def test_compile_with_given_directory(scanomatic, browser):
     start_scanjob(scanomatic, scanjobid)
     post_scan(scanomatic, scanjobid)
 
+    sleep(2)
     browser.get(scanomatic + '/experiment')
     browser.find_element_by_id('job-' + scanjobid).find_element_by_link_text(
         "Compile project".format(scanjobname)
@@ -32,6 +34,7 @@ def test_qc_with_given_directory(scanomatic, browser):
     scannerid = create_scanner(scanomatic)
     scanjobid = create_scanjob(scanomatic, scannerid, scanjobname)
 
+    sleep(2)
     browser.get(scanomatic + '/experiment')
     browser.find_element_by_id('job-' + scanjobid).find_element_by_link_text(
         "QC project".format(scanjobname)
@@ -63,7 +66,7 @@ def create_scanjob(scanomatic, scannerid, name):
         json={
             'name': name,
             'interval': 300,
-            'duration': 3600,
+            'duration': 1,
             'scannerId': scannerid,
         },
     )

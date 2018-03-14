@@ -15,7 +15,7 @@ div.panel button {
   margin: 0.25em;
 }
 
-div.panel-heading h3 {
+.panel-title {
   display: inline-block;
   font-weight: bold;
 }
