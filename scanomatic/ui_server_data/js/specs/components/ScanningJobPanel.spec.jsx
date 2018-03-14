@@ -367,6 +367,10 @@ describe('duration2milliseconds', () => {
         expect(duration2milliseconds({ minutes: 1, hours: 1, days: 1 }))
             .toEqual(90060000);
     });
+
+    it('should return 0 if no duration', () => {
+        expect(duration2milliseconds()).toEqual(0);
+    });
 });
 
 describe('getProgress', () => {

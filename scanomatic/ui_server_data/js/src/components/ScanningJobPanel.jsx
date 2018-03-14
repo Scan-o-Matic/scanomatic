@@ -6,7 +6,8 @@ import SoMPropTypes from '../prop-types';
 
 export function duration2milliseconds(duration) {
     if (duration) {
-        return (duration.minutes * 60000) + (duration.hours * 3600000) + (duration.days * 86400000);
+        const date = new Date(0);
+        return date.setUTCHours((duration.days * 24) + duration.hours, duration.minutes);
     }
     return 0;
 }
