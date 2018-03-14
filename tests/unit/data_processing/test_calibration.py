@@ -213,16 +213,6 @@ class TestAccessToken:
         ) is True, "Edit request failed, despite valid token."
 
 
-def _fixture_load_ccc(rel_path):
-    parent = os.path.dirname(__file__)
-    with open(os.path.join(parent, rel_path), 'rb') as fh:
-        data = json.load(fh)
-    _ccc = ccc_data.parse_ccc(data)
-    if _ccc:
-        return _ccc
-    raise ValueError("The `{0}` is not valid/doesn't parse".format(rel_path))
-
-
 class TestValidatePolynomial:
 
     @pytest.mark.parametrize('slope,p_value,stderr,expected', (
@@ -800,7 +790,6 @@ class TestSetPlateGridInfo:
         store.add_plate.assert_called_with('ccc000', 'CalibIm_2', 1, {
             CCCPlate.grid_cell_size: (100, 200),
             CCCPlate.grid_shape: (12, 32),
-            CCCPlate.compressed_ccc_data: {},
         })
         store.update_plate.assert_not_called()
 
@@ -836,12 +825,6 @@ class TestSetPlateGridInfo:
             active=False,
             access_token='password',
         )
-        img = make_image_metadata(identifier='CalibIm_2')
-        img[CCCImage.plates][1] = {
-            CCCPlate.grid_cell_size: None,
-            CCCPlate.grid_shape: None,
-            CCCPlate.compressed_ccc_data: True
-        }
         store.has_calibration_image_with_id.return_value = True
         store.has_plate_with_id.return_value = True
         store.has_measurements_for_plate.return_value = True

@@ -70,21 +70,11 @@ Data structure for CCC-jsons
 from __future__ import absolute_import
 
 from enum import Enum
-from glob import iglob
-import json
-import os
-import re
-from types import StringTypes
 from uuid import uuid1
 
 from scanomatic.io.logger import Logger
-from scanomatic.io.paths import Paths
 
 _logger = Logger("CCC-data")
-
-
-class CCCFormatError(Exception):
-    pass
 
 
 class CellCountCalibration(Enum):
@@ -97,8 +87,6 @@ class CellCountCalibration(Enum):
     """:type : CellCountCalibration"""
     identifier = 3
     """:type : CellCountCalibration"""
-    images = 4
-    """:type : CellCountCalibration"""
     polynomial = 6
     """:type : CellCountCalibration"""
     edit_access_token = 7
@@ -108,8 +96,6 @@ class CellCountCalibration(Enum):
 class CCCImage(Enum):
 
     identifier = 0
-    """:type : CCCImage"""
-    plates = 1
     """:type : CCCImage"""
     grayscale_name = 2
     """:type : CCCImage"""
@@ -129,8 +115,6 @@ class CCCPlate(Enum):
     grid_shape = 0
     """:type : CCCPlate"""
     grid_cell_size = 1
-    """:type : CCCPlate"""
-    compressed_ccc_data = 2
     """:type : CCCPlate"""
 
 
@@ -163,7 +147,6 @@ def get_empty_ccc_entry(ccc_id, species, reference):
         CellCountCalibration.identifier: ccc_id,
         CellCountCalibration.species: species,
         CellCountCalibration.reference: reference,
-        CellCountCalibration.images: [],
         CellCountCalibration.edit_access_token: uuid1().hex,
         CellCountCalibration.polynomial: None,
         CellCountCalibration.status: CalibrationEntryStatus.UnderConstruction,
@@ -204,7 +187,6 @@ def get_empty_image_entry(identifier):
 
     return {
         CCCImage.identifier: identifier,
-        CCCImage.plates: {},
         CCCImage.grayscale_name: None,
         CCCImage.grayscale_source_values: None,
         CCCImage.grayscale_target_values: None,
@@ -212,144 +194,3 @@ def get_empty_image_entry(identifier):
         CCCImage.marker_y: None,
         CCCImage.fixture: None,
     }
-
-
-def parse_ccc(data):
-
-    data = _decode_dict(data)
-
-    for ccc_data_type in CellCountCalibration:
-        if ccc_data_type not in data:
-            _logger.error(
-                "Corrupt CCC-data, missing {0} in {1}".format(
-                    ccc_data_type, data)
-            )
-            return None
-
-    return data
-
-
-__DECODABLE_ENUMS = {
-    "CellCountCalibration": CellCountCalibration,
-    "CalibrationEntryStatus": CalibrationEntryStatus,
-    "CCCImage": CCCImage,
-    "CCCMeasurement": CCCMeasurement,
-    "CCCPlate": CCCPlate,
-    "CCCPolynomial": CCCPolynomial,
-}
-
-
-def _decode_ccc_key(key):
-    if isinstance(key, StringTypes):
-        if '.' in key:
-            return _decode_ccc_enum(key)
-        else:
-            if re.match(r'\(\d+, \d+\)', key):
-                return eval(key)
-            else:
-                try:
-                    return int(key)
-                except ValueError:
-                    raise CCCFormatError("{} not recognized".format(key))
-    raise CCCFormatError("{} not recognized".format(key))
-
-
-def _decode_ccc_enum(value):
-    enum_name, enum_value = value.split(".")
-    try:
-        return __DECODABLE_ENUMS[enum_name][enum_value]
-    except (ValueError, KeyError):
-        raise CCCFormatError("'{}' not a valid property of '{}'".format(
-            enum_value, enum_name))
-
-
-def _decode_val(v):
-    if isinstance(v, dict):
-        return _decode_dict(v)
-    if isinstance(v, list) or isinstance(v, tuple):
-        return type(v)(_decode_val(e) for e in v)
-    elif isinstance(v, StringTypes):
-        try:
-            return _decode_ccc_enum(v)
-        except (CCCFormatError, ValueError):
-            return v
-    else:
-        return v
-
-
-def _decode_dict(d):
-    return {_decode_ccc_key(k): _decode_val(v) for k, v in d.iteritems()}
-
-
-def _encode_ccc_key(key):
-    if isinstance(key, tuple):
-        return str(key)
-    elif isinstance(key, Enum):
-        return _encode_ccc_enum(key)
-    return key
-
-
-def _encode_ccc_enum(key):
-    if type(key) in __DECODABLE_ENUMS.values():
-        return "{}.{}".format(str(key).split(".")[-2], key.name)
-    else:
-        raise CCCFormatError("'{}' not usable in CCC keys".format(key))
-
-
-def _encode_val(v):
-    if isinstance(v, dict):
-        return _encode_dict(v)
-    if isinstance(v, list) or isinstance(v, tuple):
-        return type(v)(_encode_val(e) for e in v)
-    else:
-        try:
-            return _encode_ccc_enum(v)
-        except CCCFormatError:
-            return v
-
-
-def _encode_dict(d):
-    return {_encode_ccc_key(k): _encode_val(v) for k, v in d.iteritems()}
-
-
-def save_ccc(data):
-
-    identifier = data[CellCountCalibration.identifier]
-
-    try:
-        os.makedirs(
-            os.path.dirname(Paths().ccc_file_pattern.format(identifier)))
-    except os.error:
-        pass
-
-    with open(Paths().ccc_file_pattern.format(identifier), 'wb') as fh:
-        json.dump(_encode_dict(data), fh)
-
-    return True
-
-
-def load_cccs():
-
-    for ccc_path in iglob(Paths().ccc_file_pattern.format("*")):
-
-        with open(ccc_path, mode='rb') as fh:
-            try:
-                data = json.load(fh)
-            except ValueError:
-                _logger.warning("JSON format corrupt in file '{}'".format(
-                    ccc_path
-                ))
-                continue
-        try:
-            data = parse_ccc(data)
-        except CCCFormatError:
-            _logger.warning("{} is an outdated CCC".format(ccc_path))
-
-        if (data is None or
-                CellCountCalibration.identifier not in data or
-                not data[CellCountCalibration.identifier]):
-
-            _logger.error("Data file '{0}' is corrupt.".format(ccc_path))
-
-        else:
-            yield data

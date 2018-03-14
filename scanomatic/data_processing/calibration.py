@@ -250,7 +250,6 @@ def set_plate_grid_info(
         plate_json = {
             CCCPlate.grid_cell_size: grid_cell_size,
             CCCPlate.grid_shape: grid_shape,
-            CCCPlate.compressed_ccc_data: {}
         }
         store.add_plate(identifier, image_identifier, plate, plate_json)
     return True
