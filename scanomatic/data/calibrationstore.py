@@ -109,7 +109,7 @@ class CalibrationStore(object):
         )
 
     def update_calibration_image_with_id(self, calibrationid, imageid, values):
-        columns = {
+        updatable = {
             CCCImage.grayscale_name: 'grayscale_name',
             CCCImage.grayscale_source_values: 'grayscale_source_values',
             CCCImage.grayscale_target_values: 'grayscale_target_values',
@@ -117,7 +117,7 @@ class CalibrationStore(object):
             CCCImage.marker_x: 'marker_x',
             CCCImage.marker_y: 'marker_y',
         }
-        values = {columns[key]: value for key, value in values.items()}
+        values = {updatable[key]: value for key, value in values.items()}
         result = self._execute(
             self._images.update().where(
                 sa.and_(
