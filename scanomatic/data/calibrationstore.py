@@ -9,14 +9,6 @@ from scanomatic.io.ccc_data import (
 )
 
 
-def dump_status(status):
-    return {
-        CalibrationEntryStatus.UnderConstruction: 'under construction',
-        CalibrationEntryStatus.Active: 'active',
-        CalibrationEntryStatus.Deleted: 'deleted',
-    }[status]
-
-
 class CalibrationStore(object):
 
     class IntegrityError(Exception):
@@ -30,7 +22,7 @@ class CalibrationStore(object):
         self._measurements = dbmetadata.tables['calibration_measurements']
 
     def add_calibration(self, calibration):
-        status = dump_status(calibration[CellCountCalibration.status])
+        status = calibration[CellCountCalibration.status].name
         cccpolynomial = calibration.get(CellCountCalibration.polynomial)
         if cccpolynomial is not None:
             coefficients = cccpolynomial.get(CCCPolynomial.coefficients)
@@ -78,11 +70,9 @@ class CalibrationStore(object):
                 calibration[CellCountCalibration.polynomial] = (
                     get_polynomal_entry(power, coefficients)
                 )
-            calibration[CellCountCalibration.status] = {
-                'active': CalibrationEntryStatus.Active,
-                'under construction': CalibrationEntryStatus.UnderConstruction,
-                'deleted': CalibrationEntryStatus.Deleted,
-            }[row['status']]
+            calibration[CellCountCalibration.status] = (
+                CalibrationEntryStatus[row['status']]
+            )
             yield calibration
 
     def has_calibration_with_id(self, id_):
@@ -105,7 +95,7 @@ class CalibrationStore(object):
     def set_calibration_status(self, id_, status):
         result = self._execute(
             self._calibrations.update().where(self._calibrations.c.id == id_)
-            .values(status=dump_status(status))
+            .values(status=status.name)
         )
         if result.rowcount == 0:
             raise LookupError(id_)

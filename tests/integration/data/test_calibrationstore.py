@@ -74,7 +74,7 @@ class TestAddCalibration:
                 'ccc001',
                 'S. Kombuchae',
                 'Anonymous et al., 2020',
-                'under construction',
+                'UnderConstruction',
                 None,
                 'authorization001',
             )]
@@ -103,7 +103,7 @@ class TestAddCalibration:
             'ccc001',
             'S. Kombuchae',
             'Anonymous et al., 2020',
-            'active',
+            'Active',
             [1, 2, 3],
             'authorization001',
         )]
@@ -258,7 +258,7 @@ class TestSetCalibrationStatus:
                     WHERE id='ccc001'
                 '''
             )
-        ) == [('active',)]
+        ) == [('Active',)]
 
     def test_delete(self, store, dbconnection):
         store.add_calibration(
@@ -274,7 +274,7 @@ class TestSetCalibrationStatus:
                     WHERE id='ccc001'
                 '''
             )
-        ) == [('deleted',)]
+        ) == [('Deleted',)]
 
     def test_activate_unknown(self, store):
         with pytest.raises(LookupError):

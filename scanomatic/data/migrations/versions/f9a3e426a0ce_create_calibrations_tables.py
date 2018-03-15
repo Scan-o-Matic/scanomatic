@@ -27,7 +27,7 @@ def upgrade():
         sa.Column(
             'status',
             sa.Enum(
-                'under construction', 'active', 'deleted',
+                'Active', 'Deleted', 'UnderConstruction',
                 name='calibration_status',
             ),
             nullable=False,
@@ -103,7 +103,7 @@ def upgrade():
         'polynomial': [
             3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.
         ],
-        'status': 'active',
+        'status': 'Active',
     }])
 
 
