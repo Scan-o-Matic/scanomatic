@@ -76,6 +76,45 @@ class TestSetStartTime:
             store.set_scanjob_start_time(scanjob02.identifier, start_time)
 
 
+class TestTerminateScanjob:
+    def test_started_scanjob(self, store, dbconnection):
+        dbconnection.execute(
+            '''
+            INSERT INTO scanners(id) values ('scanner001');
+            INSERT INTO scanjobs(id, scanner_id, name, duration, interval,
+                                 start_time)
+            VALUES ('scnjb001', 'scanner001', 'Test Scanjob', '5 minutes',
+                    '1 minute', '1985-10-26 01:20:00+00');
+            '''
+            )
+        termination_time = datetime(1985, 10, 26, 1, 21, tzinfo=utc)
+        store.terminate_scanjob('scnjb001', termination_time, "Just 'cause")
+        assert list(dbconnection.execute(
+            ''' SELECT termination_time, termination_message
+                FROM scanjobs WHERE id = 'scnjb001'
+            '''
+        )) == [(termination_time, "Just 'cause")]
+
+    def test_unknown_scanjob(self, store, dbconnection):
+        termination_time = datetime(1985, 10, 26, 1, 21, tzinfo=utc)
+        with pytest.raises(LookupError):
+            store.terminate_scanjob('unknown', termination_time, "Just 'cause")
+
+    def test_not_started_scanjob(self, store, dbconnection):
+        dbconnection.execute(
+            '''
+            INSERT INTO scanners(id) values ('scanner001');
+            INSERT INTO scanjobs(id, scanner_id, name, duration, interval,
+                                 start_time)
+            VALUES ('scnjb001', 'scanner001', 'Test Scanjob', '5 minutes',
+                    '1 minute', NULL);
+            '''
+        )
+        termination_time = datetime(1985, 10, 26, 1, 21, tzinfo=utc)
+        with pytest.raises(store.IntegrityError):
+            store.terminate_scanjob('scnjb001', termination_time, "Message")
+
+
 @pytest.mark.usefixtures('insert_test_scanjobs')
 class TestHasScanJobWithName:
     def test_exists(self, store, scanjob01):

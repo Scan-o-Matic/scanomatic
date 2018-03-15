@@ -38,6 +38,21 @@ class ScanJobStore(object):
         except sa.exc.IntegrityError as e:
             raise self.IntegrityError(e)
 
+    def terminate_scanjob(self, id_, termination_time, termination_msg):
+        try:
+            result = self._connection.execute(
+                self._table.update()
+                .where(self._table.c.id == id_)
+                .values(
+                    termination_time=termination_time,
+                    termination_message=termination_msg,
+                )
+            )
+        except sa.exc.IntegrityError as e:
+            raise self.IntegrityError(e)
+        if result.rowcount < 1:
+            raise LookupError(id_)
+
     def get_scanjob_by_id(self, id_):
         query = self._table.select().where(self._table.c.id == id_)
         for scanjob in self._get_scanjobs(query):
