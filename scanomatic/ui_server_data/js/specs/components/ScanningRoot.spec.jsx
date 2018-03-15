@@ -147,6 +147,7 @@ describe('getStatus', () => {
 });
 
 describe('jobSorter', () => {
+    const job0 = { status: 'Planned' };
     const job1 = { status: 'Planned' };
     const job2 = {
         status: 'Running',
@@ -176,6 +177,7 @@ describe('jobSorter', () => {
         expect([job1, job2, job4].sort(jobSorter)).toEqual([job1, job2, job4]);
         expect([job2, job1, job4].sort(jobSorter)).toEqual([job1, job2, job4]);
         expect([job4, job1, job2].sort(jobSorter)).toEqual([job1, job2, job4]);
+        expect([job0, job1].sort(jobSorter)).toEqual([job0, job1]);
     });
 
     it('should sort running jobs so first to complete comes first', () => {

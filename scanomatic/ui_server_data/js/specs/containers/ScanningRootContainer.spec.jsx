@@ -157,6 +157,15 @@ describe('<ScanningRootContainer />', () => {
                     Object.assign({}, job2, { startTime: null, endTime: null }),
                 ]);
             });
+
+            it('should make an error if starting job not known', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                const unstarted = Object.assign({}, job, { startTime: null, endTime: null, identifier: 'whoami' });
+                wrapper.prop('onStartJob')(unstarted);
+                wrapper.update();
+                expect(wrapper.prop('error')).toEqual(`UI lost job '${job.name}'`);
+                expect(wrapper.prop('jobs')[0].disableStart).toBeFalsy();
+            });
         });
 
         describe('Start Job resolving', () => {
