@@ -20,6 +20,10 @@ def job2json(job):
     }
     if job.start_time is not None:
         obj['startTime'] = datetime2json(job.start_time)
+    if job.termination_time is not None:
+        obj['terminationTime'] = datetime2json(job.termination_time)
+    if job.termination_message is not None:
+        obj['terminationMessage'] = job.termination_message
     return obj
 
 

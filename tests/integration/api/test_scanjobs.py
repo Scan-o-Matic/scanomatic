@@ -111,15 +111,31 @@ class TestScanJobs:
         identifier = response.json['identifier']
         response = test_app.get(self.URI)
         response.status_code == OK
-        assert response.json == [
-            {
-                'identifier': identifier,
-                'name': job['name'],
-                'interval': job['interval'],
-                'duration': job['duration'],
-                'scannerId': job['scannerId'],
-            }
-        ]
+        assert response.json == [{
+            'identifier': identifier,
+            'name': job['name'],
+            'interval': job['interval'],
+            'duration': job['duration'],
+            'scannerId': job['scannerId'],
+        }]
+
+
+class TestGetScanJob:
+
+    def test_get_terminated(self, apiclient):
+        jobid = (
+            apiclient.create_scan_job('9a8486a6f9cb11e7ac660050b68338ac')
+            .json['identifier']
+        )
+        with freezegun.freeze_time('1985-10-26 01:20:00Z'):
+            apiclient.start_scan_job(jobid)
+        with freezegun.freeze_time('1985-10-26 01:21:00Z'):
+            apiclient.terminate_scan_job(jobid, 'This is why...')
+        with freezegun.freeze_time('1985-10-26 01:22:00Z'):
+            response = apiclient.get_scan_job(jobid)
+        assert response.status_code == OK
+        assert response.json['terminationTime'] == '1985-10-26T01:21:00Z'
+        assert response.json['terminationMessage'] == 'This is why...'
 
 
 class TestStartScanJob:
@@ -163,3 +179,28 @@ class TestStartScanJob:
         jobid2 = self.create_scanjob(test_app)
         response = test_app.post(self.URI.format(id=jobid2))
         assert response.status_code == CONFLICT
+
+
+class TestPostScanJobTerminate:
+    URI = '/scan-jobs/{id}/terminate'
+
+    def test_unknown_job(self, apiclient):
+        response = apiclient.terminate_scan_job('unknown')
+        assert response.status_code == NOT_FOUND
+
+    def test_terminate_job(self, apiclient):
+        jobid = apiclient.create_scan_job(
+            scannerid='9a8486a6f9cb11e7ac660050b68338ac',
+            duration=86400,
+        ).json['identifier']
+        apiclient.start_scan_job(jobid)
+        response = apiclient.terminate_scan_job(jobid)
+        assert response.status_code == OK
+
+    def test_inactive_job(self, apiclient):
+        jobid = apiclient.create_scan_job(
+            scannerid='9a8486a6f9cb11e7ac660050b68338ac',
+            duration=86400,
+        ).json['identifier']
+        response = apiclient.terminate_scan_job(jobid)
+        assert response.status_code == BAD_REQUEST

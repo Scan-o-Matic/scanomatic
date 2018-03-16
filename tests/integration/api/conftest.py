@@ -59,6 +59,15 @@ def apiclient(client):
         def start_scan_job(self, jobid):
             return client.post('/scan-jobs/{}/start'.format(jobid))
 
+        def terminate_scan_job(self, jobid, message='Just testing'):
+            return client.post(
+                '/scan-jobs/{}/terminate'.format(jobid),
+                data=json.dumps({
+                    'message': message
+                }),
+                content_type='application/json',
+            )
+
         def get_scanner_job(self, scannerid):
             return client.get('/scanners/{}/job'.format(scannerid))
 
