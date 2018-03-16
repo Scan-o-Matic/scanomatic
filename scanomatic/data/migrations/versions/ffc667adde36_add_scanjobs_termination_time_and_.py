@@ -34,6 +34,25 @@ def upgrade():
         OR (start_time IS NOT NULL and start_time < termination_time)
         '''
     )
+    op.drop_constraint('exclude_overlapping_scanjobs', 'scanjobs')
+    op.create_exclude_constraint(
+        'scanjobs_overlap_exclude',
+        'scanjobs',
+        ('scanner_id', '='),
+        (
+            '''
+            tsrange(
+                start_time AT TIME ZONE 'UTC',
+                LEAST(
+                    termination_time AT TIME ZONE 'UTC',
+                    start_time AT TIME ZONE 'UTC' + duration
+                ),
+                '[]'
+            )
+            ''', '&&'
+        ),
+        where=(sa.Column('start_time').isnot(None)),
+    ),
 
 
 def downgrade():
