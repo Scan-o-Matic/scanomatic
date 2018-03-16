@@ -121,9 +121,9 @@ class ScanJobTerminateController(Resource):
         try:
             terminate_scanjob(scanjobstore, scanjobid, message)
         except UnknownScanjobError:
-            raise NotFound
-        except TerminateScanJobError:
-            raise BadRequest
+            raise NotFound('No scan job with id {}'.format(scanjobid))
+        except TerminateScanJobError as e:
+            raise BadRequest(str(e))
         return '', OK
 
 

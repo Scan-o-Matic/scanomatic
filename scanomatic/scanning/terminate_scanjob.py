@@ -18,5 +18,7 @@ def terminate_scanjob(scanjob_store, scanjob_id, termination_message):
         raise UnknownScanjobError('No scan job with id {}'.format(scanjob_id))
     now = datetime.now(utc)
     if not scanjob.is_active(now):
-        raise TerminateScanJobError()
+        raise TerminateScanJobError(
+            'Scan job {} is not active'.format(scanjob_id)
+        )
     scanjob_store.terminate_scanjob(scanjob_id, now, termination_message)
