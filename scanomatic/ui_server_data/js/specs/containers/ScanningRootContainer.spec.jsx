@@ -1,4 +1,4 @@
-import { shallow } from 'enzyme';
+import { shallow, mount } from 'enzyme';
 import React from 'react';
 
 import '../components/enzyme-setup';
@@ -10,6 +10,7 @@ import FakePromise from '../helpers/FakePromise';
 
 describe('<ScanningRootContainer />', () => {
     const job = {
+        identifier: 'job1iamindeed',
         name: 'Test',
         scannerId: 'aha',
         duration: {
@@ -18,6 +19,17 @@ describe('<ScanningRootContainer />', () => {
             minutes: 777,
         },
         interval: 8888,
+    };
+    const job2 = {
+        identifier: 'job2iamevenmore',
+        name: 'Test2',
+        scannerId: 'ahab',
+        duration: {
+            days: 5,
+            hours: 6,
+            minutes: 77,
+        },
+        interval: 88888,
     };
     const scanner = {
         name: 'Kassad',
@@ -99,14 +111,18 @@ describe('<ScanningRootContainer />', () => {
     describe('Jobs and Scanners request resolving', () => {
         beforeEach(() => {
             spyOn(API, 'getScanningJobs').and
-                .returnValue(FakePromise.resolve([job]));
+                .returnValue(FakePromise.resolve([job, job2]));
             spyOn(helpers, 'getScannersWithOwned').and
                 .returnValue(FakePromise.resolve([scanner]));
         });
 
         it('should pass updated jobs', () => {
             const wrapper = shallow(<ScanningRootContainer />);
-            expect(wrapper.prop('jobs')).toEqual([job]);
+            expect(wrapper.prop('jobs'))
+                .toEqual([
+                    Object.assign({}, job, { startTime: null, endTime: null }),
+                    Object.assign({}, job2, { startTime: null, endTime: null }),
+                ]);
         });
 
         it('should pass updated scanners', () => {
@@ -131,11 +147,24 @@ describe('<ScanningRootContainer />', () => {
 
             it('should deactivate button', () => {
                 const wrapper = shallow(<ScanningRootContainer />);
-                wrapper.prop('onStartJob')(job);
+                const unstarted = Object.assign({}, job, { startTime: null, endTime: null });
+                wrapper.prop('onStartJob')(unstarted);
                 wrapper.update();
-                const startingJob = Object.assign(job);
+                const startingJob = Object.assign({}, unstarted);
                 startingJob.disableStart = true;
-                expect(wrapper.prop('jobs')).toEqual([startingJob]);
+                expect(wrapper.prop('jobs')).toEqual([
+                    startingJob,
+                    Object.assign({}, job2, { startTime: null, endTime: null }),
+                ]);
+            });
+
+            it('should make an error if starting job not known', () => {
+                const wrapper = shallow(<ScanningRootContainer />);
+                const unstarted = Object.assign({}, job, { startTime: null, endTime: null, identifier: 'whoami' });
+                wrapper.prop('onStartJob')(unstarted);
+                wrapper.update();
+                expect(wrapper.prop('error')).toEqual(`UI lost job '${job.name}'`);
+                expect(wrapper.prop('jobs')[0].disableStart).toBeFalsy();
             });
         });
 
@@ -223,7 +252,61 @@ describe('<ScanningRootContainer />', () => {
 
         it('should pass jobs', () => {
             const wrapper = shallow(<ScanningRootContainer />);
-            expect(wrapper.prop('jobs')).toEqual([job]);
+            expect(wrapper.prop('jobs'))
+                .toEqual([Object.assign({}, job, { startTime: null, endTime: null })]);
         });
+    });
+
+    describe('Resolving with a started (running or completed) job', () => {
+        const startedJob = {
+            name: 'Test',
+            scannerId: 'aha',
+            duration: {
+                days: 5,
+                hours: 6,
+                minutes: 7,
+            },
+            interval: 8888,
+            startTime: '1980-03-23T13:00:00Z',
+        };
+
+        beforeEach(() => {
+            spyOn(API, 'getScanningJobs').and
+                .returnValue(FakePromise.resolve([startedJob]));
+            spyOn(helpers, 'getScannersWithOwned').and
+                .returnValue(FakePromise.resolve([scanner]));
+        });
+
+        it('should convert startTime to a date', () => {
+            const wrapper = shallow(<ScanningRootContainer />);
+            expect(wrapper.prop('jobs'))
+                .toEqual([Object.assign({}, startedJob, {
+                    startTime: new Date(startedJob.startTime),
+                    endTime: new Date('1980-03-28T19:07:00Z'),
+                })]);
+        });
+    });
+
+    it('is live updating', () => {
+        spyOn(API, 'getScanningJobs').and
+            .returnValue(FakePromise.resolve([]));
+        spyOn(helpers, 'getScannersWithOwned').and
+            .returnValue(FakePromise.resolve([]));
+        jasmine.clock().install();
+
+        mount(<ScanningRootContainer />);
+        expect(API.getScanningJobs.calls.count()).toEqual(1);
+        expect(helpers.getScannersWithOwned.calls.count()).toEqual(1);
+        jasmine.clock().tick(5000);
+        expect(API.getScanningJobs.calls.count()).toEqual(1);
+        expect(helpers.getScannersWithOwned.calls.count()).toEqual(1);
+        jasmine.clock().tick(5050);
+        expect(API.getScanningJobs.calls.count()).toEqual(2);
+        expect(helpers.getScannersWithOwned.calls.count()).toEqual(2);
+        jasmine.clock().tick(10000);
+        expect(API.getScanningJobs.calls.count()).toEqual(3);
+        expect(helpers.getScannersWithOwned.calls.count()).toEqual(3);
+
+        jasmine.clock().uninstall();
     });
 });
