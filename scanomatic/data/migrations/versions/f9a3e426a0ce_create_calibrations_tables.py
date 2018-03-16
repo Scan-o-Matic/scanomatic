@@ -27,7 +27,7 @@ def upgrade():
         sa.Column(
             'status',
             sa.Enum(
-                'under construction', 'active', 'deleted',
+                'Active', 'Deleted', 'UnderConstruction',
                 name='calibration_status',
             ),
             nullable=False,
@@ -38,6 +38,10 @@ def upgrade():
             'species', 'reference',
             name='uq_species_reference'
         ),
+        sa.CheckConstraint(
+            "status <> 'Active' OR polynomial IS NOT NULL",
+            name='calibrations_active_polynomial_check',
+        )
     )
     op.create_table(
         'calibration_images',
@@ -103,7 +107,7 @@ def upgrade():
         'polynomial': [
             3.379796310880545e-05, 0., 0., 0., 48.99061427688507, 0.
         ],
-        'status': 'active',
+        'status': 'Active',
     }])
 
 

@@ -74,7 +74,7 @@ class TestAddCalibration:
                 'ccc001',
                 'S. Kombuchae',
                 'Anonymous et al., 2020',
-                'under construction',
+                'UnderConstruction',
                 None,
                 'authorization001',
             )]
@@ -103,7 +103,7 @@ class TestAddCalibration:
             'ccc001',
             'S. Kombuchae',
             'Anonymous et al., 2020',
-            'active',
+            'Active',
             [1, 2, 3],
             'authorization001',
         )]
@@ -241,13 +241,22 @@ class TestSetCalibrationPolynomial:
         with pytest.raises(LookupError):
             store.set_calibration_polynomial('unknown', None)
 
+    def test_set_to_none_activated_scanjob(self, store, dbconnection):
+        store.add_calibration(
+            make_calibration(
+                identifier='ccc001', active=True,
+            )
+        )
+        with pytest.raises(store.IntegrityError):
+            store.set_calibration_polynomial('ccc001', None)
+
 
 class TestSetCalibrationStatus:
 
     def test_activate(self, store, dbconnection):
         store.add_calibration(
             make_calibration(
-                identifier='ccc001', active=False
+                identifier='ccc001', active=False, polynomial=[1, 2, 3],
             )
         )
         store.set_calibration_status('ccc001', CalibrationEntryStatus.Active)
@@ -258,7 +267,7 @@ class TestSetCalibrationStatus:
                     WHERE id='ccc001'
                 '''
             )
-        ) == [('active',)]
+        ) == [('Active',)]
 
     def test_delete(self, store, dbconnection):
         store.add_calibration(
@@ -274,12 +283,24 @@ class TestSetCalibrationStatus:
                     WHERE id='ccc001'
                 '''
             )
-        ) == [('deleted',)]
+        ) == [('Deleted',)]
 
     def test_activate_unknown(self, store):
         with pytest.raises(LookupError):
             store.set_calibration_status(
                 'unknown', CalibrationEntryStatus.Active
+            )
+
+    def test_activate_without_polynomial(self, store, dbconnection):
+        store.add_calibration(
+            make_calibration(
+                identifier='ccc001', active=False, polynomial=None,
+            )
+        )
+        with pytest.raises(store.IntegrityError):
+            store.set_calibration_status(
+                'ccc001',
+                CalibrationEntryStatus.Active,
             )
 
 
@@ -622,7 +643,9 @@ class TestSetMeasurement:
                     FROM calibration_measurements
                 '''
             )
-        ) == [('ccc001', 'img001', 1, 2, 3, [4.1, 5.2, 6.3], [7, 8, 9], 123456)]
+        ) == [
+            ('ccc001', 'img001', 1, 2, 3, [4.1, 5.2, 6.3], [7, 8, 9], 123456)
+        ]
 
     def test_replace(self, store, dbconnection):
         store.add_calibration(make_calibration(identifier='ccc001'))
