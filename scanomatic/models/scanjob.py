@@ -58,7 +58,10 @@ class ScanJob(ScanJobBase):
         )
 
     def is_active(self, timepoint):
-        return (
-            self.start_time is not None
-            and self.start_time <= timepoint <= self.start_time + self.duration
-        )
+        if self.start_time is None:
+            return False
+        if self.termination_time is None:
+            end_time = self.start_time + self.duration
+        else:
+            end_time = self.termination_time
+        return self.start_time <= timepoint <= end_time

@@ -86,3 +86,23 @@ class TestIsActive:
     ])
     def test_not_active(self, started_job, now):
         assert not started_job.is_active(now)
+
+    def test_terminated_job_is_not_active(self):
+        terminated_job = ScanJob(
+            identifier='xxxx',
+            name='Unknown',
+            duration=timedelta(minutes=20),
+            interval=timedelta(minutes=5),
+            scanner_id='yyyy',
+            start_time=datetime(
+                1985, 10, 26, 1, 20, tzinfo=utc
+            ),
+            termination_time=datetime(
+                1985, 10, 26, 1, 21, tzinfo=utc
+            ),
+        )
+        assert not terminated_job.is_active(
+            datetime(
+                1985, 10, 26, 1, 22, tzinfo=utc
+            )
+        )
