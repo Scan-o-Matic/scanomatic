@@ -38,6 +38,10 @@ def upgrade():
             'species', 'reference',
             name='uq_species_reference'
         ),
+        sa.CheckConstraint(
+            "status <> 'Active' OR polynomial IS NOT NULL",
+            name='calibrations_active_polynomial_check',
+        )
     )
     op.create_table(
         'calibration_images',
