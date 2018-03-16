@@ -251,7 +251,6 @@ class TestSetCalibrationPolynomial:
             store.set_calibration_polynomial('ccc001', None)
 
 
-
 class TestSetCalibrationStatus:
 
     def test_activate(self, store, dbconnection):
@@ -644,7 +643,9 @@ class TestSetMeasurement:
                     FROM calibration_measurements
                 '''
             )
-        ) == [('ccc001', 'img001', 1, 2, 3, [4.1, 5.2, 6.3], [7, 8, 9], 123456)]
+        ) == [
+            ('ccc001', 'img001', 1, 2, 3, [4.1, 5.2, 6.3], [7, 8, 9], 123456)
+        ]
 
     def test_replace(self, store, dbconnection):
         store.add_calibration(make_calibration(identifier='ccc001'))
