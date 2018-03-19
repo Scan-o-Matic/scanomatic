@@ -46,7 +46,6 @@ def launch_server(host, port, debug):
     _DEBUG_MODE = debug
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
     prom = Prometheus(app)
-    prom.start_server(9999)
     app.config['calibrationstore'] = CalibrationStore()
     app.config['imagestore'] = ImageStore(Config().paths.projects_root)
     app.config['DATABASE_URL'] = get_database_url()
