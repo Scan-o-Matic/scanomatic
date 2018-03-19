@@ -15,6 +15,15 @@ div.panel button {
   margin: 0.25em;
 }
 
+.panel-title {
+  display: inline-block;
+  font-weight: bold;
+}
+
+.panel-heading .label {
+  float: right;
+}
+
 button.new-job {
   display: inline-block;
   margin-bottom: 0.5em;
@@ -29,7 +38,14 @@ button.new-job {
   vertical-align: middle;
 }
 
-.job-status {
-  display: inline-block;
-  font-weight: bold;
+.job-description .progress {
+  margin-bottom: 0;
+}
+
+table.job-stats {
+  margin: 0.5em 0 0 0;
+}
+
+table.job-stats tr td:first-child {
+  background-color: #f5f5f5;
 }

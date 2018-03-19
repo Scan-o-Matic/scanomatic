@@ -23,6 +23,9 @@ COPY scripts/ /tmp/scripts/
 COPY scanomatic/ /tmp/scanomatic/
 COPY setup.py /tmp/setup.py
 
+RUN mkdir /var/run/prometheus_multiproc
+ENV prometheus_multiproc_dir=/var/run/prometheus_multiproc
+
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/ccc.js /tmp/scanomatic/ui_server_data/js/ccc.js
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/scanning.js /tmp/scanomatic/ui_server_data/js/scanning.js
 RUN cd /tmp && python setup.py install
