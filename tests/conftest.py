@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+
+import json
+
 import pytest
 
 
@@ -24,3 +27,29 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "slow" in item.keywords:
                 item.add_marker(skip_slow)
+
+
+def _load_measurements(path):
+    with path.open('r') as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def good_ccc_measurements(pytestconfig):
+    return _load_measurements(
+        pytestconfig.rootdir.join('tests/fixtures/good_ccc_measurements.json')
+    )
+
+
+@pytest.fixture
+def badslope_ccc_measurements(pytestconfig):
+    return _load_measurements(
+        pytestconfig.rootdir.join('tests/fixtures/badslope_ccc_measurements.json')
+    )
+
+
+@pytest.fixture
+def full_ccc_measurements(pytestconfig):
+    return _load_measurements(
+        pytestconfig.rootdir.join('tests/fixtures/full_ccc_measurements.json')
+    )

@@ -47,7 +47,7 @@ def test_post_analysis_job_request(scanomatic, browser):
     elem.send_keys('testproject/testproject.project.compilation')
 
     elem = Select(browser.find_element_by_id('ccc-selection'))
-    elem.select_by_visible_text('Testum Testis, Test Testare')
+    elem.select_by_visible_text('S. cerevisiae, Zackrisson et. al. 2016')
 
     elem = browser.find_element_by_id('analysis-directory')
     elem.send_keys('test_ccc_{}'.format(browser_name))
