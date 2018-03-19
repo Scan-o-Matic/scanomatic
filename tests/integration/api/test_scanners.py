@@ -20,6 +20,19 @@ class TestGetScannerJob(object):
         assert response.status_code == HTTPStatus.OK
         assert response.json is None
 
+    def test_terminated_job(self, apiclient):
+        jobid = apiclient.create_scan_job(
+            self.SCANNERID, duration=600
+        ).json['identifier']
+        with freeze_time('1985-10-26 01:20:00Z'):
+            apiclient.start_scan_job(jobid)
+        with freeze_time('1985-10-26 01:21:00Z'):
+            apiclient.terminate_scan_job(jobid)
+        with freeze_time('1985-10-26 01:22:00Z'):
+            response = apiclient.get_scanner_job(self.SCANNERID)
+        assert response.status_code == HTTPStatus.OK
+        assert response.json is None
+
     def test_has_scanjob(self, apiclient):
         jobid = apiclient.create_scan_job(self.SCANNERID).json['identifier']
         job = apiclient.get_scan_job(jobid).json

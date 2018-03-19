@@ -1,18 +1,21 @@
 from __future__ import absolute_import
+
 from datetime import datetime, timedelta
 from httplib import BAD_REQUEST, CONFLICT, CREATED, OK
 from uuid import uuid1
 
-from flask import request, jsonify, Blueprint
+from flask import Blueprint, jsonify, request
 from flask_restful import Api, Resource
 import pytz
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import BadRequest, NotFound
 
 from scanomatic.models.scanjob import ScanJob
+from scanomatic.scanning.terminate_scanjob import (
+    TerminateScanJobError, UnknownScanjobError, terminate_scanjob
+)
+from . import database
 from .general import json_abort
 from .serialization import job2json
-from . import database
-
 
 blueprint = Blueprint('scan_jobs_api', __name__)
 
@@ -109,6 +112,25 @@ class ScanJobStartController(Resource):
         return '', OK
 
 
+class ScanJobTerminateController(Resource):
+
+    def post(self, scanjobid):
+        scanjobstore = database.getscanjobstore()
+        data_obj = request.get_json(silent=True)
+        if data_obj is not None:
+            message = data_obj.get('message')
+        else:
+            message = None
+        try:
+            terminate_scanjob(scanjobstore, scanjobid, message)
+        except UnknownScanjobError:
+            raise NotFound('No scan job with id {}'.format(scanjobid))
+        except TerminateScanJobError as e:
+            raise BadRequest(str(e))
+        return '', OK
+
+
 api = Api(blueprint)
 api.add_resource(ScanJobStartController, '/<scanjobid>/start')
+api.add_resource(ScanJobTerminateController, '/<scanjobid>/terminate')
 api.add_resource(ScanJobDocument, '/<scanjobid>')
