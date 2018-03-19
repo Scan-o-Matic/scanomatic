@@ -137,6 +137,21 @@ class TestGetScanJob:
         assert response.json['terminationTime'] == '1985-10-26T01:21:00Z'
         assert response.json['terminationMessage'] == 'This is why...'
 
+    def test_get_terminated_without_message(self, apiclient):
+        jobid = (
+            apiclient.create_scan_job('9a8486a6f9cb11e7ac660050b68338ac')
+            .json['identifier']
+        )
+        with freezegun.freeze_time('1985-10-26 01:20:00Z'):
+            apiclient.start_scan_job(jobid)
+        with freezegun.freeze_time('1985-10-26 01:21:00Z'):
+            apiclient.terminate_scan_job(jobid, message=None)
+        with freezegun.freeze_time('1985-10-26 01:22:00Z'):
+            response = apiclient.get_scan_job(jobid)
+        assert response.status_code == OK
+        assert response.json['terminationTime'] == '1985-10-26T01:21:00Z'
+        assert 'terminationMessage' not in response.json
+
 
 class TestStartScanJob:
     URI = '/scan-jobs/{id}/start'
@@ -195,6 +210,15 @@ class TestPostScanJobTerminate:
         ).json['identifier']
         apiclient.start_scan_job(jobid)
         response = apiclient.terminate_scan_job(jobid)
+        assert response.status_code == OK
+
+    def test_terminate_job_with_message(self, apiclient):
+        jobid = apiclient.create_scan_job(
+            scannerid='9a8486a6f9cb11e7ac660050b68338ac',
+            duration=86400,
+        ).json['identifier']
+        apiclient.start_scan_job(jobid)
+        response = apiclient.terminate_scan_job(jobid, message='Reason...')
         assert response.status_code == OK
 
     def test_inactive_job(self, apiclient):

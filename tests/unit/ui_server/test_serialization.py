@@ -67,6 +67,24 @@ class TestJob2Json:
         assert obj['terminationTime'] == '1967-09-03T06:00:00Z'
         assert obj['terminationMessage'] == 'Some message'
 
+    def test_empty_termination_message(self):
+        job = ScanJob(
+            identifier='test',
+            name='testing',
+            duration=dt.timedelta(seconds=15),
+            interval=dt.timedelta(hours=22),
+            scanner_id='hohoho',
+            start_time=dt.datetime(
+                1967, 9, 3, 5, tzinfo=pytz.utc
+            ),
+            termination_time=dt.datetime(
+                1967, 9, 3, 6, tzinfo=pytz.utc
+            ),
+            termination_message='',
+        )
+        obj = job2json(job)
+        assert 'terminationMessage' not in obj
+
 
 class TestScan2Json(object):
     def test_simple_scan(self):

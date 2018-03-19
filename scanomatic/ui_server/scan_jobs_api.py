@@ -116,8 +116,11 @@ class ScanJobTerminateController(Resource):
 
     def post(self, scanjobid):
         scanjobstore = database.getscanjobstore()
-        data_obj = request.get_json(silent=False)
-        message = data_obj.get('message')
+        data_obj = request.get_json(silent=True)
+        if data_obj is not None:
+            message = data_obj.get('message')
+        else:
+            message = None
         try:
             terminate_scanjob(scanjobstore, scanjobid, message)
         except UnknownScanjobError:
