@@ -5,7 +5,8 @@ linters:
   flake8: {}
   pep8:
     ignore: 'W503'
-  py3k: {}
+  py3k:
+    ignore: 'W1618'
   eslint:
     fixer: true
   yamllint: {}
