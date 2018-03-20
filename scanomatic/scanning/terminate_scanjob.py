@@ -2,12 +2,10 @@ from datetime import datetime
 
 from pytz import utc
 
+from .exceptions import UnknownScanjobError
+
 
 class TerminateScanJobError(Exception):
-    pass
-
-
-class UnknownScanjobError(Exception):
     pass
 
 
