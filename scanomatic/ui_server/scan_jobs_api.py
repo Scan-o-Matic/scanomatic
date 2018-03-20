@@ -10,8 +10,12 @@ import pytz
 from werkzeug.exceptions import BadRequest, NotFound
 
 from scanomatic.models.scanjob import ScanJob
+from scanomatic.scanning.delete_scanjob import (
+    DeleteScanjobError, delete_scanjob
+)
+from scanomatic.scanning.exceptions import UnknownScanjobError
 from scanomatic.scanning.terminate_scanjob import (
-    TerminateScanJobError, UnknownScanjobError, terminate_scanjob
+    TerminateScanJobError, terminate_scanjob
 )
 from . import database
 from .general import json_abort
@@ -87,6 +91,7 @@ def scan_jobs_list():
 
 
 class ScanJobDocument(Resource):
+
     def get(self, scanjobid):
         scanjobstore = database.getscanjobstore()
         try:
@@ -94,6 +99,15 @@ class ScanJobDocument(Resource):
         except KeyError:
             raise NotFound
         return job2json(job)
+
+    def delete(self, scanjobid):
+        scanjobstore = database.getscanjobstore()
+        try:
+            delete_scanjob(scanjobstore, scanjobid)
+        except UnknownScanjobError:
+            raise NotFound
+        except DeleteScanjobError as e:
+            raise BadRequest(str(e))
 
 
 class ScanJobStartController(Resource):

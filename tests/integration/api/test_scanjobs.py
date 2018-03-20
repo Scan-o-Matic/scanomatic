@@ -1,5 +1,6 @@
 from __future__ import absolute_import
-from httplib import BAD_REQUEST, CONFLICT, OK, CREATED, NOT_FOUND
+
+from httplib import BAD_REQUEST, CONFLICT, CREATED, NOT_FOUND, OK
 import json
 from types import MethodType
 import uuid
@@ -151,6 +152,36 @@ class TestGetScanJob:
         assert response.status_code == OK
         assert response.json['terminationTime'] == '1985-10-26T01:21:00Z'
         assert 'terminationMessage' not in response.json
+
+
+class TestDeleteScanJob:
+
+    def test_unknown(self, apiclient):
+        response = apiclient.delete_scan_job('unknown')
+        assert response.status_code == NOT_FOUND
+
+    def test_deletable(self, apiclient):
+        jobid = (
+            apiclient.create_scan_job('9a8486a6f9cb11e7ac660050b68338ac')
+            .json['identifier']
+        )
+        response = apiclient.delete_scan_job(jobid)
+        assert response.status_code == OK
+        response2 = apiclient.get_scan_job(jobid)
+        assert response2.status_code == NOT_FOUND
+
+    def test_undeletable(self, apiclient):
+        jobid = (
+            apiclient.create_scan_job('9a8486a6f9cb11e7ac660050b68338ac')
+            .json['identifier']
+        )
+        apiclient.start_scan_job(jobid)
+        response = apiclient.delete_scan_job(jobid)
+        assert response.status_code == BAD_REQUEST
+        assert response.json == {
+            'message':
+            'Scanjob {} has been started, cannot delete'.format(jobid)
+        }
 
 
 class TestStartScanJob:
