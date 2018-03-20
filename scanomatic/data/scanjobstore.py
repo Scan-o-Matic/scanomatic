@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 from pytz import utc
 import sqlalchemy as sa
 from sqlalchemy.sql import and_
@@ -54,6 +55,13 @@ class ScanJobStore(object):
             )
         except sa.exc.IntegrityError as e:
             raise self.IntegrityError(e)
+        if result.rowcount < 1:
+            raise LookupError(id_)
+
+    def delete_scanjob(self, id_):
+        result = self._connection.execute(
+            self._table.delete().where(self._table.c.id == id_)
+        )
         if result.rowcount < 1:
             raise LookupError(id_)
 

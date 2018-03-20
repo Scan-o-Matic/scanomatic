@@ -163,6 +163,30 @@ class TestTerminateScanjob:
             store.terminate_scanjob('scnjb001', termination_time, "Message")
 
 
+class TestDeleteScanJob:
+    def test_delete_scanjob(self, store, dbconnection):
+        dbconnection.execute(
+            '''
+            INSERT INTO scanners(id) values ('scanner001');
+            INSERT INTO scanjobs(id, scanner_id, name, duration, interval)
+            VALUES ('scnjb001', 'scanner001', 'Test Scanjob', '5 minutes',
+                    '1 minute');
+            '''
+        )
+        store.delete_scanjob('scnjb001')
+        assert list(
+            dbconnection.execute(
+                '''
+                SELECT * FROM scanjobs WHERE id = 'scnjb001'
+                '''
+            )
+        ) == []
+
+    def test_delete_unknown(self, store):
+        with pytest.raises(LookupError):
+            store.delete_scanjob('unknown')
+
+
 @pytest.mark.usefixtures('insert_test_scanjobs')
 class TestHasScanJobWithName:
     def test_exists(self, store, scanjob01):
