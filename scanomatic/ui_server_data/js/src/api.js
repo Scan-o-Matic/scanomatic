@@ -112,20 +112,6 @@ export function SetGrayScaleImageAnalysis(cccId, imageId, accessToken) {
     return API.postFormData(path, formData);
 }
 
-export function GetGrayScaleAnalysis(grayScaleName, imageData, successCallback, errorCallback) {
-    const path = GetGrayScaleAnalysisPath + grayScaleName;
-    const formData = new FormData();
-    formData.append('image', imageData);
-    $.ajax({
-        url: path,
-        type: 'POST',
-        contentType: false,
-        enctype: 'multipart/form-data',
-        data: formData,
-        processData: false,
-    });
-}
-
 export function SetGrayScaleTransform(cccId, imageId, plate, accessToken) {
     const path = `/api/calibration/${cccId}/image/${imageId}/plate/${plate}/transform`;
     const formData = new FormData();

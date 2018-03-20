@@ -88,7 +88,7 @@ def json_data(data):
         return data
 
 
-def add_routes(app, rpc_client, is_debug_mode):
+def add_routes(app, rpc_client):
 
     """
 
@@ -96,7 +96,6 @@ def add_routes(app, rpc_client, is_debug_mode):
         app (Flask): The flask app to decorate
         rpc_client (scanomatic.io.rpc_client._ClientProxy):
             A dynamic rpc-client bridge
-        is_debug_mode (bool): If running in debug-mode
     """
 
     @app.route("/api/data/phenotype", methods=['POST'])
@@ -227,78 +226,6 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         return jsonify(success=True, grayscales=grayscales, default=default)
 
-    @app.route("/api/data/grayscale/image/<grayscale_name>", methods=['POST'])
-    def _gs_get_from_image(grayscale_name):
-        """Analyse image slice as grayscale-strip
-
-        The image should be supplied via POST, preferably in a
-        json-object, under the key 'image'
-
-        Args:
-            grayscale_name: The type of strip, known by default
-                ['Kodak', 'SilverFast']
-
-        Returns: json-object with keys
-            'source_values' as an array of each strip segment's
-                average value in the image
-            'target_values' as an array of the reference values
-                supplied by the manufacturer
-            'grayscale' as the name of the grayscale
-            'success' if analysis completed and if not 'reason'
-                is added as to why not.
-            'exits' lists the suggested further requests
-            'transform_grayscale' list with the uri to transform image
-                in grayscale calibrated space using the results
-                of the current request
-
-        See Also:
-            _grayscales @ route /api/data/grayscales:
-                Getting the names of the known grayscales
-        """
-        raise NotImplemented("This endpoint is not complete")
-
-        data_object = request.get_json(silent=True, force=True)
-        if not data_object:
-            data_object = request.values
-
-        image = get_image_data_as_array(
-            data_object.get("image", default=[[]]),
-            reshape=data_object.get("shape", default=None))
-
-        grayscale_area_model = GrayScaleAreaModel(
-            name=grayscale_name,
-            x1=0, x2=image.shape[1],
-            y1=0, y2=image.shape[0])
-
-        if get_area_too_large_for_grayscale(grayscale_area_model):
-
-            return jsonify(
-                success=False, source_values=None, target_values=None,
-                grayscale=None, reason="Area too large")
-
-        try:
-            _, values = get_grayscale(
-                fixture, grayscale_area_model, debug=is_debug_mode)
-        except TypeError:
-            return jsonify(
-                success=False, is_endpoint=True,
-                reason="Grayscale detection failed")
-
-        grayscale_object = getGrayscale(grayscale_area_model.name)
-        valid = get_grayscale_is_valid(values, grayscale_object)
-
-        return jsonify(
-            success=valid,
-            source_values=values,
-            target_values=grayscale_object['targets'],
-            grayscale=grayscale_area_model.name,
-            reason=(
-                None if valid else
-                "No valid grayscale detected for {0}".format(
-                    dict(**grayscale_area_model))),
-            exits=["transform_grayscale"],
-            transform_grayscale=["/api/data/image/transform/grayscale"])
-
     @app.route(
         "/api/data/grayscale/fixture/<fixture_name>", methods=['POST', 'GET'])
     def _gs_get_from_fixture(fixture_name):
@@ -335,8 +262,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         fixture = get_fixture_image_by_name(fixture_name)
 
         try:
-            _, values = get_grayscale(
-                fixture, grayscale_area_model, debug=is_debug_mode)
+            _, values = get_grayscale(fixture, grayscale_area_model)
         except TypeError:
             return jsonify(
                 success=False, is_endpoint=True,
