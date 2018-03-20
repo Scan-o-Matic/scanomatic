@@ -8,4 +8,4 @@ do
 done
 echo "Migration complete!"
 
-$*
+exec "$@"

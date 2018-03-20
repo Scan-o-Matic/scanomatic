@@ -8,7 +8,6 @@ services:
     volumes:
       - scan-o-matic-home:/root/.scan-o-matic
       - somprojects:/somprojects
-    command: scan-o-matic --no-browser
     environment:
       - SOM_BACKEND_HOST=scanomatic-backend
       - PGHOST=db

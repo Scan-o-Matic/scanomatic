@@ -17,6 +17,7 @@ RUN apt update && apt -y install python-pip
 
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
+RUN pip install gunicorn
 
 COPY data/ /tmp/data/
 COPY scripts/ /tmp/scripts/
@@ -34,5 +35,9 @@ COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENV PGPASSFILE=/etc/scanomatic/pgpass
+ENV WEB_CONCURRENCY=2
 ENTRYPOINT ["/entrypoint.sh"]
-CMD scan-o-matic --no-browser
+CMD gunicorn \
+    --config python:scanomatic.ui_server.gunicorn_config \
+    --bind 0.0.0.0:5000 \
+    "scanomatic.ui_server.ui_server:create_app()"

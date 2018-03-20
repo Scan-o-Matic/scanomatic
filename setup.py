@@ -43,7 +43,6 @@ setup(
     },
     scripts=[
         os.path.join("scripts", p) for p in [
-            "scan-o-matic",
             "scan-o-matic_migrate",
             "scan-o-matic_server",
         ]
@@ -65,7 +64,6 @@ setup(
         'enum34',
         'flask',
         'flask-restful',
-        'flask_cors',
         'future',
         'matplotlib',
         'numpy',

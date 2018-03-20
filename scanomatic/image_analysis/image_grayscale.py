@@ -36,7 +36,6 @@ NEW_GS_ALG_L_DIFF_T = 0.1
 NEW_GS_ALG_L_DIFF_SPIKE_T = 0.3
 NEW_GS_ALG_SPIKES_FRACTION = 0.8
 NEW_SAFETY_PADDING = 0.2
-DEBUG_DETECTION = False
 
 _logger = logger.Logger("Analyze Grayscale")
 
@@ -138,16 +137,14 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
     return im_ortho_trimmed
 
 
-def get_grayscale(fixture, grayscale_area_model, debug=False):
+def get_grayscale(fixture, grayscale_area_model):
     im = fixture.get_grayscale_im_section(grayscale_area_model)
     if im is None:
         return None
-    return get_grayscale_image_analysis(im, grayscale_area_model.name, debug=debug)
+    return get_grayscale_image_analysis(im, grayscale_area_model.name)
 
 
-def get_grayscale_image_analysis(im, grayscale_name, debug=False):
-    global DEBUG_DETECTION
-
+def get_grayscale_image_analysis(im, grayscale_name):
     gs = getGrayscale(grayscale_name)
     if not im.size:
         return None, None
@@ -157,8 +154,6 @@ def get_grayscale_image_analysis(im, grayscale_name, debug=False):
     im_p = get_para_trimmed_slice(im_o, gs)
     if im_p is None or not im_p.size:
         return None, None
-    DEBUG_DETECTION = debug
-
     return detect_grayscale(im_p, gs)
 
 
@@ -204,14 +199,8 @@ def detect_grayscale(im_trimmed, grayscale):
     mid_ortho_trimmed = mid_ortho_slice - rect[0][1]
     _logger.info("Loaded pre-trimmed image slice for GS detection")
 
-    if DEBUG_DETECTION:
-        np.save(os.path.join(Paths().log, 'gs_section_used_in_detection.npy'), im_trimmed)
-
     # THE 1D SIGNAL ALONG THE GS
     para_signal_trimmed_im = np.mean(im_trimmed, axis=1)
-
-    if DEBUG_DETECTION:
-        np.save(os.path.join(Paths().log, 'gs_para_signal_trimmed_im.npy'), para_signal_trimmed_im)
 
     # FOUND GS-SEGMENT DIFFERENCE TO EXPECTED SIZE
     expected_strip_size = float(grayscale['length'] * grayscale['sections'])
@@ -219,9 +208,6 @@ def detect_grayscale(im_trimmed, grayscale):
     gs_l_diff = abs(1 - para_signal_trimmed_im.size / expected_strip_size)
 
     up_spikes = signal.get_signal(para_signal_trimmed_im, SPIKE_UP_T)
-
-    if DEBUG_DETECTION:
-        np.save(os.path.join(Paths().log, "gs_up_spikes.npy"), up_spikes)
 
     if gs_l_diff < NEW_GS_ALG_L_DIFF_T:
 
@@ -238,11 +224,6 @@ def detect_grayscale(im_trimmed, grayscale):
                 np.isnan(deltas[-1])) / float(grayscale['sections']) >
                 NEW_GS_ALG_SPIKES_FRACTION):
 
-            if DEBUG_DETECTION:
-                np.save(os.path.join(Paths().log, "gs_pos_diffs.npy"), observed_to_expected_map)
-                np.save(os.path.join(Paths().log, "gs_deltas.npy"), deltas)
-                np.save(os.path.join(Paths().log, "gs_observed_spikes.npy"), observed_spikes)
-
             edges = signal.get_signal_edges(observed_to_expected_map, deltas, observed_spikes,
                                             grayscale['sections'])
 
@@ -252,9 +233,6 @@ def detect_grayscale(im_trimmed, grayscale):
                 return None, None
 
             where_fin_edges = np.where(fin_edges)[0]
-
-            if DEBUG_DETECTION:
-                np.save(os.path.join(Paths().log, "gs_edges.npy"), edges)
 
             # GET THE FREQ
             frequency = np.diff(edges[where_fin_edges[0]: where_fin_edges[-1]], 1)
@@ -291,9 +269,6 @@ def detect_grayscale(im_trimmed, grayscale):
             grayscale_segment_centers += rect[0][0]
             _logger.info("Offsetting centers with {0}".format(rect[0][0]))
 
-            if DEBUG_DETECTION:
-                np.save(os.path.join(Paths().log, "gs_segment_centers.npy"), grayscale_segment_centers)
-
             val_orth = grayscale['width'] * NEW_SAFETY_PADDING
             val_para = frequency * NEW_SAFETY_PADDING
 
@@ -306,9 +281,6 @@ def detect_grayscale(im_trimmed, grayscale):
             bottom = mid_ortho_trimmed + val_orth + 1
             if bottom >= im_trimmed.shape[1]:
                 bottom = im_trimmed.shape[1] - 1
-
-            if DEBUG_DETECTION:
-                np.save(os.path.join(Paths().log, "gs_slice.npy"), im_trimmed)
 
             for i, pos in enumerate(grayscale_segment_centers):
 
@@ -328,10 +300,6 @@ def detect_grayscale(im_trimmed, grayscale):
                 bottom = int(round(bottom))
 
                 gray_scale.append(iqr_mean(im_trimmed[left: right, top: bottom]))
-
-                if DEBUG_DETECTION:
-                    np.save(os.path.join(Paths().log, "gs_segment_{0}.npy".format(i)),
-                            im_trimmed[left: right, top: bottom])
 
         else:
 
@@ -423,8 +391,5 @@ def detect_grayscale(im_trimmed, grayscale):
 
     gray_scale, grayscale_segment_centers = signal.get_higher_second_half_order_according_to_first(
         gray_scale, grayscale_segment_centers)
-
-    if DEBUG_DETECTION:
-        np.save(os.path.join(Paths().log, "gs_final_values.npy"), gray_scale)
 
     return grayscale_segment_centers, gray_scale

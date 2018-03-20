@@ -327,8 +327,7 @@ def analyse_ccc_image_grayscale(ccc_identifier, image_identifier):
             reason='Unknown image or CCC'
         )
 
-    _, values = get_grayscale_image_analysis(
-        gs_image, gs_name, debug=False)
+    _, values = get_grayscale_image_analysis(gs_image, gs_name)
     grayscale_object = getGrayscale(gs_name)
     valid = get_grayscale_is_valid(values, grayscale_object)
     if not valid:
