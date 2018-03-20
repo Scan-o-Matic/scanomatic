@@ -39,29 +39,15 @@ _LOGGER = Logger("UI-server")
 _DEBUG_MODE = None
 
 
-def launch_server(host, port, debug):
-
-    global _URL, _DEBUG_MODE
-    _DEBUG_MODE = debug
+def create_app(debug=False):
     app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
-    prom = Prometheus(app)
+    Prometheus(app)
     app.config['imagestore'] = ImageStore(Config().paths.projects_root)
     app.config['DATABASE_URL'] = get_database_url()
     database.setup(app)
-
     rpc_client = get_client(admin=True)
-
-    if port is None:
-        port = Config().ui_server.port
-    if host is None:
-        host = Config().ui_server.host
-
-    _URL = "http://{host}:{port}".format(host=host, port=port)
-
     add_resource_routes(app, rpc_client)
-
     ui_pages.add_routes(app)
-
     management_api.add_routes(app, rpc_client)
     tools_api.add_routes(app)
     qc_api.add_routes(app)
@@ -80,6 +66,20 @@ def launch_server(host, port, debug):
         scanners_api.blueprint, url_prefix="/api/scanners"
     )
     app.register_blueprint(scans_api.blueprint, url_prefix="/api/scans")
+    return app
+
+
+def launch_server(host, port, debug):
+
+    global _URL, _DEBUG_MODE
+    _DEBUG_MODE = debug
+    app = create_app(debug)
+    if port is None:
+        port = Config().ui_server.port
+    if host is None:
+        host = Config().ui_server.host
+
+    _URL = "http://{host}:{port}".format(host=host, port=port)
 
     if debug:
         CORS(app)
