@@ -73,6 +73,9 @@ def apiclient(client):
                 content_type='application/json',
             )
 
+        def delete_scan_job(self, jobid):
+            return client.delete('/scan-jobs/{}'.format(jobid))
+
         def get_scanner_job(self, scannerid):
             return client.get('/scanners/{}/job'.format(scannerid))
 

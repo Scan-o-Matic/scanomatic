@@ -1,0 +1,2 @@
+class UnknownScanjobError(Exception):
+    pass
