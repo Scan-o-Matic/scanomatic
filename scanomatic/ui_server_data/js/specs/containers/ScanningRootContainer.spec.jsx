@@ -311,7 +311,7 @@ describe('<ScanningRootContainer />', () => {
         jasmine.clock().uninstall();
     });
 
-    describe('onDeleteJob', () => {
+    describe('onRemoveJob', () => {
         let getScanningJobs;
         let wrapper;
 
@@ -325,16 +325,16 @@ describe('<ScanningRootContainer />', () => {
         });
 
         it('calls the expected API method', () => {
-            const onDeleteJob = wrapper.prop('onDeleteJob');
+            const onRemoveJob = wrapper.prop('onRemoveJob');
             spyOn(API, 'deleteScanningJob').and.returnValue(new Promise(() => {}));
-            onDeleteJob('job1iamindeed');
+            onRemoveJob('job1iamindeed');
             expect(API.deleteScanningJob).toHaveBeenCalledWith('job1iamindeed');
         });
 
         it('removes the job from the list', (done) => {
-            const onDeleteJob = wrapper.prop('onDeleteJob');
+            const onRemoveJob = wrapper.prop('onRemoveJob');
             spyOn(API, 'deleteScanningJob').and.returnValue(new Promise(() => {}));
-            onDeleteJob('job1iamindeed');
+            onRemoveJob('job1iamindeed');
             afterPromises(() => {
                 wrapper.update();
                 expect(wrapper.prop('jobs')).toEqual([
@@ -346,10 +346,10 @@ describe('<ScanningRootContainer />', () => {
 
         describe('on success', () => {
             it('triggers an update of the jobs', (done) => {
-                const onDeleteJob = wrapper.prop('onDeleteJob');
+                const onRemoveJob = wrapper.prop('onRemoveJob');
                 spyOn(API, 'deleteScanningJob').and.returnValue(Promise.resolve());
                 getScanningJobs.calls.reset();
-                onDeleteJob('job1iamindeed');
+                onRemoveJob('job1iamindeed');
                 afterPromises(() => {
                     expect(getScanningJobs).toHaveBeenCalled();
                     done();
@@ -359,10 +359,10 @@ describe('<ScanningRootContainer />', () => {
 
         describe('on failure', () => {
             it('should set the error', (done) => {
-                const onDeleteJob = wrapper.prop('onDeleteJob');
+                const onRemoveJob = wrapper.prop('onRemoveJob');
                 const promise = Promise.reject('not good');
                 spyOn(API, 'deleteScanningJob').and.returnValue(promise);
-                onDeleteJob('job1iamindeed');
+                onRemoveJob('job1iamindeed');
                 afterPromises(() => {
                     wrapper.update();
                     expect(wrapper.prop('error')).toEqual('Error deleting job: not good');
@@ -371,10 +371,10 @@ describe('<ScanningRootContainer />', () => {
             });
 
             it('should trigger an update of the jobs', (done) => {
-                const onDeleteJob = wrapper.prop('onDeleteJob');
+                const onRemoveJob = wrapper.prop('onRemoveJob');
                 spyOn(API, 'deleteScanningJob').and.returnValue(Promise.reject('not good'));
                 getScanningJobs.calls.reset();
-                onDeleteJob('job1iamindeed');
+                onRemoveJob('job1iamindeed');
                 afterPromises(() => {
                     expect(getScanningJobs).toHaveBeenCalled();
                     done();

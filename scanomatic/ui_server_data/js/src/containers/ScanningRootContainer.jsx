@@ -19,7 +19,7 @@ export default class ScanningRootContainer extends React.Component {
         this.handleNewJob = this.handleNewJob.bind(this);
         this.handleCloseNewJob = this.handleCloseNewJob.bind(this);
         this.handleStartJob = this.handleStartJob.bind(this);
-        this.handleDeleteJob = this.handleDeleteJob.bind(this);
+        this.handleRemoveJob = this.handleRemoveJob.bind(this);
     }
 
     componentDidMount() {
@@ -92,7 +92,7 @@ export default class ScanningRootContainer extends React.Component {
             });
     }
 
-    handleDeleteJob(jobId) {
+    handleRemoveJob(jobId) {
         this.setState({ jobs: this.state.jobs.filter(job => job.identifier !== jobId) });
         deleteScanningJob(jobId)
             .catch((message) => {
@@ -114,7 +114,7 @@ export default class ScanningRootContainer extends React.Component {
                 onCloseNewJob={this.handleCloseNewJob}
                 onNewJob={this.handleNewJob}
                 onStartJob={this.handleStartJob}
-                onDeleteJob={this.handleDeleteJob}
+                onRemoveJob={this.handleRemoveJob}
             />
         );
     }

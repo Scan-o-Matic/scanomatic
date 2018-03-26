@@ -98,11 +98,15 @@ describe('<ScanningRoot />', () => {
             expect(jobPanels.last().prop('status')).toEqual('Completed');
         });
 
-        it('should pass onDeleteJob to <ScanningJobPanel/>', () => {
-            const onDeleteJob = jasmine.createSpy('onDeleteJob');
-            const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} onDeleteJob={onDeleteJob} />);
+        it('should pass onRemoveJob to <ScanningJobPanel/>', () => {
+            const onRemoveJob = jasmine.createSpy('onRemoveJob');
+            const wrapper = shallow(<ScanningRoot
+                {...props}
+                jobs={jobs}
+                onRemoveJob={onRemoveJob}
+            />);
             const jobPanels = wrapper.find('ScanningJobPanel');
-            expect(jobPanels.first().prop('onDeleteJob')).toBe(onDeleteJob);
+            expect(jobPanels.first().prop('onRemoveJob')).toBe(onRemoveJob);
         });
     });
 
