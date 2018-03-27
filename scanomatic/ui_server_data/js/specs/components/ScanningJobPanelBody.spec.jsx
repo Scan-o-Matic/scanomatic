@@ -3,7 +3,7 @@ import React from 'react';
 
 import './enzyme-setup';
 import ScanningJobPanelBody, { duration2milliseconds, getProgress }
-from '../../src/components/ScanningJobPanelBody';
+    from '../../src/components/ScanningJobPanelBody';
 
 
 describe('<ScanningJobPanelBody />', () => {
@@ -321,7 +321,7 @@ describe('<ScanningJobPanelBody />', () => {
                 {...props}
                 duration={{ days: 2, hours: 0, minutes: 51 }}
             />);
-            const desc = wrapper.find('div.job-description');
+            const desc = wrapper.find('tr.job-duration');
             expect(desc.find('td').at(1).text()).toEqual('2 days 51 minutes');
         });
 
@@ -330,7 +330,7 @@ describe('<ScanningJobPanelBody />', () => {
                 {...props}
                 duration={{ days: 3, hours: 2, minutes: 0 }}
             />);
-            const desc = wrapper.find('div.job-description');
+            const desc = wrapper.find('tr.job-duration');
             expect(desc.find('td').at(1).text()).toEqual('3 days 2 hours');
         });
     });
