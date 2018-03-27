@@ -6,6 +6,7 @@ import ScanningRootContainer from '../../src/containers/ScanningRootContainer';
 import * as API from '../../src/api';
 import * as helpers from '../../src/helpers';
 import FakePromise from '../helpers/FakePromise';
+import afterPromises from '../helpers/afterPromises';
 
 
 describe('<ScanningRootContainer />', () => {
@@ -308,5 +309,77 @@ describe('<ScanningRootContainer />', () => {
         expect(helpers.getScannersWithOwned.calls.count()).toEqual(3);
 
         jasmine.clock().uninstall();
+    });
+
+    describe('onRemoveJob', () => {
+        let getScanningJobs;
+        let wrapper;
+
+        beforeEach((done) => {
+            getScanningJobs = spyOn(API, 'getScanningJobs')
+                .and.returnValue(Promise.resolve([job, job2]));
+            spyOn(helpers, 'getScannersWithOwned')
+                .and.returnValue(Promise.resolve([scanner]));
+            wrapper = shallow(<ScanningRootContainer />);
+            afterPromises(done);
+        });
+
+        it('calls the expected API method', () => {
+            const onRemoveJob = wrapper.prop('onRemoveJob');
+            spyOn(API, 'deleteScanningJob').and.returnValue(new Promise(() => {}));
+            onRemoveJob('job1iamindeed');
+            expect(API.deleteScanningJob).toHaveBeenCalledWith('job1iamindeed');
+        });
+
+        it('removes the job from the list', (done) => {
+            const onRemoveJob = wrapper.prop('onRemoveJob');
+            spyOn(API, 'deleteScanningJob').and.returnValue(new Promise(() => {}));
+            onRemoveJob('job1iamindeed');
+            afterPromises(() => {
+                wrapper.update();
+                expect(wrapper.prop('jobs')).toEqual([
+                    Object.assign({}, job2, { startTime: null, endTime: null }),
+                ]);
+                done();
+            });
+        });
+
+        describe('on success', () => {
+            it('triggers an update of the jobs', (done) => {
+                const onRemoveJob = wrapper.prop('onRemoveJob');
+                spyOn(API, 'deleteScanningJob').and.returnValue(Promise.resolve());
+                getScanningJobs.calls.reset();
+                onRemoveJob('job1iamindeed');
+                afterPromises(() => {
+                    expect(getScanningJobs).toHaveBeenCalled();
+                    done();
+                });
+            });
+        });
+
+        describe('on failure', () => {
+            it('should set the error', (done) => {
+                const onRemoveJob = wrapper.prop('onRemoveJob');
+                const promise = Promise.reject('not good');
+                spyOn(API, 'deleteScanningJob').and.returnValue(promise);
+                onRemoveJob('job1iamindeed');
+                afterPromises(() => {
+                    wrapper.update();
+                    expect(wrapper.prop('error')).toEqual('Error deleting job: not good');
+                    done();
+                });
+            });
+
+            it('should trigger an update of the jobs', (done) => {
+                const onRemoveJob = wrapper.prop('onRemoveJob');
+                spyOn(API, 'deleteScanningJob').and.returnValue(Promise.reject('not good'));
+                getScanningJobs.calls.reset();
+                onRemoveJob('job1iamindeed');
+                afterPromises(() => {
+                    expect(getScanningJobs).toHaveBeenCalled();
+                    done();
+                });
+            });
+        });
     });
 });

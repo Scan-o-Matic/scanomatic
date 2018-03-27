@@ -18,6 +18,15 @@ class API {
         }));
     }
 
+    static delete(url) {
+        return new Promise((resolve, reject) => $.ajax({
+            url,
+            type: 'DELETE',
+            success: resolve,
+            error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
+        }));
+    }
+
     static postFormData(url, formData) {
         return new Promise((resolve, reject) => $.ajax({
             url,
@@ -283,4 +292,8 @@ export function getScanners() {
 
 export function getScannerJob(scannerId) {
     return API.get(`/api/scanners/${scannerId}/job`);
+}
+
+export function deleteScanningJob(job) {
+    return API.delete(`/api/scan-jobs/${job}`);
 }

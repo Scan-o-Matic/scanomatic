@@ -51,6 +51,7 @@ export default function ScanningRoot(props) {
                 const scanner = props.scanners.filter(s => s.identifier === job.scannerId)[0];
                 jobs.push(<ScanningJobPanel
                     onStartJob={() => onStartJob(job)}
+                    onRemoveJob={props.onRemoveJob}
                     key={job.name}
                     scanner={scanner}
                     {...job}
@@ -93,6 +94,7 @@ ScanningRoot.propTypes = {
     jobs: PropTypes.arrayOf(SoMPropTypes.scanningJobType).isRequired,
     scanners: PropTypes.arrayOf(SoMPropTypes.scannerType).isRequired,
     onStartJob: PropTypes.func.isRequired,
+    onRemoveJob: PropTypes.func.isRequired,
 };
 
 ScanningRoot.defaultProps = {

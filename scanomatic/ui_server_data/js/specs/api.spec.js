@@ -941,4 +941,38 @@ describe('API', () => {
             });
         });
     });
+
+    describe('deleteScanningJob', () => {
+        const args = ['scnjb005'];
+
+        it('should query the correct URL', () => {
+            API.deleteScanningJob(...args);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/scan-jobs/scnjb005');
+        });
+
+        it('should send a DELETE request', () => {
+            API.deleteScanningJob(...args);
+            expect(mostRecentRequest().method).toEqual('DELETE');
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.deleteScanningJob(...args).then(() => done());
+            mostRecentRequest().respondWith({
+                status: 200,
+                responseText: 'null',
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.deleteScanningJob(...args).catch((reason) => {
+                expect(reason).toEqual('No can do');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400,
+                responseText: JSON.stringify({ reason: 'No can do' }),
+            });
+        });
+    });
 });
