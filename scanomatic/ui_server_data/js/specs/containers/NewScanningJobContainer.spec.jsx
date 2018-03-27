@@ -7,6 +7,16 @@ import * as API from '../../src/api';
 import FakePromise from '../helpers/FakePromise';
 
 
+function makeScanner({ identifier } = { identifiier: 'scanner01' }) {
+    return {
+        identifier,
+        name: `Test scanner ${identifier}`,
+        power: true,
+        owned: false,
+    };
+}
+
+
 describe('<NewScanningJobContainer />', () => {
     const onClose = jasmine.createSpy('onError');
     const props = { onClose, scanners: [] };
@@ -35,6 +45,46 @@ describe('<NewScanningJobContainer />', () => {
             it('should set interval', () => {
                 const wrapper = shallow(<NewScanningJobContainer {...props} />);
                 expect(wrapper.prop('interval')).toEqual(20);
+            });
+
+            it('should set scannerId to "" if no scanners', () => {
+                const wrapper = shallow(<NewScanningJobContainer
+                    {...props}
+                    scanners={[]}
+                />);
+                expect(wrapper.prop('scannerId')).toEqual('');
+            });
+        });
+
+        describe('on props update', () => {
+            it('should set scannerId when scanners are populated', () => {
+                const wrapper = shallow(<NewScanningJobContainer
+                    {...props}
+                    scanners={[]}
+                />);
+                const nextProps = Object.assign({}, props, {
+                    scanners: [
+                        makeScanner({ identifier: 'scnr01' }),
+                        makeScanner({ identifier: 'scnr02' }),
+                    ],
+                });
+                wrapper.setProps(nextProps);
+                expect(wrapper.prop('scannerId')).toEqual('scnr01');
+            });
+
+            it('should not set scannerId if already set', () => {
+                const wrapper = shallow(<NewScanningJobContainer
+                    {...props}
+                    scanners={[makeScanner({ identifier: 'scnr02' })]}
+                />);
+                const nextProps = Object.assign({}, props, {
+                    scanners: [
+                        makeScanner({ identifier: 'scnr01' }),
+                        makeScanner({ identifier: 'scnr02' }),
+                    ],
+                });
+                wrapper.setProps(nextProps);
+                expect(wrapper.prop('scannerId')).toEqual('scnr02');
             });
         });
 
