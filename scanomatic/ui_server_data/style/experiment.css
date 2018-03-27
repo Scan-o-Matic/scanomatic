@@ -33,17 +33,8 @@ button.new-job {
   min-height: 7.5em;
 }
 
-.job-description {
-  display: inline-block;
-  vertical-align: middle;
-}
-
-.job-description .progress {
+.job-listing .progress {
   margin-bottom: 0;
-}
-
-table.job-stats {
-  margin: 0.5em 0 0 0;
 }
 
 table.job-stats tr td:first-child {

@@ -71,7 +71,7 @@ export default function ScanningRoot(props) {
                     {props.error}
                 </div>
             )}
-            <div className="col-md-6">
+            <div className="col-md-12">
                 <button
                     className="btn btn-primary btn-next new-job"
                     onClick={props.onNewJob}
