@@ -49,7 +49,6 @@ class ExperimentPage(PageObject):
     def find_job_panel_by_name(self, name):
         for el in self.driver.find_elements_by_css_selector('div.job-listing'):
             title = el.find_element_by_tag_name('h3').text
-            print('title', title)
             if title == name:
                 return ExperimentPage.ScanningJobPanel(el)
         raise LookupError('No job panel with name "{}"'.format(name))
