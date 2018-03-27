@@ -297,3 +297,7 @@ export function getScannerJob(scannerId) {
 export function deleteScanningJob(job) {
     return API.delete(`/api/scan-jobs/${job}`);
 }
+
+export function terminateScanningJob(jobid, message) {
+    return API.postJSON(`/api/scan-jobs/${jobid}/terminate`, { message });
+}
