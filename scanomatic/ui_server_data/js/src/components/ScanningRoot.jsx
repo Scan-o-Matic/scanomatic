@@ -54,7 +54,7 @@ export default function ScanningRoot(props) {
                     onRemoveJob={props.onRemoveJob}
                     key={job.name}
                     scanner={scanner}
-                    {...job}
+                    scanningJob={job}
                 />);
             });
         jobList = (
