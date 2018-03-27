@@ -17,7 +17,8 @@ def docker_compose_file(pytestconfig):
 
 
 @pytest.fixture(scope='session')
-def scanomatic(docker_ip, docker_services):
+def _scanomatic(docker_ip, docker_services):
+
     def is_responsive(url):
         try:
             requests.get(url).raise_for_status()
@@ -35,6 +36,16 @@ def scanomatic(docker_ip, docker_services):
         check=lambda: is_responsive(url + '/fixtures')
     )
     return url
+
+
+def pytest_configure(config):
+    scanomatic_url = config.getoption('--scanomatic-url')
+    if scanomatic_url is not None:
+        globals()['scanomatic'] = (
+            pytest.fixture(scope='session')(lambda: scanomatic_url)
+        )
+    else:
+        globals()['scanomatic'] = _scanomatic
 
 
 @pytest.fixture()

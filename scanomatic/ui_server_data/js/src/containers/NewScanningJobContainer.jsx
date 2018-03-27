@@ -15,7 +15,7 @@ export default class NewScanningJobContainer extends React.Component {
                 minutes: 0,
             },
             interval: 20,
-            scannerId: props.scanners.length > 0 ? props.scanners[0].identifier : null,
+            scannerId: props.scanners.length > 0 ? props.scanners[0].identifier : '',
         };
 
         this.handleNameChange = this.handleNameChange.bind(this);
@@ -27,8 +27,8 @@ export default class NewScanningJobContainer extends React.Component {
         this.handleScannerChange = this.handleScannerChange.bind(this);
     }
 
-    willRecieveNewProps(nextProps) {
-        if (this.state.scannerId === null && nextProps.scanners.length > 0) {
+    componentWillReceiveProps(nextProps) {
+        if (this.state.scannerId === '' && nextProps.scanners.length > 0) {
             this.setState({ scannerId: nextProps.scanners[0].identifier });
         }
     }

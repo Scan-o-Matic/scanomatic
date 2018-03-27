@@ -18,6 +18,12 @@ def pytest_addoption(parser):
         choices=['firefox', 'chrome'],
         default='firefox',
     )
+    parser.addoption(
+        '--scanomatic-url',
+        action='store',
+        help='''Run system tests againt the provided URL instead of starting
+                scan-o-matic with docker-compose''',
+    )
 
 
 def pytest_collection_modifyitems(config, items):
