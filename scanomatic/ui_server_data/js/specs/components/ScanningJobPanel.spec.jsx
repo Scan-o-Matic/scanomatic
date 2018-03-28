@@ -17,6 +17,7 @@ describe('<ScanningJobPanel />', () => {
         },
         onStartJob: () => {},
         onRemoveJob: () => {},
+        onStopJob: () => {},
     };
 
     const scanner = {
@@ -145,6 +146,94 @@ describe('<ScanningJobPanel />', () => {
             wrapper.find('ScanningJobRemoveDialogue').prop('onCancel')();
             wrapper.update();
             expect(onRemoveJob).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('on stop', () => {
+        it('should hide <ScanningJobPanelBody/>', () => {
+            const wrapper = shallow(<ScanningJobPanel {...props} />);
+            wrapper.find('ScanningJobPanelBody').prop('onStopJob')();
+            wrapper.update();
+            const body = wrapper.find('ScanningJobPanelBody');
+            expect(body.exists()).toBeFalsy();
+        });
+
+        it('should render <ScanningJobStopDialogue/>', () => {
+            const wrapper = shallow(<ScanningJobPanel {...props} />);
+            wrapper.find('ScanningJobPanelBody').prop('onStopJob')();
+            wrapper.update();
+            const dialogue = wrapper.find('ScanningJobStopDialogue');
+            expect(dialogue.exists()).toBeTruthy();
+        });
+    });
+
+    describe('on confirm stop', () => {
+        it('should render <ScanningJobPanelBody/>', () => {
+            const wrapper = shallow(<ScanningJobPanel {...props} />);
+            wrapper.find('ScanningJobPanelBody').prop('onStopJob')();
+            wrapper.update();
+            wrapper.find('ScanningJobStopDialogue').prop('onConfirm')();
+            wrapper.update();
+            const dialogue = wrapper.find('ScanningJobPanelBody');
+            expect(dialogue.exists()).toBeTruthy();
+        });
+
+        it('should hide <ScanningJobStopDialogue/>', () => {
+            const wrapper = shallow(<ScanningJobPanel {...props} />);
+            wrapper.find('ScanningJobPanelBody').prop('onStopJob')();
+            wrapper.update();
+            wrapper.find('ScanningJobStopDialogue').prop('onConfirm')();
+            wrapper.update();
+            const dialogue = wrapper.find('ScanningJobStopDialogue');
+            expect(dialogue.exists()).toBeFalsy();
+        });
+
+        it('should call onDelete with the job identifier', () => {
+            const onStopJob = jasmine.createSpy('onStopJob');
+            const wrapper = shallow(<ScanningJobPanel
+                {...props}
+                onStopJob={onStopJob}
+            />);
+            wrapper.find('ScanningJobPanelBody').prop('onStopJob')();
+            wrapper.update();
+            wrapper.find('ScanningJobStopDialogue').prop('onConfirm')();
+            wrapper.update();
+            expect(onStopJob).toHaveBeenCalledWith(props.scanningJob.identifier);
+        });
+    });
+
+    describe('on cancel stop', () => {
+        it('should render <ScanningJobPanelBody/>', () => {
+            const wrapper = shallow(<ScanningJobPanel {...props} />);
+            wrapper.find('ScanningJobPanelBody').prop('onStopJob')();
+            wrapper.update();
+            wrapper.find('ScanningJobStopDialogue').prop('onCancel')();
+            wrapper.update();
+            const dialogue = wrapper.find('ScanningJobPanelBody');
+            expect(dialogue.exists()).toBeTruthy();
+        });
+
+        it('should hide <ScanningJobStopDialogue/>', () => {
+            const wrapper = shallow(<ScanningJobPanel {...props} />);
+            wrapper.find('ScanningJobPanelBody').prop('onStopJob')();
+            wrapper.update();
+            wrapper.find('ScanningJobStopDialogue').prop('onCancel')();
+            wrapper.update();
+            const dialogue = wrapper.find('ScanningJobStopDialogue');
+            expect(dialogue.exists()).toBeFalsy();
+        });
+
+        it('should not call onDelete', () => {
+            const onStopJob = jasmine.createSpy('onStopJob');
+            const wrapper = shallow(<ScanningJobPanel
+                {...props}
+                onStopJob={onStopJob}
+            />);
+            wrapper.find('ScanningJobPanelBody').prop('onStopJob')();
+            wrapper.update();
+            wrapper.find('ScanningJobStopDialogue').prop('onCancel')();
+            wrapper.update();
+            expect(onStopJob).not.toHaveBeenCalled();
         });
     });
 });
