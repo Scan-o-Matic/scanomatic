@@ -1,6 +1,11 @@
 import React from 'react';
 
-import { getScanningJobs, startScanningJob, deleteScanningJob } from '../api';
+import {
+    deleteScanningJob,
+    getScanningJobs,
+    startScanningJob,
+    terminateScanningJob,
+} from '../api';
 import { getScannersWithOwned } from '../helpers';
 import ScanningRoot from '../components/ScanningRoot';
 import { duration2milliseconds } from '../components/ScanningJobPanelBody';
@@ -15,11 +20,12 @@ export default class ScanningRootContainer extends React.Component {
             jobs: [],
             scanners: [],
         };
+        this.handleCloseNewJob = this.handleCloseNewJob.bind(this);
         this.handleError = this.handleError.bind(this);
         this.handleNewJob = this.handleNewJob.bind(this);
-        this.handleCloseNewJob = this.handleCloseNewJob.bind(this);
-        this.handleStartJob = this.handleStartJob.bind(this);
         this.handleRemoveJob = this.handleRemoveJob.bind(this);
+        this.handleStartJob = this.handleStartJob.bind(this);
+        this.handleStopJob = this.handleStopJob.bind(this);
     }
 
     componentDidMount() {
@@ -103,6 +109,22 @@ export default class ScanningRootContainer extends React.Component {
             });
     }
 
+    handleStopJob(jobId) {
+        this.setState({
+            jobs: this.state.jobs.map(job =>
+                (job.identifier === jobId
+                    ? Object.assign({}, job, { status: 'Completed' })
+                    : job)),
+        });
+        terminateScanningJob(jobId)
+            .catch((message) => {
+                this.setState({ error: `Error deleting job: ${message}` });
+            })
+            .then(() => {
+                this.getJobStatusRequests();
+            });
+    }
+
     render() {
         return (
             <ScanningRoot
@@ -115,6 +137,7 @@ export default class ScanningRootContainer extends React.Component {
                 onNewJob={this.handleNewJob}
                 onStartJob={this.handleStartJob}
                 onRemoveJob={this.handleRemoveJob}
+                onStopJob={this.handleStopJob}
             />
         );
     }
