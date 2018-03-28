@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import ScanningJobPanel, { duration2milliseconds, getProgress } from '../../src/components/ScanningJobPanel';
+import ScanningJobPanel from '../../src/components/ScanningJobPanel';
 
 
 describe('<ScanningJobPanel />', () => {
