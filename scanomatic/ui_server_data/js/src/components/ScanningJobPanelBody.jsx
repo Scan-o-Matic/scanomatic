@@ -4,6 +4,7 @@ import React from 'react';
 
 import SoMPropTypes from '../prop-types';
 import ScanningJobRemoveButton from './ScanningJobRemoveButton';
+import ScanningJobStopButton from './ScanningJobStopButton';
 
 export function duration2milliseconds(duration) {
     if (duration) {
@@ -151,12 +152,15 @@ export default function ScanningJobPanelBody(props) {
     return (
         <div>
             <div className="panel-body">
+                {status}
                 {showStart}
                 {props.status === 'Planned' && <ScanningJobRemoveButton
                     identifier={props.identifier}
                     onRemoveJob={props.onRemoveJob}
                 />}
-                {status}
+                {props.status === 'Running' && <ScanningJobStopButton
+                    onStopJob={props.onStopJob}
+                />}
             </div>
             <table className="table job-stats">
                 <tbody>
@@ -185,6 +189,7 @@ ScanningJobPanelBody.propTypes = {
     name: PropTypes.string.isRequired,
     onRemoveJob: PropTypes.func.isRequired,
     onStartJob: PropTypes.func.isRequired,
+    onStopJob: PropTypes.func.isRequired,
     scanner: SoMPropTypes.scannerType,
     startTime: PropTypes.instanceOf(Date),
     status: PropTypes.string.isRequired,

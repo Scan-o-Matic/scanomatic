@@ -17,6 +17,7 @@ describe('<ScanningJobPanelBody />', () => {
         status: 'Planned',
         onStartJob,
         onRemoveJob: () => {},
+        onStopJob: () => {},
     };
 
     const scanner = {
@@ -148,12 +149,19 @@ describe('<ScanningJobPanelBody />', () => {
             const wrapper = shallow(<ScanningJobPanelBody
                 {...props}
                 status="Planned"
-                identifier="scnjb001"
             />);
             const btn = wrapper.find('ScanningJobRemoveButton');
             expect(btn.exists()).toBeTruthy();
-            expect(btn.prop('identifier')).toEqual('scnjb001');
             expect(btn.prop('onRemoveJob')).toBe(props.onRemoveJob);
+        });
+
+        it('should not render a stop button', () => {
+            const wrapper = shallow(<ScanningJobPanelBody
+                {...props}
+                status="Planned"
+            />);
+            const btn = wrapper.find('ScanningJobStopButton');
+            expect(btn.exists()).toBeFalsy();
         });
     });
 
@@ -240,6 +248,12 @@ describe('<ScanningJobPanelBody />', () => {
             const btn = wrapper.find('ScanningJobRemoveButton');
             expect(btn.exists()).toBeFalsy();
         });
+
+        it('should render a stop button', () => {
+            const btn = wrapper.find('ScanningJobStopButton');
+            expect(btn.exists()).toBeTruthy();
+            expect(btn.prop('onStopJob')).toBe(props.onStopJob);
+        });
     });
 
     describe('Status Completed', () => {
@@ -295,6 +309,11 @@ describe('<ScanningJobPanelBody />', () => {
 
         it('should not render a remove button', () => {
             const btn = wrapper.find('ScanningJobRemoveButton');
+            expect(btn.exists()).toBeFalsy();
+        });
+
+        it('should not render a stop button', () => {
+            const btn = wrapper.find('ScanningJobStopButton');
             expect(btn.exists()).toBeFalsy();
         });
     });
