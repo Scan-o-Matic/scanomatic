@@ -7,7 +7,7 @@ import ScanningRoot, { getStatus, jobSorter } from '../../src/components/Scannin
 import Duration from '../../src/Duration';
 
 
-function createJob(properties) {
+function makeJob(properties) {
     return Object.assign(
         {},
         {
@@ -67,8 +67,12 @@ describe('<ScanningRoot />', () => {
 
     describe('showing existing jobs', () => {
         const jobs = [
-            { name: 'A', duration: { days: 0, hours: 1, minutes: 3 }, startTime: new Date('1867-03-01T06:33:12.000Z') },
-            { name: 'B' },
+            makeJob({
+                duration: new Duration(1800),
+                name: 'A',
+                startTime: new Duration(3600).before(new Date()),
+            }),
+            makeJob({ name: 'B', startTime: null }),
         ];
 
         it('should render a list of jobs', () => {
@@ -98,7 +102,7 @@ describe('<ScanningRoot />', () => {
             const jobPanels = wrapper.find('ScanningJobPanel');
             jobPanels.last().prop('onStartJob')();
             expect(onStartJob)
-                .toHaveBeenCalledWith(Object.assign({}, jobs[0], { status: 'Completed' }));
+                .toHaveBeenCalledWith(jasmine.objectContaining(jobs[0]));
         });
 
         it('couples start callback with job (last)', () => {
@@ -106,7 +110,7 @@ describe('<ScanningRoot />', () => {
             const jobPanels = wrapper.find('ScanningJobPanel');
             jobPanels.first().prop('onStartJob')();
             expect(onStartJob)
-                .toHaveBeenCalledWith(Object.assign({}, jobs[1], { status: 'Planned' }));
+                .toHaveBeenCalledWith(jasmine.objectContaining(jobs[1]));
         });
 
         it('should add statuses to the jobs', () => {
@@ -156,13 +160,13 @@ describe('<ScanningRoot />', () => {
 describe('getStatus', () => {
     it('Returns Planned if not startTime', () => {
         const now = new Date('2001-01-01T01:01:01Z');
-        expect(getStatus(createJob({ startTime: null }, now))).toEqual('Planned');
+        expect(getStatus(makeJob({ startTime: null }, now))).toEqual('Planned');
     });
 
     it('Returns "Completed" if startTime and endTime is less than now', () => {
         const now = new Date('2001-01-01T01:01:01Z');
         expect(getStatus(
-            createJob({
+            makeJob({
                 duration: new Duration(3600),
                 startTime: new Date('2001-01-01T00:01:00Z'),
             }),
@@ -173,7 +177,7 @@ describe('getStatus', () => {
     it('Returns "Running" if startTime and endTime is less than now', () => {
         const now = new Date('2001-01-01T01:01:01Z');
         expect(getStatus(
-            createJob({
+            makeJob({
                 duration: new Duration(3600),
                 startTime: new Date('2001-01-01T01:00:00Z'),
             }),
@@ -184,7 +188,7 @@ describe('getStatus', () => {
     it('Returns "Completed" if terminationTime less than now', () => {
         const now = new Date('2001-01-01T01:01:01Z');
         expect(getStatus(
-            createJob({
+            makeJob({
                 duration: new Duration(3600),
                 startTime: new Date('2001-01-01T01:00:00Z'),
                 terminationTime: new Date('2001-01-01T01:01:00Z'),
