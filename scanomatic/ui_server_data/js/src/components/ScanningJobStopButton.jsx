@@ -6,7 +6,7 @@ const ScanningJobStopButton = (props) => {
     return (
         <button
             type="button"
-            className="btn btn-lg scanning-job-remove-button"
+            className="btn btn-lg scanning-job-stop-button"
             onClick={onStopJob}
         >
             <span className="glyphicon glyphicon-remove" /> Stop

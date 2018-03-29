@@ -387,22 +387,9 @@ describe('<ScanningRootContainer />', () => {
         it('should call the expected API method', () => {
             const onStopJob = wrapper.prop('onStopJob');
             spyOn(API, 'terminateScanningJob').and.returnValue(new Promise(() => {}));
-            onStopJob('job1iamindeed');
-            expect(API.terminateScanningJob).toHaveBeenCalledWith('job1iamindeed');
-        });
-
-        it('should mark the job as completed', (done) => {
-            const onStopJob = wrapper.prop('onStopJob');
-            spyOn(API, 'terminateScanningJob').and.returnValue(new Promise(() => {}));
-            onStopJob('job1iamindeed');
-            afterPromises(() => {
-                wrapper.update();
-                expect(wrapper.prop('jobs')).toEqual([
-                    Object.assign({}, job, { startTime: null, endTime: null, status: 'Completed' }),
-                    Object.assign({}, job2, { startTime: null, endTime: null }),
-                ]);
-                done();
-            });
+            onStopJob('job1iamindeed', 'My reasons');
+            expect(API.terminateScanningJob)
+                .toHaveBeenCalledWith('job1iamindeed', 'My reasons');
         });
 
         describe('on success', () => {

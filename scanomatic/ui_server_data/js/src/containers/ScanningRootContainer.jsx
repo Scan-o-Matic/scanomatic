@@ -108,14 +108,8 @@ export default class ScanningRootContainer extends React.Component {
             });
     }
 
-    handleStopJob(jobId) {
-        this.setState({
-            jobs: this.state.jobs.map(job =>
-                (job.identifier === jobId
-                    ? Object.assign({}, job, { status: 'Completed' })
-                    : job)),
-        });
-        terminateScanningJob(jobId)
+    handleStopJob(jobId, reason) {
+        terminateScanningJob(jobId, reason)
             .catch((message) => {
                 this.setState({ error: `Error deleting job: ${message}` });
             })

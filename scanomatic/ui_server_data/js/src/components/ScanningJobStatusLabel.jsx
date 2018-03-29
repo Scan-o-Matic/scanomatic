@@ -3,13 +3,15 @@ import React from 'react';
 
 const ScanningJobStatusLabel = (props) => {
     const { status } = props;
-    let className = 'label label-default';
+    const classNames = ['label', 'scanning-job-status-label'];
     if (status === 'Running') {
-        className = 'label label-info';
+        classNames.push('label-info');
     } else if (status === 'Completed') {
-        className = 'label label-success';
+        classNames.push('label-success');
+    } else {
+        classNames.push('label-default');
     }
-    return <span className={className}>{status}</span>;
+    return <span className={classNames.join(' ')}>{status}</span>;
 };
 
 ScanningJobStatusLabel.propTypes = {

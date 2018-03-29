@@ -317,6 +317,31 @@ describe('<ScanningJobPanelBody />', () => {
             const btn = wrapper.find('ScanningJobStopButton');
             expect(btn.exists()).toBeFalsy();
         });
+
+        it('should show "Stopped" time if terminationTime present', () => {
+            const terminationTime = new Date('1980-03-24T13:00:00Z');
+            wrapper.setProps({ terminationTime });
+            const desc = wrapper.find('tr.job-stopped');
+            expect(desc.exists()).toBeTruthy();
+            expect(desc.find('td').at(0).text()).toEqual('Stopped');
+            expect(desc.find('td').at(1).text()).toEqual(`${terminationTime}`);
+        });
+
+        it('should hide "Ended" time if terminationTime present', () => {
+            const terminationTime = new Date('1980-03-24T13:00:00Z');
+            wrapper.setProps({ terminationTime });
+            const desc = wrapper.find('tr.job-end');
+            expect(desc.exists()).toBeFalsy();
+        });
+
+        it('should show "Reason" time if terminationMessage present', () => {
+            const terminationMessage = 'The Why';
+            wrapper.setProps({ terminationMessage });
+            const desc = wrapper.find('tr.job-reason');
+            expect(desc.exists()).toBeTruthy();
+            expect(desc.find('td').at(0).text()).toEqual('Reason');
+            expect(desc.find('td').at(1).text()).toEqual(terminationMessage);
+        });
     });
 
     describe('duration', () => {

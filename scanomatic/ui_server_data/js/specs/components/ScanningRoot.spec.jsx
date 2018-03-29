@@ -155,23 +155,42 @@ describe('<ScanningRoot />', () => {
 
 describe('getStatus', () => {
     it('Returns Planned if not startTime', () => {
-        expect(getStatus()).toEqual('Planned');
+        const now = new Date('2001-01-01T01:01:01Z');
+        expect(getStatus(createJob({ startTime: null }, now))).toEqual('Planned');
     });
 
-    it('Returns completed if startTime and endTime is less than now', () => {
+    it('Returns "Completed" if startTime and endTime is less than now', () => {
+        const now = new Date('2001-01-01T01:01:01Z');
         expect(getStatus(
-            new Date('1710-05-13T06:33:12.000Z'),
-            new Date('1999-12-24T06:33:12.000Z'),
-            new Date('2023-04-02T06:33:12.000Z'),
+            createJob({
+                duration: new Duration(3600),
+                startTime: new Date('2001-01-01T00:01:00Z'),
+            }),
+            now,
         )).toEqual('Completed');
     });
 
-    it('Returns completed if startTime and endTime is less than now', () => {
+    it('Returns "Running" if startTime and endTime is less than now', () => {
+        const now = new Date('2001-01-01T01:01:01Z');
         expect(getStatus(
-            new Date('1710-05-13T06:33:12.000Z'),
-            new Date('2023-04-02T06:33:12.000Z'),
-            new Date('1999-12-24T06:33:12.000Z'),
+            createJob({
+                duration: new Duration(3600),
+                startTime: new Date('2001-01-01T01:00:00Z'),
+            }),
+            now,
         )).toEqual('Running');
+    });
+
+    it('Returns "Completed" if terminationTime less than now', () => {
+        const now = new Date('2001-01-01T01:01:01Z');
+        expect(getStatus(
+            createJob({
+                duration: new Duration(3600),
+                startTime: new Date('2001-01-01T01:00:00Z'),
+                terminationTime: new Date('2001-01-01T01:01:00Z'),
+            }),
+            now,
+        )).toEqual('Completed');
     });
 });
 

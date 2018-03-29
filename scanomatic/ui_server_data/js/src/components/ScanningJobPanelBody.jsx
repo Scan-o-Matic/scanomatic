@@ -138,7 +138,14 @@ export default function ScanningJobPanelBody(props) {
                 <td>{`${props.startTime}`}</td>
             </tr>
         );
-        if (props.status === 'Completed') {
+        if (terminationTime) {
+            jobEnd = (
+                <tr className="job-info job-stopped">
+                    <td>Stopped</td>
+                    <td>{`${terminationTime}`}</td>
+                </tr>
+            );
+        } else if (props.status === 'Completed') {
             jobEnd = (
                 <tr className="job-info job-end">
                     <td>Ended</td>
@@ -174,6 +181,12 @@ export default function ScanningJobPanelBody(props) {
                     {jobScanner}
                     {jobStart}
                     {jobEnd}
+                    {terminationMessage &&
+                        <tr className="job-info job-reason">
+                            <td>Reason</td>
+                            <td>{terminationMessage}</td>
+                        </tr>
+                    }
                 </tbody>
             </table>
             {links}
@@ -194,6 +207,8 @@ ScanningJobPanelBody.propTypes = {
     scanner: SoMPropTypes.scannerType,
     startTime: PropTypes.instanceOf(Date),
     status: PropTypes.string.isRequired,
+    terminationMessage: PropTypes.string,
+    terminationTime: PropTypes.instanceOf(Date),
 };
 
 ScanningJobPanelBody.defaultProps = {
@@ -201,4 +216,6 @@ ScanningJobPanelBody.defaultProps = {
     endTime: null,
     scanner: null,
     startTime: null,
+    terminationMessage: null,
+    terminationTime: null,
 };

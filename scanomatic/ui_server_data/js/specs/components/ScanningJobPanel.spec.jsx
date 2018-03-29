@@ -188,7 +188,7 @@ describe('<ScanningJobPanel />', () => {
             expect(dialogue.exists()).toBeFalsy();
         });
 
-        it('should call onDelete with the job identifier', () => {
+        it('should call onStopJob with the job indentifier and reason', () => {
             const onStopJob = jasmine.createSpy('onStopJob');
             const wrapper = shallow(<ScanningJobPanel
                 {...props}
@@ -196,9 +196,11 @@ describe('<ScanningJobPanel />', () => {
             />);
             wrapper.find('ScanningJobPanelBody').prop('onStopJob')();
             wrapper.update();
-            wrapper.find('ScanningJobStopDialogue').prop('onConfirm')();
+            wrapper.find('ScanningJobStopDialogue')
+                .prop('onConfirm')('My reason');
             wrapper.update();
-            expect(onStopJob).toHaveBeenCalledWith(props.scanningJob.identifier);
+            expect(onStopJob)
+                .toHaveBeenCalledWith(props.scanningJob.identifier, 'My reason');
         });
     });
 

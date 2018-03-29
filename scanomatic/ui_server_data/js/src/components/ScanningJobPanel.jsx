@@ -40,9 +40,9 @@ class ScanningJobPanel extends React.Component {
         this.setState({ dialogue: null });
     }
 
-    handleConfirmStop() {
+    handleConfirmStop(reason) {
         this.setState({ dialogue: null });
-        this.props.onStopJob(this.props.scanningJob.identifier);
+        this.props.onStopJob(this.props.scanningJob.identifier, reason);
     }
 
     render() {
