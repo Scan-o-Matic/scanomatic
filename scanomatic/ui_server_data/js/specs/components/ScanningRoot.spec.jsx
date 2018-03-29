@@ -15,6 +15,7 @@ function makeJob(properties) {
             identifier: 'job003',
             duration: new Duration(1800),
             interval: new Duration(300),
+            scannerId: 'scanner025',
             startTime: undefined,
             terminationTime: undefined,
             terminationMessage: undefined,
@@ -30,12 +31,14 @@ describe('<ScanningRoot />', () => {
     const onStartJob = jasmine.createSpy('onStartJob');
 
     const props = {
-        onNewJob,
-        onCloseNewJob,
-        onStartJob,
         error: null,
-        newJob: false,
         jobs: [],
+        newJob: false,
+        onCloseNewJob,
+        onNewJob,
+        onRemoveJob: () => {},
+        onStartJob,
+        onStopJob: () => {},
         scanners: [],
     };
 

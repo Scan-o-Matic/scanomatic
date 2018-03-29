@@ -3,6 +3,7 @@ import React from 'react';
 
 import './enzyme-setup';
 import ScanningJobPanel from '../../src/components/ScanningJobPanel';
+import Duration from '../../src/Duration';
 
 
 describe('<ScanningJobPanel />', () => {
@@ -10,8 +11,8 @@ describe('<ScanningJobPanel />', () => {
         scanningJob: {
             name: 'Omnibus',
             identifier: 'job0000',
-            duration: { days: 3, hours: 2, minutes: 51 },
-            interval: 13,
+            duration: new Duration(123456),
+            interval: new Duration(123),
             scannerId: 'hoho',
             status: 'Planned',
         },

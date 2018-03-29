@@ -355,7 +355,7 @@ describe('<ScanningJobPanelBody />', () => {
         it('should skip days if zero', () => {
             const wrapper = shallow(<ScanningJobPanelBody
                 {...props}
-                duration={{ days: 0, hours: 2, minutes: 51 }}
+                duration={new Duration(10260)}
             />);
             const desc = wrapper.find('tr.job-duration');
             expect(desc.find('td').at(1).text()).toEqual('2 hours 51 minutes');
@@ -364,7 +364,7 @@ describe('<ScanningJobPanelBody />', () => {
         it('should skip hours if zero', () => {
             const wrapper = shallow(<ScanningJobPanelBody
                 {...props}
-                duration={{ days: 2, hours: 0, minutes: 51 }}
+                duration={new Duration(175860)}
             />);
             const desc = wrapper.find('tr.job-duration');
             expect(desc.find('td').at(1).text()).toEqual('2 days 51 minutes');
@@ -373,7 +373,7 @@ describe('<ScanningJobPanelBody />', () => {
         it('should skip minues if zero', () => {
             const wrapper = shallow(<ScanningJobPanelBody
                 {...props}
-                duration={{ days: 3, hours: 2, minutes: 0 }}
+                duration={new Duration(266400)}
             />);
             const desc = wrapper.find('tr.job-duration');
             expect(desc.find('td').at(1).text()).toEqual('3 days 2 hours');

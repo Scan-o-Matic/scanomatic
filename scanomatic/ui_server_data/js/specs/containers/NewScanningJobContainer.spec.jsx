@@ -223,8 +223,8 @@ describe('<NewScanningJobContainer />', () => {
             it('should submit', () => {
                 const state = {
                     name: 'Hyperion',
-                    duration: '-eternal',
-                    interval: 'limes null',
+                    duration: { days: 41, hours: 23, minutes: 0 },
+                    interval: 123,
                     scannerId: 'Shrike',
                 };
                 const wrapper = shallow(<NewScanningJobContainer {...props} />);
