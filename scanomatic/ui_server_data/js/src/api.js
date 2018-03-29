@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import Duration from './Duration';
 
 const GetSliceImagePath = '/api/calibration/#0#/image/#1#/slice/get/#2#';
 const GetTranposedMarkerPath = '/api/data/fixture/calculate/';
@@ -266,14 +267,11 @@ export function getScanningJobs() {
         identifier: jsonJob.identifier,
         name: jsonJob.name,
         scannerId: jsonJob.scannerId,
-        interval: jsonJob.interval / secondsPerMinute,
-        duration: {
-            days: Math.floor(jsonJob.duration / secondsPerDay),
-            hours:
-                Math.floor((jsonJob.duration % secondsPerDay) / secondsPerHour),
-            minutes: (jsonJob.duration % secondsPerHour) / secondsPerMinute,
-        },
-        startTime: jsonJob.startTime,
+        interval: new Duration(jsonJob.interval),
+        duration: new Duration(jsonJob.duration),
+        startTime: jsonJob.startTime && new Date(jsonJob.startTime),
+        terminationMessage: jsonJob.terminationMessage,
+        terminationTime: jsonJob.terminationTime && new Date(jsonJob.terminationTime),
     })));
 }
 

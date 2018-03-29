@@ -1,6 +1,7 @@
 import 'jasmine-ajax';
 
 import * as API from '../src/api';
+import Duration from '../src/Duration';
 
 const toHaveMethod = (util, customEqualityTesters) => ({
     compare: (request, expected) => {
@@ -749,14 +750,6 @@ describe('API', () => {
 
 
     describe('getScanningJobs', () => {
-        const scanJob = {
-            identifier: 'xyz',
-            name: 'Some Job',
-            duration: { days: 1, hours: 3, minutes: 5 },
-            interval: 20,
-            scannerId: 'sc4nn3r',
-            startTime: null,
-        };
         const jsonScanJob = {
             identifier: 'xyz',
             name: 'Some Job',
@@ -779,11 +772,63 @@ describe('API', () => {
 
         it('should return a promise that resolves on success', (done) => {
             API.getScanningJobs().then((value) => {
-                expect(value).toEqual([scanJob]);
+                expect(value).toEqual([jasmine.objectContaining({
+                    identifier: 'xyz',
+                    name: 'Some Job',
+                    duration: new Duration(97500),
+                    interval: new Duration(1200),
+                    scannerId: 'sc4nn3r',
+                })]);
                 done();
             });
             mostRecentRequest().respondWith({
                 status: 200, responseText: JSON.stringify([jsonScanJob]),
+            });
+        });
+
+        it('should parse startTime if present', (done) => {
+            API.getScanningJobs().then((value) => {
+                expect(value[0].startTime).toEqual(new Date('1985-10-26T01:20:00Z'));
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200,
+                responseText: JSON.stringify([
+                    Object.assign({}, jsonScanJob, {
+                        startTime: '1985-10-26T01:20:00Z',
+                    }),
+                ]),
+            });
+        });
+
+        it('should parse terminationTime if present', (done) => {
+            API.getScanningJobs().then((value) => {
+                expect(value[0].terminationTime)
+                    .toEqual(new Date('1985-10-26T01:20:00Z'));
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200,
+                responseText: JSON.stringify([
+                    Object.assign({}, jsonScanJob, {
+                        terminationTime: '1985-10-26T01:20:00Z',
+                    }),
+                ]),
+            });
+        });
+
+        it('should set terminationMessage if present', (done) => {
+            API.getScanningJobs().then((value) => {
+                expect(value[0].terminationMessage).toEqual('The Message');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200,
+                responseText: JSON.stringify([
+                    Object.assign({}, jsonScanJob, {
+                        terminationMessage: 'The Message',
+                    }),
+                ]),
             });
         });
 
