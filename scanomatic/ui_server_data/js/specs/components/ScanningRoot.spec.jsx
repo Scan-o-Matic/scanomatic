@@ -4,6 +4,24 @@ import React from 'react';
 
 import './enzyme-setup';
 import ScanningRoot, { getStatus, jobSorter } from '../../src/components/ScanningRoot';
+import Duration from '../../src/Duration';
+
+
+function createJob(properties) {
+    return Object.assign(
+        {},
+        {
+            name: 'Test Job',
+            identifier: 'job003',
+            duration: new Duration(1800),
+            interval: new Duration(300),
+            startTime: undefined,
+            terminationTime: undefined,
+            terminationMessage: undefined,
+        },
+        properties,
+    );
+}
 
 
 describe('<ScanningRoot />', () => {

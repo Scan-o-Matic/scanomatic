@@ -39,10 +39,9 @@ export default class ScanningRootContainer extends React.Component {
         getScanningJobs()
             .then(jobs => this.setState({
                 jobs: jobs.map(job => Object.assign({}, job, {
-                    startTime: job.startTime ? new Date(job.startTime) : null,
-                    endTime: job.startTime ?
-                        new Date(new Date(job.startTime) - -duration2milliseconds(job.duration)) :
-                        null,
+                    endTime: job.startTime
+                        ? job.duration.after(job.startTime)
+                        : null,
                 })),
             }))
             .catch(reason => this.setState({ error: `Error requesting jobs: ${reason}` }));

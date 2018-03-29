@@ -7,6 +7,7 @@ import * as API from '../../src/api';
 import * as helpers from '../../src/helpers';
 import FakePromise from '../helpers/FakePromise';
 import afterPromises from '../helpers/afterPromises';
+import Duration from '../../src/Duration';
 
 
 describe('<ScanningRootContainer />', () => {
@@ -14,23 +15,15 @@ describe('<ScanningRootContainer />', () => {
         identifier: 'job1iamindeed',
         name: 'Test',
         scannerId: 'aha',
-        duration: {
-            days: 55,
-            hours: 66,
-            minutes: 777,
-        },
-        interval: 8888,
+        duration: new Duration(5036220),
+        interval: new Duration(8888),
     };
     const job2 = {
         identifier: 'job2iamevenmore',
         name: 'Test2',
         scannerId: 'ahab',
-        duration: {
-            days: 5,
-            hours: 6,
-            minutes: 77,
-        },
-        interval: 88888,
+        duration: new Duration(458220),
+        interval: new Duration(88888),
     };
     const scanner = {
         name: 'Kassad',
@@ -121,8 +114,8 @@ describe('<ScanningRootContainer />', () => {
             const wrapper = shallow(<ScanningRootContainer />);
             expect(wrapper.prop('jobs'))
                 .toEqual([
-                    Object.assign({}, job, { startTime: null, endTime: null }),
-                    Object.assign({}, job2, { startTime: null, endTime: null }),
+                    Object.assign({}, job, { endTime: null }),
+                    Object.assign({}, job2, { endTime: null }),
                 ]);
         });
 
@@ -148,20 +141,20 @@ describe('<ScanningRootContainer />', () => {
 
             it('should deactivate button', () => {
                 const wrapper = shallow(<ScanningRootContainer />);
-                const unstarted = Object.assign({}, job, { startTime: null, endTime: null });
+                const unstarted = Object.assign({}, job, { endTime: null });
                 wrapper.prop('onStartJob')(unstarted);
                 wrapper.update();
                 const startingJob = Object.assign({}, unstarted);
                 startingJob.disableStart = true;
                 expect(wrapper.prop('jobs')).toEqual([
                     startingJob,
-                    Object.assign({}, job2, { startTime: null, endTime: null }),
+                    Object.assign({}, job2, { endTime: null }),
                 ]);
             });
 
             it('should make an error if starting job not known', () => {
                 const wrapper = shallow(<ScanningRootContainer />);
-                const unstarted = Object.assign({}, job, { startTime: null, endTime: null, identifier: 'whoami' });
+                const unstarted = Object.assign({}, job, { endTime: null, identifier: 'whoami' });
                 wrapper.prop('onStartJob')(unstarted);
                 wrapper.update();
                 expect(wrapper.prop('error')).toEqual(`UI lost job '${job.name}'`);
@@ -254,7 +247,7 @@ describe('<ScanningRootContainer />', () => {
         it('should pass jobs', () => {
             const wrapper = shallow(<ScanningRootContainer />);
             expect(wrapper.prop('jobs'))
-                .toEqual([Object.assign({}, job, { startTime: null, endTime: null })]);
+                .toEqual([Object.assign({}, job, { endTime: null })]);
         });
     });
 
@@ -262,13 +255,9 @@ describe('<ScanningRootContainer />', () => {
         const startedJob = {
             name: 'Test',
             scannerId: 'aha',
-            duration: {
-                days: 5,
-                hours: 6,
-                minutes: 7,
-            },
-            interval: 8888,
-            startTime: '1980-03-23T13:00:00Z',
+            duration: new Duration(454020),
+            interval: new Duration(8888),
+            startTime: new Date('1980-03-23T13:00:00Z'),
         };
 
         beforeEach(() => {
@@ -278,11 +267,10 @@ describe('<ScanningRootContainer />', () => {
                 .returnValue(FakePromise.resolve([scanner]));
         });
 
-        it('should convert startTime to a date', () => {
+        it('should compute endTime as startTime + duration', () => {
             const wrapper = shallow(<ScanningRootContainer />);
             expect(wrapper.prop('jobs'))
                 .toEqual([Object.assign({}, startedJob, {
-                    startTime: new Date(startedJob.startTime),
                     endTime: new Date('1980-03-28T19:07:00Z'),
                 })]);
         });
@@ -338,7 +326,7 @@ describe('<ScanningRootContainer />', () => {
             afterPromises(() => {
                 wrapper.update();
                 expect(wrapper.prop('jobs')).toEqual([
-                    Object.assign({}, job2, { startTime: null, endTime: null }),
+                    Object.assign({}, job2, { endTime: null }),
                 ]);
                 done();
             });

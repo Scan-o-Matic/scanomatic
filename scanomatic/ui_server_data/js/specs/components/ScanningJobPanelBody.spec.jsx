@@ -4,6 +4,7 @@ import React from 'react';
 import './enzyme-setup';
 import ScanningJobPanelBody, { duration2milliseconds, getProgress }
     from '../../src/components/ScanningJobPanelBody';
+import Duration from '../../src/Duration';
 
 
 describe('<ScanningJobPanelBody />', () => {
@@ -11,8 +12,8 @@ describe('<ScanningJobPanelBody />', () => {
     const props = {
         name: 'Omnibus',
         identifier: 'job0000',
-        duration: { days: 3, hours: 2, minutes: 51 },
-        interval: 13,
+        duration: new Duration(269460),
+        interval: new Duration(780),
         scannerId: 'hoho',
         status: 'Planned',
         onStartJob,
