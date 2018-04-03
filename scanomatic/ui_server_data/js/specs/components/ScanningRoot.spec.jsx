@@ -71,8 +71,8 @@ describe('<ScanningRoot />', () => {
         it('passes jobs-data to <ScanningJobPanel />:s', () => {
             const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
             const jobPanels = wrapper.find('ScanningJobPanel');
-            expect(jobPanels.last().prop('name')).toEqual('A');
-            expect(jobPanels.first().prop('name')).toEqual('B');
+            expect(jobPanels.last().prop('scanningJob').name).toEqual('A');
+            expect(jobPanels.first().prop('scanningJob').name).toEqual('B');
         });
 
         it('couples start callback with job (first)', () => {
@@ -94,8 +94,8 @@ describe('<ScanningRoot />', () => {
         it('should add statuses to the jobs', () => {
             const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
             const jobPanels = wrapper.find('ScanningJobPanel');
-            expect(jobPanels.first().prop('status')).toEqual('Planned');
-            expect(jobPanels.last().prop('status')).toEqual('Completed');
+            expect(jobPanels.first().prop('scanningJob').status).toEqual('Planned');
+            expect(jobPanels.last().prop('scanningJob').status).toEqual('Completed');
         });
 
         it('should pass onRemoveJob to <ScanningJobPanel/>', () => {
