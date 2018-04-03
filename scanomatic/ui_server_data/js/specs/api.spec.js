@@ -1022,14 +1022,6 @@ describe('API', () => {
     });
 
     describe('terminateScanningJob', () => {
-        const scanJob = {
-            name: 'Some Job',
-            duration: { days: 1, hours: 3, minutes: 5 },
-            interval: 20,
-            scannerId: 'sc4nn3r',
-            identifier: '125dasd12',
-        };
-
         it('should query the correct URL', () => {
             API.terminateScanningJob('job002', 'Because fire!!!');
             expect(mostRecentRequest().url)
