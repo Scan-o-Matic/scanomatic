@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import Duration from './Duration';
 
 
 const pinningFormat = PropTypes.shape({
@@ -24,15 +25,11 @@ const scannerType = PropTypes.shape({
 });
 
 const scanningJobType = PropTypes.shape({
-    duration: PropTypes.shape({
-        days: PropTypes.number.isRequired,
-        hours: PropTypes.number.isRequired,
-        minutes: PropTypes.number.isRequired,
-    }).isRequired,
-    name: PropTypes.string.isRequired,
-    interval: PropTypes.number.isRequired,
-    scannerId: PropTypes.string.isRequired,
     disableStart: PropTypes.bool,
+    duration: PropTypes.instanceOf(Duration).isRequired,
+    interval: PropTypes.instanceOf(Duration).isRequired,
+    name: PropTypes.string.isRequired,
+    scannerId: PropTypes.string.isRequired,
 });
 
 export default {

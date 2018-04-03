@@ -4,10 +4,12 @@ import NewScanningJobContainer from '../containers/NewScanningJobContainer';
 import SoMPropTypes from '../prop-types';
 import ScanningJobPanel from './ScanningJobPanel';
 
-export function getStatus(startTime, endTime, now) {
-    if (!startTime) {
+export function getStatus(job, now) {
+    if (!job.startTime) {
         return 'Planned';
-    } else if (endTime > now) {
+    } else if (job.terminationTime && job.terminationTime < now) {
+        return 'Completed';
+    } else if (job.duration.after(job.startTime) > now) {
         return 'Running';
     }
     return 'Completed';
@@ -44,15 +46,16 @@ export default function ScanningRoot(props) {
         const jobs = [];
         const now = new Date();
         props.jobs
-            .map(job => Object.assign({ status: getStatus(job.startTime, job.endTime, now) }, job))
+            .map(job => Object.assign({ status: getStatus(job, now) }, job))
             .filter(job => job.status)
             .sort(jobSorter)
             .forEach((job) => {
                 const scanner = props.scanners.filter(s => s.identifier === job.scannerId)[0];
                 jobs.push(<ScanningJobPanel
-                    onStartJob={() => onStartJob(job)}
-                    onRemoveJob={props.onRemoveJob}
                     key={job.name}
+                    onRemoveJob={props.onRemoveJob}
+                    onStartJob={() => onStartJob(job)}
+                    onStopJob={props.onStopJob}
                     scanner={scanner}
                     scanningJob={job}
                 />);
@@ -95,6 +98,7 @@ ScanningRoot.propTypes = {
     scanners: PropTypes.arrayOf(SoMPropTypes.scannerType).isRequired,
     onStartJob: PropTypes.func.isRequired,
     onRemoveJob: PropTypes.func.isRequired,
+    onStopJob: PropTypes.func.isRequired,
 };
 
 ScanningRoot.defaultProps = {

@@ -4,6 +4,8 @@ import React from 'react';
 
 import SoMPropTypes from '../prop-types';
 import ScanningJobRemoveButton from './ScanningJobRemoveButton';
+import ScanningJobStopButton from './ScanningJobStopButton';
+import Duration from '../Duration';
 
 export function duration2milliseconds(duration) {
     if (duration) {
@@ -19,18 +21,22 @@ export function getProgress(job) {
     return Math.min(1, progress / duration) * 100;
 }
 
+function renderDuration(duration) {
+    const strs = [];
+    if (duration.days > 0) {
+        strs.push(`${duration.days} days`);
+    }
+    if (duration.hours > 0) {
+        strs.push(`${duration.hours} hours`);
+    }
+    if (duration.minutes > 0) {
+        strs.push(`${duration.minutes} minutes`);
+    }
+    return strs.join(' ');
+}
+
 export default function ScanningJobPanelBody(props) {
-    const duration = [];
-    if (props.duration.days > 0) {
-        duration.push(`${props.duration.days} days`);
-    }
-    if (props.duration.hours > 0) {
-        duration.push(`${props.duration.hours} hours`);
-    }
-    if (props.duration.minutes > 0) {
-        duration.push(`${props.duration.minutes} minutes`);
-    }
-    const { scanner } = props;
+    const { scanner, terminationTime, terminationMessage } = props;
     let showStart = null;
     let status = null;
     let scanFrequency;
@@ -54,14 +60,14 @@ export default function ScanningJobPanelBody(props) {
         scanFrequency = (
             <tr className="job-info job-interval">
                 <td>Frequency</td>
-                <td>Scanning every {props.interval} minutes</td>
+                <td>Scanning every {renderDuration(props.interval)}</td>
             </tr>
         );
     } else if (props.status === 'Completed') {
         scanFrequency = (
             <tr className="job-info job-interval">
                 <td>Frequency</td>
-                <td>Scanned every {props.interval} minutes</td>
+                <td>Scanned every {renderDuration(props.interval)}</td>
             </tr>
         );
         links = (
@@ -78,7 +84,7 @@ export default function ScanningJobPanelBody(props) {
         scanFrequency = (
             <tr className="job-info job-interval">
                 <td>Frequency</td>
-                <td>Scan every {props.interval} minutes</td>
+                <td>Scan every {renderDuration(props.interval)}</td>
             </tr>
         );
         showStart = (
@@ -90,7 +96,7 @@ export default function ScanningJobPanelBody(props) {
         scanFrequency = (
             <tr className="job-info job-interval">
                 <td>Frequency</td>
-                <td>Scan every {props.interval} minutes</td>
+                <td>Scan every {renderDuration(props.interval)}</td>
             </tr>
         );
         showStart = (
@@ -102,7 +108,7 @@ export default function ScanningJobPanelBody(props) {
     const jobDuration = (
         <tr className="job-info job-duration">
             <td>Duration</td>
-            <td>{duration.join(' ')}</td>
+            <td>{renderDuration(props.duration)}</td>
         </tr>
     );
     let jobScanner;
@@ -132,7 +138,14 @@ export default function ScanningJobPanelBody(props) {
                 <td>{`${props.startTime}`}</td>
             </tr>
         );
-        if (props.status === 'Completed') {
+        if (terminationTime) {
+            jobEnd = (
+                <tr className="job-info job-stopped">
+                    <td>Stopped</td>
+                    <td>{`${terminationTime}`}</td>
+                </tr>
+            );
+        } else if (props.status === 'Completed') {
             jobEnd = (
                 <tr className="job-info job-end">
                     <td>Ended</td>
@@ -151,12 +164,15 @@ export default function ScanningJobPanelBody(props) {
     return (
         <div>
             <div className="panel-body">
+                {status}
                 {showStart}
                 {props.status === 'Planned' && <ScanningJobRemoveButton
                     identifier={props.identifier}
                     onRemoveJob={props.onRemoveJob}
                 />}
-                {status}
+                {props.status === 'Running' && <ScanningJobStopButton
+                    onStopJob={props.onStopJob}
+                />}
             </div>
             <table className="table job-stats">
                 <tbody>
@@ -165,6 +181,12 @@ export default function ScanningJobPanelBody(props) {
                     {jobScanner}
                     {jobStart}
                     {jobEnd}
+                    {terminationMessage &&
+                        <tr className="job-info job-reason">
+                            <td>Reason</td>
+                            <td>{terminationMessage}</td>
+                        </tr>
+                    }
                 </tbody>
             </table>
             {links}
@@ -174,20 +196,19 @@ export default function ScanningJobPanelBody(props) {
 
 ScanningJobPanelBody.propTypes = {
     disableStart: PropTypes.bool,
-    duration: PropTypes.shape({
-        days: PropTypes.number.isRequired,
-        hours: PropTypes.number.isRequired,
-        minutes: PropTypes.number.isRequired,
-    }).isRequired,
+    duration: PropTypes.instanceOf(Duration).isRequired,
     endTime: PropTypes.instanceOf(Date),
     identifier: PropTypes.string.isRequired,
-    interval: PropTypes.number.isRequired,
+    interval: PropTypes.instanceOf(Duration).isRequired,
     name: PropTypes.string.isRequired,
     onRemoveJob: PropTypes.func.isRequired,
     onStartJob: PropTypes.func.isRequired,
+    onStopJob: PropTypes.func.isRequired,
     scanner: SoMPropTypes.scannerType,
     startTime: PropTypes.instanceOf(Date),
     status: PropTypes.string.isRequired,
+    terminationMessage: PropTypes.string,
+    terminationTime: PropTypes.instanceOf(Date),
 };
 
 ScanningJobPanelBody.defaultProps = {
@@ -195,4 +216,6 @@ ScanningJobPanelBody.defaultProps = {
     endTime: null,
     scanner: null,
     startTime: null,
+    terminationMessage: null,
+    terminationTime: null,
 };

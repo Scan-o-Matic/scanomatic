@@ -4,6 +4,7 @@ import React from 'react';
 import SoMPropTypes from '../prop-types';
 import ScanningJobPanelBody from './ScanningJobPanelBody';
 import ScanningJobRemoveDialogue from './ScanningJobRemoveDialogue';
+import ScanningJobStopDialogue from './ScanningJobStopDialogue';
 import ScanningJobStatusLabel from './ScanningJobStatusLabel';
 
 class ScanningJobPanel extends React.Component {
@@ -13,6 +14,9 @@ class ScanningJobPanel extends React.Component {
         this.handleRemove = this.handleRemove.bind(this);
         this.handleCancelRemove = this.handleCancelRemove.bind(this);
         this.handleConfirmRemove = this.handleConfirmRemove.bind(this);
+        this.handleStop = this.handleStop.bind(this);
+        this.handleCancelStop = this.handleCancelStop.bind(this);
+        this.handleConfirmStop = this.handleConfirmStop.bind(this);
     }
 
     handleRemove() {
@@ -26,6 +30,19 @@ class ScanningJobPanel extends React.Component {
     handleConfirmRemove() {
         this.setState({ dialogue: null });
         this.props.onRemoveJob(this.props.scanningJob.identifier);
+    }
+
+    handleStop() {
+        this.setState({ dialogue: 'stop' });
+    }
+
+    handleCancelStop() {
+        this.setState({ dialogue: null });
+    }
+
+    handleConfirmStop(reason) {
+        this.setState({ dialogue: null });
+        this.props.onStopJob(this.props.scanningJob.identifier, reason);
     }
 
     render() {
@@ -51,6 +68,7 @@ class ScanningJobPanel extends React.Component {
                         {...scanningJob}
                         onRemoveJob={this.handleRemove}
                         onStartJob={onStartJob}
+                        onStopJob={this.handleStop}
                         scanner={scanner}
                     />
                 }
@@ -59,6 +77,13 @@ class ScanningJobPanel extends React.Component {
                         name={name}
                         onCancel={this.handleCancelRemove}
                         onConfirm={this.handleConfirmRemove}
+                    />
+                }
+                {dialogue === 'stop' &&
+                    <ScanningJobStopDialogue
+                        name={name}
+                        onCancel={this.handleCancelStop}
+                        onConfirm={this.handleConfirmStop}
                     />
                 }
             </div>
@@ -71,6 +96,7 @@ ScanningJobPanel.propTypes = {
     scanner: SoMPropTypes.scannerType,
     onStartJob: PropTypes.func.isRequired,
     onRemoveJob: PropTypes.func.isRequired,
+    onStopJob: PropTypes.func.isRequired,
 };
 
 export default ScanningJobPanel;

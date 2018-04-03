@@ -4,6 +4,7 @@ import React from 'react';
 import './enzyme-setup';
 import ScanningJobPanelBody, { duration2milliseconds, getProgress }
     from '../../src/components/ScanningJobPanelBody';
+import Duration from '../../src/Duration';
 
 
 describe('<ScanningJobPanelBody />', () => {
@@ -11,12 +12,13 @@ describe('<ScanningJobPanelBody />', () => {
     const props = {
         name: 'Omnibus',
         identifier: 'job0000',
-        duration: { days: 3, hours: 2, minutes: 51 },
-        interval: 13,
+        duration: new Duration(269460),
+        interval: new Duration(780),
         scannerId: 'hoho',
         status: 'Planned',
         onStartJob,
         onRemoveJob: () => {},
+        onStopJob: () => {},
     };
 
     const scanner = {
@@ -148,12 +150,19 @@ describe('<ScanningJobPanelBody />', () => {
             const wrapper = shallow(<ScanningJobPanelBody
                 {...props}
                 status="Planned"
-                identifier="scnjb001"
             />);
             const btn = wrapper.find('ScanningJobRemoveButton');
             expect(btn.exists()).toBeTruthy();
-            expect(btn.prop('identifier')).toEqual('scnjb001');
             expect(btn.prop('onRemoveJob')).toBe(props.onRemoveJob);
+        });
+
+        it('should not render a stop button', () => {
+            const wrapper = shallow(<ScanningJobPanelBody
+                {...props}
+                status="Planned"
+            />);
+            const btn = wrapper.find('ScanningJobStopButton');
+            expect(btn.exists()).toBeFalsy();
         });
     });
 
@@ -240,6 +249,12 @@ describe('<ScanningJobPanelBody />', () => {
             const btn = wrapper.find('ScanningJobRemoveButton');
             expect(btn.exists()).toBeFalsy();
         });
+
+        it('should render a stop button', () => {
+            const btn = wrapper.find('ScanningJobStopButton');
+            expect(btn.exists()).toBeTruthy();
+            expect(btn.prop('onStopJob')).toBe(props.onStopJob);
+        });
     });
 
     describe('Status Completed', () => {
@@ -297,6 +312,36 @@ describe('<ScanningJobPanelBody />', () => {
             const btn = wrapper.find('ScanningJobRemoveButton');
             expect(btn.exists()).toBeFalsy();
         });
+
+        it('should not render a stop button', () => {
+            const btn = wrapper.find('ScanningJobStopButton');
+            expect(btn.exists()).toBeFalsy();
+        });
+
+        it('should show "Stopped" time if terminationTime present', () => {
+            const terminationTime = new Date('1980-03-24T13:00:00Z');
+            wrapper.setProps({ terminationTime });
+            const desc = wrapper.find('tr.job-stopped');
+            expect(desc.exists()).toBeTruthy();
+            expect(desc.find('td').at(0).text()).toEqual('Stopped');
+            expect(desc.find('td').at(1).text()).toEqual(`${terminationTime}`);
+        });
+
+        it('should hide "Ended" time if terminationTime present', () => {
+            const terminationTime = new Date('1980-03-24T13:00:00Z');
+            wrapper.setProps({ terminationTime });
+            const desc = wrapper.find('tr.job-end');
+            expect(desc.exists()).toBeFalsy();
+        });
+
+        it('should show "Reason" time if terminationMessage present', () => {
+            const terminationMessage = 'The Why';
+            wrapper.setProps({ terminationMessage });
+            const desc = wrapper.find('tr.job-reason');
+            expect(desc.exists()).toBeTruthy();
+            expect(desc.find('td').at(0).text()).toEqual('Reason');
+            expect(desc.find('td').at(1).text()).toEqual(terminationMessage);
+        });
     });
 
     describe('duration', () => {
@@ -310,7 +355,7 @@ describe('<ScanningJobPanelBody />', () => {
         it('should skip days if zero', () => {
             const wrapper = shallow(<ScanningJobPanelBody
                 {...props}
-                duration={{ days: 0, hours: 2, minutes: 51 }}
+                duration={new Duration(10260)}
             />);
             const desc = wrapper.find('tr.job-duration');
             expect(desc.find('td').at(1).text()).toEqual('2 hours 51 minutes');
@@ -319,7 +364,7 @@ describe('<ScanningJobPanelBody />', () => {
         it('should skip hours if zero', () => {
             const wrapper = shallow(<ScanningJobPanelBody
                 {...props}
-                duration={{ days: 2, hours: 0, minutes: 51 }}
+                duration={new Duration(175860)}
             />);
             const desc = wrapper.find('tr.job-duration');
             expect(desc.find('td').at(1).text()).toEqual('2 days 51 minutes');
@@ -328,7 +373,7 @@ describe('<ScanningJobPanelBody />', () => {
         it('should skip minues if zero', () => {
             const wrapper = shallow(<ScanningJobPanelBody
                 {...props}
-                duration={{ days: 3, hours: 2, minutes: 0 }}
+                duration={new Duration(266400)}
             />);
             const desc = wrapper.find('tr.job-duration');
             expect(desc.find('td').at(1).text()).toEqual('3 days 2 hours');

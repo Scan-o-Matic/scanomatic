@@ -3,12 +3,12 @@ from uuid import uuid4
 import pytest
 import requests
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select, WebDriverWait
 
 
-@pytest.fixture(autouse=True, scope='module')
-def scanner(scanomatic):
-    scannerid = uuid4().hex
+def create_scanner(scanomatic, scannerid):
     response = requests.put(
         scanomatic + '/api/scanners/{}/status'.format(scannerid),
         json={
@@ -18,20 +18,24 @@ def scanner(scanomatic):
         },
     )
     response.raise_for_status()
+
+
+@pytest.fixture(autouse=True, scope='module')
+def scanner(scanomatic):
+    scannerid = uuid4().hex
+    create_scanner(scanomatic, scannerid)
     return scannerid
 
 
-class PageObject(object):
-    path = '/'
+class ExperimentPage(object):
+    path = '/experiment'
+
+    scanner_select_locator = (By.CSS_SELECTOR, 'select.scanner')
 
     def __init__(self, driver, baseurl):
         self.driver = driver
         self.baseurl = baseurl
         self.driver.get(self.baseurl + self.path)
-
-
-class ExperimentPage(PageObject):
-    path = '/experiment'
 
     def add_job(self, name, scannerid=None):
         btn = self.driver.find_element_by_css_selector('button.new-job')
@@ -39,49 +43,20 @@ class ExperimentPage(PageObject):
         form = self.driver.find_element_by_css_selector('div.panel-body')
         name_input = form.find_element_by_css_selector('input.name')
         name_input.send_keys(name)
-        scanner_select = Select(
-            self.driver.find_element_by_css_selector('select.scanner')
-        )
+        scanner_select = self.driver.find_element(*self.scanner_select_locator)
+        WebDriverWait(
+            scanner_select, 5
+        ).until(EC.presence_of_element_located((By.TAG_NAME, 'option')))
         if scannerid:
-            scanner_select.select_by_value(scannerid)
+            Select(scanner_select).select_by_value(scannerid)
         form.find_element_by_css_selector('button.job-add').click()
 
     def find_job_panel_by_name(self, name):
         for el in self.driver.find_elements_by_css_selector('div.job-listing'):
             title = el.find_element_by_tag_name('h3').text
             if title == name:
-                return ExperimentPage.ScanningJobPanel(el)
+                return ScanningJobPanel(el, self.driver)
         raise LookupError('No job panel with name "{}"'.format(name))
-
-    class ScanningJobPanel(object):
-
-        def __init__(self, element):
-            self.element = element
-
-        def can_remove_job(self):
-            try:
-                self.element.find_element_by_class_name(
-                    'scanning-job-remove-button'
-                )
-                return True
-            except NoSuchElementException:
-                return False
-
-        def remove_job(self, confirm=True):
-            self.element.find_element_by_class_name(
-                'scanning-job-remove-button'
-            ).click()
-            if confirm:
-                self.element.find_element_by_css_selector(
-                    '.scanning-job-remove-dialogue .confirm-button'
-                ).click()
-            else:
-                self.element.find_element_by_css_selector(
-                    '.scanning-job-remove-dialogue .cancel-button'
-                ).click()
-
-        def start_job(self):
-            self.element.find_element_by_class_name('job-start').click()
 
     def has_job_with_name(self, name):
         try:
@@ -91,28 +66,143 @@ class ExperimentPage(PageObject):
             return False
 
 
-def test_remove_scanning_job(scanomatic, browser):
-    page = ExperimentPage(browser, scanomatic)
-    name = 'Test job that should be removed {}'.format(uuid4())
-    page.add_job(name=name)
-    panel = page.find_job_panel_by_name(name)
-    panel.remove_job(confirm=True)
-    assert not page.has_job_with_name(name)
+class ScanningJobPanel(object):
+    job_info_locator = (By.CLASS_NAME, 'job-info')
+    remove_button_locator = (By.CLASS_NAME, 'scanning-job-remove-button')
+    stop_button_locator = (By.CLASS_NAME, 'scanning-job-stop-button')
+    stop_reason_input_locator = (
+        By.CSS_SELECTOR, '.scanning-job-stop-dialogue .reason-input'
+    )
+    status_label_locator = (By.CLASS_NAME, 'scanning-job-status-label')
+
+    def __init__(self, element, driver):
+        self.element = element
+        self.driver = driver
+
+    def can_remove_job(self):
+        try:
+            self.element.find_element(*self.remove_button_locator)
+            return True
+        except NoSuchElementException:
+            return False
+
+    def remove_job(self, confirm=True):
+        self.element.find_element(*self.remove_button_locator).click()
+        if confirm:
+            self.element.find_element_by_css_selector(
+                '.scanning-job-remove-dialogue .confirm-button'
+            ).click()
+        else:
+            self.element.find_element_by_css_selector(
+                '.scanning-job-remove-dialogue .cancel-button'
+            ).click()
+
+    def start_job(self):
+        self.element.find_element_by_class_name('job-start').click()
+        WebDriverWait(self.element, 2).until(
+            EC.
+            text_to_be_present_in_element(self.status_label_locator, 'Running')
+        )
+
+    def can_stop_job(self):
+        try:
+            self.element.find_element(*self.stop_button_locator)
+            return True
+        except NoSuchElementException:
+            return False
+
+    def stop_job(self, reason='', confirm=True):
+        self.element.find_element(*self.stop_button_locator).click()
+        (
+            self.element.find_element(*self.stop_reason_input_locator)
+            .send_keys(reason)
+        )
+        if confirm:
+            self.element.find_element_by_css_selector(
+                '.scanning-job-stop-dialogue .confirm-button'
+            ).click()
+            WebDriverWait(self.element, 2).until(
+                EC.text_to_be_present_in_element(
+                    self.status_label_locator, 'Completed'
+                )
+            )
+        else:
+            self.element.find_element_by_css_selector(
+                '.scanning-job-stop-dialogue .cancel-button'
+            ).click()
+
+    def get_job_stats(self):
+        info = {}
+        for row in self.element.find_elements(*self.job_info_locator):
+            tds = row.find_elements_by_tag_name('td')
+            info[tds[0].text] = tds[1].text
+        return info
+
+    def get_job_status(self):
+        return self.element.find_element(*self.status_label_locator).text
 
 
-def test_cancel_removing_scanning_job(scanomatic, browser):
-    page = ExperimentPage(browser, scanomatic)
-    name = 'Test job that should not be removed {}'.format(uuid4())
-    page.add_job(name=name)
-    panel = page.find_job_panel_by_name(name)
-    panel.remove_job(confirm=False)
-    assert page.has_job_with_name(name)
+class TestRemoveJob:
+
+    def test_remove_scanning_job(self, scanomatic, browser):
+        page = ExperimentPage(browser, scanomatic)
+        name = 'Test job that should be removed {}'.format(uuid4())
+        page.add_job(name=name)
+        panel = page.find_job_panel_by_name(name)
+        panel.remove_job(confirm=True)
+        assert not page.has_job_with_name(name)
+
+    def test_cancel_removing_scanning_job(self, scanomatic, browser):
+        page = ExperimentPage(browser, scanomatic)
+        name = 'Test job that should not be removed {}'.format(uuid4())
+        page.add_job(name=name)
+        panel = page.find_job_panel_by_name(name)
+        panel.remove_job(confirm=False)
+        assert page.has_job_with_name(name)
+
+    def test_cannot_remove_started_job(self, scanomatic, browser):
+        scannerid = uuid4().hex
+        create_scanner(scanomatic, scannerid)
+        page = ExperimentPage(browser, scanomatic)
+        name = 'Started test job that cannot be removed {}'.format(uuid4())
+        page.add_job(name=name, scannerid=scannerid)
+        panel = page.find_job_panel_by_name(name)
+        panel.start_job()
+        assert not panel.can_remove_job()
 
 
-def test_cannot_remove_started_job(scanomatic, browser, scanner):
-    page = ExperimentPage(browser, scanomatic)
-    name = 'Started test job that cannot be removed {}'.format(uuid4())
-    page.add_job(name=name, scannerid=scanner)
-    panel = page.find_job_panel_by_name(name)
-    panel.start_job()
-    assert not panel.can_remove_job()
+class TestStopJob:
+
+    def test_stop_running_job(self, scanomatic, browser):
+        jobname = 'Started test job that should be stopped {}'.format(uuid4())
+        scannerid = uuid4().hex
+        reason = "I don't want to do this anymore!"
+        create_scanner(scanomatic, scannerid)
+        page = ExperimentPage(browser, scanomatic)
+        page.add_job(name=jobname, scannerid=scannerid)
+        panel = page.find_job_panel_by_name(jobname)
+        panel.start_job()
+        panel.stop_job(confirm=True, reason=reason)
+        assert panel.get_job_status() == 'Completed'
+        job_stats = panel.get_job_stats()
+        assert 'Stopped' in job_stats
+        assert job_stats['Reason'] == reason
+
+    def test_cancel_stopping_running_job(self, scanomatic, browser):
+        jobname = 'Started test job that should be stopped {}'.format(uuid4())
+        scannerid = uuid4().hex
+        create_scanner(scanomatic, scannerid)
+        page = ExperimentPage(browser, scanomatic)
+        page.add_job(name=jobname, scannerid=scannerid)
+        panel = page.find_job_panel_by_name(jobname)
+        panel.start_job()
+        panel.stop_job(confirm=False)
+        assert panel.get_job_status() == 'Running'
+        assert 'Stopped' not in panel.get_job_stats()
+
+    def test_cannot_stop_planned_job(self, scanomatic, browser):
+        jobname = 'Started test job that should be stopped {}'.format(uuid4())
+        page = ExperimentPage(browser, scanomatic)
+        page.add_job(name=jobname)
+        panel = page.find_job_panel_by_name(jobname)
+        assert not panel.can_stop_job()
