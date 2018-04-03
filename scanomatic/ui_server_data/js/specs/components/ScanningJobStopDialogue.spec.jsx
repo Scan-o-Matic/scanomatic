@@ -19,7 +19,7 @@ describe('<ScanningJobStopDialogue/>', () => {
             onConfirm={onConfirm}
         />);
         const input = wrapper.find('.reason-input');
-        input.simulate('change', { target: { value: 'The Reason' } })
+        input.simulate('change', { target: { value: 'The Reason' } });
         const btn = wrapper.find('.confirm-button');
         btn.simulate('click');
         expect(onConfirm).toHaveBeenCalledWith('The Reason');
