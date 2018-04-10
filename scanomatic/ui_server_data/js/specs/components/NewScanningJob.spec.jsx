@@ -145,8 +145,8 @@ describe('<NewScanningJob/>', () => {
         it('renders the scanner options', () => {
             const wrapper = shallow(<NewScanningJob {...props} />);
             const opts = wrapper.find('option');
-            expect(opts.first().text()).toEqual('Tox (online, free)');
-            expect(opts.last().text()).toEqual('Npm (offline, occupied)');
+            expect(opts.first().text()).toEqual('Npm (offline, occupied)');
+            expect(opts.last().text()).toEqual('Tox (online, free)');
         });
 
         it('calls `onScannerChange` when changed', () => {
