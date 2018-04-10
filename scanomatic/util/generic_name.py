@@ -6,7 +6,7 @@ import random
 def get_generic_name():
     bird = random.choice(get_bird_list())
     adjective = get_adjective(bird)
-    return "The {} {}".format(adjective.capitalize(), bird)
+    return "{} {}".format(adjective.capitalize(), bird)
 
 
 def get_bird_list():

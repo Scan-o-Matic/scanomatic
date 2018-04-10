@@ -10,8 +10,7 @@ def test_added_scanner_gets_a_name(scanomatic):
     response.raise_for_status()
     scanner = response.json()
     name = scanner['name']
-    assert len(name.split(' ', 2)) == 3
-    assert name.split(' ', 2)[0] == 'The'
+    assert len(name.split(' ', 1)) == 2
 
 
 def create_scanner(scanomatic):
