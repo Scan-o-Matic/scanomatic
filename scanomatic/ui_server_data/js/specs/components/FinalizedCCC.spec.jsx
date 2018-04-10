@@ -24,6 +24,6 @@ describe('<FinalizedCCC />', () => {
         const btnWrapper = wrapper.find('a.btn');
         expect(btnWrapper.exists()).toBeTruthy();
         expect(btnWrapper.text()).toContain('Go to home page');
-        expect(btnWrapper.prop('href')).toEqual('/');
+        expect(btnWrapper.prop('href')).toEqual('/home');
     });
 });
