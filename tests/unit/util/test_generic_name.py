@@ -9,9 +9,8 @@ def test_get_generic_name():
     name = get_generic_name()
     name_list = get_bird_list()
     adjecive_list = get_adjective_list()
-    assert name.split(' ', 2)[0] == "The"
-    assert name.split(' ', 2)[1].lower() in adjecive_list
-    assert name.split(' ', 2)[2] in name_list
+    assert name.split(' ', 1)[0].lower() in adjecive_list
+    assert name.split(' ', 1)[1] in name_list
 
 
 def test_get_name_list():
