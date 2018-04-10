@@ -78,12 +78,18 @@ export default function NewScanningJob(props) {
                                 onChange={props.onScannerChange}
                                 value={props.scannerId}
                             >
-                                {props.scanners.map(v => (
-                                    <option key={v.name} value={v.identifier}>
-                                        {v.name}
-                                        {` (${v.power ? 'online' : 'offline'}, ${v.owned ? 'occupied' : 'free'})`}
-                                    </option>
-                                ))}
+                                {props.scanners
+                                    .sort((a, b) => {
+                                        if (a.name < b.name) return -1;
+                                        if (a.name > b.name) return 1;
+                                        return 0;
+                                    })
+                                    .map(v => (
+                                        <option key={v.name} value={v.identifier}>
+                                            {v.name}
+                                            {` (${v.power ? 'online' : 'offline'}, ${v.owned ? 'occupied' : 'free'})`}
+                                        </option>
+                                    ))}
                             </select>
                         </div>
                         <button className="btn btn-primary job-add" onClick={props.onSubmit}>
