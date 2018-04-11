@@ -14,7 +14,7 @@ function set_fixture_plate_listing() {
             $('#fixture-error-message').html('<em>' + data.reason + '</em>').show();
          } else {
             $('#fixture-error-message').hide();
-            gridplates = Map(data.plates, function (e) {return e.index;});
+            gridplates = ArrMap(data.plates, function (e) {return e.index;});
             if ($('#manual-regridding').prop('checked')) {
                 $('#manual-regridding-settings').show();
             } else {
@@ -22,7 +22,7 @@ function set_fixture_plate_listing() {
             }
             parent = $('#manual-regridding-plates');
             parent.empty();
-            Map(gridplates, function(e) {append_regridding_ui(parent, e);});
+            ArrMap(gridplates, function(e) {append_regridding_ui(parent, e);});
          }
     };
 

@@ -153,28 +153,10 @@ function Dialogue(title, body_header, body, redirect, reactivate_button ) {
 
 }
 
-function Map(arr, lambda_func) {
+function ArrMap(arr, lambda_func) {
     new_arr = [];
     for (i=0; i<arr.length; i++) {
         new_arr[i] = lambda_func(arr[i]);
     }
     return new_arr;
-}
-
-function setVersionInformation(target, preface) {
-    API.get('/api/app/version')
-        .then((data) => {
-            let branch = '';
-            if (data.source_information && data.source_information.branch) {
-                branch = `, ${data.source_information.branch}`;
-            }
-            $(target).html(preface + data.version + branch);
-        })
-        .catch((reason) => {
-            if (reason) {
-                $(target).html(`Error checking version: ${reason}`);
-            } else {
-                $(target).html('Error checking version');
-            }
-        });
 }

@@ -1,0 +1,386 @@
+{% extends "root.html" %}
+{% block header %}
+  <script src="js/external/jquery.js"></script>
+  <script src="js/external/bootstrap.js"></script>
+  <script src="js/external/d3.js"></script>
+  <script src="js/external/jquery.treetable.js"></script>
+  <script src="js/external/jquery.modal.js"></script>
+  <script src="js/external/jquery-ui.js"></script>
+  <script src="js/external/bootstrap-toggle.js"></script>
+  <script src="js/external/spin.js"></script>
+
+  <script src="js/qc_normHelper.js"></script>
+  <script src="js/qc_normDrawPlate.js"></script>
+  <script src="js/qc_normDrawCurves.js"></script>
+  <script src="js/qc_normAPIHelper.js"></script>
+  <script src="js/qc2.js"></script>
+
+  <link href="style/qc_norm.css" rel="stylesheet"/>
+  <link href="style/bootstrap.css" rel="stylesheet"/>
+  <link rel="stylesheet" type="text/css" href="style/main.css">
+  <link href="style/jquery.treetable.css" rel="stylesheet" />
+  <link href="style/jquery.treetable.theme.default.css" rel="stylesheet" />
+  <link href="style/bootstrap-toggle.min.css" rel="stylesheet" />
+  <link href="style/jquery.modal.css" rel="stylesheet" />
+  <link href="style/jquery-ui.css" rel="stylesheet" />
+  <script>
+      $(window)
+          .unload(function () {
+              var lock_key = $("#spLock").data("lock_key");
+              var unlockPath = $("#spLock").data("unLock_path");
+              if (unlockPath) {
+                  $("#divLockRemoving").show();
+                  RemoveLock(unlockPath,
+                      lock_key,
+                      function (success) {
+                          $("#spLock").text("Read/Write");
+                          $("#divLockRemoving").hide();
+                      });
+              };
+          });
+
+      $(document)
+          .ready(function () {
+              initSpinner();
+              wait();
+              stopWait();
+
+              createMarkButtons();
+              spinner.stop();
+              setQCProjectFromURL()
+                .then(() => {}, () => {
+                  //draw Project selection
+                  BrowseProjectsRoot(function (browseData) {
+                      if (browseData === null) {
+                          alert("ERROR: There was a problem with the API!");
+                          return;
+                      }
+                      projectSelectionStage("project");
+                      var selProjects = d3.select("#divProjectsSelector").append("table").attr("id", "tblProjects");
+                      $(browseData)
+                          .each(function (idx, elem) {
+                              selProjects.append("tr")
+                                  .attr("data-tt-id", elem.url)
+                                  .attr("data-tt-branch", true)
+                                  .append("td")
+                                  .text(elem.name);
+                          });
+                      $("#tblProjects")
+                          .treetable({
+                              expandable: true,
+                              onNodeExpand: nodeExpand,
+                              onNodeCollapse: nodeCollapse
+                          });
+                  });
+                });
+
+              $("#divLockRemoving").hide();
+              $("#ckMarkExperiments").change(function () {
+                  $("#divMarkStates").toggle();
+                  $("#qidxHint").toggle();
+                  if (this.checked) {
+                      setExperimentByQidx(qIdxOperations.Current);
+                  }
+              });
+              $("#ckNormalized").change(function () {
+                  $("#" + selRunNormPhenotypesName).toggle();
+                  $("#" + selRunPhenotypesName).toggle();
+                  if (this.checked) {
+                      $("#" + selRunNormPhenotypesName).prop('selectedIndex', 14);
+                      $("#" + selRunNormPhenotypesName).change();
+                      drawPhenotypePlatesSelection();
+                  }
+              });
+              $("#inMarkArea").change(function () {
+                  allowMarking = this.checked;
+              });
+              $("#btnNormalizeProject").click(function () {
+                  if (confirm("This will overwrite any previous normalization data, are you sure?")) {
+                      var project = $("#spProject").text();
+                      var lockKey = getLock_key();
+                      wait();
+                      GetNormalizeProject(project, lockKey, function (data) {
+                          if (data.success === true)
+                              alert("Succeded!");
+                          else
+                              alert("Failed! - " + data.reason);
+                          stopWait();
+                      });
+                  }
+              });
+              $("#lnkExportAbsolute").click(function () {
+                  var project = $("#spProject").text();
+                  var url = "/api/results/export/phenotypes/Absolute/" + project;
+                  wait();
+                  e.preventDefault();
+                  window.location.href = url;
+              });
+              $("#lnkNormalizedRelative").click(function () {
+                  var project = $("#spProject").text();
+                  var url = "/api/results/export/phenotypes/NormalizedRelative/" + project;
+                  wait();
+                  GetExport(url, function () {
+                      stopWait();
+                  });
+              });
+              $("#lnkNormalizedAbsoluteBatched").click(function () {
+                  var project = $("#spProject").text();
+                  var url = "/api/results/export/phenotypes/NormalizedAbsoluteBatched/" + project;
+                  wait();
+                  GetExport(url, function () {
+                      stopWait();
+                  });
+              });
+              $("#btnRefreshKey").click(function () {
+                  getLock(function () { });
+              });
+              $("#btnMarkOK").click(function () {
+                  markExperiemnt(plateMetaDataType.OK, false);
+              });
+              $("#btnMarkBad").click(function () {
+                  markExperiemnt(plateMetaDataType.BadData, false);
+              });
+              $("#btnMarkEmpty").click(function () {
+                  markExperiemnt(plateMetaDataType.Empty, true);
+              });
+              $("#btnMarkNoGrowth").click(function () {
+                  markExperiemnt(plateMetaDataType.NoGrowth, true);
+              });
+              $("#btnQidxNext").click(function () {
+                  setExperimentByQidx(qIdxOperations.Prev);
+              });
+              $("#btnQidxPrev").click(function () {
+                  setExperimentByQidx(qIdxOperations.Next);
+              });
+              $(document).keypress(function (event) {
+                  var char = getChar(event).toLowerCase();
+                  switch (char) {
+                      case 'q':
+                          markExperiemnt(plateMetaDataType.OK, false);
+                          break;
+                      case 'w':
+                          markExperiemnt(plateMetaDataType.BadData, false);
+                          break;
+                      case 'e':
+                          markExperiemnt(plateMetaDataType.Empty, true);
+                          break;
+                      case 'r':
+                          markExperiemnt(plateMetaDataType.NoGrowth, true);
+                          break;
+                      case '1':
+                          $("#btnPlate0").focus();
+                          document.getElementById("btnPlate0").click();
+                          break;
+                      case '2':
+                          $("#btnPlate1").focus();
+                          document.getElementById("btnPlate1").click();
+                          break;
+                      case '3':
+                          $("#btnPlate2").focus();
+                          document.getElementById("btnPlate2").click();
+                          break;
+                      case '4':
+                          $("#btnPlate3").focus();
+                          document.getElementById("btnPlate3").click();
+                          break;
+                  }
+              });
+              $(document).keydown(function (e) {
+                  if (!isQualityControlOn()) return;
+                  switch (e.which) {
+                      case 37: // left
+                      case 40: // down
+                          setExperimentByQidx(qIdxOperations.Prev);
+                          break;
+                      case 38: // up
+                      case 39: // right
+                          setExperimentByQidx(qIdxOperations.Next);
+                          break;
+                      default: return;
+                  }
+                  e.preventDefault();
+              });
+          });
+  </script>
+
+{% endblock %}
+{% block page %}
+  <div id="divLoading" class="modal">
+      <p>Talking to server ... </p>
+  </div>
+  <div id="cont" class="container QCCont">
+      <h1>Quality Control</h1>
+      <h2>Data Selection</h2>
+      <div class="section-frame">
+          <div class="row">
+              <div class="col-md-12 loProjectSelection " style="height: 100%; width: 100%">
+                  <div id="btnBrowseProject-box" class="floating-box" style="width: 20%; horiz-align: center">
+                      <a id="btnBrowseProject" class="btn " role="button" data-toggle="collapse" href="#selectProject" aria-expanded="false" aria-controls="selectProject">
+                          <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>
+                          Select a project
+                      </a>
+                  </div>
+                  <div class="floating-box" style="width: 75%">
+                      <div class="collapse" id="selectProject">
+                          <div id="divProjectsSelector"></div>
+                      </div>
+                      <table id="tbProjectDetails">
+                          <tr>
+                              <td>Name</td>
+                              <td><span id="spProject_name"></span></td>
+                          </tr>
+                          <tr>
+                              <td>Directory</td>
+                              <td><span id="spProject"></span></td>
+                          </tr>
+                          <tr>
+                              <td>Extraction Date</td>
+                              <td><span id="spExtraction_date"></span></td>
+                          </tr>
+                          <tr>
+                              <td>Analysis Date</td>
+                              <td><span id="spAnalysis_date"></span></td>
+                          </tr>
+                          <tr style="visibility: collapse">
+                              <td>Analysis Instructions</td>
+                              <td><span id="spAnalysis_instructions"></span></td>
+                          </tr>
+                          <tr>
+                              <td>Nomalization</td>
+                              <td>
+                                  <div style="text-align:left">
+                                      <div style="float: left"> Offset:</div>
+                                      <div style="margin-left: 10px; float: left" id="divReferenceOffsetSelector"></div>
+                                      <button style="margin-left: 10px; float: left" id="btnNormalizeProject" type="button" class="btn btn-default btn-xs" aria-label="Normalize project">
+                                          Normalize
+                                      </button>
+                                  </div>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td>Permissions</td>
+                              <td>
+                                  <span id="spLock"></span>
+                                  <button id="btnRefreshKey" type="button" class="btn btn-default btn-xs" aria-label="refresh key">
+                                      <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+                                  </button>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td>Export Data</td>
+                              <td>
+                                  <div class="dropup">
+                                      <button title="Note: Dosent work on Firefox!" class="btn btn-default btn-xs dropdown-toggle" type="button" id="ddmSave" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                          Export
+                                          <span style="margin-left:5px" class="caret"></span>
+                                      </button>
+                                      <ul class="dropdown-menu" aria-labelledby="ddmSave" id="ulExport"></ul>
+                                  </div>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td>
+                                  Load Metadata
+                              </td>
+                              <td>
+                                  <input type="file" name="meta_data" id="meta_data" accept=".xls,.xlsx,.ods" />
+                                  <input type="hidden" name="file_suffix" id="file_suffix" />
+                                  <button id="btnUploadMetaData" class="btn btn-default btn-xs">
+                                      Upload
+                                  </button>
+                              </td>
+                          </tr>
+                      </table>
+                  </div>
+
+              </div>
+          </div>
+          <div class="row">
+              <br />
+              <div class="col-md-12 loPhenotypeSelection">
+                  <div style="float: left">
+                      Phenotype:
+                  </div>
+                  <div style="float: left" id="divRunPhenotypesSelector"></div>
+                  <div style="float: left">
+                      Show Normalized Phenotypes
+                      <input style="margin-left:5px" id="ckNormalized" type="checkbox" data-toggle="toggle" data-size="mini"/>
+                  </div>
+              </div>
+          </div>
+          <div class="row">
+              <div class="col-md-12 loPlateSelection">
+                  <div id="divPhenotypePlatesSelecton"></div>
+              </div>
+          </div>
+      </div>
+      <div class="section-frame" id="displayArea">
+          <div class="row">
+              <div class="col-md-7">
+                  <div class="row">
+                      <div class="col-md-7">
+                          <h2 style="float: left">
+                              Plate
+                              <span id="spnPlateIdx">n</span>
+                          </h2>
+                      </div>
+                  </div>
+                  <div class="row">
+                      <div class="col-md-4">
+                          <div>
+                              Mark experiments
+                              <input id="ckMarkExperiments" type="checkbox" data-toggle="toggle" data-size="mini"/>
+                          </div>
+                      </div>
+                      <div id="divMarkStates" class="col-md-8">
+                          <div id="currentSelection"></div>
+                          <span class="vcenter" style="padding-right: 8px;visibility:collapse">
+                              Area selection
+                              <input class="vcenter" id="inMarkArea" type="checkbox" />
+                          </span>
+                          <button id="btnMarkOK" class="markButton vcenter" title="Mark with metadata: OK [hotkey: q]"></button>
+                          <button id="btnMarkBad" class="markButton vcenter" title="Mark with metadata: Bad [hotkey: w]"></button>
+                          <button id="btnMarkEmpty" class="markButton vcenter" title="Mark with metadata: Empty [hotkey: e]"></button>
+                          <button id="btnMarkNoGrowth" class="markButton vcenter" title="Mark with metadata: NoGrowth [hotkey: r]"></button>
+                          <button id="btnQidxNext" style="margin-left:10px" class="btn btn-default btn-xs" title="Next in Qidx position [hotkey: <right>/<up>]">
+                              <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                          </button>
+                          <button id="btnQidxPrev" class="btn btn-default btn-xs" title="Back in Qidx position [hotkey: <left>/<down>]">
+                              <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+                          </button>
+                      </div>
+                  </div>
+                  <div class="row">
+                      <div class="col-md-12">
+                          <div id="plate"></div>
+                          <span id="qidxHint">
+                              Hint: Use the arrows to navigate the plate using the Qidx order.
+                          </span>
+                      </div>
+                  </div>
+              </div>
+              <div class="col-md-5">
+                  <div class="row">
+                      <div class="col-md-6">
+                          <h2>Graph</h2>
+                      </div>
+                  </div>
+                  <div class="row">
+                      <div class="col-md-12 text-center">
+                          <div id="sel"></div>
+                      </div>
+                  </div>
+                  <div class="row">
+                      <div class="col-md-12">
+                          <div id="graph"></div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+  <div id="text"></div>
+  <div id="dialogGrid" title="Gridding">
+      <img id="imgGridding" src="#" alt="Grid" />
+  </div>
+{% endblock %}

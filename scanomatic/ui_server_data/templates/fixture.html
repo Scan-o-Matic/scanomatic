@@ -1,34 +1,31 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" type="text/css" href="/style/main.css?ver=_-_VERSIONTAG_-_">
-    <link rel="stylesheet" type="text/css" href="/style/fixtures.css?ver=_-_VERSIONTAG_-_">
-    <title>Scan-o-Matic</title>
-    <script src="/js/external/jquery.js"></script>
-    <script src="/js/external/jquery-ui.js"></script>
-    <script src="/js/helpers.js?ver=_-_VERSIONTAG_-_"></script>
-    <script src="/js/simple_graphs.js?ver=_-_VERSIONTAG_-_"></script>
-    <script src="/js/grayscales.js?ver=_-_VERSIONTAG_-_"></script>
-    <script src="/js/fixtures.js?ver=_-_VERSIONTAG_-_"></script>
-    <script>
-        current_fixture_id = "#current-fixture";
-        new_fixture_data_id = "#new-fixture-data";
-        new_fixture_detect_id = "#new-fixture-detect";
-        new_fixture_image_id = "#new-fixture-image";
-        new_fixture_markers_id = "#new-fixture-markers";
-        new_fixture_name = "#new-fixture-name";
-        selected_fixture_div_id = "#selected-fixture";
-        selected_fixture_canvas_id = '#selected-fixture-canvas';
-        fixture_name_id = "#selected-fixture-name";
-        save_fixture_action_id = "#update-type";
-        save_fixture_button = "#submit-button";
-        remove_fixture_id = "#remove-button";
-        grayscale_type_id = "#grayscale";
-
-    </script>
-</head>
-<body>
-<div id="cont">
+{% extends "root.html" %}
+{% block header %}
+  <link rel="stylesheet" type="text/css" href="style/main.css">
+  <link rel="stylesheet" type="text/css" href="/style/fixtures.css">
+  <script src="/js/external/jquery.js"></script>
+  <script src="/js/external/jquery-ui.js"></script>
+  <script src="/js/helpers.js"></script>
+  <script src="/js/simple_graphs.js"></script>
+  <script src="/js/grayscales.js"></script>
+  <script src="/js/fixtures.js"></script>
+  <script>
+      current_fixture_id = "#current-fixture";
+      new_fixture_data_id = "#new-fixture-data";
+      new_fixture_detect_id = "#new-fixture-detect";
+      new_fixture_image_id = "#new-fixture-image";
+      new_fixture_markers_id = "#new-fixture-markers";
+      new_fixture_name = "#new-fixture-name";
+      selected_fixture_div_id = "#selected-fixture";
+      selected_fixture_canvas_id = '#selected-fixture-canvas';
+      fixture_name_id = "#selected-fixture-name";
+      save_fixture_action_id = "#update-type";
+      save_fixture_button = "#submit-button";
+      remove_fixture_id = "#remove-button";
+      grayscale_type_id = "#grayscale";
+  </script>
+{% endblock %}
+{% block page %}
+  <div id="cont">
     <h1>Fixtures</h1>
     <form action="" method="post">
 
@@ -110,6 +107,5 @@
         </script>
 
     </form>
-</div>
-</body>
-</html>
+  </div>
+{% endblock %}

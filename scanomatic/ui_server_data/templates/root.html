@@ -2,11 +2,10 @@
 <html>
     <head lang="en">
         <meta charset="UTF-8">
-        <link rel="stylesheet" type="text/css" href="style/main.css?ver=_-_VERSIONTAG_-_">
-        <script src="/js/external/jquery.js"></script>
-        <script src="/js/helpers.js?ver=_-_VERSIONTAG_-_"></script>
         <title>Scan-o-Matic</title>
         <link rel="icon" type="image/ico" href="images/favicon.ico">
+        {% block header %}
+        {% endblock %}
     </head>
     <body>
         <div id="holder">
@@ -22,41 +21,40 @@
                     <div class="nav-dropdown">
                         <span class="linky"><img src="/images/menu.png" class="nav-icon">Experiment</span>
                         <div class="nav-dropdown-content">
-                            <div class="nav-dropdown-item"><a href="/experiment?ver=_-_VERSIONTAG_-_" target="page">Experiment / Scan</a></div>
-                            <div class="nav-dropdown-item"><a href="/compile?ver=_-_VERSIONTAG_-_" target="page">Compile Project</a></div>
-                            <div class="nav-dropdown-item"><a href="/analysis?ver=_-_VERSIONTAG_-_" target="page">Analysis</a></div>
-                            <div class="nav-dropdown-item"><a href="/feature_extract?ver=_-_VERSIONTAG_-_" target="page">Feature Extraction</a></div>
+                            <a class="nav-dropdown-item" href="/experiment">Experiment / Scan</a>
+                            <a class="nav-dropdown-item" href="/compile">Compile Project</a>
+                            <a class="nav-dropdown-item" href="/analysis">Analysis</a>
+                            <a class="nav-dropdown-item" href="/feature_extract">Feature Extraction</a>
                         </div>
                     </div>
                     |
-                    <a href="/qc_norm?ver=_-_VERSIONTAG_-_" target="page">QC & Norm</a>
+                    <a class="nav-nodropdown" href="/qc_norm">QC & Norm</a>
                     |
-                    <a href="/status?ver=_-_VERSIONTAG_-_" target="page">Status</a>
+                    <a class="nav-nodropdown" href="/status">Status</a>
                     |
                     <div class="nav-dropdown">
                         <span class="linky"><img src="/images/menu.png" class="nav-icon">Settings</span>
                         <div class="nav-dropdown-content">
-                            <div class="nav-dropdown-item"><a href="/fixtures?ver=_-_VERSIONTAG_-_" target="page">Fixtures</a></div>
-                            <div class="nav-dropdown-item"><a href="/ccc?ver=_-_VERSIONTAG_-_" target="page" title="Cell Count Calibration">CCC</a></div>
+                            <a class="nav-dropdown-item" href="/fixtures">Fixtures</a>
+                            <a class="nav-dropdown-item" href="/ccc" title="Cell Count Calibration">CCC</a>
                         </div>
                     </div>
                     |
                     <div class="nav-dropdown">
                         <span class="linky"><img src="/images/menu.png" class="nav-icon">Help</span>
                         <div class="nav-dropdown-content">
-                            <div class="nav-dropdown-item"><a href="/wiki?ver=_-_VERSIONTAG_-_" target="_blank">Wiki</a></div>
-                            <div class="nav-dropdown-item"><a href="/help?ver=_-_VERSIONTAG_-_" target="page">Bug or Suggestion</a></div>
+                            <a class="nav-dropdown-item" href="/wiki">Wiki</a>
+                            <a class="nav-dropdown-item" href="/help">Bug or Suggestion</a>
                         </div>
                     </div>
 
-                    <span id="version-info">ver=_-_VERSIONTAG_-_</span>
+                    <span id="version-info">ver={{ version }}</span>
                 </nav>
             </div>
-            <iframe id="page" name="page" src="/home"></iframe>
+            <div id="page" name="page">
+              {% block page %}
+              {% endblock %}
+            </div>
         </div>
-        <script>
-            $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
-            setVersionInformation("#version-info", "");
-        </script>
     </body>
 </html>

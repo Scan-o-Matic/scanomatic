@@ -1,0 +1,17 @@
+{% extends "root.html" %}
+{% block header %}
+  <script src="js/external/jquery.js"></script>
+  <script src="js/external/bootstrap.js"></script>
+  <script src="js/external/d3.js"></script>
+  <script src="js/ccc.js"></script>
+
+  <link rel="stylesheet" type="text/css" href="style/main.css">
+  <link href="style/ccc.css" rel="stylesheet" />
+  <link href="style/bootstrap.css" rel="stylesheet" />
+{% endblock %}
+{% block page %}
+  <div id="cont" class="container">
+    <h1>Cell Count Calibration</h1>
+    <div id="react-root"></div>
+  </div>
+{% endblock %}

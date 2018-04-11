@@ -103,13 +103,16 @@ li {
 }
 
 nav {
-    display: block;
-    position: absolute;
-    bottom: 0px;
-    padding: 12px;
+  display: block;
+  position: absolute;
+  bottom: 0px;
+  padding: 12px;
 	background: #cd8b34;
 	color: #cd8b34;
 	min-width: 960px;
+	font-family: sans-serif;
+	font-size: 16px;
+	line-height: 1;
 }
 
 nav a, nav .linky {
@@ -119,24 +122,36 @@ nav a, nav .linky {
 nav span {
 	background: #cd8b34;
 	color: #541f0f;
-    padding-left: 6px;
-    padding-right: 6px;
-    margin-left: 6px;
-    margin-right: 6px;
-
+  padding-left: 6px;
+  padding-right: 6px;
+  margin-left: 6px;
+  margin-right: 6px;
 }
 
 .nav-dropdown {
     display: inline-block;
 }
 
+.nav-nodropdown {
+	display: inline-block;
+	background: #f8e03e !important;
+	color: #541f0f !important;
+	padding: 3px 6px;
+	margin-top: 3px;
+	margin-bottom: 3px;
+}
+
+.nav-nodropdown:hover {
+	text-decoration: none;
+}
+
 .nav-dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #cd8b34;
-    min-width: 160px;
-    padding: 12px 6px;
-    z-index: 1;
+  display: none;
+  position: absolute;
+  background-color: #cd8b34;
+  min-width: 160px;
+  padding: 12px 6px;
+  z-index: 1;
 }
 
 .nav-dropdown:hover .nav-dropdown-content {
@@ -144,11 +159,17 @@ nav span {
 }
 
 .nav-dropdown-item {
-    display: block;
-    background-color: #cd8b34;
-    padding: 3px 6px;
-    margin-top: 3px;
-    margin-bottom: 3px;
+  display: block;
+	background: #f8e03e !important;
+	color: #541f0f !important;
+  padding: 3px 6px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+	margin-right: 6px;
+}
+
+.nav-dropdown-item:hover {
+	text-decoration: none;
 }
 
 .nav-icon {
