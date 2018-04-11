@@ -27,7 +27,7 @@ def app(rpc_client):
     app = Flask(
         __name__,
         template_folder=os.path.join(
-            os.path.dirname(ui_server.__file__, 'templates')
+            os.path.dirname(ui_server.__file__), 'templates',
         )
     )
     experiment_api.add_routes(app, rpc_client)

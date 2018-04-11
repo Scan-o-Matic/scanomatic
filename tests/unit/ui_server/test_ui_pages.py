@@ -12,7 +12,7 @@ def app():
     app = Flask(
         __name__,
         template_folder=os.path.join(
-            os.path.dirname(ui_server.__file__, 'templates')
+            os.path.dirname(ui_server.__file__), 'templates',
         )
     )
     add_routes(app)
