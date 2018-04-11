@@ -9,12 +9,12 @@ function analysisToggleLocalFixture(caller) {
 }
 
 function set_fixture_plate_listing() {
-    callback = function(data, status) {
+    callback = function (data, status) {
         if (!data.success) {
-            $('#fixture-error-message').html('<em>' + data.reason + '</em>').show();
-         } else {
+            $('#fixture-error-message').html(`<em>${data.reason}</em>`).show();
+        } else {
             $('#fixture-error-message').hide();
-            gridplates = ArrMap(data.plates, function (e) {return e.index;});
+            gridplates = ArrMap(data.plates, e => e.index);
             if ($('#manual-regridding').prop('checked')) {
                 $('#manual-regridding-settings').show();
             } else {
@@ -22,24 +22,24 @@ function set_fixture_plate_listing() {
             }
             parent = $('#manual-regridding-plates');
             parent.empty();
-            ArrMap(gridplates, function(e) {append_regridding_ui(parent, e);});
-         }
+            ArrMap(gridplates, (e) => { append_regridding_ui(parent, e); });
+        }
     };
 
-    error_callback = function() {
+    error_callback = function () {
         $('#fixture-error-message').html('<em>Fixture file missing</em>').show();
-    }
+    };
 
     if (localFixture) {
         if (path.length > 5) {
-            $.get('/api/data/fixture/local/' + path.substring(5, path.length), callback).fail(error_callback);
+            $.get(`/api/data/fixture/local/${path.substring(5, path.length)}`, callback).fail(error_callback);
         } else {
             error_callback();
         }
     } else {
         fixt = $(current_fixture_id).val();
         if (fixt) {
-            $.get('/api/data/fixture/get/' + fixt, callback).fail(error_callback);
+            $.get(`/api/data/fixture/get/${fixt}`, callback).fail(error_callback);
         } else {
             $('#fixture-error-message').hide();
         }
