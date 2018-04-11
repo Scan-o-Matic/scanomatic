@@ -14,7 +14,7 @@ export default function FinalizedCCC(props) {
                     in new experiments.
                 </p>
                 <div className="text-center">
-                    <a href="/" className="btn btn-primary">Go to home page</a>
+                    <a href="/home" className="btn btn-primary">Go to home page</a>
                 </div>
             </div>
         </div>
