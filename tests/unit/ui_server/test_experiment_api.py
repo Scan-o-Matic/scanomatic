@@ -14,7 +14,7 @@ import pytest
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
-from scanomatic.ui_server import experiment_api
+from scanomatic.ui_server import experiment_api, ui_server
 
 
 @pytest.fixture
@@ -24,7 +24,12 @@ def rpc_client():
 
 @pytest.fixture
 def app(rpc_client):
-    app = Flask(__name__, template_folder=Paths().ui_templates)
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(
+            os.path.dirname(ui_server.__file__, 'templates')
+        )
+    )
     experiment_api.add_routes(app, rpc_client)
     return app
 

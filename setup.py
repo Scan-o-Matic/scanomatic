@@ -30,7 +30,7 @@ setup(
             'ui_server_data/js/external/*.js',
             'ui_server_data/style/*.css',
             'ui_server_data/fonts/*',
-            'ui_server_data/templates/*',
+            'ui_server/templates/*',
             'images/*',
             'util/birds.txt',
             'util/adjectives.txt',

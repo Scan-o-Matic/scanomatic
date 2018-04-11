@@ -1,14 +1,20 @@
 from __future__ import absolute_import
 from flask import Flask, template_rendered
 import pytest
+import os
 
 from scanomatic.ui_server.ui_pages import add_routes
-from scanomatic.io.paths import Paths
+from scanomatic.ui_server import ui_server
 
 
 @pytest.fixture
 def app():
-    app = Flask(__name__, template_folder=Paths().ui_templates)
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(
+            os.path.dirname(ui_server.__file__, 'templates')
+        )
+    )
     add_routes(app)
     return app
 

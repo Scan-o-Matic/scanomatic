@@ -29,7 +29,7 @@ from .flask_prometheus import Prometheus
 
 
 def create_app():
-    app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
+    app = Flask(__name__)
     Prometheus(app)
     app.config['imagestore'] = ImageStore(Config().paths.projects_root)
     app.config['DATABASE_URL'] = get_database_url()

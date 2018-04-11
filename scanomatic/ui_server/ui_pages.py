@@ -17,7 +17,7 @@ def add_routes(app):
     @app.route("/")
     def _root():
         return render_template(
-            Paths().ui_status_file,
+            'status.html',
             debug=app.debug,
             version=get_version(),
         )
@@ -25,7 +25,7 @@ def add_routes(app):
     @app.route("/home")
     def _show_homescreen():
         return render_template(
-            Paths().ui_status_file,
+            'status.html',
             debug=app.debug,
             version=get_version(),
         )
@@ -33,7 +33,7 @@ def add_routes(app):
     @app.route("/ccc")
     def _ccc():
         return render_template(
-            Paths().ui_ccc_file,
+            'CCC.html',
             debug=app.debug,
             version=get_version(),
         )
@@ -41,7 +41,7 @@ def add_routes(app):
     @app.route("/fixtures")
     def _fixtures():
         return render_template(
-            Paths().ui_fixture_file,
+            'fixture.html',
             debug=app.debug,
             version=get_version(),
         )
@@ -49,7 +49,7 @@ def add_routes(app):
     @app.route("/status")
     def _status():
         return render_template(
-            Paths().ui_status_file,
+            'status.html',
             debug=app.debug,
             version=get_version(),
         )
@@ -57,7 +57,7 @@ def add_routes(app):
     @app.route("/qc_norm")
     def _qc_norm():
         return render_template(
-            Paths().ui_qc_norm_file,
+            'qc_norm.html',
             debug=app.debug,
             version=get_version(),
         )
@@ -65,7 +65,7 @@ def add_routes(app):
     @app.route("/help")
     def _help():
         return render_template(
-            Paths().ui_help_file,
+            'help.html',
             debug=app.debug,
             version=get_version(),
         )
@@ -77,7 +77,7 @@ def add_routes(app):
     @app.route("/feature_extract")
     def _feature_extract():
         return render_template(
-            Paths().ui_feature_extract_file,
+            'feature_extract.html',
             debug=app.debug,
             version=get_version(),
         )
@@ -85,7 +85,7 @@ def add_routes(app):
     @app.route("/analysis")
     def _analysis():
         return render_template(
-            Paths().ui_analysis_file,
+            'analysis.html',
             debug=app.debug,
             version=get_version(),
         )
@@ -93,7 +93,7 @@ def add_routes(app):
     @app.route("/experiment")
     def _experiment():
         return render_template(
-            Paths().ui_experiment_file,
+            'experiment.html',
             debug=app.debug,
             version=get_version(),
         )
@@ -106,7 +106,7 @@ def add_routes(app):
             'projectdirectory_readonly': projectdir is not None,
         }
         return render_template(
-            Paths().ui_compile_file,
+            'compile.html',
             debug=app.debug,
             version=get_version(),
             **context
