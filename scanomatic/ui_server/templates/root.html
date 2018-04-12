@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+    <head lang="en">
+        <meta charset="UTF-8">
+        <title>Scan-o-Matic</title>
+        <link rel="icon" type="image/ico" href="images/favicon.ico">
+        {% block header %}
+        {% endblock %}
+    </head>
+    <body>
+        <div id="holder">
+            <div id="header">
+                <img id='logo' src='images/scan-o-matic_2.png'>
+                {% if debug %}
+                <div class="urgent">You are running in debug mode.
+                    This exposes you to execution of arbitrary remote code.
+                    Make absolutely sure you are behind a firewall and never use this
+                    option in deployment.</div>
+                {% endif %}
+                <nav>
+                    <div class="nav-dropdown">
+                        <span class="linky"><img src="/images/menu.png" class="nav-icon">Experiment</span>
+                        <div class="nav-dropdown-content">
+                            <a class="nav-dropdown-item" href="/experiment">Experiment / Scan</a>
+                            <a class="nav-dropdown-item" href="/compile">Compile Project</a>
+                            <a class="nav-dropdown-item" href="/analysis">Analysis</a>
+                            <a class="nav-dropdown-item" href="/feature_extract">Feature Extraction</a>
+                        </div>
+                    </div>
+                    |
+                    <a class="nav-nodropdown" href="/qc_norm">QC & Norm</a>
+                    |
+                    <a class="nav-nodropdown" href="/status">Status</a>
+                    |
+                    <div class="nav-dropdown">
+                        <span class="linky"><img src="/images/menu.png" class="nav-icon">Settings</span>
+                        <div class="nav-dropdown-content">
+                            <a class="nav-dropdown-item" href="/fixtures">Fixtures</a>
+                            <a class="nav-dropdown-item" href="/ccc" title="Cell Count Calibration">CCC</a>
+                        </div>
+                    </div>
+                    |
+                    <div class="nav-dropdown">
+                        <span class="linky"><img src="/images/menu.png" class="nav-icon">Help</span>
+                        <div class="nav-dropdown-content">
+                            <a class="nav-dropdown-item" href="/wiki">Wiki</a>
+                            <a class="nav-dropdown-item" href="/help">Bug or Suggestion</a>
+                        </div>
+                    </div>
+
+                    <span id="version-info">ver={{ version }}</span>
+                </nav>
+            </div>
+            <div id="page" name="page">
+              {% block page %}
+              {% endblock %}
+            </div>
+        </div>
+    </body>
+</html>

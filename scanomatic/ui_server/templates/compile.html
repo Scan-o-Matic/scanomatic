@@ -1,0 +1,100 @@
+{% extends "root.html" %}
+{% block header %}
+  <link rel="stylesheet" type="text/css" href="style/main.css">
+  <link rel="stylesheet" type="text/css" href="style/compilation.css">
+  <script src="/js/external/jquery.js"></script>
+  <script src="/js/external/jquery-ui.js"></script>
+  <script src="/js/helpers.js"></script>
+  <script src="/js/fixtures.js"></script>
+  <script src="/js/compile.js"></script>
+  <script>
+      current_fixture_id = "#current-fixture";
+  </script>
+{% endblock %}
+{% block page %}
+  <div id="cont">
+      <h1>Compile Project</h1>
+      <form action="" method="post">
+          <div id="selecting-fixture" class="section-frame">
+              <div class="section">
+                  <label for="local-fixture">Fixture</label>
+
+                  <div class="onoffswitch">
+                      <input type="checkbox" name="local-fixture" class="onoffswitch-checkbox" id="local-fixture"
+                          onclick="compileToggleLocalFixture(this)"/>
+                      <label class="onoffswitch-label" for="local-fixture">
+                          <span class="onoffswitch-inner"></span>
+                          <span class="onoffswitch-switch"></span>
+                      </label>
+                  </div>
+                  <label for="current-fixture"></label>
+                  <select name="current-fixtures" id="current-fixture" onchange="set_fixture_status();"></select>
+                  <br>
+                  <div class="error-message" id="fixture-error-message"></div>
+              </div>
+              <div class="section">
+                  <label for="project-directory">Project Directory</label>
+                  <input
+                      id="project-directory"
+                      name="project-directory"
+                      class="long"
+                      value="{{ projectdirectory }}"
+                      {% if projectdirectory_readonly %}readonly{% endif %}
+                      onchange="set_project_directory(this);"
+                      onfocus="set_project_directory(this);"
+                      onkeyup="set_project_directory(this);"/>
+                  <div class="indented" id="project-directory-info"><em>
+                      The project directory is the directory that contains
+                      the images that were scanned.
+                  </em></div>
+
+              </div>
+
+              <h3>Manual selection of images</h3>
+              <div class="section" id="manual-selection-div">
+                  <input type="checkbox" id="manual-selection"
+                      onclick="toggleManualSelectionBtn(this);"/>
+                  <label for="manual-selection">Manual Selection</label>
+                  <input type="hidden" id="hidden-path" value="">
+                  <div class="large" id="list-buttons">
+                      <input type="button" id="manual-select-all" value="Select All"
+                          onclick="setOnAllImages(true);"/>
+                      <input type="button" id="manual-select-none" value="Select None"
+                          onclick="setOnAllImages(false);"/>
+                  </div>
+                  <div id="options"></div>
+              </div>
+
+              <h3>Chaining</h3>
+              <div class="section" id="chaining-div">
+                  <div class="onoffswitch chain">
+                          <input type="checkbox" name="chain" class="onoffswitch-checkbox chain" id="chain-analysis-request"/>
+                          <label class="onoffswitch-label chain" for="chain-analysis-request">
+                              <span class="onoffswitch-inner chain"></span>
+                              <span class="onoffswitch-switch chain"></span>
+                          </label>
+                  </div>
+              </div>
+              <div class="section">
+                  <button type="button" id="submit-button"
+                          onclick="Compile(this);">
+                      Compile Project
+                  </button>
+              </div>
+          </div>
+      </form>
+  </div>
+
+  <script>
+      $().ready(function() {
+        image_list_div = $('#manual-selection-div');
+        manual_btn = $('#manual-selection');
+        InputEnabled(manual_btn, false);
+        toggleManualSelectionBtn(manual_btn);
+        get_fixtures();
+        compileToggleLocalFixture("#local-fixture");
+        InputEnabled($("#submit-button"), false);
+        set_project_directory('#project-directory');
+      });
+  </script>
+{% endblock %}

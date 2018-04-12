@@ -1,0 +1,81 @@
+{% extends "root.html" %}
+{% block header %}
+  <link rel="stylesheet" type="text/css" href="style/main.css">
+  <link rel="stylesheet" type="text/css" href="style/analysis.css">
+  <script src="/js/external/jquery.js"></script>
+  <script src="/js/external/jquery-ui.js"></script>
+  <script src="/js/helpers.js"></script>
+  <script src="/js/fixtures.js"></script>
+  <script src="/js/analysis.js"></script>
+  <script>
+      current_fixture_id = "#current-fixture";
+  </script>
+{% endblock %}
+{% block page %}
+  <div id="cont">
+      <h1>Feature extraction</h1>
+      <div class="section-frame">
+          <form>
+
+              <label for="extract">
+                  Analysis folder
+              </label>
+              <input name="extract" id="extract" class="long"
+                  onchange="set_analysis_directory(this, true);"
+                  onfocus="set_analysis_directory(this, true);"
+                  onkeyup="set_analysis_directory(this, true);"/>
+
+              <div class="indented"><em>
+                  The analysis folder is the folder produced by the above
+                  step, it contains, among other things, various files named
+                  <code>image_X_data.npy</code> and a file
+                  <code>time_data.npy</code>.
+              </em></div>
+
+              <div class="section">
+                  <div class="onoffswitch keep-qc">
+                          <input type="checkbox" name="keep-qc"
+                              class="onoffswitch-checkbox keep-qc"
+                              id="keep-qc">
+                          <label class="onoffswitch-label keep-qc" for="keep-qc">
+                              <span class="onoffswitch-inner keep-qc">
+                              </span>
+                              <span class="onoffswitch-switch keep-qc">
+                              </span>
+                          </label>
+                  </div>
+              </div>
+
+              <button type="button" id="submit-button2"
+                      onclick="Extract(this);">
+                  Run Feature Extraction
+              </button>
+
+          </form>
+      </div>
+
+      <h2>Bioscreen feature extraction</h2>
+      <div class="section-frame">
+          <form>
+
+              <label for="bioscreen_extract">
+                  Bioscreen file
+              </label>
+              <input name="extract" id="bioscreen_extract" class="long" value="root/"/>
+
+              <div class="indented"><em>
+                  For now you have to know the exact path, and keep
+                  <code>root/</code> or it won't work.  A folder will be
+                  created in which the output is stored.
+              </em></div>
+              <button type="button" id="submit-button3"
+                      onclick="BioscreenExtract(this);">
+                  Run Feature Extraction
+              </button>
+          </form>
+      </div>
+  </div>
+  <script>
+      InputEnabled($("#submit-button2"), false);
+  </script>
+{% endblock %}

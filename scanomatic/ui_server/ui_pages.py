@@ -6,6 +6,7 @@ from flask import (
     send_from_directory, render_template, redirect, abort, request
 )
 
+from scanomatic import get_version
 from scanomatic.data_processing import phenotyper
 from scanomatic.io.paths import Paths
 from .general import convert_url_to_path, serve_log_as_html
@@ -15,61 +16,101 @@ def add_routes(app):
 
     @app.route("/")
     def _root():
-        return render_template(Paths().ui_root_file, debug=app.debug)
+        return render_template(
+            'status.html',
+            debug=app.debug,
+            version=get_version(),
+        )
 
     @app.route("/home")
     def _show_homescreen():
-        return redirect("/status")
+        return render_template(
+            'status.html',
+            debug=app.debug,
+            version=get_version(),
+        )
 
     @app.route("/ccc")
     def _ccc():
-        return send_from_directory(Paths().ui_root, Paths().ui_ccc_file)
+        return render_template(
+            'CCC.html',
+            debug=app.debug,
+            version=get_version(),
+        )
 
     @app.route("/fixtures")
     def _fixtures():
-
-        return send_from_directory(Paths().ui_root, Paths().ui_fixture_file)
+        return render_template(
+            'fixture.html',
+            debug=app.debug,
+            version=get_version(),
+        )
 
     @app.route("/status")
     def _status():
-        return send_from_directory(Paths().ui_root, Paths().ui_status_file)
+        return render_template(
+            'status.html',
+            debug=app.debug,
+            version=get_version(),
+        )
 
     @app.route("/qc_norm")
     def _qc_norm():
-        return send_from_directory(Paths().ui_root, Paths().ui_qc_norm_file)
+        return render_template(
+            'qc_norm.html',
+            debug=app.debug,
+            version=get_version(),
+        )
 
     @app.route("/help")
     def _help():
-        return send_from_directory(Paths().ui_root, Paths().ui_help_file)
+        return render_template(
+            'help.html',
+            debug=app.debug,
+            version=get_version(),
+        )
 
     @app.route("/wiki")
     def _wiki():
         return redirect("https://github.com/local-minimum/scanomatic/wiki")
 
-    @app.route("/feature_extract", methods=['get'])
+    @app.route("/feature_extract")
     def _feature_extract():
+        return render_template(
+            'feature_extract.html',
+            debug=app.debug,
+            version=get_version(),
+        )
 
-        return send_from_directory(
-            Paths().ui_root, Paths().ui_feature_extract_file)
-
-    @app.route("/analysis", methods=['get'])
+    @app.route("/analysis")
     def _analysis():
+        return render_template(
+            'analysis.html',
+            debug=app.debug,
+            version=get_version(),
+        )
 
-        return send_from_directory(Paths().ui_root, Paths().ui_analysis_file)
-
-    @app.route("/experiment", methods=['get'])
+    @app.route("/experiment")
     def _experiment():
+        return render_template(
+            'experiment.html',
+            debug=app.debug,
+            version=get_version(),
+        )
 
-        return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
-
-    @app.route("/compile", methods=['get'])
+    @app.route("/compile")
     def _compile():
         projectdir = request.args.get('projectdirectory')
         context = {
             'projectdirectory': projectdir if projectdir is not None else '',
             'projectdirectory_readonly': projectdir is not None,
         }
-        return render_template(Paths().ui_compile_file, **context)
+        return render_template(
+            'compile.html',
+            debug=app.debug,
+            version=get_version(),
+            **context
+        )
 
     @app.route("/logs/project/<path:project>")
     def _project_logs(project):

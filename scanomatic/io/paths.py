@@ -60,22 +60,6 @@ class Paths(SingeltonOneInit):
         self.ui_css = os.path.join(self.ui_root, "style")
         self.ui_js = os.path.join(self.ui_root, "js")
         self.ui_font = os.path.join(self.ui_root, "fonts")
-        self.ui_templates = os.path.join(self.ui_root, "templates")
-        self.ui_help_file = "help.html"
-        self.ui_qc_norm_file = "qc_norm.html"
-        self.ui_access_restricted = "access_restricted.html"
-        self.ui_maintain_file = "maintain.html"
-        self.ui_fixture_file = "fixture.html"
-        self.ui_root_file = 'root.html'
-        self.ui_compile_file = 'compile.html'
-        self.ui_experiment_file = 'experiment.html'
-        self.ui_status_file = 'status.html'
-        self.ui_analysis_file = 'analysis.html'
-        self.ui_feature_extract_file = 'feature_extract.html'
-        self.ui_settings_template = 'settings.html'
-        self.ui_log_template = 'log.html'
-        self.ui_log_not_found_template = 'log_not_found.html'
-        self.ui_ccc_file = 'CCC.html'
 
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
 

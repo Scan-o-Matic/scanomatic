@@ -475,9 +475,11 @@ def serve_log_as_html(log_path, title):
 
     if data:
         return render_template(
-            Paths().ui_log_template,
+            'log.html',
             title=title,
             **data)
     else:
-        return render_template(Paths().ui_log_not_found_template,
-                               title=title)
+        return render_template(
+            'log_not_found.html',
+            title=title,
+        )

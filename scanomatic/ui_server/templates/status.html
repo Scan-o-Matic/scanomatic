@@ -1,0 +1,31 @@
+{% extends "root.html" %}
+{% block header %}
+  <link rel="stylesheet" type="text/css" href="style/main.css">
+  <link rel="stylesheet" type="text/css" href="/style/status.css">
+  <script src="js/external/jquery.js"></script>
+  <script src="/js/external/jquery-ui.js"></script>
+  <script src="/js/status.js"></script>
+  <script src="/js/helpers.js"></script>
+{% endblock %}
+{% block page %}
+  <div id="cont">
+      <h1>Status</h1>
+      <div class="section-frame" id="status-general"></div>
+      <h2>Jobs Queue</h2>
+      <div class="section-frame" id="status-queue"></div>
+      <h2>Jobs</h2>
+      <div class="section-frame" id="status-jobs"></div>
+  </div>
+  <script>
+      updateStatus('#status-general', 'server', serverStatusFormatter);
+      updateStatus('#status-queue', 'queue', queueStatusFormatter);
+      updateStatus('#status-jobs', 'jobs', jobsStatusFormatter);
+
+      $(document).ready(function() {
+          setInterval("updateStatus('#status-general', 'server', serverStatusFormatter)", 61000);
+          setInterval("updateStatus('#status-queue', 'queue', queueStatusFormatter)", 17000);
+          setInterval("updateStatus('#status-jobs', 'jobs', jobsStatusFormatter)", 19000);
+      });
+
+  </script>
+{% endblock %}
