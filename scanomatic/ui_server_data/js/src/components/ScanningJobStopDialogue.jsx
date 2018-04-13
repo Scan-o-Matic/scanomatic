@@ -28,7 +28,7 @@ class ScanningJobStopDialogue extends React.Component {
                 <h1>Stop Job?</h1>
                 <p>
                     This will stop the job {name} and free up the scanner with no
-                    ability to undo this action. Analysis can be performad like
+                    ability to undo this action. Analysis can be performed like
                     normal.
                 </p>
                 <input
