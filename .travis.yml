@@ -47,5 +47,10 @@ jobs:
         - docker-compose build
         - tox -e system-tests -- --browser firefox
       after_success:
-        - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"; docker-compose push; fi
-        - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ; then curl "https://jenkins.molflow.com/buildByToken/buildWithParameters?job=INFRA&token=${JENKINS_TOKEN}"; fi
+        - |
+          if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ;
+          then
+            echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" ;
+            docker-compose push;
+            curl "https://jenkins.molflow.com/buildByToken/buildWithParameters?job=INFRA&token=${JENKINS_TOKEN}";
+          fi
