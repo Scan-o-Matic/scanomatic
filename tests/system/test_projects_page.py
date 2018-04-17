@@ -13,7 +13,7 @@ class ProjectsPage(object):
         self.baseurl = baseurl
         self.driver.get(self.baseurl + self.path)
         WebDriverWait(
-            self.driver, 10
+            self.driver, 5
         ).until(EC.presence_of_element_located(self.page_heading_locator))
 
     def get_page_heading(self):
