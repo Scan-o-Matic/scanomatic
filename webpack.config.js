@@ -2,6 +2,7 @@ module.exports = {
     entry: {
         ccc: ['./scanomatic/ui_server_data/js/src/ccc.jsx'],
         scanning: ['./scanomatic/ui_server_data/js/src/scanning.jsx'],
+        projects: ['./scanomatic/ui_server_data/js/src/projects'],
     },
     output: {
         filename: 'scanomatic/ui_server_data/js/[name].js',
