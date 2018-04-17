@@ -29,6 +29,7 @@ ENV prometheus_multiproc_dir=/var/run/prometheus_multiproc
 
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/ccc.js /tmp/scanomatic/ui_server_data/js/ccc.js
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/scanning.js /tmp/scanomatic/ui_server_data/js/scanning.js
+COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/projects.js /tmp/scanomatic/ui_server_data/js/projects.js
 RUN cd /tmp && python setup.py install
 
 COPY scripts/entrypoint.sh /entrypoint.sh

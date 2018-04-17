@@ -2,13 +2,10 @@ from __future__ import absolute_import
 
 import os
 
-from flask import (
-    send_from_directory, render_template, redirect, abort, request
-)
+from flask import abort, redirect, render_template, request
 
 from scanomatic import get_version
 from scanomatic.data_processing import phenotyper
-from scanomatic.io.paths import Paths
 from .general import convert_url_to_path, serve_log_as_html
 
 
@@ -94,6 +91,14 @@ def add_routes(app):
     def _experiment():
         return render_template(
             'experiment.html',
+            debug=app.debug,
+            version=get_version(),
+        )
+
+    @app.route("/projects")
+    def _projects():
+        return render_template(
+            'projects.html',
             debug=app.debug,
             version=get_version(),
         )
