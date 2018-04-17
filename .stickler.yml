@@ -9,7 +9,6 @@ linters:
     ignore: 'W1618'
   eslint:
     fixer: true
-  yamllint: {}
   csslint: {}
 files:
   ignore:
