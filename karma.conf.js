@@ -18,7 +18,7 @@ module.exports = function (config) {
             'js/external/jquery-ui.js',
             'js/qc2.js',
             'js/qc_normHelper.js',
-        { pattern: 'js/specs/**/*.spec.@(js|jsx)', watched: false },
+        { pattern: 'js/src/**/*.spec.@(js|jsx)', watched: false },
         ],
 
     // list of files to exclude
@@ -32,7 +32,7 @@ module.exports = function (config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
         preprocessors: {
-            'js/specs/**/*.spec.@(js|jsx)': ['webpack'],
+            'js/src/**/*.spec.@(js|jsx)': ['webpack'],
         },
 
     // test results reporter to use
