@@ -18,10 +18,10 @@ module.exports = function (config) {
             'js/external/jquery-ui.js',
             'js/qc2.js',
             'js/qc_normHelper.js',
-        { pattern: 'js/src/**/*.spec.@(js|jsx)', watched: false },
+            { pattern: 'js/src/**/*.spec.@(js|jsx)', watched: false },
         ],
 
-    // list of files to exclude
+        // list of files to exclude
         exclude: [
             'js/image.js',
             '**/*.swp',
