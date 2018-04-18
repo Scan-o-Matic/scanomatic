@@ -58,6 +58,7 @@ class ScanningJobPanel extends React.Component {
             <div
                 className="panel panel-default job-listing"
                 id={`job-${identifier}`}
+                data-jobname={name}
             >
                 <div className="panel-heading">
                     <h3 className="panel-title">{name}</h3>

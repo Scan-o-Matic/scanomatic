@@ -32,6 +32,11 @@ class ExperimentPage(object):
 
     scanner_select_locator = (By.CSS_SELECTOR, 'select.scanner')
 
+    def scanning_job_panel_locator(self, name):
+        return (
+            By.CSS_SELECTOR, 'div.job-listing[data-jobname="{}"]'.format(name)
+        )
+
     def __init__(self, driver, baseurl):
         self.driver = driver
         self.baseurl = baseurl
@@ -50,19 +55,22 @@ class ExperimentPage(object):
         if scannerid:
             Select(scanner_select).select_by_value(scannerid)
         form.find_element_by_css_selector('button.job-add').click()
+        WebDriverWait(self.driver, 5).until(
+            EC.
+            presence_of_element_located(self.scanning_job_panel_locator(name))
+        )
 
     def find_job_panel_by_name(self, name):
-        for el in self.driver.find_elements_by_css_selector('div.job-listing'):
-            title = el.find_element_by_tag_name('h3').text
-            if title == name:
-                return ScanningJobPanel(el, self.driver)
-        raise LookupError('No job panel with name "{}"'.format(name))
+        return ScanningJobPanel(
+            self.driver.find_element(*self.scanning_job_panel_locator(name)),
+            self.driver
+        )
 
     def has_job_with_name(self, name):
         try:
-            self.find_job_panel_by_name(name)
+            self.driver.find_element(*self.scanning_job_panel_locator(name))
             return True
-        except LookupError:
+        except NoSuchElementException:
             return False
 
 
