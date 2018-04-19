@@ -3,6 +3,7 @@ import * as actions from '../../src/projects/actions';
 describe('projects/actions', () => {
     beforeEach(() => {
         jasmine.clock().install();
+        jasmine.clock().mockDate();
     });
 
     afterEach(() => {
