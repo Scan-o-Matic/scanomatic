@@ -37,10 +37,18 @@ const projectShape = {
     description: PropTypes.string,
 };
 
+const experimentShape = {
+    name: PropTypes.string.isRequired,
+    description: PropTypes.string,
+    duration: PropTypes.instanceOf(Duration).isRequired,
+    interval: PropTypes.instanceOf(Duration).isRequired,
+};
+
 export default {
     cccMetadata,
     pinningFormat,
     scannerType,
     scanningJobType,
     projectShape,
+    experimentShape,
 };

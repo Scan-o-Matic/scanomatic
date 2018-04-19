@@ -6,3 +6,11 @@
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: #333;
 }
+
+.vertical-textarea {
+  resize: vertical;
+}
+
+.new-experiment-panel {
+  margin-top: 2rem;
+}
