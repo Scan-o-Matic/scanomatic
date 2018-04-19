@@ -1,9 +1,11 @@
 // @flow
 export type Action
-    = {| type: 'NEWPROJECT_CHANGE', field: string, value: string |}
+    = {| type: 'NEWPROJECT_INIT' |}
+    | {| type: 'NEWPROJECT_CHANGE', field: string, value: string |}
     | {| type: 'NEWPROJECT_SUBMIT' |}
     | {| type: 'NEWPROJECT_CANCEL' |}
     | {| type: 'PROJECTS_ADD', id: string, name: string, description: string |}
+    | {| type: 'NEWEXPERIMENT_INIT', projectId: string |}
     | {| type: 'NEWEXPERIMENT_CHANGE', field: string, value: string |}
     | {| type: 'NEWEXPERIMENT_SUBMIT' |}
     | {| type: 'NEWEXPERIMENT_CANCEL' |}
@@ -14,11 +16,15 @@ export type Action
         id: string,
         interval: number,
         name: string,
-        project: string,
+        projectId: string,
         scanner: string,
     |}
     | {| type: 'EXPERIMENTS_START', id: string, date: Date |}
     | {| type: 'EXPERIMENTS_STOP', id: string, date: Date |}
+
+export function initNewProject(): Action {
+    return { type: 'NEWPROJECT_INIT' };
+}
 
 export function changeNewProject(field: string, value: string): Action {
     return { type: 'NEWPROJECT_CHANGE', field, value };
@@ -39,6 +45,10 @@ export function addProject(name: string, description: string): Action {
         description,
         id: new Date().getTime().toString(),
     };
+}
+
+export function initNewExperiment(projectId: string): Action {
+    return { type: 'NEWEXPERIMENT_INIT', projectId };
 }
 
 export function changeNewExperiment(field: string, value: string): Action {
@@ -62,7 +72,7 @@ export function cancelNewExperiment(): Action {
 }
 
 export function addExperiment(
-    project: string,
+    projectId: string,
     name: string,
     description: string,
     duration: number,
@@ -72,7 +82,7 @@ export function addExperiment(
     return {
         type: 'EXPERIMENTS_ADD',
         id: new Date().getTime().toString(),
-        project,
+        projectId,
         name,
         description,
         duration,

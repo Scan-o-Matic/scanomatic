@@ -10,6 +10,14 @@ describe('projects/actions', () => {
         jasmine.clock().uninstall();
     });
 
+    describe('initNewProject', () => {
+        it('should return a NEWPROJECT_INIT action', () => {
+            expect(actions.initNewProject()).toEqual({
+                type: 'NEWPROJECT_INIT'
+            });
+        });
+    });
+
     describe('changeNewProject', () => {
         it('should return a NEWPROJECT_CHANGE action', () => {
             expect(actions.changeNewProject('name', 'foo')).toEqual({
@@ -41,6 +49,15 @@ describe('projects/actions', () => {
                 id: new Date().getTime().toString(),
                 name: 'Some Project',
                 description: 'Bla bla bla',
+            });
+        });
+    });
+
+    describe('initNewExperiment', () => {
+        it('should return a NEWEXPERIMENT_INIT action', () => {
+            expect(actions.initNewExperiment('P001')).toEqual({
+                type: 'NEWEXPERIMENT_INIT',
+                projectId: 'P001',
             });
         });
     });
@@ -81,7 +98,7 @@ describe('projects/actions', () => {
             )).toEqual({
                 type: 'EXPERIMENTS_ADD',
                 id: new Date().getTime().toString(),
-                project: 'p001',
+                projectId: 'p001',
                 name: 'Some Experiment',
                 description: 'Bla bla bla',
                 duration: 300,
