@@ -6,10 +6,14 @@ import ProjectPanel from './ProjectPanel';
 
 describe('<ProjectPanel />', () => {
     let panel;
+    const onNewExperiment = jasmine.createSpy('onNewExperiment');
+
     beforeEach(() => {
+        onNewExperiment.calls.reset();
         const wrapper = shallow(<ProjectPanel
             name="Test"
             description="Debugging the system."
+            onNewExperiment={onNewExperiment}
         />);
         panel = wrapper.find('.panel');
     });
@@ -25,9 +29,26 @@ describe('<ProjectPanel />', () => {
         expect(panelHeading.text()).toEqual('Test');
     });
 
-    it('readners a panel-body with the description', () => {
+    it('renders a panel-body with the description', () => {
         const panelBody = panel.find('.panel-body');
         expect(panelBody.exists()).toBeTruthy();
-        expect(panelBody.text()).toEqual('Debugging the system.');
+        const description = panelBody.find('.project-description');
+        expect(description.exists()).toBeTruthy();
+        expect(description.text()).toEqual('Debugging the system.');
+    });
+
+    describe('Add Experiment button', () => {
+        it('renders', () => {
+            const btn = panel.find('.panel-body').find('.new-experiment');
+            expect(btn.exists()).toBeTruthy();
+            expect(btn.hasClass('btn')).toBeTruthy();
+            expect(btn.text()).toEqual(' New Experiment');
+        });
+
+        it('calls onNewExperiment with project name', () => {
+            const btn = panel.find('.panel-body').find('.new-experiment');
+            btn.simulate('click');
+            expect(onNewExperiment).toHaveBeenCalledWith('Test');
+        });
     });
 });
