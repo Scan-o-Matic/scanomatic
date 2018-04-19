@@ -30,8 +30,8 @@ export default function ProjectsRoot({
 }
 
 ProjectsRoot.propTypes = {
-    projects: PropTypes.arrayOf(myTypes.projectType),
-    newProject: myTypes.projectType,
+    projects: PropTypes.arrayOf(PropTypes.shape(myTypes.projectType)),
+    newProject: PropTypes.shape(myTypes.projectShape),
     newProjectActions: PropTypes.shape({
         error: PropTypes.string,
         onChange: PropTypes.func.isRequired,
