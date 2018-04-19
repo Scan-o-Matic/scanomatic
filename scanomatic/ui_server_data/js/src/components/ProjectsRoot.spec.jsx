@@ -5,13 +5,24 @@ import './enzyme-setup';
 import ProjectsRoot from './ProjectsRoot';
 
 describe('<ProjectsRoot />', () => {
+    const props = {
+        projects: [],
+        newProject: null,
+        newProjectActions: {
+            onChange: () => {},
+            onCancel: () => {},
+            onSubmit: () => {},
+        },
+        onNewProject: () => {},
+    };
+
     describe('New Project button', () => {
         let btn;
         const onNewProject = jasmine.createSpy('onNewProject');
 
         beforeEach(() => {
             onNewProject.calls.reset();
-            const wrapper = shallow(<ProjectsRoot onNewProject={onNewProject} />);
+            const wrapper = shallow(<ProjectsRoot {...props} onNewProject={onNewProject} />);
             btn = wrapper.find('.new-project');
         });
 
@@ -42,6 +53,7 @@ describe('<ProjectsRoot />', () => {
 
         beforeEach(() => {
             const wrapper = shallow(<ProjectsRoot
+                {...props}
                 newProject={newProject}
                 newProjectActions={newProjectActions}
             />);
@@ -66,7 +78,7 @@ describe('<ProjectsRoot />', () => {
     });
 
     it('does not render a new project form', () => {
-        const wrapper = shallow(<ProjectsRoot />);
+        const wrapper = shallow(<ProjectsRoot {...props} />);
         const form = wrapper.find('NewProjectPanel');
         expect(form.exists()).toBeFalsy();
     });
@@ -86,7 +98,7 @@ describe('<ProjectsRoot />', () => {
         let projectPanels;
 
         beforeEach(() => {
-            const wrapper = shallow(<ProjectsRoot projects={projects} />);
+            const wrapper = shallow(<ProjectsRoot {...props} projects={projects} />);
             projectPanels = wrapper.find('ProjectPanel');
         });
 
