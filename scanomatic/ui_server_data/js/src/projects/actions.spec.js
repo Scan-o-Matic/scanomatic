@@ -1,6 +1,6 @@
 import * as actions from '../../src/projects/actions';
 
-fdescribe('projects/actions', () => {
+describe('projects/actions', () => {
     beforeEach(() => {
         jasmine.clock().install();
     });

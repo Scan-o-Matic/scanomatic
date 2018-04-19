@@ -1,23 +1,24 @@
 // @flow
 export type Action
-    = { type: 'NEWPROJECT_CHANGE', field: string, value: string }
-    | { type: 'NEWPROJECT_SUBMIT' }
-    | { type: 'NEWPROJECT_CANCEL' }
-    | { type: 'PROJECTS_ADD', id: string, name: string, description: string }
-    | { type: 'NEWEXPERIMENT_CHANGE', field: string, value: string }
-    | { type: 'NEWEXPERIMENT_SUBMIT' }
-    | { type: 'NEWEXPERIMENT_CANCEL' }
-    | {
+    = {| type: 'NEWPROJECT_CHANGE', field: string, value: string |}
+    | {| type: 'NEWPROJECT_SUBMIT' |}
+    | {| type: 'NEWPROJECT_CANCEL' |}
+    | {| type: 'PROJECTS_ADD', id: string, name: string, description: string |}
+    | {| type: 'NEWEXPERIMENT_CHANGE', field: string, value: string |}
+    | {| type: 'NEWEXPERIMENT_SUBMIT' |}
+    | {| type: 'NEWEXPERIMENT_CANCEL' |}
+    | {|
         type: 'EXPERIMENTS_ADD',
-        id: string,
-        name: string,
         description: string,
         duration: number,
+        id: string,
         interval: number,
+        name: string,
+        project: string,
         scanner: string,
-    }
-    | { type: 'EXPERIMENTS_START', id: string, date: Date }
-    | { type: 'EXPERIMENTS_STOP', id: string, date: Date }
+    |}
+    | {| type: 'EXPERIMENTS_START', id: string, date: Date |}
+    | {| type: 'EXPERIMENTS_STOP', id: string, date: Date |}
 
 export function changeNewProject(field: string, value: string): Action {
     return { type: 'NEWPROJECT_CHANGE', field, value };
