@@ -1,5 +1,6 @@
-import PropTypes from 'prop-types';
 import React from 'react';
+import PropTypes from 'prop-types';
+import myTypes from '../prop-types';
 
 export default function ProjectPanel({ name, description, onNewExperiment }) {
     return (
@@ -23,7 +24,6 @@ export default function ProjectPanel({ name, description, onNewExperiment }) {
 }
 
 ProjectPanel.propTypes = {
-    name: PropTypes.string.isRequired,
-    description: PropTypes.string.isRequired,
     onNewExperiment: PropTypes.func.isRequired,
+    ...myTypes.projectShape,
 };

@@ -32,9 +32,15 @@ const scanningJobType = PropTypes.shape({
     scannerId: PropTypes.string.isRequired,
 });
 
+const projectShape = {
+    name: PropTypes.string.isRequired,
+    description: PropTypes.string,
+};
+
 export default {
     cccMetadata,
     pinningFormat,
     scannerType,
     scanningJobType,
+    projectShape,
 };
