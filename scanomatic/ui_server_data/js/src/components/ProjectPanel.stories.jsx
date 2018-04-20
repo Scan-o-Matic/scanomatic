@@ -41,6 +41,7 @@ storiesOf('ProjectPanel', module)
                 onDurationHoursChange: action('durationHoursChange'),
                 onDurationMinutesChange: action('durationMinutesChange'),
                 onIntervalChange: action('intervalChange'),
+                onScannerChange: action('scannerChange'),
                 onSubmit: action('submit'),
                 onCancel: action('cancel'),
             }}
@@ -80,6 +81,7 @@ storiesOf('ProjectPanel', module)
                 onDurationHoursChange: action('durationHoursChange'),
                 onDurationMinutesChange: action('durationMinutesChange'),
                 onIntervalChange: action('intervalChange'),
+                onScannerChange: action('scannerChange'),
                 onSubmit: action('submit'),
                 onCancel: action('cancel'),
             }}
@@ -128,6 +130,7 @@ storiesOf('ProjectPanel', module)
                 onDurationHoursChange: action('durationHoursChange'),
                 onDurationMinutesChange: action('durationMinutesChange'),
                 onIntervalChange: action('intervalChange'),
+                onScannerChange: action('scannerChange'),
                 onSubmit: action('submit'),
                 onCancel: action('cancel'),
             }}

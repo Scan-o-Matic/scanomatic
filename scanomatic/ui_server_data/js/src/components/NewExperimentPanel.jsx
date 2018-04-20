@@ -16,13 +16,13 @@ export default function NewExperimentPanel(props) {
                         </div>
                     )}
                     <div className="panel-body">
-                        <div className={`form-group${props.errors && props.errors.name && ' has-error'}`}>
+                        <div className={`form-group${props.errors && props.errors.name ? ' has-error' : ''}`}>
                             <label className="control-label" htmlFor="new-exp-name">Name</label>
                             <input
                                 className="form-control"
                                 value={props.name}
                                 placeholder="Short description of content"
-                                onChange={props.onNameChange}
+                                onChange={e => props.onNameChange(e.target.value)}
                                 name="new-exp-name"
                                 data-error={props.errors && props.errors.name}
                             />
@@ -35,9 +35,9 @@ export default function NewExperimentPanel(props) {
                         <div className="form-group">
                             <label className="control-label" htmlFor="new-exp-desc">Description</label>
                             <textarea
-                                className="name form-control vertical-textarea"
+                                className="description form-control vertical-textarea"
                                 placeholder="Full description of experiment and its plates"
-                                onChange={props.onDescriptionChange}
+                                onChange={e => props.onDescriptionChange(e.target.value)}
                                 name="new-exp-desc"
                             >
                                 {props.description}
@@ -45,19 +45,17 @@ export default function NewExperimentPanel(props) {
                         </div>
                         <div
                             className={`form-group${
-                                props.errors && (props.errors.durationDays || props.errors.durationHours || props.errors.durationMinutes) && ' has-error'
+                                props.errors && (props.errors.durationDays || props.errors.durationHours || props.errors.durationMinutes) ? ' has-error' : ''
                             }`}
                         >
                             <label className="control-label">Duration</label>
-                        </div>
-                        <div className={`form-group${props.errors && props.errors.durationDays && ' has-error'}`}>
                             <div className="input-group">
                                 <input
                                     className="days form-control"
                                     type="number"
                                     value={props.duration.days}
                                     placeholder="Days"
-                                    onChange={props.onDurationDaysChange}
+                                    onChange={e => props.onDurationDaysChange(e.target.value)}
                                 />
                                 <span className="input-group-addon" id="duration-days-unit">days</span>
                             </div>
@@ -66,15 +64,13 @@ export default function NewExperimentPanel(props) {
                                     {props.errors.durationDays}
                                 </span>
                             )}
-                        </div>
-                        <div className={`form-group${props.errors && props.errors.durationHours && ' has-error'}`}>
                             <div className="input-group">
                                 <input
                                     className="hours form-control"
                                     type="number"
                                     value={props.duration.hours}
                                     placeholder="Hours"
-                                    onChange={props.onDurationHoursChange}
+                                    onChange={e => props.onDurationHoursChange(e.target.value)}
                                 />
                                 <span className="input-group-addon" id="duration-hours-unit">hours</span>
                             </div>
@@ -83,15 +79,13 @@ export default function NewExperimentPanel(props) {
                                     {props.errors.durationHours}
                                 </span>
                             )}
-                        </div>
-                        <div className={`form-group${props.errors && props.errors.durationMinutes && ' has-error'}`}>
                             <div className="input-group">
                                 <input
                                     className="minutes form-control"
                                     type="number"
                                     value={props.duration.minutes}
                                     placeholder="Minutes"
-                                    onChange={props.onDurationMinutesChange}
+                                    onChange={e => props.onDurationMinutesChange(e.target.value)}
                                 />
                                 <span className="input-group-addon" id="duration-minutes-unit">minutes</span>
                             </div>
@@ -101,7 +95,7 @@ export default function NewExperimentPanel(props) {
                                 </span>
                             )}
                         </div>
-                        <div className={`form-group${props.errors && props.errors.interval && ' has-error'}`}>
+                        <div className={`form-group${props.errors && props.errors.interval ? ' has-error' : ''}`}>
                             <label htmlFor="new-exp-interval" className="control-label">Interval</label>
                             <div className="input-group">
                                 <input
@@ -109,7 +103,7 @@ export default function NewExperimentPanel(props) {
                                     type="number"
                                     value={props.interval}
                                     placeholder="Interval (minutes)"
-                                    onChange={props.onIntervalChange}
+                                    onChange={e => props.onIntervalChange(e.target.value)}
                                     name="new-exp-interval"
                                 />
                                 <span className="input-group-addon" id="interval-unit">minutes</span>
@@ -120,11 +114,11 @@ export default function NewExperimentPanel(props) {
                                 </span>
                             )}
                         </div>
-                        <div className={`form-group${props.errors && props.errors.scanner && ' has-error'}`}>
+                        <div className={`form-group${props.errors && props.errors.scanner ? ' has-error' : ''}`}>
                             <label htmlFor="new-exp-scanner" className="control-label">Scanner</label>
                             <select
                                 className="scanner form-control"
-                                onChange={props.onScannerChange}
+                                onChange={e => props.onScannerChange(e.target.value)}
                                 value={props.scannerId}
                                 name="new-exp-scanner"
                             >
@@ -147,12 +141,14 @@ export default function NewExperimentPanel(props) {
                                 </span>
                             )}
                         </div>
-                        <button className="btn btn-primary job-add" onClick={props.onSubmit}>
-                            Add Experiment
-                        </button>
-                        <button className="btn cancel" onClick={props.onCancel}>
-                            Cancel
-                        </button>
+                        <div className="btn-toolbar" role="toolbar">
+                            <button className="btn btn-primary job-add" onClick={props.onSubmit}>
+                                Add Experiment
+                            </button>
+                            <button className="btn cancel" onClick={props.onCancel}>
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
