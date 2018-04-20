@@ -17,12 +17,14 @@ const cccMetadata = PropTypes.shape({
     pinningFormat: pinningFormat.isRequired,
 });
 
-const scannerType = PropTypes.shape({
+const scannerShape = {
     identifier: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     owned: PropTypes.bool.isRequired,
     power: PropTypes.bool.isRequired,
-});
+};
+
+const scannerType = PropTypes.shape(scannerShape);
 
 const scanningJobType = PropTypes.shape({
     disableStart: PropTypes.bool,
@@ -39,16 +41,30 @@ const projectShape = {
 
 const experimentShape = {
     name: PropTypes.string.isRequired,
+    project: PropTypes.string.isRequired,
     description: PropTypes.string,
     duration: PropTypes.instanceOf(Duration).isRequired,
     interval: PropTypes.instanceOf(Duration).isRequired,
+    scannerId: PropTypes.string,
+};
+
+const newExperimentErrorsShape = {
+    general: PropTypes.string,
+    name: PropTypes.string,
+    durationDays: PropTypes.string,
+    durationHours: PropTypes.string,
+    durationMinutes: PropTypes.string,
+    interval: PropTypes.string,
+    scanner: PropTypes.string,
 };
 
 export default {
     cccMetadata,
     pinningFormat,
+    scannerShape,
     scannerType,
     scanningJobType,
     projectShape,
     experimentShape,
+    newExperimentErrorsShape,
 };

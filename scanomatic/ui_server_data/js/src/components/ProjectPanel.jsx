@@ -4,11 +4,19 @@ import myTypes from '../prop-types';
 import NewExperimentPanel from './NewExperimentPanel';
 
 export default function ProjectPanel({
-    name, description, onNewExperiment, newExperiment, newExperimentActions,
+    name, description, onNewExperiment, newExperiment, newExperimentActions, newExperimentErrors,
+    scanners,
 }) {
     let newExperimentPanel;
     if (newExperiment) {
-        newExperimentPanel = <NewExperimentPanel {...newExperiment} {...newExperimentActions} />;
+        newExperimentPanel = (
+            <NewExperimentPanel
+                errors={newExperimentErrors}
+                scanners={scanners}
+                {...newExperiment}
+                {...newExperimentActions}
+            />
+        );
     }
 
     return (
@@ -47,10 +55,12 @@ ProjectPanel.propTypes = {
         onCancel: PropTypes.func.isRequired,
         onSubmit: PropTypes.func.isRequired,
     }),
+    newExperimentErrors: PropTypes.shape(myTypes.newExperimentErrorsShape),
     ...myTypes.projectShape,
 };
 
 ProjectPanel.defaultProps = {
+    newExperimentErrors: null,
     newExperiment: null,
     newExperimentActions: {},
 };
