@@ -34,10 +34,10 @@ describe('projects/actions', () => {
         });
     });
 
-    describe('cancelNewProject', () => {
-        it('should return a NEWPROJECT_CANCEL action', () => {
-            expect(actions.cancelNewProject()).toEqual({
-                type: 'NEWPROJECT_CANCEL',
+    describe('clearNewProject', () => {
+        it('should return a NEWPROJECT_CLEAR action', () => {
+            expect(actions.clearNewProject()).toEqual({
+                type: 'NEWPROJECT_CLEAR',
             });
         });
     });
@@ -79,10 +79,10 @@ describe('projects/actions', () => {
             });
         });
     });
-    describe('cancelNewExperiment', () => {
-        it('should return a NEWEXPERIMENT_CANCEL action', () => {
-            expect(actions.cancelNewExperiment()).toEqual({
-                type: 'NEWEXPERIMENT_CANCEL',
+    describe('clearNewExperiment', () => {
+        it('should return a NEWEXPERIMENT_CLEAR action', () => {
+            expect(actions.clearNewExperiment()).toEqual({
+                type: 'NEWEXPERIMENT_CLEAR',
             });
         });
     });

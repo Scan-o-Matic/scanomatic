@@ -101,8 +101,8 @@ fdescribe('projects/reducers/forms/newExperiment.js', () => {
         });
     });
 
-    it('should clear the state on NEWEXPERIMENT_CANCEL', () => {
-        const action = { type: 'NEWEXPERIMENT_CANCEL' };
+    it('should clear the state on NEWEXPERIMENT_CLEAR', () => {
+        const action = { type: 'NEWEXPERIMENT_CLEAR' };
         expect(newExperiment(defaultState, action)).toBe(null);
     });
 });

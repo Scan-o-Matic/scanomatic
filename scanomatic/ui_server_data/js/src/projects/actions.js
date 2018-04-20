@@ -3,12 +3,12 @@ export type Action
     = {| type: 'NEWPROJECT_INIT' |}
     | {| type: 'NEWPROJECT_CHANGE', field: string, value: string |}
     | {| type: 'NEWPROJECT_SUBMIT' |}
-    | {| type: 'NEWPROJECT_CANCEL' |}
+    | {| type: 'NEWPROJECT_CLEAR' |}
     | {| type: 'PROJECTS_ADD', id: string, name: string, description: string |}
     | {| type: 'NEWEXPERIMENT_INIT', projectId: string |}
     | {| type: 'NEWEXPERIMENT_CHANGE', field: string, value: string|number |}
     | {| type: 'NEWEXPERIMENT_SUBMIT' |}
-    | {| type: 'NEWEXPERIMENT_CANCEL' |}
+    | {| type: 'NEWEXPERIMENT_CLEAR' |}
     | {|
         type: 'EXPERIMENTS_ADD',
         description: string,
@@ -34,8 +34,8 @@ export function submitNewProject(): Action {
     return { type: 'NEWPROJECT_SUBMIT' };
 }
 
-export function cancelNewProject(): Action {
-    return { type: 'NEWPROJECT_CANCEL' };
+export function clearNewProject(): Action {
+    return { type: 'NEWPROJECT_CLEAR' };
 }
 
 export function addProject(name: string, description: string): Action {
@@ -65,9 +65,9 @@ export function submitNewExperiment(): Action {
     };
 }
 
-export function cancelNewExperiment(): Action {
+export function clearNewExperiment(): Action {
     return {
-        type: 'NEWEXPERIMENT_CANCEL',
+        type: 'NEWEXPERIMENT_CLEAR',
     };
 }
 

@@ -53,7 +53,7 @@ export default function newExperiment(state: State = null, action: Action): Stat
             ...state,
             submitted: true,
         };
-    case 'NEWEXPERIMENT_CANCEL':
+    case 'NEWEXPERIMENT_CLEAR':
         return null;
     default:
         return state;
