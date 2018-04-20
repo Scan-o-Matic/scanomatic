@@ -34,7 +34,7 @@ export type Field = {
     touched: boolean,
 };
 
-export type NewProject = {
+export type NewProject = ?{
     +fields: {
         +name: string,
         +description: string,

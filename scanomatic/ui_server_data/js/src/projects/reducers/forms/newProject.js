@@ -3,56 +3,31 @@ import type { NewProject as State } from '../../state';
 import type { Action } from '../../actions';
 
 const defaultState: State = {
+    submitted: false,
     fields: {
-        name: { value: '', touched: false },
-        description: { value: '', touched: false },
+        name: '',
+        description: '',
     },
-    error: null,
 };
 
-export default function reducer(state: State = defaultState, action: Action): State {
+export default function reducer(state: State = null, action: Action): State {
     switch (action.type) {
+    case 'NEWPROJECT_INIT':
+        return defaultState;
     case 'NEWPROJECT_CHANGE':
-        if (action.field === 'name') {
-            return {
-                ...state,
-                fields: {
-                    ...state.fields,
-                    name: {
-                        value: action.value,
-                        touched: true,
-                    },
-                },
-            };
-        }
-        if (action.field === 'description') {
-            return {
-                ...state,
-                fields: {
-                    ...state.fields,
-                    description: {
-                        value: action.value,
-                        touched: true,
-                    },
-                },
-            };
-        }
-        return state;
-    case 'NEWPROJECT_SUBMIT':
+        if (state == null) return null;
         return {
             ...state,
             fields: {
                 ...state.fields,
-                description: {
-                    ...state.fields.description,
-                    touched: true,
-                },
-                name: {
-                    ...state.fields.name,
-                    touched: true,
-                },
+                [action.field]: action.value,
             },
         };
+    case 'NEWPROJECT_SUBMIT':
+        if (state == null) return null;
+        return { ...state, submitted: true };
+    case 'NEWPROJECT_CLEAR':
+        return null;
     default:
         return state;
     }
