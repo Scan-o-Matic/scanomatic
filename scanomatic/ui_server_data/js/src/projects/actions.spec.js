@@ -13,7 +13,7 @@ describe('projects/actions', () => {
     describe('initNewProject', () => {
         it('should return a NEWPROJECT_INIT action', () => {
             expect(actions.initNewProject()).toEqual({
-                type: 'NEWPROJECT_INIT'
+                type: 'NEWPROJECT_INIT',
             });
         });
     });
