@@ -6,7 +6,7 @@ export type Action
     | {| type: 'NEWPROJECT_CANCEL' |}
     | {| type: 'PROJECTS_ADD', id: string, name: string, description: string |}
     | {| type: 'NEWEXPERIMENT_INIT', projectId: string |}
-    | {| type: 'NEWEXPERIMENT_CHANGE', field: string, value: string |}
+    | {| type: 'NEWEXPERIMENT_CHANGE', field: string, value: string|number |}
     | {| type: 'NEWEXPERIMENT_SUBMIT' |}
     | {| type: 'NEWEXPERIMENT_CANCEL' |}
     | {|
