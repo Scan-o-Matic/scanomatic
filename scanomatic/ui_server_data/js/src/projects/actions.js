@@ -1,4 +1,7 @@
 // @flow
+import type { State } from './state';
+import { getNewProject, getNewProjectErrors } from './selectors';
+
 export type Action
     = {| type: 'NEWPROJECT_INIT' |}
     | {| type: 'NEWPROJECT_CHANGE', field: string, value: string |}
@@ -28,10 +31,6 @@ export function initNewProject(): Action {
 
 export function changeNewProject(field: string, value: string): Action {
     return { type: 'NEWPROJECT_CHANGE', field, value };
-}
-
-export function submitNewProject(): Action {
-    return { type: 'NEWPROJECT_SUBMIT' };
 }
 
 export function clearNewProject(): Action {
@@ -104,5 +103,18 @@ export function stopExperiment(id: string): Action {
         type: 'EXPERIMENTS_STOP',
         id,
         date: new Date(),
+    };
+}
+
+type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
+export function submitNewProject(): ThunkAction {
+    return (dispatch, getState) => {
+        const newProject = getNewProject(getState());
+        if (newProject == null) return;
+        dispatch({ type: 'NEWPROJECT_SUBMIT' });
+        const errors = getNewProjectErrors(getState());
+        if (errors.size > 0) return;
+        dispatch(addProject(newProject.name, newProject.description));
+        dispatch(clearNewProject());
     };
 }

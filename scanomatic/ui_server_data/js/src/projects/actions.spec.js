@@ -1,4 +1,5 @@
 import * as actions from '../../src/projects/actions';
+import StateBuilder from './StateBuilder';
 
 describe('projects/actions', () => {
     beforeEach(() => {
@@ -22,14 +23,6 @@ describe('projects/actions', () => {
         it('should return a NEWPROJECT_CHANGE action', () => {
             expect(actions.changeNewProject('name', 'foo')).toEqual({
                 type: 'NEWPROJECT_CHANGE', field: 'name', value: 'foo',
-            });
-        });
-    });
-
-    describe('submitNewProject', () => {
-        it('should return a NEWPROJECT_SUBMIT action', () => {
-            expect(actions.submitNewProject()).toEqual({
-                type: 'NEWPROJECT_SUBMIT',
             });
         });
     });
@@ -124,6 +117,65 @@ describe('projects/actions', () => {
                 type: 'EXPERIMENTS_STOP',
                 id: '123',
                 date: new Date(),
+            });
+        });
+    });
+
+    fdescribe('submitNewProject', () => {
+        const getState = jasmine.createSpy('getState').and.returnValue(new StateBuilder().build());
+
+        it('should dispatch a NEWPROJECT_SUBMIT action', () => {
+            const dispatch = jasmine.createSpy('dispatch');
+            actions.submitNewProject()(dispatch, getState);
+            expect(dispatch).toHaveBeenCalledWith({ type: 'NEWPROJECT_SUBMIT' });
+        });
+
+        describe('if new project has no errors', () => {
+            beforeEach(() => {
+                getState.and.returnValue(new StateBuilder()
+                    .setNewProjectName('New Project')
+                    .setNewProjectDescription('abcd')
+                    .submitNewProject()
+                    .build());
+            });
+
+            it('should dispatch a PROJECTS_ADD action', () => {
+                const dispatch = jasmine.createSpy('dispatch');
+                actions.submitNewProject()(dispatch, getState);
+                expect(dispatch).toHaveBeenCalledWith(jasmine.objectContaining({ type: 'PROJECTS_ADD', name: 'New Project', description: 'abcd' }));
+            });
+
+            it('should dispatch a NEWPROJECT_CLEAR action', () => {
+                const dispatch = jasmine.createSpy('dispatch');
+                actions.submitNewProject()(dispatch, getState);
+                expect(dispatch).toHaveBeenCalledWith({ type: 'NEWPROJECT_CLEAR' });
+            });
+        });
+
+        describe('if new project has errors', () => {
+            beforeEach(() => {
+                getState.and.returnValue(new StateBuilder()
+                    .setNewProjectName('')
+                    .submitNewProject()
+                    .build());
+            });
+
+            it('should not dispatch a PROJECTS_ADD action', () => {
+                const dispatch = jasmine.createSpy('dispatch');
+                actions.submitNewProject()(dispatch, getState);
+                expect(dispatch)
+                    .not.toHaveBeenCalledWith(jasmine.objectContaining({
+                        type: 'PROJECTS_ADD',
+                    }));
+            });
+
+            it('should not dispatch a NEWPROJECT_CLEAR action', () => {
+                const dispatch = jasmine.createSpy('dispatch');
+                actions.submitNewProject()(dispatch, getState);
+                expect(dispatch)
+                    .not.toHaveBeenCalledWith(jasmine.objectContaining({
+                        type: 'NEWPROJECT_CLEAR',
+                    }));
             });
         });
     });
