@@ -1,6 +1,6 @@
 import { validateNewExperiment, validateNewProject } from './validators';
 
-fdescribe('projects/validators', () => {
+describe('projects/validators', () => {
     describe('validateNewProject', () => {
         const validState = {
             fields: {

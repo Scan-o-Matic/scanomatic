@@ -121,7 +121,7 @@ describe('projects/actions', () => {
         });
     });
 
-    fdescribe('submitNewProject', () => {
+    describe('submitNewProject', () => {
         const getState = jasmine.createSpy('getState').and.returnValue(new StateBuilder().build());
 
         it('should dispatch a NEWPROJECT_SUBMIT action', () => {

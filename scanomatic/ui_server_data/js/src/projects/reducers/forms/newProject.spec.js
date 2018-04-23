@@ -1,6 +1,6 @@
 import reducer from './newProject';
 
-fdescribe('projects/reducers/forms/newProject', () => {
+describe('projects/reducers/forms/newProject', () => {
     it('should return null as initial state', () => {
         expect(reducer(undefined, {})).toBe(null);
     });

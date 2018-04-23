@@ -1,6 +1,6 @@
 import newExperiment from './newExperiment';
 
-fdescribe('projects/reducers/forms/newExperiment.js', () => {
+describe('projects/reducers/forms/newExperiment.js', () => {
     it('should return null as initial state', () => {
         expect(newExperiment(undefined, {})).toBe(null);
     });

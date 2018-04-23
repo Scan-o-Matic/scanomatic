@@ -1,7 +1,7 @@
 import * as selectors from '../../src/projects/selectors';
 import StateBuilder from './StateBuilder';
 
-fdescribe('projects/selectors', () => {
+describe('projects/selectors', () => {
     describe('getProjects', () => {
         it('should return an empty array if there are no projects', () => {
             const state = new StateBuilder().clearProjects().build();
