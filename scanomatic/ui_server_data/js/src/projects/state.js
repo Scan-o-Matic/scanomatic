@@ -35,6 +35,7 @@ export type Field = {
 };
 
 export type NewProject = ?{
+    +submitted: boolean,
     +fields: {
         +name: string,
         +description: string,
