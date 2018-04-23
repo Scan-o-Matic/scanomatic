@@ -1,18 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import { createStore } from 'redux';
+import { createStore, applyMiddleware } from 'redux';
+import thunk from 'redux-thunk';
 
 import reducer from './reducers';
-import ProjectsRoot from '../components/ProjectsRoot';
+import ProjectsRootContainer from '../containers/ProjectsRootContainer';
 
 
-const store = createStore(reducer);
+const store = createStore(reducer, applyMiddleware(thunk));
+store.subscribe(() => console.log(store.getState()));
 
 document.addEventListener('DOMContentLoaded', () => {
     ReactDOM.render(
         <Provider store={store}>
-            <ProjectsRoot />
+            <ProjectsRootContainer />
         </Provider>,
         document.getElementById('react-root'),
     );
