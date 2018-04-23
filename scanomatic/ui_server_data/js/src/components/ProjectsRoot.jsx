@@ -6,11 +6,15 @@ import ProjectPanel from './ProjectPanel';
 import NewProjectPanel from './NewProjectPanel';
 
 export default function ProjectsRoot({
-    projects, newProject, newProjectActions, onNewProject,
+    projects, newProject, newProjectActions, newProjectErrors, onNewProject,
 }) {
     let newProjectForm = null;
     if (newProject) {
-        newProjectForm = <NewProjectPanel {...newProject} {...newProjectActions} />;
+        newProjectForm = (<NewProjectPanel
+            {...newProject}
+            {...newProjectActions}
+            errors={newProjectErrors}
+        />);
     }
     const newProjectButton = (
         <button className="btn btn-primary new-project" onClick={onNewProject} disabled={newProject}>
@@ -32,8 +36,8 @@ export default function ProjectsRoot({
 ProjectsRoot.propTypes = {
     projects: PropTypes.arrayOf(PropTypes.shape(myTypes.projectShape)),
     newProject: PropTypes.shape(myTypes.projectShape),
+    newProjectErrors: PropTypes.instanceOf(Map),
     newProjectActions: PropTypes.shape({
-        error: PropTypes.string,
         onChange: PropTypes.func.isRequired,
         onCancel: PropTypes.func.isRequired,
         onSubmit: PropTypes.func.isRequired,
@@ -44,4 +48,5 @@ ProjectsRoot.propTypes = {
 ProjectsRoot.defaultProps = {
     projects: [],
     newProject: null,
+    newProjectErrors: null,
 };
