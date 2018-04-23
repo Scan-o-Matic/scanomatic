@@ -2,34 +2,33 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 export default function NewProjectPanel({
-    name, description, error, onChange, onSubmit, onCancel,
+    name, description, errors, onChange, onSubmit, onCancel,
 }) {
+    const nameError = errors.get('name');
+    const descriptionError = errors.get('description');
     return (
         <div className="panel panel-default new-project-panel">
             <div className="panel-heading">New project</div>
-            {error && (
-                <div className="alert alert-danger" role="alert">
-                    {error}
-                </div>
-            )}
             <div className="panel-body">
                 <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
-                    <div className="form-group">
-                        <label>Name</label>
+                    <div className={`form-group ${nameError ? 'has-error' : ''}`}>
+                        <label className="control-label">Name</label>
                         <input
                             className="form-control name"
                             value={name}
                             onChange={event => onChange('name', event.target.value)}
                         />
+                        {nameError && <span className="help-block">{nameError}</span>}
                     </div>
-                    <div className="form-group">
-                        <label>Description</label>
+                    <div className={`form-group ${descriptionError ? 'has-error' : ''}`}>
+                        <label className="control-label">Description</label>
                         <textarea
                             value={description}
                             onChange={event => onChange('description', event.target.value)}
                             className="form-control description"
                             rows="3"
                         />
+                        {descriptionError && <span className="help-block">{descriptionError}</span>}
                     </div>
                     <button type="submit" className="btn btn-primary">
                         Add project
@@ -46,14 +45,14 @@ export default function NewProjectPanel({
 NewProjectPanel.propTypes = {
     name: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
-    error: PropTypes.string,
+    errors: PropTypes.instanceOf(Map),
     onCancel: PropTypes.func,
     onChange: PropTypes.func,
     onSubmit: PropTypes.func,
 };
 
 NewProjectPanel.defaultProps = {
-    error: null,
+    errors: new Map(),
     onCancel: null,
     onChange: null,
     onSubmit: null,
