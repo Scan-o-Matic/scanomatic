@@ -22,9 +22,6 @@ export default function newExperiment(state: State = null, action: Action): Stat
         case 'name':
         case 'description':
         case 'scannerId':
-            if (typeof action.value !== 'string') {
-                throw TypeError(`Invalid type ${typeof (action.value)} for field ${action.field}`);
-            }
             return {
                 ...state,
                 fields: {
@@ -34,9 +31,6 @@ export default function newExperiment(state: State = null, action: Action): Stat
             };
         case 'duration':
         case 'interval':
-            if (typeof action.value !== 'number') {
-                throw TypeError(`Invalid type ${typeof (action.value)} for field ${action.field}`);
-            }
             return {
                 ...state,
                 fields: {
