@@ -1,3 +1,4 @@
 ---
 ignore:
-  - "scanomatic/ui_server_data/js/specs"
+  - "scanomatic/ui_server_data/js/**/*.spec.js$"
+  - "scanomatic/ui_server_data/js/**/*.spec.jsx?$"

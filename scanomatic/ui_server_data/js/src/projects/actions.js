@@ -9,7 +9,8 @@ export type Action
     | {| type: 'NEWPROJECT_CLEAR' |}
     | {| type: 'PROJECTS_ADD', id: string, name: string, description: string |}
     | {| type: 'NEWEXPERIMENT_INIT', projectId: string |}
-    | {| type: 'NEWEXPERIMENT_CHANGE', field: string, value: string|number |}
+    | {| type: 'NEWEXPERIMENT_CHANGE', field: 'name'|'description'|'scannerId', value: string |}
+    | {| type: 'NEWEXPERIMENT_CHANGE', field: 'duration'|'interval', value: number |}
     | {| type: 'NEWEXPERIMENT_SUBMIT' |}
     | {| type: 'NEWEXPERIMENT_CLEAR' |}
     | {|
@@ -50,12 +51,32 @@ export function initNewExperiment(projectId: string): Action {
     return { type: 'NEWEXPERIMENT_INIT', projectId };
 }
 
-export function changeNewExperiment(field: string, value: string): Action {
-    return {
-        type: 'NEWEXPERIMENT_CHANGE',
-        field,
-        value,
-    };
+export function changeNewExperiment(field: string, value: string|number): Action {
+    switch (field) {
+    case 'description':
+    case 'name':
+    case 'scannerId':
+        if (typeof value !== 'string') {
+            throw TypeError(`Invalid type ${typeof (value)} for field ${field}`);
+        }
+        return {
+            type: 'NEWEXPERIMENT_CHANGE',
+            field,
+            value: (value: string),
+        };
+    case 'duration':
+    case 'interval':
+        if (typeof value === 'number') {
+            return {
+                type: 'NEWEXPERIMENT_CHANGE',
+                field,
+                value: (value: number),
+            };
+        }
+        throw TypeError(`Invalid type ${typeof (value)} for field ${field}`);
+    default:
+        throw Error(`Unknown field ${field}`);
+    }
 }
 
 export function clearNewExperiment(): Action {
