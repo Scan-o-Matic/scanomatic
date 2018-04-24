@@ -112,7 +112,7 @@ describe('projects/selectors', () => {
         });
     });
 
-    fdescribe('getNewExperiment', () => {
+    describe('getNewExperiment', () => {
         it('should return null if there is no new experiment', () => {
             const state = new StateBuilder().clearNewExperiment().build();
             expect(selectors.getNewExperiment(state)).toBe(null);

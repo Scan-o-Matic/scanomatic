@@ -179,4 +179,71 @@ describe('projects/actions', () => {
             });
         });
     });
+
+    describe('submitNewExperiment', () => {
+        const getState = jasmine.createSpy('getState').and.returnValue(new StateBuilder().build());
+
+        it('should dispatch a NEWEXPERIMENT_SUBMIT action', () => {
+            const dispatch = jasmine.createSpy('dispatch');
+            actions.submitNewExperiment()(dispatch, getState);
+            expect(dispatch).toHaveBeenCalledWith({ type: 'NEWEXPERIMENT_SUBMIT' });
+        });
+
+        describe('if new experiment has no errors', () => {
+            beforeEach(() => {
+                getState.and.returnValue(new StateBuilder()
+                    .setNewExperimentValues({
+                        name: 'Some experiment',
+                        scannerId: 'xyz',
+                        duration: 5000,
+                        interval: 500,
+                        description: 'bla bla bla',
+                    })
+                    .setNewExperimentProjectId('P0')
+                    .submitNewExperiment()
+                    .build());
+            });
+
+            it('should dispatch a EXPERIMENTS_ADD action', () => {
+                const dispatch = jasmine.createSpy('dispatch');
+                actions.submitNewExperiment()(dispatch, getState);
+                expect(dispatch).toHaveBeenCalledWith(jasmine.objectContaining({
+                    type: 'EXPERIMENTS_ADD',
+                    name: 'Some experiment',
+                    scanner: 'xyz',
+                    duration: 5000,
+                    interval: 500,
+                    description: 'bla bla bla',
+                    projectId: 'P0',
+                }));
+            });
+
+            it('should dispatch a NEWEXPERIMENT_CLEAR action', () => {
+                const dispatch = jasmine.createSpy('dispatch');
+                actions.submitNewExperiment()(dispatch, getState);
+                expect(dispatch).toHaveBeenCalledWith({ type: 'NEWEXPERIMENT_CLEAR' });
+            });
+        });
+
+        describe('if new experiment has errors', () => {
+            beforeEach(() => {
+                getState.and.returnValue(new StateBuilder()
+                    .setNewExperimentValues({ name: '' })
+                    .submitNewExperiment()
+                    .build());
+            });
+
+            it('should not dispatch a EXPERIMENTS_ADD action', () => {
+                const dispatch = jasmine.createSpy('dispatch');
+                actions.submitNewExperiment()(dispatch, getState);
+                expect(dispatch).not.toHaveBeenCalledWith(jasmine.objectContaining({ type: 'EXPERIMENTS_ADD' }));
+            });
+
+            it('should dispatch a NEWEXPERIMENT_CLEAR action', () => {
+                const dispatch = jasmine.createSpy('dispatch');
+                actions.submitNewExperiment()(dispatch, getState);
+                expect(dispatch).not.toHaveBeenCalledWith({ type: 'NEWEXPERIMENT_CLEAR' });
+            });
+        });
+    });
 });
