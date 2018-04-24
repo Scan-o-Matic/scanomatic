@@ -151,6 +151,11 @@ export default class StateBuilder {
         return this;
     }
 
+    clearScanners(): StateBuilder {
+        this.scanners = [];
+        return this;
+    }
+
     clearProjects(): StateBuilder {
         this.extraProjects = [];
         this.projectIds = [];

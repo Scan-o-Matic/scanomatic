@@ -68,6 +68,39 @@ describe('projects/selectors', () => {
         });
     });
 
+    describe('getScanners', () => {
+        it('should return an empty array if there are no scanners', () => {
+            const state = new StateBuilder().clearScanners().build();
+            expect(selectors.getScanners(state)).toEqual([]);
+        });
+
+        it('should return the scanner information', () => {
+            const state = new StateBuilder()
+                .clearScanners()
+                .addScanner({
+                    id: 'S01', name: 'Scanny', isOnline: true, isFree: false,
+                })
+                .build();
+            expect(selectors.getScanners(state)).toEqual([{
+                id: 'S01', name: 'Scanny', isOnline: true, isFree: false,
+            }]);
+        });
+
+        it('should sort the scanners by name', () => {
+            const state = new StateBuilder()
+                .clearScanners()
+                .addScanner({ id: 'S01', name: 'Foo' })
+                .addScanner({ id: 'S02', name: 'Bar' })
+                .addScanner({ id: 'S03', name: 'Baz' })
+                .build();
+            expect(selectors.getScanners(state).map(s => s.name)).toEqual([
+                'Bar',
+                'Baz',
+                'Foo',
+            ]);
+        });
+    });
+
     describe('getNewProject', () => {
         it('should return null if there is no new project', () => {
             const state = new StateBuilder().clearNewProject().build();

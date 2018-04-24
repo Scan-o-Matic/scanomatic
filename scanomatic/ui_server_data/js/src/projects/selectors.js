@@ -44,6 +44,19 @@ export function getProjects(state: State): Array<Project> {
     });
 }
 
+export function getScanners(state: State): Array<{ name: string, id: string, isOnline: boolean, isFree: boolean }> {
+    const scanners = Object.keys(state.entities.scanners).sort().map(key => ({
+        ...state.entities.scanners[key],
+        id: key,
+    }));
+    scanners.sort((s1, s2) => {
+        if (s1.name < s2.name) return -1;
+        if (s1.name > s2.name) return 1;
+        return 0;
+    });
+    return scanners;
+}
+
 export function getNewProject(state: State): ?{ name: string, description: string } {
     if (state.forms.newProject == null) return null;
     const { name, description } = state.forms.newProject.fields;
