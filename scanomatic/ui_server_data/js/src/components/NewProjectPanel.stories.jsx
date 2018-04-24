@@ -24,11 +24,14 @@ storiesOf('NewProjectPanel', module)
             onCancel={action('cancel')}
         />
     ))
-    .add('with error', () => (
+    .add('with errors', () => (
         <NewProjectPanel
             name="Some name"
             description="This is the description. It describes."
-            error="Something is wrong..."
+            errors={new Map([
+                ['name', 'Something is wrong here'],
+                ['description', 'Not looking good either'],
+            ])}
             onChange={action('change')}
             onSubmit={action('submit')}
             onCancel={action('cancel')}
