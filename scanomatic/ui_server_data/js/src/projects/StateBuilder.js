@@ -41,12 +41,12 @@ type PartialScanner = {
 };
 
 type PartialNewExperiment = {
-            name?: string,
-            description?: string,
-            scannerId?: string,
-            duration?: number,
-            interval?: number
-        };
+    name?: string,
+    description?: string,
+    scannerId?: string,
+    duration?: number,
+    interval?: number
+};
 
 export default class StateBuilder {
     hasNewProject: boolean;
@@ -56,6 +56,7 @@ export default class StateBuilder {
     newProjectIsSubmitted: boolean;
     newExperimentValues: PartialNewExperiment;
     newExperimentIsSubmitted: boolean;
+    newExperimentProjectId: string;
     projectIds: Array<string>;
     extraProjects: Array<{ id: string, name?: string, description?: string }>;
     experiments: Array<PartialExperiment>;
@@ -69,6 +70,7 @@ export default class StateBuilder {
         this.newProjectIsSubmitted = true;
         this.newExperimentValues = {};
         this.newExperimentIsSubmitted = true;
+        this.newExperimentProjectId = 'P123';
         this.projectIds = ['001', '002'];
         this.extraProjects = [];
         this.experiments = [];
@@ -104,6 +106,12 @@ export default class StateBuilder {
 
     setNewExperimentValues(values: PartialNewExperiment): StateBuilder {
         this.newExperimentValues = values;
+        this.hasNewExperiment = true;
+        return this;
+    }
+
+    setNewExperimentProjectId(projectId: string): StateBuilder {
+        this.newExperimentProjectId = projectId;
         this.hasNewExperiment = true;
         return this;
     }
@@ -204,7 +212,7 @@ export default class StateBuilder {
                 scannerId: 'scnr01',
                 ...this.newExperimentValues,
             },
-            projectId: 'P01',
+            projectId: this.newExperimentProjectId,
         };
     }
 

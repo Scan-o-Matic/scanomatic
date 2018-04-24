@@ -66,10 +66,14 @@ export function getNewExperiment(state: State): ?{
     +description: string,
     +scannerId: string,
     +duration: number,
-    +interval: number
+    +interval: number,
+    +projectId: string,
 } {
     if (state.forms.newExperiment == null) return null;
-    return state.forms.newExperiment.fields;
+    return {
+        ...state.forms.newExperiment.fields,
+        projectId: state.forms.newExperiment.projectId,
+    };
 }
 
 export function getNewExperimentErrors(state: State): Map<string, string> {

@@ -112,7 +112,7 @@ describe('projects/selectors', () => {
         });
     });
 
-    describe('getNewExperiment', () => {
+    fdescribe('getNewExperiment', () => {
         it('should return null if there is no new experiment', () => {
             const state = new StateBuilder().clearNewExperiment().build();
             expect(selectors.getNewExperiment(state)).toBe(null);
@@ -127,6 +127,7 @@ describe('projects/selectors', () => {
                     duration: 500,
                     interval: 20,
                 })
+                .setNewExperimentProjectId('P123')
                 .build();
             expect(selectors.getNewExperiment(state)).toEqual({
                 name: 'Foo',
@@ -134,6 +135,7 @@ describe('projects/selectors', () => {
                 scannerId: 'scnr01',
                 duration: 500,
                 interval: 20,
+                projectId: 'P123',
             });
         });
     });
