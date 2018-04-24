@@ -35,6 +35,7 @@ class NewProjectForm(object):
     name_input_locator = (By.CSS_SELECTOR, 'input.name')
     description_input_locator = (By.CSS_SELECTOR, 'textarea.description')
     submit_button_locator = (By.CSS_SELECTOR, 'button[type="submit"]')
+    errors_locator = (By.CSS_SELECTOR, '.form-group.has-error .help-block')
 
     def __init__(self, driver):
         self.driver = driver
@@ -44,8 +45,14 @@ class NewProjectForm(object):
         self.element.find_element(*self.name_input_locator).send_keys(name)
 
     def set_description(self, description):
-        self.element.find_element(*self.description_input_locator,
-                                 ).send_keys(description)
+        input = self.element.find_element(*self.description_input_locator)
+        input.send_keys(description)
+
+    @property
+    def errors(self):
+        return [
+            el.text for el in self.element.find_elements(*self.errors_locator)
+        ]
 
     def click_submit(self):
         self.element.find_element(*self.submit_button_locator).click()
@@ -91,3 +98,12 @@ def test_create_project(scanomatic, browser):
     panel = page.get_project_panel('My project')
     assert panel.heading == 'My project'
     assert 'bla bla bla bla bla' in panel.body
+
+
+def test_create_project_without_name(scanomatic, browser):
+    page = ProjectsPage(browser, scanomatic)
+    form = page.click_add_project()
+    form.set_name('')
+    form.set_description('bla bla bla bla bla')
+    form.click_submit()
+    assert 'Project name cannot be empty' in form.errors
