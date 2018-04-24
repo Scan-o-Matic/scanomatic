@@ -11,7 +11,8 @@ jobs:
         - npm install
         - npm install codecov
       script:
-        - xvfb-run npm test
+        - npm run flow check
+        - npm test
       after_success:
         - ./node_modules/.bin/codecov
     - python: "2.7"
