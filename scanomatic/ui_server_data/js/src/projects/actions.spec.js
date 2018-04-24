@@ -65,13 +65,6 @@ describe('projects/actions', () => {
         });
     });
 
-    describe('submitNewExperiment', () => {
-        it('should return a NEWEXPERIMENT_SUBMIT action', () => {
-            expect(actions.submitNewExperiment()).toEqual({
-                type: 'NEWEXPERIMENT_SUBMIT',
-            });
-        });
-    });
     describe('clearNewExperiment', () => {
         it('should return a NEWEXPERIMENT_CLEAR action', () => {
             expect(actions.clearNewExperiment()).toEqual({
