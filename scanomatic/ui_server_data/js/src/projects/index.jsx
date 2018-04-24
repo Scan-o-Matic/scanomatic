@@ -9,7 +9,6 @@ import ProjectsRootContainer from '../containers/ProjectsRootContainer';
 
 
 const store = createStore(reducer, applyMiddleware(thunk));
-store.subscribe(() => console.log(store.getState()));
 
 document.addEventListener('DOMContentLoaded', () => {
     ReactDOM.render(
