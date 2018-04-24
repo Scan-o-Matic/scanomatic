@@ -887,7 +887,7 @@ describe('API', () => {
     describe('submitScanningJob', () => {
         const scanJob = {
             name: 'Some Job',
-            duration: { days: 1, hours: 3, minutes: 5 },
+            duration: 97500,
             interval: 20,
             scannerId: 'sc4nn3r',
         };
@@ -895,7 +895,7 @@ describe('API', () => {
             name: 'Some Job',
             scannerId: 'sc4nn3r',
             interval: 1200,
-            duration: 97500,
+            duration: 97.5,
         };
         const args = [scanJob];
 

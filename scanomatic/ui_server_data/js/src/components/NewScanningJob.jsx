@@ -27,7 +27,7 @@ export default function NewScanningJob(props) {
                             />
                         </div>
                         <DurationInput
-                            duration={555}
+                            duration={props.duration}
                             onChange={props.onDurationChange}
                         />
                         <div className="form-group">

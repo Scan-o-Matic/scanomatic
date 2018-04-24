@@ -32,18 +32,18 @@ class Duration {
         return new Date(someDate.getTime() + this.totalMilliseconds);
     }
 
-    shifted(days, hours, minutes) {
-        return new Duration(((this.days + days) * secondsInADay) +
-            ((this.hours + hours) * secondsInAnHour) +
-            ((this.minutes + minutes) * secondsInAMinute));
-    }
-
     before(someDate) {
         return new Date(someDate.getTime() - this.totalMilliseconds);
     }
 
     static fromMilliseconds(milliSeconds) {
         return new Duration(milliSeconds / 1000);
+    }
+
+    static fromDaysHoursMinutes(days, hours, minutes) {
+        return new Duration(Math.max(0, (days * secondsInADay) +
+            (hours * secondsInAnHour) +
+            (minutes * secondsInAMinute)));
     }
 }
 

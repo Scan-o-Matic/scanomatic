@@ -8,49 +8,51 @@ export default class DurationInput extends React.Component {
         this.handleDaysChange = this.handleDaysChange.bind(this);
         this.handleHoursChange = this.handleHoursChange.bind(this);
         this.handleMinutesChange = this.handleMinutesChange.bind(this);
-        this.handleBlur = this.handleBlur.bind(this);
-        const duration = Duration.fromMilliseconds(this.props.duration);
+        const duration = Duration.fromMilliseconds(Math.max(0, this.props.duration));
         this.state = {
             duration,
         };
     }
     handleDaysChange(evt) {
-        const val = Number.parseInt(evt.target.value, 10);
-        if (!Number.isNaN(val)) this.setState({ days: val });
+        let val = Number.parseInt(evt.target.value, 10);
+        if (Number.isNaN(val)) val = 0;
+        this.setState({ days: val });
     }
 
     handleHoursChange(evt) {
-        const val = Number.parseInt(evt.target.value, 10);
-        if (!Number.isNaN(val)) this.setState({ hours: val });
+        let val = Number.parseInt(evt.target.value, 10);
+        if (Number.isNaN(val)) val = 0;
+        this.setState({ hours: val });
     }
 
     handleMinutesChange(evt) {
-        const val = Number.parseInt(evt.target.value, 10);
-        if (!Number.isNaN(val)) this.setState({ minutes: val });
+        let val = Number.parseInt(evt.target.value, 10);
+        if (Number.isNaN(val)) val = 0;
+        this.setState({ minutes: val });
     }
 
-    handleBlur() {
-        const {
-            duration, days, hours, minutes,
-        } = this.state;
-        const newDuration = duration.shifted(days || 0, hours || 0, minutes || 0);
-        const value = Math.max(newDuration.totalMilliseconds, 0);
+    handleNewDuration(duration) {
+        const { days, hours, minutes } = (duration || {});
+        const newDuration = Duration.fromDaysHoursMinutes(days || 0, hours || 0, minutes || 0);
+        const value = newDuration.totalMilliseconds;
         if (value !== this.props.duration) {
             if (this.props.onChange) this.props.onChange(value);
-            this.setState({
-                days: newDuration.days,
-                hours: newDuration.hours,
-                minutes: newDuration.minutes,
-            });
         }
+        this.setState({
+            days: newDuration.days,
+            hours: newDuration.hours,
+            minutes: newDuration.minutes,
+        });
     }
 
     render() {
-        const { duration, newDuration } = this.state;
+        const { duration } = this.state;
         let { days, hours, minutes } = this.state;
-        if (days == null) days = newDuration ? newDuration.days : duration.days;
-        if (hours == null) hours = newDuration ? newDuration.hours : duration.hours;
-        if (minutes == null) minutes = newDuration ? newDuration.minutes : duration.minutes;
+        if (days == null) ({ days } = duration);
+        if (hours == null) ({ hours } = duration);
+        if (minutes == null) ({ minutes } = duration);
+        const blurValues = { hours, minutes, days };
+        const handleBlur = () => this.handleNewDuration(blurValues);
         if (days === 0) days = '';
         if (hours === 0) hours = '';
         if (minutes === 0) minutes = '';
@@ -64,7 +66,7 @@ export default class DurationInput extends React.Component {
                         value={days}
                         placeholder="Days"
                         onChange={this.handleDaysChange}
-                        onBlur={this.handleBlur}
+                        onBlur={handleBlur}
                     />
                     <span className="input-group-addon" id="duration-days-unit">days</span>
                 </div>
@@ -75,7 +77,7 @@ export default class DurationInput extends React.Component {
                         value={hours}
                         placeholder="Hours"
                         onChange={this.handleHoursChange}
-                        onBlur={this.handleBlur}
+                        onBlur={handleBlur}
                     />
                     <span className="input-group-addon" id="duration-hours-unit">hours</span>
                 </div>
@@ -86,7 +88,7 @@ export default class DurationInput extends React.Component {
                         value={minutes}
                         placeholder="Minutes"
                         onChange={this.handleMinutesChange}
-                        onBlur={this.handleBlur}
+                        onBlur={handleBlur}
                     />
                     <span className="input-group-addon" id="duration-minutes-unit">minutes</span>
                 </div>

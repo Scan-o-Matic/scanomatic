@@ -8,9 +8,7 @@ import NewScanningJob from '../../src/components/NewScanningJob';
 
 describe('<NewScanningJob/>', () => {
     const onNameChange = jasmine.createSpy('onNameChange');
-    const onDurationDaysChange = jasmine.createSpy('onDurationDaysChange');
-    const onDurationHoursChange = jasmine.createSpy('onDurationHoursChange');
-    const onDurationMinutesChange = jasmine.createSpy('onDurationMinutesChange');
+    const onDurationChange = jasmine.createSpy('onDurationDaysChange');
     const onIntervalChange = jasmine.createSpy('onIntervalChange');
     const onScannerChange = jasmine.createSpy('onScannerChange');
     const onSubmit = jasmine.createSpy('onSubmit');
@@ -18,11 +16,7 @@ describe('<NewScanningJob/>', () => {
 
     const props = {
         name: 'Test all the things!',
-        duration: {
-            days: 3,
-            hours: 13,
-            minutes: 22,
-        },
+        duration: 1234567,
         scannerId: 'hoho',
         scanners: [
             {
@@ -41,9 +35,7 @@ describe('<NewScanningJob/>', () => {
         ],
         interval: 16,
         onNameChange,
-        onDurationDaysChange,
-        onDurationHoursChange,
-        onDurationMinutesChange,
+        onDurationChange,
         onIntervalChange,
         onScannerChange,
         onSubmit,
@@ -51,9 +43,7 @@ describe('<NewScanningJob/>', () => {
     };
 
     beforeEach(() => {
-        onDurationDaysChange.calls.reset();
-        onDurationHoursChange.calls.reset();
-        onDurationMinutesChange.calls.reset();
+        onDurationChange.calls.reset();
         onIntervalChange.calls.reset();
         onScannerChange.calls.reset();
         onSubmit.calls.reset();
@@ -83,43 +73,16 @@ describe('<NewScanningJob/>', () => {
         expect(onNameChange).toHaveBeenCalled();
     });
 
-    it('renders days input', () => {
+    it('renders a DuraionInput', () => {
         const wrapper = shallow(<NewScanningJob {...props} />);
-        const input = wrapper.find('input.days');
-        expect(input.prop('value')).toEqual(props.duration.days);
+        const input = wrapper.find('DurationInput');
+        expect(input.prop('duration')).toEqual(props.duration);
     });
 
-    it('calls `onDurationDaysChange` when days changed', () => {
+    it('passes on `onDurationChange`', () => {
         const wrapper = shallow(<NewScanningJob {...props} />);
-        const input = wrapper.find('input.days');
-        input.simulate('change');
-        expect(onDurationDaysChange).toHaveBeenCalled();
-    });
-
-    it('renders hours input', () => {
-        const wrapper = shallow(<NewScanningJob {...props} />);
-        const input = wrapper.find('input.hours');
-        expect(input.prop('value')).toEqual(props.duration.hours);
-    });
-
-    it('calls `onDurationHoursChange` when hours changed', () => {
-        const wrapper = shallow(<NewScanningJob {...props} />);
-        const input = wrapper.find('input.hours');
-        input.simulate('change');
-        expect(onDurationHoursChange).toHaveBeenCalled();
-    });
-
-    it('renders minutes input', () => {
-        const wrapper = shallow(<NewScanningJob {...props} />);
-        const input = wrapper.find('input.minutes');
-        expect(input.prop('value')).toEqual(props.duration.minutes);
-    });
-
-    it('calls `onDurationMinutesChange` when hours changed', () => {
-        const wrapper = shallow(<NewScanningJob {...props} />);
-        const input = wrapper.find('input.minutes');
-        input.simulate('change');
-        expect(onDurationMinutesChange).toHaveBeenCalled();
+        const input = wrapper.find('DurationInput');
+        expect(input.prop('onChange')).toEqual(onDurationChange);
     });
 
     it('renders interval input', () => {

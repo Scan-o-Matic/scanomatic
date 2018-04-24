@@ -58,4 +58,16 @@ describe('Duration(93784)', () => {
                 .toEqual(new Date('1985-10-24T23:16:56Z'));
         });
     });
+
+    describe('fromMilliseconds', () => (
+        it('should be 55', () => {
+            expect(Duration.fromMilliseconds(55000).totalSeconds).toEqual(55);
+        })
+    ));
+
+    describe('fromDaysHoursMinutes', () => {
+        it('should be something', () => {
+            expect(Duration.fromDaysHoursMinutes(1, 2, 3).totalSeconds).toEqual(86400 + 7200 + 180);
+        });
+    });
 });
