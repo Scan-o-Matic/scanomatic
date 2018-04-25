@@ -40,9 +40,8 @@ export default function NewExperimentPanel(props) {
                                 placeholder="Full description of experiment and its plates"
                                 onChange={e => props.onChange('description', e.target.value)}
                                 name="new-exp-desc"
-                            >
-                                {props.description}
-                            </textarea>
+                                value={props.description}
+                            />
                             {(props.errors && props.errors.description) && (
                                 <span className="help-block">
                                     {props.errors.description}

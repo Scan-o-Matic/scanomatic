@@ -46,9 +46,9 @@ ProjectPanel.propTypes = {
     onNewExperiment: PropTypes.func.isRequired,
     newExperiment: PropTypes.shape(myTypes.experimentShape),
     newExperimentActions: PropTypes.shape({
-        onChange: PropTypes.func.isRequired,
-        onCancel: PropTypes.func.isRequired,
-        onSubmit: PropTypes.func.isRequired,
+        onChange: PropTypes.func,
+        onCancel: PropTypes.func,
+        onSubmit: PropTypes.func,
     }),
     newExperimentErrors: PropTypes.shape(myTypes.newExperimentErrorsShape),
     ...myTypes.projectShape,
