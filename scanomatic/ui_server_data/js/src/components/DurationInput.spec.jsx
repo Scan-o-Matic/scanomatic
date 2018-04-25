@@ -48,58 +48,134 @@ describe('<DuraionInput />', () => {
             wrapper = shallow(<DurationInput onChange={onChange} />);
         });
 
-        it('updates days on change but dont call onChange', () => {
-            let input = wrapper.find('input.days');
-            input.simulate('change', { target: { value: 11 } });
-            wrapper.update();
-            input = wrapper.find('input.days');
-            expect(input.prop('value')).toEqual(11);
-            expect(onChange).not.toHaveBeenCalled();
+        describe('days', () => {
+            it('updates days on change but dont call onChange if in focus', () => {
+                let input = wrapper.find('input.days');
+                input.simulate('focus');
+                input.simulate('change', { target: { value: 60 } });
+                wrapper.update();
+                input = wrapper.find('input.days');
+                expect(input.prop('value')).toEqual(60);
+                expect(onChange).not.toHaveBeenCalled();
+            });
+
+            it('calls onChange on days blur if duration changed', () => {
+                let input = wrapper.find('input.days');
+                input.simulate('change', { target: { value: 1 } });
+                wrapper.update();
+                input = wrapper.find('input.days');
+                input.simulate('blur');
+                expect(onChange).toHaveBeenCalledWith(86400000);
+            });
+
+            it('calls onChange on days change if not in focus', () => {
+                const input = wrapper.find('input.days');
+                input.simulate('change', { target: { value: 1 } });
+                expect(onChange).toHaveBeenCalledWith(86400000);
+            });
         });
 
-        it('calls onChange on days blur if duration changed', () => {
-            let input = wrapper.find('input.days');
-            input.simulate('change', { target: { value: 1 } });
-            wrapper.update();
-            input = wrapper.find('input.days');
+        describe('hours', () => {
+            it('updates hours on change but dont call onChange', () => {
+                let input = wrapper.find('input.hours');
+                input.simulate('focus');
+                input.simulate('change', { target: { value: 30 } });
+                wrapper.update();
+                input = wrapper.find('input.hours');
+                expect(input.prop('value')).toEqual(30);
+                expect(onChange).not.toHaveBeenCalled();
+            });
+
+            it('calls onChange on hours blur if duration changed', () => {
+                let input = wrapper.find('input.hours');
+                input.simulate('change', { target: { value: 2 } });
+                wrapper.update();
+                input = wrapper.find('input.hours');
+                input.simulate('blur');
+                expect(onChange).toHaveBeenCalledWith(7200000);
+            });
+
+            it('calls onChange on hours change if not in focus', () => {
+                const input = wrapper.find('input.hours');
+                input.simulate('change', { target: { value: 2 } });
+                expect(onChange).toHaveBeenCalledWith(7200000);
+            });
+        });
+
+        describe('minutes', () => {
+            it('updates minutes on change but dont call onChange if in focus', () => {
+                let input = wrapper.find('input.minutes');
+                input.simulate('focus');
+                input.simulate('change', { target: { value: 3000 } });
+                wrapper.update();
+                input = wrapper.find('input.minutes');
+                expect(input.prop('value')).toEqual(3000);
+                expect(onChange).not.toHaveBeenCalled();
+            });
+
+            it('calls onChange on minutes blur if duration changed', () => {
+                let input = wrapper.find('input.minutes');
+                input.simulate('change', { target: { value: 3 } });
+                wrapper.update();
+                input = wrapper.find('input.minutes');
+                input.simulate('blur');
+                expect(onChange).toHaveBeenCalledWith(180000);
+            });
+
+            it('calls onChange on minutes change if not in focus', () => {
+                const input = wrapper.find('input.minutes');
+                input.simulate('change', { target: { value: 3 } });
+                expect(onChange).toHaveBeenCalledWith(180000);
+            });
+        });
+
+        it('sets values accoring to new props when change appears to come from the component', () => {
+            const input = wrapper.find('input.minutes');
+            input.simulate('focus');
+            input.simulate('change', { target: { value: 3000 } });
             input.simulate('blur');
-            expect(onChange).toHaveBeenCalledWith(86400000);
-        });
-
-        it('updates hours on change but dont call onChange', () => {
-            let input = wrapper.find('input.hours');
-            input.simulate('change', { target: { value: 30 } });
+            wrapper.setProps({ duration: (86400 + 7200 + 180) * 1000 });
             wrapper.update();
-            input = wrapper.find('input.hours');
-            expect(input.prop('value')).toEqual(30);
-            expect(onChange).not.toHaveBeenCalled();
+            expect(wrapper.find('input.days').prop('value')).toEqual(1);
+            expect(wrapper.find('input.hours').prop('value')).toEqual(2);
+            expect(wrapper.find('input.minutes').prop('value')).toEqual(3);
         });
 
-        it('calls onChange on hours blur if duration changed', () => {
-            let input = wrapper.find('input.hours');
-            input.simulate('change', { target: { value: 2 } });
-            wrapper.update();
-            input = wrapper.find('input.hours');
-            input.simulate('blur');
-            expect(onChange).toHaveBeenCalledWith(7200000);
-        });
-
-        it('updates days on change but dont call onChange', () => {
-            let input = wrapper.find('input.days');
-            input.simulate('change', { target: { value: 60 } });
-            wrapper.update();
-            input = wrapper.find('input.days');
-            expect(input.prop('value')).toEqual(60);
-            expect(onChange).not.toHaveBeenCalled();
-        });
-
-        it('calls onChange on days blur if duration changed', () => {
+        it('keeps entered values if new props while inputting data', () => {
             let input = wrapper.find('input.minutes');
-            input.simulate('change', { target: { value: 3 } });
+            input.simulate('focus');
+            input.simulate('change', { target: { value: 3000 } });
             wrapper.update();
             input = wrapper.find('input.minutes');
-            input.simulate('blur');
-            expect(onChange).toHaveBeenCalledWith(180000);
+            expect(input.prop('value')).toEqual(3000);
+            wrapper.setProps({ duration: 0 });
+            wrapper.update();
+            expect(wrapper.find('input.minutes').prop('value')).toEqual(3000);
+        });
+
+        it('calls onChange with all changes (focus => change, change other field)', () => {
+            let input = wrapper.find('input.minutes');
+            input.simulate('focus');
+            input.simulate('change', { target: { value: 10 } });
+            wrapper.update();
+            input = wrapper.find('input.hours');
+            input.simulate('change', { target: { value: 2 } });
+            expect(onChange).toHaveBeenCalledWith(7800000);
+        });
+
+        it('updates the inputs with all changes (focus => change, change other field)', () => {
+            let input = wrapper.find('input.minutes');
+            input.simulate('focus');
+            input.simulate('change', { target: { value: 61 } });
+            wrapper.update();
+            input = wrapper.find('input.hours');
+            input.simulate('change', { target: { value: 2 } });
+            wrapper.update();
+            const duration = (7200 + 3660) * 1000;
+            wrapper.setProps({ duration });
+            expect(wrapper.find('input.days').prop('value')).toEqual('');
+            expect(wrapper.find('input.hours').prop('value')).toEqual(3);
+            expect(wrapper.find('input.minutes').prop('value')).toEqual(1);
         });
     });
 });
