@@ -17,6 +17,15 @@ export default class DurationInput extends React.Component {
         this.state = {};
     }
 
+    getDisplayedValues(stateDuration) {
+        let { days, hours, minutes } = stateDuration;
+        const duration = Duration.fromMilliseconds(Math.max(0, this.props.duration));
+        if (days == null) ({ days } = duration);
+        if (hours == null) ({ hours } = duration);
+        if (minutes == null) ({ minutes } = duration);
+        return { days, hours, minutes };
+    }
+
     handleDaysChange(evt) {
         let val = Number.parseInt(evt.target.value, 10);
         if (Number.isNaN(val)) val = 0;
@@ -60,15 +69,6 @@ export default class DurationInput extends React.Component {
     handleMinutesBlur() {
         this.setState({ minutesFocus: false });
         this.handleNewDuration(this.state);
-    }
-
-    getDisplayedValues(stateDuration) {
-        let { days, hours, minutes } = stateDuration;
-        const duration = Duration.fromMilliseconds(Math.max(0, this.props.duration));
-        if (days == null) ({ days } = duration);
-        if (hours == null) ({ hours } = duration);
-        if (minutes == null) ({ minutes } = duration);
-        return { days, hours, minutes };
     }
 
     handleNewDuration(stateDuration) {
