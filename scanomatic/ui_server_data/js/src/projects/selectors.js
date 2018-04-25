@@ -45,7 +45,7 @@ export function getProjects(state: State): Array<Project> {
 }
 
 export function getScanners(state: State): Array<{ name: string, id: string, isOnline: boolean, isFree: boolean }> {
-    const scanners = Object.keys(state.entities.scanners).sort().map(key => ({
+    const scanners = Object.keys(state.entities.scanners).map(key => ({
         ...state.entities.scanners[key],
         id: key,
     }));
