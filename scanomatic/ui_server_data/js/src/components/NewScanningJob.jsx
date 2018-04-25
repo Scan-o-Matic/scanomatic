@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import SoMPropTypes from '../prop-types';
+import DurationInput from './DurationInput';
 
 export default function NewScanningJob(props) {
     return (
@@ -25,39 +26,10 @@ export default function NewScanningJob(props) {
                                 onChange={props.onNameChange}
                             />
                         </div>
-                        <div className="form-group">
-                            <label>Duration</label>
-                            <div className="input-group">
-                                <input
-                                    className="days form-control"
-                                    type="number"
-                                    value={props.duration.days}
-                                    placeholder="Days"
-                                    onChange={props.onDurationDaysChange}
-                                />
-                                <span className="input-group-addon" id="duration-days-unit">days</span>
-                            </div>
-                            <div className="input-group">
-                                <input
-                                    className="hours form-control"
-                                    type="number"
-                                    value={props.duration.hours}
-                                    placeholder="Hours"
-                                    onChange={props.onDurationHoursChange}
-                                />
-                                <span className="input-group-addon" id="duration-hours-unit">hours</span>
-                            </div>
-                            <div className="input-group">
-                                <input
-                                    className="minutes form-control"
-                                    type="number"
-                                    value={props.duration.minutes}
-                                    placeholder="Minutes"
-                                    onChange={props.onDurationMinutesChange}
-                                />
-                                <span className="input-group-addon" id="duration-minutes-unit">minutes</span>
-                            </div>
-                        </div>
+                        <DurationInput
+                            duration={props.duration}
+                            onChange={props.onDurationChange}
+                        />
                         <div className="form-group">
                             <label>Interval</label>
                             <div className="input-group">
@@ -108,18 +80,12 @@ export default function NewScanningJob(props) {
 NewScanningJob.propTypes = {
     name: PropTypes.string,
     error: PropTypes.string,
-    duration: PropTypes.shape({
-        days: PropTypes.number.isRequired,
-        hours: PropTypes.number.isRequired,
-        minutes: PropTypes.number.isRequired,
-    }).isRequired,
+    duration: PropTypes.number,
     scannerId: PropTypes.string,
     scanners: PropTypes.arrayOf(SoMPropTypes.scannerType),
     interval: PropTypes.number.isRequired,
     onNameChange: PropTypes.func.isRequired,
-    onDurationDaysChange: PropTypes.func.isRequired,
-    onDurationHoursChange: PropTypes.func.isRequired,
-    onDurationMinutesChange: PropTypes.func.isRequired,
+    onDurationChange: PropTypes.func.isRequired,
     onIntervalChange: PropTypes.func.isRequired,
     onScannerChange: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
@@ -131,4 +97,5 @@ NewScanningJob.defaultProps = {
     error: null,
     scannerId: '',
     scanners: [],
+    duration: null,
 };

@@ -35,11 +35,7 @@ describe('<NewScanningJobContainer />', () => {
         describe('initializing', () => {
             it('should set duration', () => {
                 const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                expect(wrapper.prop('duration')).toEqual({
-                    days: 3,
-                    hours: 0,
-                    minutes: 0,
-                });
+                expect(wrapper.prop('duration')).toEqual(2.592e+8);
             });
 
             it('should set interval', () => {
@@ -117,105 +113,11 @@ describe('<NewScanningJobContainer />', () => {
                 expect(wrapper.prop('interval')).toEqual(5);
             });
 
-            it('should set days', () => {
+            it('should set duration', () => {
                 const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                wrapper.prop('onDurationDaysChange')({ target: { value: '1' } });
+                wrapper.prop('onDurationChange')(444);
                 wrapper.update();
-                expect(wrapper.prop('duration')).toEqual({
-                    days: 1,
-                    hours: 0,
-                    minutes: 0,
-                });
-            });
-
-            it('should refuse negative days', () => {
-                const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                wrapper.prop('onDurationDaysChange')({ target: { value: '-1' } });
-                wrapper.update();
-                expect(wrapper.prop('duration')).toEqual({
-                    days: 0,
-                    hours: 0,
-                    minutes: 0,
-                });
-            });
-
-            it('should set hours', () => {
-                const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                wrapper.prop('onDurationHoursChange')({ target: { value: '1' } });
-                wrapper.update();
-                expect(wrapper.prop('duration')).toEqual({
-                    days: 3,
-                    hours: 1,
-                    minutes: 0,
-                });
-            });
-
-            it('should increase days if setting more than 23 hours', () => {
-                const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                wrapper.prop('onDurationHoursChange')({ target: { value: '24' } });
-                wrapper.update();
-                expect(wrapper.prop('duration')).toEqual({
-                    days: 4,
-                    hours: 0,
-                    minutes: 0,
-                });
-            });
-
-            it('should refuse negative hours', () => {
-                const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                wrapper.prop('onDurationHoursChange')({ target: { value: '-1' } });
-                wrapper.update();
-                expect(wrapper.prop('duration')).toEqual({
-                    days: 3,
-                    hours: 0,
-                    minutes: 0,
-                });
-            });
-
-            it('should set minutes', () => {
-                const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                wrapper.prop('onDurationMinutesChange')({ target: { value: '1' } });
-                wrapper.update();
-                expect(wrapper.prop('duration')).toEqual({
-                    days: 3,
-                    hours: 0,
-                    minutes: 1,
-                });
-            });
-
-            it('should increase hours if setting more than 59 minutes', () => {
-                const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                wrapper.prop('onDurationMinutesChange')({ target: { value: '60' } });
-                wrapper.update();
-                expect(wrapper.prop('duration')).toEqual({
-                    days: 3,
-                    hours: 1,
-                    minutes: 0,
-                });
-            });
-
-            it('should increase days if setting more than 59 minutes', () => {
-                const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                wrapper.setState({ duration: { days: 41, hours: 23, minutes: 0 } });
-                wrapper.update();
-                wrapper.prop('onDurationMinutesChange')({ target: { value: '60' } });
-                wrapper.update();
-                expect(wrapper.prop('duration')).toEqual({
-                    days: 42,
-                    hours: 0,
-                    minutes: 0,
-                });
-            });
-
-            it('should refuse negative minutes', () => {
-                const wrapper = shallow(<NewScanningJobContainer {...props} />);
-                wrapper.prop('onDurationMinutesChange')({ target: { value: '-1' } });
-                wrapper.update();
-                expect(wrapper.prop('duration')).toEqual({
-                    days: 3,
-                    hours: 0,
-                    minutes: 0,
-                });
+                expect(wrapper.prop('duration')).toEqual(444);
             });
         });
 
@@ -223,7 +125,7 @@ describe('<NewScanningJobContainer />', () => {
             it('should submit', () => {
                 const state = {
                     name: 'Hyperion',
-                    duration: { days: 41, hours: 23, minutes: 0 },
+                    duration: 4020,
                     interval: 123,
                     scannerId: 'Shrike',
                 };

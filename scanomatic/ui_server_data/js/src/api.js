@@ -254,10 +254,7 @@ export function submitScanningJob(job) {
         name: job.name,
         scannerId: job.scannerId,
         interval: job.interval * secondsPerMinute,
-        duration:
-            (job.duration.days * secondsPerDay)
-            + (job.duration.hours * secondsPerHour)
-            + (job.duration.minutes * secondsPerMinute),
+        duration: job.duration / 1000,
     };
     return API.postJSON('/api/scan-jobs', data);
 }
