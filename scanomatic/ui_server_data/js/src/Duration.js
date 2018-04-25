@@ -35,6 +35,16 @@ class Duration {
     before(someDate) {
         return new Date(someDate.getTime() - this.totalMilliseconds);
     }
+
+    static fromMilliseconds(milliSeconds) {
+        return new Duration(milliSeconds / 1000);
+    }
+
+    static fromDaysHoursMinutes(days, hours, minutes) {
+        return new Duration((days * secondsInADay) +
+            (hours * secondsInAnHour) +
+            (minutes * secondsInAMinute));
+    }
 }
 
 export default Duration;

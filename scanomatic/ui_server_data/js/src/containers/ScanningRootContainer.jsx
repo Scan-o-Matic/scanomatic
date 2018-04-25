@@ -8,7 +8,6 @@ import {
 } from '../api';
 import { getScannersWithOwned } from '../helpers';
 import ScanningRoot from '../components/ScanningRoot';
-import { duration2milliseconds } from '../components/ScanningJobPanelBody';
 
 
 export default class ScanningRootContainer extends React.Component {

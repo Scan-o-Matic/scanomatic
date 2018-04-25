@@ -9,19 +9,13 @@ export default class NewScanningJobContainer extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            duration: {
-                days: 3,
-                hours: 0,
-                minutes: 0,
-            },
+            duration: 3 * 24 * 3600 * 1000,
             interval: 20,
             scannerId: props.scanners.length > 0 ? props.scanners[0].identifier : '',
         };
 
         this.handleNameChange = this.handleNameChange.bind(this);
-        this.handleDurationDaysChange = this.handleDurationDaysChange.bind(this);
-        this.handleDurationHoursChange = this.handleDurationHoursChange.bind(this);
-        this.handleDurationMinutesChange = this.handleDurationMinutesChange.bind(this);
+        this.handleDurationChange = this.handleDurationChange.bind(this);
         this.handleIntervalChange = this.handleIntervalChange.bind(this);
         this.handleSumbit = this.handleSumbit.bind(this);
         this.handleScannerChange = this.handleScannerChange.bind(this);
@@ -41,45 +35,8 @@ export default class NewScanningJobContainer extends React.Component {
         this.setState({ name: e.target.value });
     }
 
-    handleDurationDaysChange(e) {
-        let days = Number(Number(e.target.value).toFixed(0));
-        if (days < 0) {
-            days = 0;
-        }
-        const duration = Object.assign({}, this.state.duration);
-        duration.days = days;
+    handleDurationChange(duration) {
         this.setState({ duration });
-    }
-
-    handleDurationHoursChange(e) {
-        let hours = Number(Number(e.target.value).toFixed(0));
-        let { days } = this.state.duration;
-        if (hours < 0) {
-            hours = 0;
-        } else if (hours > 23) {
-            hours -= 24;
-            days += 1;
-        }
-        const duration = Object.assign({}, this.state.duration);
-        duration.days = days;
-        duration.hours = hours;
-        this.setState({ duration });
-    }
-
-    handleDurationMinutesChange(e) {
-        let minutes = Number(Number(e.target.value).toFixed(0));
-        let { days, hours } = this.state.duration;
-        if (minutes < 0) {
-            minutes = 0;
-        } else if (minutes > 59) {
-            minutes -= 60;
-            hours += 1;
-        }
-        if (hours > 23) {
-            hours -= 24;
-            days += 1;
-        }
-        this.setState({ duration: { days, hours, minutes } });
     }
 
     handleIntervalChange(e) {
@@ -108,9 +65,7 @@ export default class NewScanningJobContainer extends React.Component {
             onSubmit={this.handleSumbit}
             onCancel={this.props.onClose}
             onIntervalChange={this.handleIntervalChange}
-            onDurationMinutesChange={this.handleDurationMinutesChange}
-            onDurationHoursChange={this.handleDurationHoursChange}
-            onDurationDaysChange={this.handleDurationDaysChange}
+            onDurationChange={this.handleDurationChange}
             onNameChange={this.handleNameChange}
             onScannerChange={this.handleScannerChange}
         />);
