@@ -43,17 +43,16 @@ const experimentShape = {
     name: PropTypes.string.isRequired,
     project: PropTypes.string.isRequired,
     description: PropTypes.string,
-    duration: PropTypes.instanceOf(Duration).isRequired,
-    interval: PropTypes.instanceOf(Duration).isRequired,
+    duration: PropTypes.number.isRequired,
+    interval: PropTypes.number.isRequired,
     scannerId: PropTypes.string,
 };
 
 const newExperimentErrorsShape = {
     general: PropTypes.string,
     name: PropTypes.string,
-    durationDays: PropTypes.string,
-    durationHours: PropTypes.string,
-    durationMinutes: PropTypes.string,
+    description: PropTypes.string,
+    duration: PropTypes.string,
     interval: PropTypes.string,
     scanner: PropTypes.string,
 };

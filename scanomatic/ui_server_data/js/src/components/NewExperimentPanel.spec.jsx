@@ -3,15 +3,14 @@ import { shallow } from 'enzyme';
 
 import '../components/enzyme-setup';
 import NewExperimentPanel from './NewExperimentPanel';
-import Duration from '../Duration';
 
 describe('<NewExperimentPanel/>', () => {
     const defaultProps = {
         project: 'I project',
         name: 'Cool idea',
         description: 'Test all the things',
-        duration: new Duration(),
-        interval: new Duration(),
+        duration: 120000,
+        interval: 60000,
         scanners: [
             {
                 name: 'Tox',
@@ -26,69 +25,42 @@ describe('<NewExperimentPanel/>', () => {
                 identifier: 'haha',
             },
         ],
-        onNameChange: jasmine.createSpy('onNameChange'),
-        onDescriptionChange: jasmine.createSpy('onDescriptionChange'),
-        onDurationDaysChange: jasmine.createSpy('onDurationDaysChange'),
-        onDurationHoursChange: jasmine.createSpy('onDurationHoursChange'),
-        onDurationMinutesChange: jasmine.createSpy('onDurationMinutesChange'),
-        onIntervalChange: jasmine.createSpy('onIntervalChange'),
-        onScannerChange: jasmine.createSpy('onIntervalChange'),
+        onChange: jasmine.createSpy('onNameChange'),
         onSubmit: jasmine.createSpy('onSubmit'),
         onCancel: jasmine.createSpy('onCancel'),
     };
 
     beforeEach(() => {
-        defaultProps.onNameChange.calls.reset();
-        defaultProps.onDescriptionChange.calls.reset();
-        defaultProps.onDurationDaysChange.calls.reset();
-        defaultProps.onDurationHoursChange.calls.reset();
-        defaultProps.onDurationMinutesChange.calls.reset();
-        defaultProps.onIntervalChange.calls.reset();
-        defaultProps.onScannerChange.calls.reset();
+        defaultProps.onChange.calls.reset();
         defaultProps.onSubmit.calls.reset();
         defaultProps.onCancel.calls.reset();
     });
 
-    it('should call onChangeName when name is changed', () => {
+    it('should call onChange when name is changed', () => {
         const wrapper = shallow(<NewExperimentPanel {...defaultProps} />);
         const evt = { target: { value: 'foo' } };
         wrapper.find('input.name').simulate('change', evt);
-        expect(defaultProps.onNameChange).toHaveBeenCalledWith(evt.target.value);
+        expect(defaultProps.onChange).toHaveBeenCalledWith('name', evt.target.value);
     });
 
-    it('should call onDescriptionChange when description is changed', () => {
+    it('should call onChange when description is changed', () => {
         const wrapper = shallow(<NewExperimentPanel {...defaultProps} />);
         const evt = { target: { value: 'foo' } };
         wrapper.find('textarea.description').simulate('change', evt);
-        expect(defaultProps.onDescriptionChange).toHaveBeenCalledWith(evt.target.value);
+        expect(defaultProps.onChange).toHaveBeenCalledWith('description', evt.target.value);
     });
 
-    it('should call onDurationDaysChange when duration days is changed', () => {
+    it('should call onChange when duration is changed', () => {
         const wrapper = shallow(<NewExperimentPanel {...defaultProps} />);
-        const evt = { target: { value: '1' } };
-        wrapper.find('input.days').simulate('change', evt);
-        expect(defaultProps.onDurationDaysChange).toHaveBeenCalledWith(evt.target.value);
+        wrapper.find('DurationInput').prop('onChange')(44);
+        expect(defaultProps.onChange).toHaveBeenCalledWith('duration', 44);
     });
 
-    it('should call onDurationHoursChange when duration hours is changed', () => {
+    it('should call onChange when interval is changed', () => {
         const wrapper = shallow(<NewExperimentPanel {...defaultProps} />);
-        const evt = { target: { value: '1' } };
-        wrapper.find('input.hours').simulate('change', evt);
-        expect(defaultProps.onDurationHoursChange).toHaveBeenCalledWith(evt.target.value);
-    });
-
-    it('should call onDurationMinutesChange when duration minutes is changed', () => {
-        const wrapper = shallow(<NewExperimentPanel {...defaultProps} />);
-        const evt = { target: { value: '1' } };
-        wrapper.find('input.minutes').simulate('change', evt);
-        expect(defaultProps.onDurationMinutesChange).toHaveBeenCalledWith(evt.target.value);
-    });
-
-    it('should call onIntervalChange when interval is changed', () => {
-        const wrapper = shallow(<NewExperimentPanel {...defaultProps} />);
-        const evt = { target: { value: '1' } };
+        const evt = { target: { value: 1 } };
         wrapper.find('input.interval').simulate('change', evt);
-        expect(defaultProps.onIntervalChange).toHaveBeenCalledWith(evt.target.value);
+        expect(defaultProps.onChange).toHaveBeenCalledWith('interval', evt.target.value);
     });
 
     it('should call onSubmit when form is submitted', () => {

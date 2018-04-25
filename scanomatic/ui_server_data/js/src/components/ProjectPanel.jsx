@@ -46,12 +46,7 @@ ProjectPanel.propTypes = {
     onNewExperiment: PropTypes.func.isRequired,
     newExperiment: PropTypes.shape(myTypes.experimentShape),
     newExperimentActions: PropTypes.shape({
-        onNameChange: PropTypes.func.isRequired,
-        onDescriptionChange: PropTypes.func.isRequired,
-        onDurationDaysChange: PropTypes.func.isRequired,
-        onDurationHoursChange: PropTypes.func.isRequired,
-        onDurationMinutesChange: PropTypes.func.isRequired,
-        onIntervalChange: PropTypes.func.isRequired,
+        onChange: PropTypes.func.isRequired,
         onCancel: PropTypes.func.isRequired,
         onSubmit: PropTypes.func.isRequired,
     }),

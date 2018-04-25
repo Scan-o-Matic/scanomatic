@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import myTypes from '../prop-types';
+import DurationInput from './DurationInput';
 
 export default function NewExperimentPanel(props) {
     return (
@@ -16,13 +17,13 @@ export default function NewExperimentPanel(props) {
                         </div>
                     )}
                     <div className="panel-body">
-                        <div className={`form-group${props.errors && props.errors.name ? ' has-error' : ''}`}>
+                        <div className={`form-group ${props.errors && props.errors.name ? 'has-error' : ''}`}>
                             <label className="control-label" htmlFor="new-exp-name">Name</label>
                             <input
                                 className="form-control"
                                 value={props.name}
                                 placeholder="Short description of content"
-                                onChange={e => props.onNameChange(e.target.value)}
+                                onChange={e => props.onChange('name', e.target.value)}
                                 name="new-exp-name"
                                 data-error={props.errors && props.errors.name}
                             />
@@ -32,70 +33,28 @@ export default function NewExperimentPanel(props) {
                                 </span>
                             )}
                         </div>
-                        <div className="form-group">
+                        <div className={`form-group ${props.errors && props.errors.description ? 'has-error' : ''}`}>
                             <label className="control-label" htmlFor="new-exp-desc">Description</label>
                             <textarea
                                 className="description form-control vertical-textarea"
                                 placeholder="Full description of experiment and its plates"
-                                onChange={e => props.onDescriptionChange(e.target.value)}
+                                onChange={e => props.onChange('description', e.target.value)}
                                 name="new-exp-desc"
                             >
                                 {props.description}
                             </textarea>
-                        </div>
-                        <div
-                            className={`form-group${
-                                props.errors && (props.errors.durationDays || props.errors.durationHours || props.errors.durationMinutes) ? ' has-error' : ''
-                            }`}
-                        >
-                            <label className="control-label">Duration</label>
-                            <div className="input-group">
-                                <input
-                                    className="days form-control"
-                                    type="number"
-                                    value={props.duration.days}
-                                    placeholder="Days"
-                                    onChange={e => props.onDurationDaysChange(e.target.value)}
-                                />
-                                <span className="input-group-addon" id="duration-days-unit">days</span>
-                            </div>
-                            {(props.errors && props.errors.durationDays) && (
+                            {(props.errors && props.errors.description) && (
                                 <span className="help-block">
-                                    {props.errors.durationDays}
-                                </span>
-                            )}
-                            <div className="input-group">
-                                <input
-                                    className="hours form-control"
-                                    type="number"
-                                    value={props.duration.hours}
-                                    placeholder="Hours"
-                                    onChange={e => props.onDurationHoursChange(e.target.value)}
-                                />
-                                <span className="input-group-addon" id="duration-hours-unit">hours</span>
-                            </div>
-                            {(props.errors && props.errors.durationHours) && (
-                                <span className="help-block">
-                                    {props.errors.durationHours}
-                                </span>
-                            )}
-                            <div className="input-group">
-                                <input
-                                    className="minutes form-control"
-                                    type="number"
-                                    value={props.duration.minutes}
-                                    placeholder="Minutes"
-                                    onChange={e => props.onDurationMinutesChange(e.target.value)}
-                                />
-                                <span className="input-group-addon" id="duration-minutes-unit">minutes</span>
-                            </div>
-                            {(props.errors && props.errors.durationMinutes) && (
-                                <span className="help-block">
-                                    {props.errors.durationMinutes}
+                                    {props.errors.description}
                                 </span>
                             )}
                         </div>
-                        <div className={`form-group${props.errors && props.errors.interval ? ' has-error' : ''}`}>
+                        <DurationInput
+                            duration={props.duration}
+                            onChange={v => props.onChange('duration', v)}
+                            error={props.error && props.error.duration}
+                        />
+                        <div className={`form-group ${props.errors && props.errors.interval ? 'has-error' : ''}`}>
                             <label htmlFor="new-exp-interval" className="control-label">Interval</label>
                             <div className="input-group">
                                 <input
@@ -114,7 +73,7 @@ export default function NewExperimentPanel(props) {
                                 </span>
                             )}
                         </div>
-                        <div className={`form-group${props.errors && props.errors.scanner ? ' has-error' : ''}`}>
+                        <div className={`form-group ${props.errors && props.errors.scanner ? 'has-error' : ''}`}>
                             <label htmlFor="new-exp-scanner" className="control-label">Scanner</label>
                             <select
                                 className="scanner form-control"
@@ -161,12 +120,7 @@ NewExperimentPanel.propTypes = {
     errors: PropTypes.shape(myTypes.newExperimentErrorsShape),
     scannerId: PropTypes.string,
     scanners: PropTypes.arrayOf(PropTypes.shape(myTypes.scannerShape)),
-    onNameChange: PropTypes.func.isRequired,
-    onDescriptionChange: PropTypes.func.isRequired,
-    onDurationDaysChange: PropTypes.func.isRequired,
-    onDurationHoursChange: PropTypes.func.isRequired,
-    onDurationMinutesChange: PropTypes.func.isRequired,
-    onIntervalChange: PropTypes.func.isRequired,
+    onChange: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
     ...myTypes.experimentShape,
