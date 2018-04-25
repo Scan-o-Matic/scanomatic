@@ -8,11 +8,9 @@ export default class DurationInput extends React.Component {
         this.handleDaysChange = this.handleDaysChange.bind(this);
         this.handleHoursChange = this.handleHoursChange.bind(this);
         this.handleMinutesChange = this.handleMinutesChange.bind(this);
-        const duration = Duration.fromMilliseconds(Math.max(0, this.props.duration));
-        this.state = {
-            duration,
-        };
+        this.state = {};
     }
+
     handleDaysChange(evt) {
         let val = Number.parseInt(evt.target.value, 10);
         if (Number.isNaN(val)) val = 0;
@@ -35,18 +33,14 @@ export default class DurationInput extends React.Component {
         const { days, hours, minutes } = (duration || {});
         const newDuration = Duration.fromDaysHoursMinutes(days || 0, hours || 0, minutes || 0);
         const value = newDuration.totalMilliseconds;
+        this.setState({ days: null, hours: null, minutes: null });
         if (value !== this.props.duration) {
             if (this.props.onChange) this.props.onChange(value);
         }
-        this.setState({
-            days: newDuration.days,
-            hours: newDuration.hours,
-            minutes: newDuration.minutes,
-        });
     }
 
     render() {
-        const { duration } = this.state;
+        const duration = Duration.fromMilliseconds(Math.max(0, this.props.duration));
         let { days, hours, minutes } = this.state;
         if (days == null) ({ days } = duration);
         if (hours == null) ({ hours } = duration);

@@ -41,9 +41,9 @@ class Duration {
     }
 
     static fromDaysHoursMinutes(days, hours, minutes) {
-        return new Duration(Math.max(0, (days * secondsInADay) +
+        return new Duration((days * secondsInADay) +
             (hours * secondsInAnHour) +
-            (minutes * secondsInAMinute)));
+            (minutes * secondsInAMinute));
     }
 }
 
