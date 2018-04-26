@@ -7,15 +7,15 @@ describe('projects/selectors', () => {
             const state = new StateBuilder().clearProjects().build();
             expect(selectors.getProjects(state)).toEqual([]);
         });
-        it('should return the projects ordered by id', () => {
+        it('should return the projects reverse-ordered by id', () => {
             const state = new StateBuilder()
                 .clearProjects()
-                .addProject({ id: 'P2', name: 'Foo', description: 'I am a project' })
                 .addProject({ id: 'P1', name: 'Bar', description: 'I am also a project' })
+                .addProject({ id: 'P2', name: 'Foo', description: 'I am a project' })
                 .build();
             expect(selectors.getProjects(state)).toEqual([
-                jasmine.objectContaining({ id: 'P1', name: 'Bar', description: 'I am also a project' }),
                 jasmine.objectContaining({ id: 'P2', name: 'Foo', description: 'I am a project' }),
+                jasmine.objectContaining({ id: 'P1', name: 'Bar', description: 'I am also a project' }),
             ]);
         });
 
