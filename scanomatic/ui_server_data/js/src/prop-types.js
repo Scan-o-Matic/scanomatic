@@ -17,12 +17,14 @@ const cccMetadata = PropTypes.shape({
     pinningFormat: pinningFormat.isRequired,
 });
 
-const scannerType = PropTypes.shape({
+const scannerShape = {
     identifier: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     owned: PropTypes.bool.isRequired,
     power: PropTypes.bool.isRequired,
-});
+};
+
+const scannerType = PropTypes.shape(scannerShape);
 
 const scanningJobType = PropTypes.shape({
     disableStart: PropTypes.bool,
@@ -40,6 +42,7 @@ const projectShape = {
 export default {
     cccMetadata,
     pinningFormat,
+    scannerShape,
     scannerType,
     scanningJobType,
     projectShape,
