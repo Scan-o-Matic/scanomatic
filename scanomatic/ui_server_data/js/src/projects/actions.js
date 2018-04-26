@@ -1,6 +1,6 @@
 // @flow
 import type { State } from './state';
-import { getNewProject, getNewProjectErrors } from './selectors';
+import { getNewExperiment, getNewExperimentErrors, getNewProject, getNewProjectErrors } from './selectors';
 
 export type Action
     = {| type: 'NEWPROJECT_INIT' |}
@@ -79,12 +79,6 @@ export function changeNewExperiment(field: string, value: string|number): Action
     }
 }
 
-export function submitNewExperiment(): Action {
-    return {
-        type: 'NEWEXPERIMENT_SUBMIT',
-    };
-}
-
 export function clearNewExperiment(): Action {
     return {
         type: 'NEWEXPERIMENT_CLEAR',
@@ -128,6 +122,7 @@ export function stopExperiment(id: string): Action {
 }
 
 type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
+
 export function submitNewProject(): ThunkAction {
     return (dispatch, getState) => {
         const newProject = getNewProject(getState());
@@ -137,5 +132,24 @@ export function submitNewProject(): ThunkAction {
         if (errors.size > 0) return;
         dispatch(addProject(newProject.name, newProject.description));
         dispatch(clearNewProject());
+    };
+}
+
+export function submitNewExperiment(): ThunkAction {
+    return (dispatch, getState) => {
+        dispatch({ type: 'NEWEXPERIMENT_SUBMIT' });
+        const newExperiment = getNewExperiment(getState());
+        if (newExperiment == null) return;
+        const errors = getNewExperimentErrors(getState());
+        if (errors.size > 0) return;
+        dispatch(addExperiment(
+            newExperiment.projectId,
+            newExperiment.name,
+            newExperiment.description,
+            newExperiment.duration,
+            newExperiment.interval,
+            newExperiment.scannerId,
+        ));
+        dispatch(clearNewExperiment());
     };
 }
