@@ -11,16 +11,16 @@ export default function NewExperimentPanel(props) {
                     <div className="panel-heading">
                         New &ldquo;{props.project}&rdquo; experiment
                     </div>
-                    {(props.errors && props.errors.general) && (
-                        <div className="alert alert-danger" role="alert">
-                            {props.errors.general}
-                        </div>
-                    )}
                     <div className="panel-body">
-                        <div className={`form-group ${props.errors && props.errors.name ? 'has-error' : ''}`}>
+                        {(props.errors && props.errors.general) && (
+                            <div className="alert alert-danger" role="alert">
+                                {props.errors.general}
+                            </div>
+                        )}
+                        <div className={`form-group group-name ${props.errors && props.errors.name ? 'has-error' : ''}`}>
                             <label className="control-label" htmlFor="new-exp-name">Name</label>
                             <input
-                                className="form-control"
+                                className="name form-control"
                                 value={props.name}
                                 placeholder="Short description of content"
                                 onChange={e => props.onChange('name', e.target.value)}
@@ -33,7 +33,7 @@ export default function NewExperimentPanel(props) {
                                 </span>
                             )}
                         </div>
-                        <div className={`form-group ${props.errors && props.errors.description ? 'has-error' : ''}`}>
+                        <div className={`form-group group-description ${props.errors && props.errors.description ? 'has-error' : ''}`}>
                             <label className="control-label" htmlFor="new-exp-desc">Description</label>
                             <textarea
                                 className="description form-control vertical-textarea"
@@ -51,9 +51,9 @@ export default function NewExperimentPanel(props) {
                         <DurationInput
                             duration={props.duration}
                             onChange={v => props.onChange('duration', v)}
-                            error={props.error && props.error.duration}
+                            error={props.errors && props.errors.duration}
                         />
-                        <div className={`form-group ${props.errors && props.errors.interval ? 'has-error' : ''}`}>
+                        <div className={`form-group group-interval ${props.errors && props.errors.interval ? 'has-error' : ''}`}>
                             <label htmlFor="new-exp-interval" className="control-label">Interval</label>
                             <div className="input-group">
                                 <input
@@ -61,7 +61,7 @@ export default function NewExperimentPanel(props) {
                                     type="number"
                                     value={props.interval}
                                     placeholder="Interval (minutes)"
-                                    onChange={e => props.onIntervalChange(e.target.value)}
+                                    onChange={e => props.onChange('interval', e.target.value)}
                                     name="new-exp-interval"
                                 />
                                 <span className="input-group-addon" id="interval-unit">minutes</span>
@@ -72,11 +72,11 @@ export default function NewExperimentPanel(props) {
                                 </span>
                             )}
                         </div>
-                        <div className={`form-group ${props.errors && props.errors.scanner ? 'has-error' : ''}`}>
+                        <div className={`form-group group-scanner ${props.errors && props.errors.scanner ? 'has-error' : ''}`}>
                             <label htmlFor="new-exp-scanner" className="control-label">Scanner</label>
                             <select
                                 className="scanner form-control"
-                                onChange={e => props.onScannerChange(e.target.value)}
+                                onChange={e => props.onChange('scanner', e.target.value)}
                                 value={props.scannerId}
                                 name="new-exp-scanner"
                             >
@@ -100,7 +100,7 @@ export default function NewExperimentPanel(props) {
                             )}
                         </div>
                         <div className="btn-toolbar" role="toolbar">
-                            <button className="btn btn-primary job-add" onClick={props.onSubmit}>
+                            <button className="btn btn-primary experiment-add" onClick={props.onSubmit}>
                                 Add Experiment
                             </button>
                             <button className="btn cancel" onClick={props.onCancel}>
