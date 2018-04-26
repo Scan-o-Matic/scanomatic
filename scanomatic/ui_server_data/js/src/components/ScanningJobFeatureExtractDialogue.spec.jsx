@@ -10,8 +10,6 @@ describe('<ScanningJobFeatureExtractDialogue />', () => {
     const onCancel = jasmine.createSpy('onCancel');
 
     const props = {
-        projectPath: '/root/123019sasf9',
-        analysis: 'analysis',
         onExtractFeatures,
         onCancel,
     };
@@ -54,11 +52,7 @@ describe('<ScanningJobFeatureExtractDialogue />', () => {
         it('calls onExtractFeatures', () => {
             const btn = wrapper.find('.feature-extract-button');
             btn.simulate('click');
-            expect(onExtractFeatures).toHaveBeenCalledWith(
-                props.projectPath,
-                props.analysis,
-                false,
-            );
+            expect(onExtractFeatures).toHaveBeenCalledWith(false);
         });
 
         it('calls onExtractFeatures with updated keep qc value', () => {
@@ -66,11 +60,7 @@ describe('<ScanningJobFeatureExtractDialogue />', () => {
             checkbox.simulate('change', { target: { checked: true } });
             const btn = wrapper.find('.feature-extract-button');
             btn.simulate('click');
-            expect(onExtractFeatures).toHaveBeenCalledWith(
-                props.projectPath,
-                props.analysis,
-                true,
-            );
+            expect(onExtractFeatures).toHaveBeenCalledWith(true);
         });
     });
 

@@ -11,8 +11,7 @@ class ScanningJobFeatureExtractDialogue extends React.Component {
     }
 
     handleExtractFeatures() {
-        const { projectPath, analysis } = this.props;
-        this.props.onExtractFeatures(projectPath, analysis, this.state.keepQC);
+        this.props.onExtractFeatures(this.state.keepQC);
     }
 
     handleKeepQC(e) {
@@ -64,14 +63,8 @@ class ScanningJobFeatureExtractDialogue extends React.Component {
 }
 
 ScanningJobFeatureExtractDialogue.propTypes = {
-    projectPath: PropTypes.string.isRequired,
-    analysis: PropTypes.string,
     onCancel: PropTypes.func.isRequired,
     onExtractFeatures: PropTypes.func.isRequired,
-};
-
-ScanningJobFeatureExtractDialogue.defaultProps = {
-    analysis: 'analysis',
 };
 
 export default ScanningJobFeatureExtractDialogue;

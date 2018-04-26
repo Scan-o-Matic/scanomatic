@@ -6,13 +6,14 @@ import ScanningJobPanelBody from './ScanningJobPanelBody';
 import ScanningJobRemoveDialogue from './ScanningJobRemoveDialogue';
 import ScanningJobStopDialogue from './ScanningJobStopDialogue';
 import ScanningJobStatusLabel from './ScanningJobStatusLabel';
+import ScanningJobFeatureExtractDialogue from './ScanningJobFeatureExtractDialogue';
 
 class ScanningJobPanel extends React.Component {
     constructor() {
         super();
         this.state = { dialogue: null };
         this.handleRemove = this.handleRemove.bind(this);
-        this.handleCancelRemove = this.handleCancelRemove.bind(this);
+        this.handleCancel = () => this.setState({ dialogue: null });
         this.handleConfirmRemove = this.handleConfirmRemove.bind(this);
         this.handleStop = this.handleStop.bind(this);
         this.handleCancelStop = this.handleCancelStop.bind(this);
@@ -21,10 +22,6 @@ class ScanningJobPanel extends React.Component {
 
     handleRemove() {
         this.setState({ dialogue: 'remove' });
-    }
-
-    handleCancelRemove() {
-        this.setState({ dialogue: null });
     }
 
     handleConfirmRemove() {
@@ -36,13 +33,14 @@ class ScanningJobPanel extends React.Component {
         this.setState({ dialogue: 'stop' });
     }
 
-    handleCancelStop() {
-        this.setState({ dialogue: null });
-    }
-
     handleConfirmStop(reason) {
         this.setState({ dialogue: null });
         this.props.onStopJob(this.props.scanningJob.identifier, reason);
+    }
+
+    handleFeatureExtract(keepQC) {
+        this.setState({ dialogue: null });
+        this.props.onExtractFeatures(this.props.scanningJob.identifier, keepQC);
     }
 
     render() {
@@ -76,15 +74,21 @@ class ScanningJobPanel extends React.Component {
                 {dialogue === 'remove' &&
                     <ScanningJobRemoveDialogue
                         name={name}
-                        onCancel={this.handleCancelRemove}
+                        onCancel={this.handleCancel}
                         onConfirm={this.handleConfirmRemove}
                     />
                 }
                 {dialogue === 'stop' &&
                     <ScanningJobStopDialogue
                         name={name}
-                        onCancel={this.handleCancelStop}
+                        onCancel={this.handleCancel}
                         onConfirm={this.handleConfirmStop}
+                    />
+                }
+                {dialogue === 'featureExtact' &&
+                    <ScanningJobFeatureExtractDialogue
+                        onCancel={this.handleCancel}
+                        onExtractFeatures={this.handleExtractFeatures}
                     />
                 }
             </div>
@@ -98,6 +102,7 @@ ScanningJobPanel.propTypes = {
     onStartJob: PropTypes.func.isRequired,
     onRemoveJob: PropTypes.func.isRequired,
     onStopJob: PropTypes.func.isRequired,
+    onExtractFeatures: PropTypes.func.isRequired,
 };
 
 export default ScanningJobPanel;
