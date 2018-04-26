@@ -3,6 +3,8 @@ import React from 'react';
 import myTypes from '../prop-types';
 import DurationInput from './DurationInput';
 
+const milliSecondsPerMinute = 60000;
+
 export default function NewExperimentPanel(props) {
     return (
         <div className="row new-experiment-panel">
@@ -13,7 +15,7 @@ export default function NewExperimentPanel(props) {
                     </div>
                     <div className="panel-body">
                         {(props.errors && props.errors.general) && (
-                            <div className="alert alert-danger" role="alert">
+                            <div className="alert general-alert alert-danger" role="alert">
                                 {props.errors.general}
                             </div>
                         )}
@@ -59,9 +61,9 @@ export default function NewExperimentPanel(props) {
                                 <input
                                     className="interval form-control"
                                     type="number"
-                                    value={props.interval}
+                                    value={Math.round(props.interval / milliSecondsPerMinute)}
                                     placeholder="Interval (minutes)"
-                                    onChange={e => props.onChange('interval', e.target.value)}
+                                    onChange={e => props.onChange('interval', e.target.value * milliSecondsPerMinute)}
                                     name="new-exp-interval"
                                 />
                                 <span className="input-group-addon" id="interval-unit">minutes</span>

@@ -106,7 +106,7 @@ storiesOf('ProjectPanel', module)
                 name: '',
                 description: '',
                 duration: 0,
-                interval: 0,
+                interval: 1200000,
                 scannerId: 'haha',
             }}
             newExperimentActions={{

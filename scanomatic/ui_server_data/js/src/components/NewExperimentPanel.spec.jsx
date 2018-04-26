@@ -10,7 +10,7 @@ describe('<NewExperimentPanel/>', () => {
         name: 'Cool idea',
         description: 'Test all the things',
         duration: 120000,
-        interval: 60000,
+        interval: 1200000,
         scannerId: 'hoho',
         scanners: [
             {
@@ -72,7 +72,7 @@ describe('<NewExperimentPanel/>', () => {
         it('should call onChange when interval is changed', () => {
             const evt = { target: { value: 1 } };
             wrapper.find('input.interval').simulate('change', evt);
-            expect(defaultProps.onChange).toHaveBeenCalledWith('interval', evt.target.value);
+            expect(defaultProps.onChange).toHaveBeenCalledWith('interval', 60000);
         });
 
         it('should call onChange when scanner is changed', () => {
@@ -162,7 +162,7 @@ describe('<NewExperimentPanel/>', () => {
             it('renders with passed value', () => {
                 const input = wrapper.find('input.interval');
                 expect(input.exists()).toBeTruthy();
-                expect(input.prop('value')).toEqual(defaultProps.interval);
+                expect(input.prop('value')).toEqual(20);
             });
 
             it('marks as error', () => {
@@ -218,6 +218,13 @@ describe('<NewExperimentPanel/>', () => {
                 expect(helpBlock.exists()).toBeTruthy();
                 expect(helpBlock.text()).toEqual(errors.scanner);
             });
+        });
+
+        it('renders general errors', () => {
+            const alert = wrapperErrors.find('.general-alert');
+            expect(alert.exists()).toBeTruthy();
+            expect(alert.hasClass('alert'));
+            expect(alert.text()).toEqual(errors.general);
         });
     });
 });
