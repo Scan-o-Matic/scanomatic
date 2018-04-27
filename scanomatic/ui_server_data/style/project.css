@@ -10,3 +10,15 @@
 .experiment-stats tr td:first-child {
   background-color: #f5f5f5;
 }
+
+.vertical-textarea {
+  resize: vertical;
+}
+
+.new-experiment-panel {
+  margin-top: 2rem;
+}
+
+.form-group {
+  margin-top: 2rem;
+}
