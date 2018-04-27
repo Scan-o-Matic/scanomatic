@@ -4,7 +4,7 @@ import React from 'react';
 import './enzyme-setup';
 import ScanningJobPanel from './ScanningJobPanel';
 import Duration from '../Duration';
-import * as API from '../api'
+import * as API from '../api';
 import FakePromise from '../helpers/FakePromise';
 
 
@@ -258,7 +258,7 @@ describe('<ScanningJobPanel />', () => {
             onRemoveJob: () => {},
             onStopJob: () => {},
         };
-        
+
         it('should render <ScanningJobFeatureExtractDialogue />', () => {
             const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
             wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
