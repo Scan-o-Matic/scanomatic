@@ -18,6 +18,7 @@ class ScanningJobPanel extends React.Component {
         this.handleStop = this.handleStop.bind(this);
         this.handleCancelStop = this.handleCancelStop.bind(this);
         this.handleConfirmStop = this.handleConfirmStop.bind(this);
+        this.handleShowFeatureExtractDialogue = this.handleShowFeatureExtractDialogue.bind(this);
     }
 
     handleRemove() {
@@ -36,6 +37,10 @@ class ScanningJobPanel extends React.Component {
     handleConfirmStop(reason) {
         this.setState({ dialogue: null });
         this.props.onStopJob(this.props.scanningJob.identifier, reason);
+    }
+
+    handleShowFeatureExtractDialogue() {
+        this.setState({ dialogue: 'featureExtact' });
     }
 
     handleFeatureExtract(keepQC) {
@@ -68,6 +73,7 @@ class ScanningJobPanel extends React.Component {
                         onRemoveJob={this.handleRemove}
                         onStartJob={onStartJob}
                         onStopJob={this.handleStop}
+                        onShowFeatureExtractDialogue={this.handleShowFeatureExtractDialogue}
                         scanner={scanner}
                     />
                 }
