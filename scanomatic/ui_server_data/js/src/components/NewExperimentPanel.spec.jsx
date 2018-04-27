@@ -6,7 +6,7 @@ import NewExperimentPanel from './NewExperimentPanel';
 
 describe('<NewExperimentPanel/>', () => {
     const defaultProps = {
-        project: 'I project',
+        projectName: 'I project',
         name: 'Cool idea',
         description: 'Test all the things',
         duration: 120000,
@@ -31,14 +31,14 @@ describe('<NewExperimentPanel/>', () => {
         onCancel: jasmine.createSpy('onCancel'),
     };
 
-    const errors = {
-        general: 'Cound not reach server',
-        name: 'Maybe you should change yours',
-        description: 'Give me at least one word',
-        duration: 'Need a minute',
-        interval: 'Takes at least five',
-        scanner: 'Thats just a fake scanner',
-    };
+    const errors = new Map([
+        ['general', 'Cound not reach server'],
+        ['name', 'Maybe you should change yours'],
+        ['description', 'Give me at least one word'],
+        ['duration', 'Need a minute'],
+        ['interval', 'Takes at least five'],
+        ['scannerId', 'Thats just a fake scanner'],
+    ]);
 
     let wrapper;
     let wrapperErrors;
@@ -78,7 +78,7 @@ describe('<NewExperimentPanel/>', () => {
         it('should call onChange when scanner is changed', () => {
             const evt = { target: { value: 'myscanner' } };
             wrapper.find('select.scanner').simulate('change', evt);
-            expect(defaultProps.onChange).toHaveBeenCalledWith('scanner', evt.target.value);
+            expect(defaultProps.onChange).toHaveBeenCalledWith('scannerId', evt.target.value);
         });
 
         it('should call onSubmit when form is submitted', () => {
@@ -116,7 +116,7 @@ describe('<NewExperimentPanel/>', () => {
                 const formGroup = wrapperErrors.find('div.group-name');
                 const helpBlock = formGroup.find('.help-block');
                 expect(helpBlock.exists()).toBeTruthy();
-                expect(helpBlock.text()).toEqual(errors.name);
+                expect(helpBlock.text()).toEqual(errors.get('name'));
             });
         });
 
@@ -137,7 +137,7 @@ describe('<NewExperimentPanel/>', () => {
                 const formGroup = wrapperErrors.find('div.group-description');
                 const helpBlock = formGroup.find('.help-block');
                 expect(helpBlock.exists()).toBeTruthy();
-                expect(helpBlock.text()).toEqual(errors.description);
+                expect(helpBlock.text()).toEqual(errors.get('description'));
             });
         });
 
@@ -154,7 +154,7 @@ describe('<NewExperimentPanel/>', () => {
 
             it('passes the error', () => {
                 const duration = wrapperErrors.find('DurationInput');
-                expect(duration.prop('error')).toEqual(errors.duration);
+                expect(duration.prop('error')).toEqual(errors.get('duration'));
             });
         });
 
@@ -175,7 +175,7 @@ describe('<NewExperimentPanel/>', () => {
                 const formGroup = wrapperErrors.find('div.group-interval');
                 const helpBlock = formGroup.find('.help-block');
                 expect(helpBlock.exists()).toBeTruthy();
-                expect(helpBlock.text()).toEqual(errors.interval);
+                expect(helpBlock.text()).toEqual(errors.get('interval'));
             });
         });
 
@@ -189,21 +189,21 @@ describe('<NewExperimentPanel/>', () => {
             it('renders scanners as options', () => {
                 const select = wrapper.find('select.scanner');
                 const options = select.find('option');
-                expect(options.length).toEqual(2);
+                expect(options.length).toEqual(3);
             });
 
-            it('renders first scanner in alphabetical order first', () => {
-                const select = wrapper.find('select.scanner');
-                const options = select.find('option');
-                expect(options.at(0).text()).toEqual('Npm (offline, occupied)');
-                expect(options.at(0).prop('value')).toEqual('haha');
-            });
-
-            it('renders second scanner in alphabetical order second', () => {
+            it('renders first scanner', () => {
                 const select = wrapper.find('select.scanner');
                 const options = select.find('option');
                 expect(options.at(1).text()).toEqual('Tox (online, free)');
                 expect(options.at(1).prop('value')).toEqual('hoho');
+            });
+
+            it('renders second scanner', () => {
+                const select = wrapper.find('select.scanner');
+                const options = select.find('option');
+                expect(options.at(2).text()).toEqual('Npm (offline, occupied)');
+                expect(options.at(2).prop('value')).toEqual('haha');
             });
 
             it('marks as error', () => {
@@ -216,7 +216,7 @@ describe('<NewExperimentPanel/>', () => {
                 const formGroup = wrapperErrors.find('div.group-scanner');
                 const helpBlock = formGroup.find('.help-block');
                 expect(helpBlock.exists()).toBeTruthy();
-                expect(helpBlock.text()).toEqual(errors.scanner);
+                expect(helpBlock.text()).toEqual(errors.get('scannerId'));
             });
         });
 
@@ -224,7 +224,7 @@ describe('<NewExperimentPanel/>', () => {
             const alert = wrapperErrors.find('.general-alert');
             expect(alert.exists()).toBeTruthy();
             expect(alert.hasClass('alert'));
-            expect(alert.text()).toEqual(errors.general);
+            expect(alert.text()).toEqual(errors.get('general'));
         });
     });
 });

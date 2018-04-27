@@ -41,7 +41,6 @@ const projectShape = {
 
 const experimentShape = {
     name: PropTypes.string.isRequired,
-    project: PropTypes.string.isRequired,
     description: PropTypes.string,
     duration: PropTypes.number.isRequired,
     interval: PropTypes.number.isRequired,
