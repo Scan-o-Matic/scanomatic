@@ -2,8 +2,10 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import './enzyme-setup';
-import ScanningJobPanel from '../../src/components/ScanningJobPanel';
-import Duration from '../../src/Duration';
+import ScanningJobPanel from './ScanningJobPanel';
+import Duration from '../Duration';
+import * as API from '../api'
+import FakePromise from '../helpers/FakePromise';
 
 
 describe('<ScanningJobPanel />', () => {
@@ -237,6 +239,145 @@ describe('<ScanningJobPanel />', () => {
             wrapper.find('ScanningJobStopDialogue').prop('onCancel')();
             wrapper.update();
             expect(onStopJob).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Feature Extract', () => {
+        const propsCompleted = {
+            scanningJob: {
+                name: 'Omnibus',
+                identifier: 'job0000',
+                duration: new Duration(123456),
+                interval: new Duration(123),
+                scannerId: 'hoho',
+                status: 'Completed',
+                startTime: new Date('1980-03-23T13:00:00Z'),
+                endTime: new Date('1980-03-26T15:51:00Z'),
+            },
+            onStartJob: () => {},
+            onRemoveJob: () => {},
+            onStopJob: () => {},
+        };
+        
+        it('should render <ScanningJobFeatureExtractDialogue />', () => {
+            const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
+            wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
+            wrapper.update();
+            expect(wrapper.find('ScanningJobFeatureExtractDialogue').exists()).toBeTruthy();
+        });
+
+        it('should hide ScanningJobPanelBody', () => {
+            const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
+            wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
+            wrapper.update();
+            expect(wrapper.find('ScanningJobPanelBody').exists()).toBeFalsy();
+        });
+
+        it('should dismiss dialogue onCancel', () => {
+            const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
+            wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
+            wrapper.update();
+            wrapper.find('ScanningJobFeatureExtractDialogue').prop('onCancel')();
+            wrapper.update();
+            expect(wrapper.find('ScanningJobPanelBody').exists()).toBeTruthy();
+            expect(wrapper.find('ScanningJobFeatureExtractDialogue').exists()).toBeFalsy();
+        });
+
+        describe('Submit request', () => {
+            it('should call the API', () => {
+                const extractFeatures = spyOn(API, 'extractFeatures').and.returnValue(new FakePromise());
+                const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
+                wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
+                wrapper.update();
+                wrapper.find('ScanningJobFeatureExtractDialogue')
+                    .prop('onExtractFeatures')(false);
+                wrapper.update();
+                expect(extractFeatures).toHaveBeenCalledWith('job0000', 'analysis', false);
+            });
+
+            it('should hide the dialogue', () => {
+                spyOn(API, 'extractFeatures').and.returnValue(new FakePromise());
+                const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
+                wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
+                wrapper.update();
+                wrapper.find('ScanningJobFeatureExtractDialogue')
+                    .prop('onExtractFeatures')(false);
+                wrapper.update();
+                expect(wrapper.find('ScanningJobPanelBody').exists()).toBeTruthy();
+                expect(wrapper.find('ScanningJobFeatureExtractDialogue').exists()).toBeFalsy();
+            });
+
+            describe('Error warnings', () => {
+                it('should produce a generic warning on error without reason', () => {
+                    spyOn(API, 'extractFeatures').and.returnValue(FakePromise.reject());
+                    const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
+                    wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
+                    wrapper.update();
+                    wrapper.find('ScanningJobFeatureExtractDialogue')
+                        .prop('onExtractFeatures')(false);
+                    wrapper.update();
+                    const alert = wrapper.find('.alert');
+                    expect(alert.exists()).toBeTruthy();
+                    expect(alert.hasClass('alert-danger'));
+                    expect(alert.text()).toContain('Unexpected error:');
+                });
+
+                it('should produce a warning with reason', () => {
+                    spyOn(API, 'extractFeatures').and.returnValue(FakePromise.reject('Wont work anyways ;('));
+                    const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
+                    wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
+                    wrapper.update();
+                    wrapper.find('ScanningJobFeatureExtractDialogue')
+                        .prop('onExtractFeatures')(false);
+                    wrapper.update();
+                    const alert = wrapper.find('.alert');
+                    expect(alert.text()).toContain('Extraction refused: Wont work anyways ;(');
+                });
+
+                it('warning should be dismissable', () => {
+                    spyOn(API, 'extractFeatures').and.returnValue(FakePromise.reject());
+                    const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
+                    wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
+                    wrapper.update();
+                    wrapper.find('ScanningJobFeatureExtractDialogue')
+                        .prop('onExtractFeatures')(false);
+                    wrapper.update();
+                    const alert = wrapper.find('.alert');
+                    alert.find('button').simulate('click');
+                    wrapper.update();
+                    expect(wrapper.find('.alert').exists()).toBeFalsy();
+                });
+            });
+
+            describe('Success info', () => {
+                it('should produce a success alert', () => {
+                    spyOn(API, 'extractFeatures').and.returnValue(FakePromise.resolve({}));
+                    const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
+                    wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
+                    wrapper.update();
+                    wrapper.find('ScanningJobFeatureExtractDialogue')
+                        .prop('onExtractFeatures')(false);
+                    wrapper.update();
+                    const alert = wrapper.find('.alert');
+                    expect(alert.exists()).toBeTruthy();
+                    expect(alert.hasClass('alert-success'));
+                    expect(alert.text()).toContain('Feature extraction enqueued.');
+                });
+
+                it('should be dismissible', () => {
+                    spyOn(API, 'extractFeatures').and.returnValue(FakePromise.resolve({}));
+                    const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
+                    wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
+                    wrapper.update();
+                    wrapper.find('ScanningJobFeatureExtractDialogue')
+                        .prop('onExtractFeatures')(false);
+                    wrapper.update();
+                    const alert = wrapper.find('.alert');
+                    alert.find('button').simulate('click');
+                    wrapper.update();
+                    expect(wrapper.find('.alert').exists()).toBeFalsy();
+                });
+            });
         });
     });
 });
