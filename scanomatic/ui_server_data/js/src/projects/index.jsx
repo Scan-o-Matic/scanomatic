@@ -8,7 +8,21 @@ import reducer from './reducers';
 import ProjectsRootContainer from '../containers/ProjectsRootContainer';
 
 
-const store = createStore(reducer, applyMiddleware(thunk));
+const store = createStore(
+    reducer,
+    {
+        entities: {
+            scanners: {
+                '0000': {
+                    name: 'Scanner One',
+                    isOnline: true,
+                    isFree: true,
+                },
+            },
+        },
+    },
+    applyMiddleware(thunk),
+);
 
 document.addEventListener('DOMContentLoaded', () => {
     ReactDOM.render(
