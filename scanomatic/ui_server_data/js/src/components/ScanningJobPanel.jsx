@@ -7,6 +7,7 @@ import ScanningJobRemoveDialogue from './ScanningJobRemoveDialogue';
 import ScanningJobStopDialogue from './ScanningJobStopDialogue';
 import ScanningJobStatusLabel from './ScanningJobStatusLabel';
 import ScanningJobFeatureExtractDialogue from './ScanningJobFeatureExtractDialogue';
+import { extractFeatures } from '../api';
 
 class ScanningJobPanel extends React.Component {
     constructor() {
@@ -45,10 +46,15 @@ class ScanningJobPanel extends React.Component {
 
     handleFeatureExtract(keepQC) {
         this.setState({ dialogue: null });
-        if (this.props.onExtractFeatures) {
-            this.props.onExtractFeatures(this.props.scanningJob.identifier, 'analysis', keepQC);
-        }
-        console.log('Extract features', this.props.scanningJob.identifier, 'analysis', keepQC);
+        extractFeatures(this.props.scanningJob.identifier, 'analysis', keepQC)
+            .then(() => this.setState({ successInfo: 'Feature extraction enqueued.' }))
+            .catch((reason) => {
+                if (reason) {
+                    this.setState({ error: `Extraction refused: ${reason}` });
+                } else {
+                    this.setState({ error: 'Unexpected error: could not request feature extraction.' });
+                }
+            });
     }
 
     render() {
@@ -58,7 +64,7 @@ class ScanningJobPanel extends React.Component {
             scanningJob,
         } = this.props;
         const { identifier, name, status } = scanningJob;
-        const { dialogue } = this.state;
+        const { dialogue, error, successInfo } = this.state;
 
         return (
             <div
@@ -70,6 +76,22 @@ class ScanningJobPanel extends React.Component {
                     <h3 className="panel-title">{name}</h3>
                     <ScanningJobStatusLabel status={status} />
                 </div>
+                {error &&
+                    <div className="alert alert-danger alert-dismissible" role="alert">
+                        <button type="button" className="close" data-dismiss="alert" aria-label="Close" onClick={() => this.setState({ error: null })}>
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        {error}
+                    </div>
+                }
+                {successInfo &&
+                    <div className="alert alert-success alert-dismissible" role="alert">
+                        <button type="button" className="close" data-dismiss="alert" aria-label="Close" onClick={() => this.setState({ successInfo: null })}>
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        {successInfo}
+                    </div>
+                }
                 {!dialogue &&
                     <ScanningJobPanelBody
                         {...scanningJob}
@@ -111,7 +133,6 @@ ScanningJobPanel.propTypes = {
     onStartJob: PropTypes.func.isRequired,
     onRemoveJob: PropTypes.func.isRequired,
     onStopJob: PropTypes.func.isRequired,
-    onExtractFeatures: PropTypes.func.isRequired,
 };
 
 export default ScanningJobPanel;
