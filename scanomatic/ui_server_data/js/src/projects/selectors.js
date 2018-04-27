@@ -20,7 +20,7 @@ type Project = {
 };
 
 export function getProjects(state: State): Array<Project> {
-    return Object.keys(state.entities.projects).sort().map((key) => {
+    return Object.keys(state.entities.projects).sort().reverse().map((key) => {
         const { name, description, experimentIds } = state.entities.projects[key];
         return {
             id: key,
