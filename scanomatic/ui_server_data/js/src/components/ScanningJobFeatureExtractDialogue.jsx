@@ -31,17 +31,18 @@ class ScanningJobFeatureExtractDialogue extends React.Component {
                     Feature extraction extracts information from the growth-curves.
                     If you have already done quality control of these phenotypes,
                     then you can select &ldquo;Attempt to keep QC&rdquo; below.
-                    If current feature extraction is compatible with the old,
+                    If the existing feature extraction is compatible with the new,
                     the QC marks of the curves will be transferred to the new features.
                 </p>
-                <div className="form-group">
-                    <input
-                        className="keep-qc"
-                        checked={keepQC}
-                        type="checkbox"
-                        onChange={this.handleKeepQC}
-                    />
-                    <label className="control-label">Attempt to keep QC</label>
+                <div className="checkbox">
+                    <label>
+                        <input
+                            className="keep-qc"
+                            checked={keepQC}
+                            type="checkbox"
+                            onChange={this.handleKeepQC}
+                        /> Attempt to keep QC
+                    </label>
                 </div>
                 <p>
                     <button
