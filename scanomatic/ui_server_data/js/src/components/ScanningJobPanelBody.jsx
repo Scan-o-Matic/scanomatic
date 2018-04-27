@@ -21,7 +21,7 @@ export function getProgress(job) {
     return Math.min(1, progress / duration) * 100;
 }
 
-function renderDuration(duration) {
+export function renderDuration(duration) {
     const strs = [];
     if (duration.days > 0) {
         strs.push(`${duration.days} days`);

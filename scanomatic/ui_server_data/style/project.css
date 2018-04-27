@@ -7,6 +7,10 @@
   color: #333;
 }
 
+.experiment-stats tr td:first-child {
+  background-color: #f5f5f5;
+}
+
 .vertical-textarea {
   resize: vertical;
 }
