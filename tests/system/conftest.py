@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 
-import warnings
+import os
 
 import py.path
 import pytest
 import requests
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 
 
 @pytest.fixture(scope='session')
@@ -38,7 +39,69 @@ def _scanomatic(docker_ip, docker_services):
     return url
 
 
+@pytest.fixture
+def chrome():
+    driver = webdriver.Chrome()
+    yield driver
+    driver.quit()
+
+
+@pytest.fixture
+def firefox():
+    driver = webdriver.Firefox()
+    yield driver
+    driver.quit()
+
+
+SAUCELABS_BROWSERS = [
+    {
+        'browserName': 'firefox',
+        'platform': 'Windows',
+        'version': '59'
+    },
+    {
+        'browserName': 'chrome',
+        'platform': 'Windows',
+        'version': '65'
+    },
+]
+
+
+@pytest.fixture(
+    ids=[
+        '{browserName} {version} on {platform}'.format(**browser)
+        for browser in SAUCELABS_BROWSERS
+    ],
+    params=SAUCELABS_BROWSERS,
+)
+def saucelabs(request):
+    username = os.environ['SAUCE_USERNAME']
+    access_key = os.environ['SAUCE_ACCESS_KEY']
+    build_number = os.environ['TRAVIS_BUILD_NUMBER']
+    job_number = os.environ['TRAVIS_JOB_NUMBER']
+    repo_slug = os.environ['TRAVIS_REPO_SLUG']
+    capabilities = dict(request.param)
+    capabilities['tunnel-identifier'] = job_number
+    capabilities['build'] = '{}#{}'.format(repo_slug, build_number)
+    capabilities['name'] = request.node.nodeid
+    hub_url = '%s:%s@localhost:4445' % (username, access_key)
+    driver = webdriver.Remote(
+        desired_capabilities=capabilities,
+        command_executor='http://%s/wd/hub' % hub_url,
+    )
+    yield driver
+    try:
+        driver.execute_script(
+            'sauce:job-result={}'.format(request.node.call_result.outcome)
+        )
+        driver.quit()
+    except WebDriverException:
+        print('Warning: The driver failed to quit properly.')
+
+
 def pytest_configure(config):
+    browser = config.getoption('--browser')
+    globals()['browser'] = globals()[browser]
     scanomatic_url = config.getoption('--scanomatic-url')
     if scanomatic_url is not None:
         globals()['scanomatic'] = (
@@ -48,14 +111,12 @@ def pytest_configure(config):
         globals()['scanomatic'] = _scanomatic
 
 
-@pytest.fixture()
-def browser(request):
-    browser = request.config.getoption('--browser')
-    if browser == 'firefox':
-        driver = webdriver.Firefox()
-    elif browser == 'chrome':
-        driver = webdriver.Chrome()
-    else:
-        raise ValueError('Unknown browser {}'.format(browser))
-    yield driver
-    driver.close()
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    # this sets the result as a test attribute for SauceLabs reporting.
+    # execute all other hooks to obtain the report object
+    outcome = yield
+    result = outcome.get_result()
+    # set an report attribute for each phase of a call, which can
+    # be "setup", "call", "teardown"
+    setattr(item, "{}_result".format(result.when), result)
