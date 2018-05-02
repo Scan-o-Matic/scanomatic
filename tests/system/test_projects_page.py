@@ -247,5 +247,4 @@ def test_create_experiment_without_name(scanomatic, browser):
     form.set_interval(123)
     form.set_scanner('0000')
     form.click_submit()
-    print(form.errors)
     assert 'Required' in form.errors
