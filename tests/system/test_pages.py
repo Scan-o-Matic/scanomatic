@@ -57,14 +57,6 @@ def test_experiment(scanomatic):
     assert '<h1>Start Scan Series</h1>' in r.text
 
 
-def test_feature_extract(scanomatic):
-    uri = '/feature_extract'
-    r = requests.get(scanomatic + uri)
-    r.raise_for_status()
-    assert r.text and len(r.text), '{} is empty'.format(uri)
-    assert "<h1>Feature extraction</h1>" in r.text
-
-
 def test_fixture(scanomatic):
     uri = '/fixtures'
     r = requests.get(scanomatic + uri)
