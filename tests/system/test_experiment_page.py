@@ -135,7 +135,7 @@ class ScanningJobPanel(object):
             self.element.find_element_by_css_selector(
                 '.scanning-job-stop-dialogue .confirm-button'
             ).click()
-            WebDriverWait(self.element, 10).until(
+            WebDriverWait(self.element, 2).until(
                 EC.text_to_be_present_in_element(
                     self.status_label_locator, 'Completed'
                 )
