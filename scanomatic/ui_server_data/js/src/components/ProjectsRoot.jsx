@@ -7,6 +7,7 @@ import NewProjectPanel from './NewProjectPanel';
 
 export default function ProjectsRoot({
     projects, newProject, newProjectActions, newProjectErrors, onNewProject,
+    onNewExperiment,
 }) {
     let newProjectForm = null;
     if (newProject) {
@@ -22,7 +23,12 @@ export default function ProjectsRoot({
         </button>
     );
 
-    const projectPanels = projects.map(project => <ProjectPanel {...project} key={project.name} />);
+    const projectPanels = projects.map(project =>
+        (<ProjectPanel
+            {...project}
+            key={project.name}
+            onNewExperiment={() => onNewExperiment(project.id)}
+        />));
     return (
         <div>
             <h1>Projects</h1>
@@ -43,6 +49,7 @@ ProjectsRoot.propTypes = {
         onSubmit: PropTypes.func.isRequired,
     }).isRequired,
     onNewProject: PropTypes.func.isRequired,
+    onNewExperiment: PropTypes.func.isRequired,
 };
 
 ProjectsRoot.defaultProps = {

@@ -55,7 +55,7 @@ ProjectPanel.propTypes = {
 };
 
 ProjectPanel.defaultProps = {
-    newExperimentErrors: null,
+    newExperimentErrors: undefined,
     newExperiment: null,
     newExperimentActions: {},
 };

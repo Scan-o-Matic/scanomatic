@@ -28,6 +28,7 @@ describe('<PolynomialConstruction />', () => {
             stderr: 0.01,
         },
         colonies: {
+            independentMeasurements: [1, 2],
             pixelValues: [[1, 2], [5.5]],
             pixelCounts: [[100, 1], [44]],
             targetValues: [123, 441],

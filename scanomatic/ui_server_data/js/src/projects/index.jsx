@@ -7,18 +7,17 @@ import thunk from 'redux-thunk';
 import reducer from './reducers';
 import ProjectsRootContainer from '../containers/ProjectsRootContainer';
 
-
 const store = createStore(
     reducer,
     {
         entities: {
-            scanners: {
-                '0000': {
+            scanners: new Map([
+                ['0000', {
                     name: 'Scanner One',
                     isOnline: true,
                     isFree: true,
-                },
-            },
+                }],
+            ]),
         },
     },
     applyMiddleware(thunk),

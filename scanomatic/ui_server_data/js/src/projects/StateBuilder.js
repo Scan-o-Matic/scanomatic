@@ -74,7 +74,7 @@ export default class StateBuilder {
         this.projectIds = ['001', '002'];
         this.extraProjects = [];
         this.experiments = [];
-        this.scanners = [];
+        this.scanners = [{ id: '001' }];
     }
 
     setNewProjectName(name: string): StateBuilder {
@@ -163,29 +163,29 @@ export default class StateBuilder {
     }
 
     buildProjects(): Projects {
-        const projects = {};
+        const projects = new Map();
         this.projectIds.forEach((id) => {
-            projects[id] = { ...projectDefaults };
+            projects.set(id, { ...projectDefaults });
         });
         this.extraProjects.forEach((p) => {
-            projects[p.id] = { ...projectDefaults, ...p };
+            projects.set(p.id, { ...projectDefaults, ...p });
         });
         return projects;
     }
 
     buildExperiments(): Experiments {
-        const experiments = {};
+        const experiments = new Map();
         this.experiments.forEach((e) => {
-            experiments[e.id] = { ...experimentDefaults, ...e };
+            experiments.set(e.id, { ...experimentDefaults, ...e });
         });
 
         return experiments;
     }
 
     buildScanners(): Scanners {
-        const scanners = {};
+        const scanners = new Map();
         this.scanners.forEach((s) => {
-            scanners[s.id] = { ...scannerDefaults, ...s };
+            scanners.set(s.id, { ...scannerDefaults, ...s });
         });
         return scanners;
     }
