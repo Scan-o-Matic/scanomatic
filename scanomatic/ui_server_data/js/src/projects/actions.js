@@ -21,7 +21,7 @@ export type Action
         interval: number,
         name: string,
         projectId: string,
-        scanner: string,
+        scannerId: string,
     |}
     | {| type: 'EXPERIMENTS_START', id: string, date: Date |}
     | {| type: 'EXPERIMENTS_STOP', id: string, date: Date |}
@@ -91,7 +91,7 @@ export function addExperiment(
     description: string,
     duration: number,
     interval: number,
-    scanner: string,
+    scannerId: string,
 ): Action {
     return {
         type: 'EXPERIMENTS_ADD',
@@ -101,7 +101,7 @@ export function addExperiment(
         description,
         duration,
         interval,
-        scanner,
+        scannerId,
     };
 }
 
