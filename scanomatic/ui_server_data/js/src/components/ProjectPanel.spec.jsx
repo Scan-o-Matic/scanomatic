@@ -26,7 +26,7 @@ describe('<ProjectPanel />', () => {
     it('renders a panel-heading with name', () => {
         const panelHeading = panel.find('.panel-heading');
         expect(panelHeading.exists()).toBeTruthy();
-        expect(panelHeading.text()).toEqual('Test');
+        expect(panelHeading.text()).toEqual(' Test');
     });
 
     it('renders a panel-body with the description', () => {
