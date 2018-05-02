@@ -23,7 +23,7 @@ class ScanningJobFeatureExtractDialogue extends React.Component {
         const { keepQC } = this.state;
         return (
             <div
-                className="jumbotron scanning-job-stop-dialogue"
+                className="jumbotron scanning-job-feature-extract-dialogue"
             >
                 <h1>Feature Extraction</h1>
                 <h3>This will remove previous extracted phenotyes</h3>
