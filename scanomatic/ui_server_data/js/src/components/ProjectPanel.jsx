@@ -14,7 +14,7 @@ class ProjectPanel extends React.Component {
         this.setState({ expanded: !this.state.expanded });
     }
 
-    render () {
+    render() {
         const {
             name, description, onNewExperiment, newExperiment, newExperimentActions,
             newExperimentErrors, scanners,
