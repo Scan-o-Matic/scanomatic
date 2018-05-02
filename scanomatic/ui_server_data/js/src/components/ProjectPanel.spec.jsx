@@ -6,15 +6,20 @@ import ProjectPanel from './ProjectPanel';
 
 describe('<ProjectPanel />', () => {
     let panel;
+    let wrapper;
     const onNewExperiment = jasmine.createSpy('onNewExperiment');
 
     beforeEach(() => {
         onNewExperiment.calls.reset();
-        const wrapper = shallow(<ProjectPanel
+        wrapper = shallow(<ProjectPanel
             name="Test"
             description="Debugging the system."
             onNewExperiment={onNewExperiment}
         />);
+        panel = wrapper.find('.panel');
+        const panelHeading = panel.find('.panel-heading');
+        panelHeading.simulate('click');
+        wrapper.update();
         panel = wrapper.find('.panel');
     });
 
