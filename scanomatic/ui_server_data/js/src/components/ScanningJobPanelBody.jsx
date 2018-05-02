@@ -73,10 +73,13 @@ export default function ScanningJobPanelBody(props) {
         links = (
             <div className="text-right job-links">
                 <a href={`/compile?projectdirectory=root/${props.identifier}`}>
-                    Compile project
+                    Compile
+                </a>
+                <a href={`/analysis?compilationfile=root/${props.identifier}/${props.identifier}.project.compilation`}>
+                    Analyse
                 </a>
                 <a href={`/qc_norm?analysisdirectory=${encodeURI(props.identifier)}/analysis&project=${encodeURI(props.name)}`}>
-                    QC project
+                    Quality Control
                 </a>
             </div>
         );
