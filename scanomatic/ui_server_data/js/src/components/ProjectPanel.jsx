@@ -36,7 +36,7 @@ class ProjectPanel extends React.Component {
                 className="panel panel-default project-listing"
                 data-projectname={name}
             >
-                <div className="panel-heading" onClick={this.handleToggleExpand}>
+                <div className="panel-heading" onClick={this.handleToggleExpand} role="button">
                     <div
                         className={
                             this.state.expanded ?
