@@ -1,6 +1,8 @@
+import time
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import Select, WebDriverWait
 
 
 class ProjectsPage(object):
@@ -62,6 +64,7 @@ class ProjectPanel(object):
 
     panel_heading_locator = (By.CLASS_NAME, 'panel-heading')
     panel_body_locator = (By.CLASS_NAME, 'panel-body')
+    add_experiment_button_locator = (By.CSS_SELECTOR, 'button.new-experiment')
 
     def project_panel_locator(self, name):
         return (
@@ -82,6 +85,99 @@ class ProjectPanel(object):
     @property
     def body(self):
         return self.element.find_element(*self.panel_body_locator).text
+
+    def click_add_experiment(self):
+        button = self.driver.find_element(*self.add_experiment_button_locator)
+        button.click()
+        return NewExperimentForm(self.element)
+
+    def get_experiment_panel(self, name):
+        return ExperimentPanel(self.element, name)
+
+
+class NewExperimentForm(object):
+    form_locator = (By.CSS_SELECTOR, '.new-experiment-panel')
+    name_input_locator = (By.CSS_SELECTOR, 'input.name')
+    description_input_locator = (By.CSS_SELECTOR, 'textarea.description')
+    interval_input_locator = (By.CSS_SELECTOR, 'input.interval')
+    scanner_select_locator = (By.CSS_SELECTOR, 'select.scanner')
+    submit_button_locator = (By.CSS_SELECTOR, 'button.experiment-add')
+    errors_locator = (By.CSS_SELECTOR, '.form-group.has-error .help-block')
+
+    @staticmethod
+    def duration_input_locator(unit):
+        return (By.CSS_SELECTOR, 'input.{}'.format(unit))
+
+    def __init__(self, parent):
+        self.driver = parent
+        self.element = parent.find_element(*self.form_locator)
+
+    def set_name(self, name):
+        self.element.find_element(*self.name_input_locator).send_keys(name)
+
+    def set_description(self, description):
+        input = self.element.find_element(*self.description_input_locator)
+        input.send_keys(description)
+
+    def set_duration(self, days, hours, minutes):
+        self.element.find_element(*self.duration_input_locator('days')
+                                 ).send_keys(days)
+        self.element.find_element(*self.duration_input_locator('hours')
+                                 ).send_keys(hours)
+        self.element.find_element(*self.duration_input_locator('minutes')
+                                 ).send_keys(minutes)
+
+    def set_interval(self, minutes):
+        self.element.find_element(*self.interval_input_locator
+                                 ).send_keys(minutes)
+
+    def set_scanner(self, scannerid):
+        element = self.element.find_element(*self.scanner_select_locator)
+        select = Select(element)
+        select.select_by_value(scannerid)
+
+    def click_submit(self):
+        self.element.find_element(*self.submit_button_locator).click()
+
+    @property
+    def errors(self):
+        return [
+            el.text for el in self.element.find_elements(*self.errors_locator)
+        ]
+
+
+class ExperimentPanel(object):
+
+    panel_heading_locator = (By.CLASS_NAME, 'panel-heading')
+    panel_body_locator = (By.CLASS_NAME, 'panel-body')
+
+    @staticmethod
+    def experiment_panel_locator(name):
+        return (
+            By.CSS_SELECTOR,
+            'div.experiment-listing[data-experimentname="{}"]'.format(name)
+        )
+
+    def __init__(self, parent, name):
+        self.element = parent.find_element(*self.experiment_panel_locator(name))
+
+    @property
+    def heading(self):
+        return self.element.find_element(*self.panel_heading_locator).text
+
+    @property
+    def body(self):
+        return self.element.find_element(*self.panel_body_locator).text
+
+    @property
+    def stats(self):
+        trs = self.element.find_element_by_class_name(
+            'experiment-stats'
+        ).find_elements_by_tag_name('tr')
+        return {
+            tds[0].text: tds[1].text
+            for tds in [tr.find_elements_by_tag_name('td') for tr in trs]
+        }
 
 
 def test_page_is_up(scanomatic, browser):
@@ -107,3 +203,43 @@ def test_create_project_without_name(scanomatic, browser):
     form.set_description('bla bla bla bla bla')
     form.click_submit()
     assert 'Project name cannot be empty' in form.errors
+
+
+def test_create_experiment(scanomatic, browser):
+    page = ProjectsPage(browser, scanomatic)
+    form = page.click_add_project()
+    form.set_name('My project')
+    form.set_description('bla bla bla bla bla')
+    form.click_submit()
+    project_panel = page.get_project_panel('My project')
+    form = project_panel.click_add_experiment()
+    form.set_name('My Experiment')
+    form.set_description('Lorem ipsum dolor sit amet')
+    form.set_duration(days=1, hours=2, minutes=3)
+    form.set_interval(4)
+    form.set_scanner('0000')
+    form.click_submit()
+    experiment_panel = project_panel.get_experiment_panel('My Experiment')
+    assert 'My Experiment' in experiment_panel.heading
+    assert 'Lorem ipsum dolor sit amet' in experiment_panel.body
+    assert '1 days 2 hours 3 minutes' in experiment_panel.stats['Duration']
+    assert '4 minutes' in experiment_panel.stats['Interval']
+    assert 'Scanner One' in experiment_panel.stats['Scanner']
+
+
+def test_create_experiment_without_name(scanomatic, browser):
+    page = ProjectsPage(browser, scanomatic)
+    form = page.click_add_project()
+    form.set_name('My project')
+    form.set_description('bla bla bla bla bla')
+    form.click_submit()
+    project_panel = page.get_project_panel('My project')
+    form = project_panel.click_add_experiment()
+    form.set_name('')
+    form.set_description('Lorem ipsum dolor sit amet')
+    form.set_duration(days=1, hours=2, minutes=3)
+    form.set_interval(123)
+    form.set_scanner('0000')
+    form.click_submit()
+    print(form.errors)
+    assert 'Required' in form.errors
