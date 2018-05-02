@@ -29,6 +29,7 @@ describe('<ScanningRoot />', () => {
     const onNewJob = jasmine.createSpy('onNewJob');
     const onCloseNewJob = jasmine.createSpy('onCloseNewJob');
     const onStartJob = jasmine.createSpy('onStartJob');
+    const updateFeed = jasmine.createSpy('updateFeed');
 
     const props = {
         error: null,
@@ -40,6 +41,7 @@ describe('<ScanningRoot />', () => {
         onStartJob,
         onStopJob: () => {},
         scanners: [],
+        updateFeed,
     };
 
     beforeEach(() => {
@@ -88,49 +90,33 @@ describe('<ScanningRoot />', () => {
             expect(wrapper.find('NewScanningJobContainer').exists()).toBeFalsy();
         });
 
-        it('renders <ScanningJobPanel />:s equal to number of jobs', () => {
+        it('renders <ScanningJobContainer />:s equal to number of jobs', () => {
             const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
-            expect(wrapper.find('ScanningJobPanel').length).toEqual(2);
+            expect(wrapper.find('ScanningJobContainer').length).toEqual(2);
         });
 
-        it('passes jobs-data to <ScanningJobPanel />:s', () => {
+        it('passes jobs-data to <ScanningJobContainer />:s', () => {
             const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
-            const jobPanels = wrapper.find('ScanningJobPanel');
+            const jobPanels = wrapper.find('ScanningJobContainer');
             expect(jobPanels.last().prop('scanningJob').name).toEqual('A');
             expect(jobPanels.first().prop('scanningJob').name).toEqual('B');
         });
 
-        it('couples start callback with job (first)', () => {
-            const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
-            const jobPanels = wrapper.find('ScanningJobPanel');
-            jobPanels.last().prop('onStartJob')();
-            expect(onStartJob)
-                .toHaveBeenCalledWith(jasmine.objectContaining(jobs[0]));
-        });
-
-        it('couples start callback with job (last)', () => {
-            const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
-            const jobPanels = wrapper.find('ScanningJobPanel');
-            jobPanels.first().prop('onStartJob')();
-            expect(onStartJob)
-                .toHaveBeenCalledWith(jasmine.objectContaining(jobs[1]));
-        });
-
         it('should add statuses to the jobs', () => {
             const wrapper = shallow(<ScanningRoot {...props} jobs={jobs} />);
-            const jobPanels = wrapper.find('ScanningJobPanel');
+            const jobPanels = wrapper.find('ScanningJobContainer');
             expect(jobPanels.first().prop('scanningJob').status).toEqual('Planned');
             expect(jobPanels.last().prop('scanningJob').status).toEqual('Completed');
         });
 
-        it('should pass onRemoveJob to <ScanningJobPanel/>', () => {
+        it('should pass onRemoveJob to <ScanningJobContainer/>', () => {
             const onRemoveJob = jasmine.createSpy('onRemoveJob');
             const wrapper = shallow(<ScanningRoot
                 {...props}
                 jobs={jobs}
                 onRemoveJob={onRemoveJob}
             />);
-            const jobPanels = wrapper.find('ScanningJobPanel');
+            const jobPanels = wrapper.find('ScanningJobContainer');
             expect(jobPanels.first().prop('onRemoveJob')).toBe(onRemoveJob);
         });
     });

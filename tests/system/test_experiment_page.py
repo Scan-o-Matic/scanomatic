@@ -82,6 +82,12 @@ class ScanningJobPanel(object):
         By.CSS_SELECTOR, '.scanning-job-stop-dialogue .reason-input'
     )
     status_label_locator = (By.CLASS_NAME, 'scanning-job-status-label')
+    extract_features_dialgoue_button_locator = (
+        By.CLASS_NAME, 'experiment-extract-features',
+    )
+    extract_features_ok_locator = (By.CLASS_NAME, 'feature-extract-button')
+    extract_features_cancel_locator = (By.CLASS_NAME, 'cancel-button')
+    keep_qc_locator = (By.CLASS_NAME, 'keep-qc')
 
     def __init__(self, element, driver):
         self.element = element
@@ -139,6 +145,30 @@ class ScanningJobPanel(object):
                 '.scanning-job-stop-dialogue .cancel-button'
             ).click()
 
+    def extract_features(self, confirm=True, keep_qc=False):
+        (
+            self.element
+                .find_element(*self.extract_features_dialgoue_button_locator)
+                .click()
+        )
+        if keep_qc:
+            self.element.find_element(*self.keep_qc_locator).click()
+        if confirm:
+            (
+                self.element
+                    .find_element(*self.extract_features_ok_locator)
+                    .click()
+            )
+            WebDriverWait(self.element, 5).until(
+                EC.presence_of_element_located((By.CLASS_NAME, 'alert'))
+            )
+        else:
+            (
+                self.element
+                    .find_element(*self.extract_features_cancel_locator)
+                    .click()
+            )
+
     def get_job_stats(self):
         info = {}
         for row in self.element.find_elements(*self.job_info_locator):
@@ -148,6 +178,9 @@ class ScanningJobPanel(object):
 
     def get_job_status(self):
         return self.element.find_element(*self.status_label_locator).text
+
+    def get_warning_alert(self):
+        return self.element.find_element(By.CLASS_NAME, 'alert-danger').text
 
 
 class TestRemoveJob:
@@ -214,3 +247,20 @@ class TestStopJob:
         page.add_job(name=jobname)
         panel = page.find_job_panel_by_name(jobname)
         assert not panel.can_stop_job()
+
+
+class TestCompletedJob:
+    def test_requesting_feature_extract_on_job_without_analysis_causes_error(
+        self, scanomatic, browser
+    ):
+        jobname = 'Started test job that should be stopped {}'.format(uuid4())
+        scannerid = uuid4().hex
+        reason = "I don't want to do this anymore!"
+        create_scanner(scanomatic, scannerid)
+        page = ExperimentPage(browser, scanomatic)
+        page.add_job(name=jobname, scannerid=scannerid)
+        panel = page.find_job_panel_by_name(jobname)
+        panel.start_job()
+        panel.stop_job(confirm=True, reason=reason)
+        panel.extract_features(confirm=True, keep_qc=True)
+        assert 'Extraction refused:' in panel.get_warning_alert()

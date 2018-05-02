@@ -9,6 +9,8 @@ import Duration from '../../src/Duration';
 
 describe('<ScanningJobPanelBody />', () => {
     const onStartJob = jasmine.createSpy('onStartJob');
+    const onShowFeatureExtractDialogue = jasmine.createSpy('onShowFeatureExtractDialogue');
+
     const props = {
         name: 'Omnibus',
         identifier: 'job0000',
@@ -19,6 +21,7 @@ describe('<ScanningJobPanelBody />', () => {
         onStartJob,
         onRemoveJob: () => {},
         onStopJob: () => {},
+        onShowFeatureExtractDialogue,
     };
 
     const scanner = {
@@ -44,6 +47,7 @@ describe('<ScanningJobPanelBody />', () => {
 
     beforeEach(() => {
         onStartJob.calls.reset();
+        onShowFeatureExtractDialogue.calls.reset();
     });
 
     describe('Status Planned', () => {
@@ -341,6 +345,20 @@ describe('<ScanningJobPanelBody />', () => {
             expect(desc.exists()).toBeTruthy();
             expect(desc.find('td').at(0).text()).toEqual('Reason');
             expect(desc.find('td').at(1).text()).toEqual(terminationMessage);
+        });
+
+        describe('Feature Extract button', () => {
+            it('should render a feature extract button', () => {
+                const btn = wrapper.find('.experiment-extract-features');
+                expect(btn.exists()).toBeTruthy();
+                expect(btn.text()).toEqual(' Extract Features');
+            });
+
+            it('should call onShowFeatureExtractDialogue prop when clicked', () => {
+                const btn = wrapper.find('.experiment-extract-features');
+                btn.simulate('click');
+                expect(onShowFeatureExtractDialogue).toHaveBeenCalled();
+            });
         });
     });
 
