@@ -23,22 +23,23 @@ export default class ScanningJobContainer extends React.Component {
     }
 
     handleStartJob() {
-        startScanningJob(this.props.scanningJob)
+        this.setState({ disableStart: true });
+        return startScanningJob(this.props.scanningJob)
             .then(() => {
                 this.props.updateFeed();
             })
             .catch((reason) => {
-                this.setState({ error: `Error starting job: ${reason}` });
+                this.setState({ error: `Error starting job: ${reason}`, disableStart: false });
             });
     }
 
     handleStopJob(jobId, reason) {
-        terminateScanningJob(jobId, reason)
+        return terminateScanningJob(jobId, reason)
+            .then(() => {
+                this.props.updateFeed();
+            })
             .catch((message) => {
                 this.setState({ error: `Error deleting job: ${message}` });
-            })
-            .then(() => {
-                this.getJobStatusRequests();
             });
     }
 
@@ -51,7 +52,7 @@ export default class ScanningJobContainer extends React.Component {
     }
 
     handleFeatureExtract(keepQC) {
-        extractFeatures(this.props.scanningJob.identifier, 'analysis', keepQC)
+        return extractFeatures(this.props.scanningJob.identifier, 'analysis', keepQC)
             .then(() => this.setState({ successInfo: 'Feature extraction enqueued.' }))
             .catch((reason) => {
                 if (reason) {
@@ -63,7 +64,7 @@ export default class ScanningJobContainer extends React.Component {
     }
 
     render() {
-        const { error, successInfo } = this.state;
+        const { error, successInfo, disableStart } = this.state;
         return (
             <ScanningJobPanel
                 onStartJob={this.handleStartJob}
@@ -73,6 +74,7 @@ export default class ScanningJobContainer extends React.Component {
                 onCloseSuccess={this.handleSuccessClose}
                 error={error}
                 successInfo={successInfo}
+                disableStart={disableStart}
                 {...this.props}
             />
         );
