@@ -14,6 +14,7 @@ describe('<ProjectsRoot />', () => {
             onSubmit: () => {},
         },
         onNewProject: () => {},
+        onNewExperiment: () => {},
     };
 
     describe('New Project button', () => {
@@ -86,10 +87,12 @@ describe('<ProjectsRoot />', () => {
     describe('projects', () => {
         const projects = [
             {
+                id: '1',
                 name: 'Test',
                 description: 'Testing',
             },
             {
+                id: '2',
                 name: 'Old Test',
                 description: 'Bla bala bal',
             },
@@ -114,5 +117,13 @@ describe('<ProjectsRoot />', () => {
             expect(projectPanels.at(0).prop('description')).toEqual(projects[0].description);
             expect(projectPanels.at(1).prop('description')).toEqual(projects[1].description);
         });
+    });
+
+    it('should bing the <ProjectPanel/> onNewExperiment callback to the project id', () => {
+        const projects = [{ id: '147', name: 'Foo', description: 'bar' }];
+        const onNewExperiment = jasmine.createSpy('onNewExperiment');
+        const wrapper = shallow(<ProjectsRoot {...props} projects={projects} onNewExperiment={onNewExperiment} />);
+        wrapper.find('ProjectPanel').prop('onNewExperiment')();
+        expect(onNewExperiment).toHaveBeenCalledWith('147');
     });
 });

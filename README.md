@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/Scan-o-Matic/scanomatic.svg?branch=master)](https://travis-ci.org/Scan-o-Matic/scanomatic)
+[![Sauce Test Status](https://saucelabs.com/buildstatus/scan-o-matic)](https://saucelabs.com/u/scan-o-matic)
 
 # Scan-o-matic (program) and scanomatic (python module)
 
@@ -31,3 +32,8 @@ Please also include the server and ui-server log files (those will be localized 
 
 Do however please note, that if you are doing something super secret, the files will contain some information on what you are doing and it may be needed that you go through them before uploading them publically.
 In this case, only redact the sensitive information, but keep general systematic parts of these lines as intact as possible.
+
+### Big Thanks
+
+Cross-browser Testing Platform and Open Source <3 Provided by
+[Sauce Labs](https://saucelabs.com)

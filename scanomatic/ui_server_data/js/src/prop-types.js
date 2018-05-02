@@ -23,6 +23,7 @@ const scannerShape = {
     owned: PropTypes.bool.isRequired,
     power: PropTypes.bool.isRequired,
 };
+
 const scannerType = PropTypes.shape(scannerShape);
 
 const scanningJobShape = {
@@ -39,12 +40,31 @@ const projectShape = {
     description: PropTypes.string,
 };
 
+const experimentShape = {
+    name: PropTypes.string.isRequired,
+    description: PropTypes.string,
+    duration: PropTypes.number.isRequired,
+    interval: PropTypes.number.isRequired,
+    scannerId: PropTypes.string,
+};
+
+const newExperimentErrorsShape = {
+    general: PropTypes.string,
+    name: PropTypes.string,
+    description: PropTypes.string,
+    duration: PropTypes.string,
+    interval: PropTypes.string,
+    scanner: PropTypes.string,
+};
+
 export default {
     cccMetadata,
     pinningFormat,
-    scannerType,
     scannerShape,
+    scannerType,
     scanningJobType,
     scanningJobShape,
     projectShape,
+    experimentShape,
+    newExperimentErrorsShape,
 };
