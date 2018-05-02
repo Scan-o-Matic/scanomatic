@@ -59,12 +59,12 @@ export function getProjects(state: State): Array<Project> {
     return projects;
 }
 
-export function getScanners(state: State): Array<{ name: string, id: string, power: boolean, owned: boolean }> {
+export function getScanners(state: State): Array<{ name: string, identifier: string, power: boolean, owned: boolean }> {
     const scanners = Array.from(
         state.entities.scanners,
         ([key, { name, isOnline, isFree }]) => (
             {
-                id: key,
+                identifier: key,
                 name,
                 power: isOnline,
                 owned: !isFree,
