@@ -86,7 +86,7 @@ describe('projects/selectors', () => {
                 })
                 .build();
             expect(selectors.getScanners(state)).toEqual([{
-                id: 'S01', name: 'Scanny', power: true, owned: true,
+                identifier: 'S01', name: 'Scanny', power: true, owned: true,
             }]);
         });
 
