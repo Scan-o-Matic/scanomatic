@@ -18,6 +18,7 @@ module.exports = function (config) {
             'js/external/jquery-ui.js',
             'js/qc2.js',
             'js/qc_normHelper.js',
+            'js/src/helpers/jasmine-fail-on-console-error.js',
             { pattern: 'js/src/**/*.spec.@(js|jsx)', watched: false },
         ],
 
