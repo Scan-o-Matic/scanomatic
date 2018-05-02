@@ -42,6 +42,22 @@ describe('<ProjectPanel />', () => {
         expect(description.text()).toEqual('Debugging the system.');
     });
 
+    it('toggles panel-body when panel-heading is clicked', () => {
+        let panelBody = wrapper.find('.panel-body');
+        const panelHeading = wrapper.find('.panel-heading');
+        expect(panelBody.exists()).toBeTruthy();
+
+        panelHeading.simulate('click');
+        wrapper.update();
+        panelBody = wrapper.find('.panel-body');
+        expect(panelBody.exists()).toBeFalsy();
+
+        panelHeading.simulate('click');
+        wrapper.update();
+        panelBody = wrapper.find('.panel-body');
+        expect(panelBody.exists()).toBeTruthy();
+    });
+
     describe('Add Experiment button', () => {
         it('renders', () => {
             const btn = panel.find('.panel-body').find('.new-experiment');
