@@ -29,6 +29,7 @@ describe('<ScanningRoot />', () => {
     const onNewJob = jasmine.createSpy('onNewJob');
     const onCloseNewJob = jasmine.createSpy('onCloseNewJob');
     const onStartJob = jasmine.createSpy('onStartJob');
+    const updateFeed = jasmine.createSpy('updateFeed');
 
     const props = {
         error: null,
@@ -40,6 +41,7 @@ describe('<ScanningRoot />', () => {
         onStartJob,
         onStopJob: () => {},
         scanners: [],
+        updateFeed,
     };
 
     beforeEach(() => {

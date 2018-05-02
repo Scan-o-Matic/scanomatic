@@ -9,6 +9,7 @@ import Duration from '../Duration';
 describe('<ScanningJobPanel />', () => {
     const onCloseError = jasmine.createSpy('onCloseError');
     const onCloseSuccess = jasmine.createSpy('onCloseSuccess');
+    const onFeatureExtract = jasmine.createSpy('onFeatureExtract');
 
     const props = {
         scanningJob: {
@@ -24,6 +25,7 @@ describe('<ScanningJobPanel />', () => {
         onStopJob: () => {},
         onCloseError,
         onCloseSuccess,
+        onFeatureExtract,
     };
 
     const scanner = {
@@ -36,6 +38,7 @@ describe('<ScanningJobPanel />', () => {
     beforeEach(() => {
         onCloseError.calls.reset();
         onCloseSuccess.calls.reset();
+        onFeatureExtract.calls.reset();
     });
 
     it('should render a panel-title with the name', () => {
@@ -285,7 +288,6 @@ describe('<ScanningJobPanel />', () => {
     });
 
     describe('Feature Extract', () => {
-        const onFeatureExtract = jasmine.createSpy('onFeatureExtract');
         const propsCompleted = {
             scanningJob: {
                 name: 'Omnibus',
@@ -301,11 +303,9 @@ describe('<ScanningJobPanel />', () => {
             onRemoveJob: () => {},
             onStopJob: () => {},
             onFeatureExtract,
+            onCloseError,
+            onCloseSuccess,
         };
-
-        beforeEach(() => {
-            onFeatureExtract.calls.reset();
-        });
 
         it('should render <ScanningJobFeatureExtractDialogue />', () => {
             const wrapper = shallow(<ScanningJobPanel {...propsCompleted} />);
