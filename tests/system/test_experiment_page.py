@@ -159,7 +159,7 @@ class ScanningJobPanel(object):
                     .find_element(*self.extract_features_ok_locator)
                     .click()
             )
-            WebDriverWait(self.element, 2).until(
+            WebDriverWait(self.element, 5).until(
                 EC.presence_of_element_located((By.CLASS_NAME, 'alert'))
             )
         else:
@@ -261,8 +261,6 @@ class TestCompletedJob:
         page.add_job(name=jobname, scannerid=scannerid)
         panel = page.find_job_panel_by_name(jobname)
         panel.start_job()
-        panel = page.find_job_panel_by_name(jobname)
         panel.stop_job(confirm=True, reason=reason)
-        panel = page.find_job_panel_by_name(jobname)
         panel.extract_features(confirm=True, keep_qc=True)
         assert 'Extraction refused:' in panel.get_warning_alert()
