@@ -1,5 +1,3 @@
-import time
-
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
@@ -120,16 +118,22 @@ class NewExperimentForm(object):
         input.send_keys(description)
 
     def set_duration(self, days, hours, minutes):
-        self.element.find_element(*self.duration_input_locator('days')
-                                 ).send_keys(days)
-        self.element.find_element(*self.duration_input_locator('hours')
-                                 ).send_keys(hours)
-        self.element.find_element(*self.duration_input_locator('minutes')
-                                 ).send_keys(minutes)
+        days_input = self.element.find_element(
+            *self.duration_input_locator('days')
+        )
+        days_input.send_keys(days)
+        hours_input = self.element.find_element(
+            *self.duration_input_locator('hours')
+        )
+        hours_input.send_keys(hours)
+        minutes_input = self.element.find_element(
+            *self.duration_input_locator('minutes')
+        )
+        minutes_input.send_keys(minutes)
 
     def set_interval(self, minutes):
-        self.element.find_element(*self.interval_input_locator
-                                 ).send_keys(minutes)
+        input = self.element.find_element(*self.interval_input_locator)
+        input.send_keys(minutes)
 
     def set_scanner(self, scannerid):
         element = self.element.find_element(*self.scanner_select_locator)
@@ -159,7 +163,9 @@ class ExperimentPanel(object):
         )
 
     def __init__(self, parent, name):
-        self.element = parent.find_element(*self.experiment_panel_locator(name))
+        self.element = parent.find_element(
+            *self.experiment_panel_locator(name)
+        )
 
     @property
     def heading(self):
