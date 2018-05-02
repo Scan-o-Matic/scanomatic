@@ -170,6 +170,31 @@ describe('<ProjectsRoot />', () => {
                 .toBeFalsy();
         },
     );
+
+    it(
+        'should pass newExperimentDisabled=true to <ProjectPanel/> if there is a new experiment for project',
+        () => {
+            const projects = [
+                {
+                    id: '42', name: 'Foo', description: 'bar', experiments: [],
+                },
+            ];
+            const newExperiment = {
+                name: 'grow stuff',
+                description: '',
+                duration: 123,
+                interval: 1,
+                scannerId: '',
+                projectId: '42',
+            };
+            const wrapper = shallow(<ProjectsRoot
+                {...props}
+                projects={projects}
+                newExperiment={newExperiment}
+            />);
+            expect(wrapper.find('ProjectPanel[id="42"]').prop('newExperimentDisabled')).toBeTruthy();
+        },
+    );
     it(
         'should create an <ExperimentPanel/> under <ProjectPanel/> for each experiment',
         () => {

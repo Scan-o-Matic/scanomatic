@@ -13,20 +13,16 @@ export default class ProjectsRoot extends React.Component {
             onNewExperiment, newExperiment, newExperimentErrors, newExperimentActions,
             scanners,
         } = this.props;
+        const hasNewExperiment = newExperiment && newExperiment.projectId === project.id;
         return (
             <ProjectPanel
                 {...project}
                 key={project.name}
-                newExperiment={
-                    (newExperiment && newExperiment.projectId === project.id)
-                        ? newExperiment
-                        : null}
-                newExperimentActions={newExperimentActions}
-                newExperimentErrors={newExperimentErrors}
                 onNewExperiment={() => onNewExperiment(project.id)}
+                newExperimentDisabled={hasNewExperiment}
                 scanners={scanners}
             >
-                {newExperiment && newExperiment.projectId === project.id &&
+                {hasNewExperiment &&
                 <NewExperimentPanel
                     {...newExperiment}
                     {...newExperimentActions}
