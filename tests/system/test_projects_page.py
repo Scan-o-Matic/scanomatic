@@ -89,6 +89,10 @@ class ProjectPanel(object):
         button.click()
         return NewExperimentForm(self.element)
 
+    def click_to_expand_project(self):
+        heading = self.driver.find_element(*self.panel_heading_locator)
+        heading.click()
+
     def get_experiment_panel(self, name):
         return ExperimentPanel(self.element, name)
 
@@ -199,6 +203,7 @@ def test_create_project(scanomatic, browser):
     form.click_submit()
     panel = page.get_project_panel('My project')
     assert panel.heading == 'My project'
+    panel.click_to_expand_project()
     assert 'bla bla bla bla bla' in panel.body
 
 
@@ -218,6 +223,7 @@ def test_create_experiment(scanomatic, browser):
     form.set_description('bla bla bla bla bla')
     form.click_submit()
     project_panel = page.get_project_panel('My project')
+    project_panel.click_to_expand_project()
     form = project_panel.click_add_experiment()
     form.set_name('My Experiment')
     form.set_description('Lorem ipsum dolor sit amet')
@@ -240,6 +246,7 @@ def test_create_experiment_without_name(scanomatic, browser):
     form.set_description('bla bla bla bla bla')
     form.click_submit()
     project_panel = page.get_project_panel('My project')
+    project_panel.click_to_expand_project()
     form = project_panel.click_add_experiment()
     form.set_name('')
     form.set_description('Lorem ipsum dolor sit amet')
