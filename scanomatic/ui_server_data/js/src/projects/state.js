@@ -1,38 +1,27 @@
 // @flow
 
-export type Projects = {
-    +[string]: {
-        +name: string,
-        +description: string,
-        +experimentIds: Array<string>,
-    }
-};
+export type Projects = Map<string, {
+    +name: string,
+    +description: string,
+    +experimentIds: Array<string>,
+}>;
 
-export type Experiments = {
-    +[string]: {
-        +name: string,
-        +description: string,
-        +duration: number,
-        +interval: number,
-        +scannerId: string,
-        +started: ?Date,
-        +stopped: ?Date,
-        +reason: ?string,
-    }
-};
+export type Experiments = Map<string, {
+    +name: string,
+    +description: string,
+    +duration: number,
+    +interval: number,
+    +scannerId: string,
+    +started: ?Date,
+    +stopped: ?Date,
+    +reason: ?string,
+}>;
 
-export type Scanners = {
-    +[string]: {
-        +name: string,
-        +isOnline: boolean,
-        +isFree: boolean,
-    }
-};
-
-export type Field = {
-    value: string,
-    touched: boolean,
-};
+export type Scanners = Map<string, {
+    +name: string,
+    +isOnline: boolean,
+    +isFree: boolean,
+}>;
 
 export type NewProject = ?{
     +submitted: boolean,

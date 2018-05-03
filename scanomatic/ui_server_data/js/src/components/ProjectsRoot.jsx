@@ -3,50 +3,94 @@ import PropTypes from 'prop-types';
 
 import myTypes from '../prop-types';
 import ProjectPanel from './ProjectPanel';
+import ExperimentPanel from './ExperimentPanel';
 import NewProjectPanel from './NewProjectPanel';
+import NewExperimentPanel from './NewExperimentPanel';
 
-export default function ProjectsRoot({
-    projects, newProject, newProjectActions, newProjectErrors, onNewProject,
-}) {
-    let newProjectForm = null;
-    if (newProject) {
-        newProjectForm = (<NewProjectPanel
-            {...newProject}
-            {...newProjectActions}
-            errors={newProjectErrors}
-        />);
+export default class ProjectsRoot extends React.Component {
+    renderProject(project) {
+        const {
+            onNewExperiment, newExperiment, newExperimentErrors, newExperimentActions,
+            scanners,
+        } = this.props;
+        const hasNewExperiment = newExperiment && newExperiment.projectId === project.id;
+        return (
+            <ProjectPanel
+                {...project}
+                key={project.name}
+                onNewExperiment={() => onNewExperiment(project.id)}
+                newExperimentDisabled={hasNewExperiment}
+                scanners={scanners}
+            >
+                {hasNewExperiment &&
+                <NewExperimentPanel
+                    {...newExperiment}
+                    {...newExperimentActions}
+                    projectName={project.name}
+                    errors={newExperimentErrors}
+                    scanners={scanners}
+                />}
+                {project.experiments.map(experiment => (
+                    <ExperimentPanel key={experiment.id} {...experiment} />
+                ))}
+            </ProjectPanel>);
     }
-    const newProjectButton = (
-        <button className="btn btn-primary new-project" onClick={onNewProject} disabled={newProject}>
-            <div className="glyphicon glyphicon-plus" /> New Project
-        </button>
-    );
 
-    const projectPanels = projects.map(project => <ProjectPanel {...project} key={project.name} />);
-    return (
-        <div>
-            <h1>Projects</h1>
-            {newProjectButton}
-            {newProjectForm}
-            {projectPanels}
-        </div>
-    );
+    render() {
+        const {
+            projects, newProject, newProjectActions, newProjectErrors, onNewProject,
+        } = this.props;
+        let newProjectForm = null;
+        if (newProject) {
+            newProjectForm = (<NewProjectPanel
+                {...newProject}
+                {...newProjectActions}
+                errors={newProjectErrors}
+            />);
+        }
+        const newProjectButton = (
+            <button className="btn btn-primary new-project" onClick={onNewProject} disabled={newProject}>
+                <div className="glyphicon glyphicon-plus" /> New Project
+            </button>
+        );
+
+        return (
+            <div>
+                <h1>Projects</h1>
+                {newProjectButton}
+                {newProjectForm}
+                {projects.map(p => this.renderProject(p))}
+            </div>
+        );
+    }
 }
 
 ProjectsRoot.propTypes = {
-    projects: PropTypes.arrayOf(PropTypes.shape(myTypes.projectShape)),
+    newExperiment: PropTypes.shape(myTypes.experimentShape),
+    newExperimentActions: PropTypes.shape({
+        onChange: PropTypes.func.isRequired,
+        onCancel: PropTypes.func.isRequired,
+        onSubmit: PropTypes.func.isRequired,
+    }).isRequired,
+    newExperimentErrors: PropTypes.instanceOf(Map),
     newProject: PropTypes.shape(myTypes.projectShape),
-    newProjectErrors: PropTypes.instanceOf(Map),
     newProjectActions: PropTypes.shape({
         onChange: PropTypes.func.isRequired,
         onCancel: PropTypes.func.isRequired,
         onSubmit: PropTypes.func.isRequired,
     }).isRequired,
+    newProjectErrors: PropTypes.instanceOf(Map),
+    onNewExperiment: PropTypes.func.isRequired,
     onNewProject: PropTypes.func.isRequired,
+    projects: PropTypes.arrayOf(PropTypes.shape(myTypes.projectShape)),
+    scanners: PropTypes.arrayOf(PropTypes.shape(myTypes.scannerShape)),
 };
 
 ProjectsRoot.defaultProps = {
-    projects: [],
+    newExperiment: undefined,
+    newExperimentErrors: undefined,
     newProject: null,
     newProjectErrors: null,
+    projects: [],
+    scanners: [],
 };

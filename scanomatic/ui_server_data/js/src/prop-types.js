@@ -26,13 +26,14 @@ const scannerShape = {
 
 const scannerType = PropTypes.shape(scannerShape);
 
-const scanningJobType = PropTypes.shape({
+const scanningJobShape = {
     disableStart: PropTypes.bool,
     duration: PropTypes.instanceOf(Duration).isRequired,
     interval: PropTypes.instanceOf(Duration).isRequired,
     name: PropTypes.string.isRequired,
     scannerId: PropTypes.string.isRequired,
-});
+};
+const scanningJobType = PropTypes.shape(scanningJobShape);
 
 const projectShape = {
     name: PropTypes.string.isRequired,
@@ -41,7 +42,6 @@ const projectShape = {
 
 const experimentShape = {
     name: PropTypes.string.isRequired,
-    project: PropTypes.string.isRequired,
     description: PropTypes.string,
     duration: PropTypes.number.isRequired,
     interval: PropTypes.number.isRequired,
@@ -63,6 +63,7 @@ export default {
     scannerShape,
     scannerType,
     scanningJobType,
+    scanningJobShape,
     projectShape,
     experimentShape,
     newExperimentErrorsShape,

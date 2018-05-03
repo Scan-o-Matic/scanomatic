@@ -1,7 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import myTypes from '../prop-types';
-import NewExperimentPanel from './NewExperimentPanel';
 
 class ProjectPanel extends React.Component {
     constructor(props) {
@@ -16,20 +14,12 @@ class ProjectPanel extends React.Component {
 
     render() {
         const {
-            name, description, onNewExperiment, newExperiment, newExperimentActions,
-            newExperimentErrors, scanners,
+            children,
+            description,
+            name,
+            newExperimentDisabled,
+            onNewExperiment,
         } = this.props;
-        let newExperimentPanel;
-        if (this.newExperiment && this.state.expanded) {
-            newExperimentPanel = (
-                <NewExperimentPanel
-                    errors={newExperimentErrors}
-                    scanners={scanners}
-                    {...newExperiment}
-                    {...newExperimentActions}
-                />
-            );
-        }
 
         return (
             <div
@@ -62,13 +52,13 @@ class ProjectPanel extends React.Component {
                                 <button
                                     className="btn btn-default new-experiment"
                                     onClick={() => onNewExperiment(name)}
-                                    disabled={newExperiment}
+                                    disabled={newExperimentDisabled}
                                 >
                                     <div className="glyphicon glyphicon-plus" /> New Experiment
                                 </button>
                             </div>
                         </div>
-                        {newExperimentPanel}
+                        {children}
                     </div>
                 )}
             </div>
@@ -77,21 +67,16 @@ class ProjectPanel extends React.Component {
 }
 
 ProjectPanel.propTypes = {
+    children: PropTypes.node,
+    description: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    newExperimentDisabled: PropTypes.bool,
     onNewExperiment: PropTypes.func.isRequired,
-    newExperiment: PropTypes.shape(myTypes.experimentShape),
-    newExperimentActions: PropTypes.shape({
-        onChange: PropTypes.func,
-        onCancel: PropTypes.func,
-        onSubmit: PropTypes.func,
-    }),
-    newExperimentErrors: PropTypes.shape(myTypes.newExperimentErrorsShape),
-    ...myTypes.projectShape,
 };
 
 ProjectPanel.defaultProps = {
-    newExperimentErrors: null,
-    newExperiment: null,
-    newExperimentActions: {},
+    newExperimentDisabled: false,
+    children: null,
 };
 
 export default ProjectPanel;

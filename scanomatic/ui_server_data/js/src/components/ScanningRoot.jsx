@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import NewScanningJobContainer from '../containers/NewScanningJobContainer';
 import SoMPropTypes from '../prop-types';
-import ScanningJobPanel from './ScanningJobPanel';
+import ScanningJobContainer from '../containers/ScanningJobContainer';
 
 export function getStatus(job, now) {
     if (!job.startTime) {
@@ -33,7 +33,6 @@ export function jobSorter(a, b) {
 }
 
 export default function ScanningRoot(props) {
-    const { onStartJob } = props;
     let newJob = null;
     if (props.newJob) {
         newJob = (<NewScanningJobContainer
@@ -51,13 +50,12 @@ export default function ScanningRoot(props) {
             .sort(jobSorter)
             .forEach((job) => {
                 const scanner = props.scanners.filter(s => s.identifier === job.scannerId)[0];
-                jobs.push(<ScanningJobPanel
+                jobs.push(<ScanningJobContainer
                     key={job.name}
                     onRemoveJob={props.onRemoveJob}
-                    onStartJob={() => onStartJob(job)}
-                    onStopJob={props.onStopJob}
                     scanner={scanner}
                     scanningJob={job}
+                    updateFeed={props.updateFeed}
                 />);
             });
         jobList = (
@@ -96,9 +94,8 @@ ScanningRoot.propTypes = {
     onCloseNewJob: PropTypes.func.isRequired,
     jobs: PropTypes.arrayOf(SoMPropTypes.scanningJobType).isRequired,
     scanners: PropTypes.arrayOf(SoMPropTypes.scannerType).isRequired,
-    onStartJob: PropTypes.func.isRequired,
     onRemoveJob: PropTypes.func.isRequired,
-    onStopJob: PropTypes.func.isRequired,
+    updateFeed: PropTypes.func.isRequired,
 };
 
 ScanningRoot.defaultProps = {

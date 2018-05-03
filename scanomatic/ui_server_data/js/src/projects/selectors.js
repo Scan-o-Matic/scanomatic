@@ -13,42 +13,64 @@ type Project = {
         interval: number,
         scanner: {
             name: string,
-            isFree: boolean,
-            isOnline: boolean,
+            power: boolean,
+            owned: boolean,
         },
     }>,
 };
 
 export function getProjects(state: State): Array<Project> {
-    return Object.keys(state.entities.projects).sort().reverse().map((key) => {
-        const { name, description, experimentIds } = state.entities.projects[key];
-        return {
+    const projects = Array.from(
+        state.entities.projects,
+        ([key, { name, description, experimentIds }]) => ({
             id: key,
             name,
             description,
             experiments: experimentIds.map((eid) => {
+                const experiment = state.entities.experiments.get(eid);
+                if (!experiment) { throw Error(`Missing experiment with id ${eid}`); }
                 const {
                     name: ename, description: edescription, duration, interval, scannerId,
-                } = state.entities.experiments[eid];
-                const scanner = state.entities.scanners[scannerId];
+                } = experiment;
+                const scanner = state.entities.scanners.get(scannerId);
+                if (!scanner) { throw Error(`Missing scanner with id ${scannerId}`); }
                 return {
                     id: eid,
                     name: ename,
                     description: edescription,
                     duration,
                     interval,
-                    scanner: { ...scanner, id: scannerId },
+                    scanner: {
+                        id: scannerId,
+                        name: scanner.name,
+                        power: scanner.isOnline,
+                        owned: !scanner.isFree,
+                    },
                 };
             }),
-        };
+        }),
+    );
+
+    projects.sort((p1, p2) => {
+        if (p1.id > p2.id) return -1;
+        if (p1.id < p2.id) return 1;
+        return 0;
     });
+    return projects;
 }
 
-export function getScanners(state: State): Array<{ name: string, id: string, isOnline: boolean, isFree: boolean }> {
-    const scanners = Object.keys(state.entities.scanners).map(key => ({
-        ...state.entities.scanners[key],
-        id: key,
-    }));
+export function getScanners(state: State): Array<{ name: string, identifier: string, power: boolean, owned: boolean }> {
+    const scanners = Array.from(
+        state.entities.scanners,
+        ([key, { name, isOnline, isFree }]) => (
+            {
+                identifier: key,
+                name,
+                power: isOnline,
+                owned: !isFree,
+            }
+        ),
+    );
     scanners.sort((s1, s2) => {
         if (s1.name < s2.name) return -1;
         if (s1.name > s2.name) return 1;

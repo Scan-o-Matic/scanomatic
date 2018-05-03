@@ -2,12 +2,12 @@ import experiments from './experiments';
 
 describe('projects/reducers/entities/experiments', () => {
     it('should return an empty initial state', () => {
-        expect(experiments(undefined, {})).toEqual({});
+        expect(experiments(undefined, {})).toEqual(new Map());
     });
 
     it('should handle EXPERIMENT_ADD', () => {
-        const state = {
-            '002': {
+        const state = new Map([
+            ['002', {
                 name: 'Some experiment',
                 description: 'This is an experiment',
                 duration: 1200,
@@ -15,9 +15,9 @@ describe('projects/reducers/entities/experiments', () => {
                 started: null,
                 stopped: null,
                 reason: null,
-                scanner: '001',
-            },
-        };
+                scannerId: '001',
+            }],
+        ]);
         const action = {
             type: 'EXPERIMENTS_ADD',
             description: '',
@@ -25,11 +25,11 @@ describe('projects/reducers/entities/experiments', () => {
             id: '003',
             interval: 24,
             name: 'Other experiment',
-            scanner: 'S04',
+            scannerId: 'S04',
         };
-        expect(experiments(state, action)).toEqual({
+        expect(experiments(state, action)).toEqual(new Map([
             ...state,
-            '003': {
+            ['003', {
                 name: 'Other experiment',
                 description: '',
                 duration: 357,
@@ -37,8 +37,8 @@ describe('projects/reducers/entities/experiments', () => {
                 started: null,
                 stopped: null,
                 reason: null,
-                scanner: 'S04',
-            },
-        });
+                scannerId: 'S04',
+            }],
+        ]));
     });
 });

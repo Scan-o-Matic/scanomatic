@@ -15,7 +15,7 @@ def pytest_addoption(parser):
     parser.addoption(
         '--browser',
         action='store',
-        choices=['firefox', 'chrome'],
+        choices=['firefox', 'chrome', 'saucelabs'],
         default='firefox',
     )
     parser.addoption(

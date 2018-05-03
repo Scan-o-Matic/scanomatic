@@ -24,7 +24,11 @@ describe('projects/selectors', () => {
                 .clearProjects()
                 .addProject({ id: 'P1', experimentIds: ['E1'] })
                 .addExperiment({
-                    id: 'E1', name: 'Foo experiment', description: 'Experimenting...', duration: 123, interval: 21, scannerid: 'S1',
+                    id: 'E1',
+                    name: 'Foo experiment',
+                    description: 'Experimenting...',
+                    duration: 123,
+                    interval: 21,
                 })
                 .build();
             expect(selectors.getProjects(state)).toEqual([
@@ -59,8 +63,8 @@ describe('projects/selectors', () => {
                             scanner: {
                                 id: 'S1',
                                 name: 'Scanny',
-                                isOnline: true,
-                                isFree: false,
+                                power: true,
+                                owned: true,
                             },
                         }),
                     ],
@@ -82,7 +86,7 @@ describe('projects/selectors', () => {
                 })
                 .build();
             expect(selectors.getScanners(state)).toEqual([{
-                id: 'S01', name: 'Scanny', isOnline: true, isFree: false,
+                identifier: 'S01', name: 'Scanny', power: true, owned: true,
             }]);
         });
 

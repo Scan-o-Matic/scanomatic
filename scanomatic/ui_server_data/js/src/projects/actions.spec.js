@@ -89,7 +89,7 @@ describe('projects/actions', () => {
                 description: 'Bla bla bla',
                 duration: 300,
                 interval: 60,
-                scanner: 'sc042',
+                scannerId: 'sc042',
             });
         });
     });
@@ -203,7 +203,7 @@ describe('projects/actions', () => {
                 expect(dispatch).toHaveBeenCalledWith(jasmine.objectContaining({
                     type: 'EXPERIMENTS_ADD',
                     name: 'Some experiment',
-                    scanner: 'xyz',
+                    scannerId: 'xyz',
                     duration: 5000,
                     interval: 500,
                     description: 'bla bla bla',

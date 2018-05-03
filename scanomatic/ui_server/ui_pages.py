@@ -71,14 +71,6 @@ def add_routes(app):
     def _wiki():
         return redirect("https://github.com/local-minimum/scanomatic/wiki")
 
-    @app.route("/feature_extract")
-    def _feature_extract():
-        return render_template(
-            'feature_extract.html',
-            debug=app.debug,
-            version=get_version(),
-        )
-
     @app.route("/analysis")
     def _analysis():
         return render_template(
