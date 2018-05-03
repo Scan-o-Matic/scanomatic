@@ -4,12 +4,30 @@ import ScanningJobStatusLabel from '../ScanningJobStatusLabel';
 import { renderDuration } from '../ScanningJobPanelBody';
 import Duration from '../../Duration';
 import myProps from '../../prop-types';
+import ScanningJobRemoveButton from '../ScanningJobRemoveButton';
 
 const millisecondsPerMinute = 60000;
 
 export default function ExperimentPanel({
     name, description, duration, interval, scanner, status,
 }) {
+    const identifier = name;
+    const actions = [];
+    if (status === 'Planned') {
+        actions.push((
+            <button key="action-start" type="button" className="btn btn-default btn-block experiment-action-start" onClick={() => {}}>
+                <span className="glyphicon glyphicon-play" /> Start
+            </button>
+        ));
+        actions.push((
+            <ScanningJobRemoveButton
+                identifier={identifier}
+                onRemoveJob={() => {}}
+                key="action-remove"
+                className="btn btn-default btn-block experiment-action-remove"
+            />
+        ));
+    }
     return (
         <div
             className="panel panel-default experiment-listing"
@@ -24,7 +42,9 @@ export default function ExperimentPanel({
                     <div className="col-md-9">
                         <div className="text-justify experiment-description">{description}</div>
                     </div>
-                    <div className="col-md-3" />
+                    <div className="col-md-3">
+                        {actions}
+                    </div>
                 </div>
             </div>
             <table className="table experiment-stats">
