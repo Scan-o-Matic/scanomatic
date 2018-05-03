@@ -21,6 +21,26 @@ export default function experiments(state: State = initialState, action: Action)
         });
         return newState;
     }
+    case 'EXPERIMENTS_START':
+    {
+        const newState = new Map(state);
+        const experiment = state.get(action.id);
+        newState.set(
+            action.id,
+            Object.assign(
+                {},
+                experiment,
+                { started: action.date },
+            ),
+        );
+        return newState;
+    }
+    case 'EXPERIMENTS_REMOVE':
+    {
+        const newState = new Map(state);
+        newState.delete(action.id);
+        return newState;
+    }
     default:
         return state;
     }

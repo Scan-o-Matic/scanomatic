@@ -11,7 +11,6 @@ import {
     submitNewProject,
     startExperiment,
     removeExperiment,
-    setExperimentDialogue,
 } from '../projects/actions';
 import {
     getNewExperiment,
@@ -51,8 +50,6 @@ function mapDispatchToProps(dispatch) {
         experimentActions: {
             onStart: experimentId => dispatch(startExperiment(experimentId)),
             onRemove: experimentId => dispatch(removeExperiment(experimentId)),
-            onDialogue: (experimentId, dialogue) =>
-                dispatch(setExperimentDialogue(experimentId, dialogue)),
         },
     };
 }

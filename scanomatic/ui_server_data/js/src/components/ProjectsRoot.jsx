@@ -82,13 +82,12 @@ ProjectsRoot.propTypes = {
     experimentActions: PropTypes.shape({
         onStart: PropTypes.func.isRequired,
         onRemove: PropTypes.func.isRequired,
-        onDialogue: PropTypes.func.isRequired,
     }).isRequired,
     newProjectErrors: PropTypes.instanceOf(Map),
     onNewExperiment: PropTypes.func.isRequired,
     onNewProject: PropTypes.func.isRequired,
     projects: PropTypes.arrayOf(PropTypes.shape(myTypes.projectShape)),
-    scanners: PropTypes.arrayOf(PropTypes.shape(myTypes.scannerShape)),
+    scanners: PropTypes.arrayOf(PropTypes.shape(myTypes.newScannerShape)),
 };
 
 ProjectsRoot.defaultProps = {

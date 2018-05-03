@@ -26,7 +26,6 @@ export type Action
     | {| type: 'EXPERIMENTS_START', id: string, date: Date |}
     | {| type: 'EXPERIMENTS_STOP', id: string, date: Date |}
     | {| type: 'EXPERIMENTS_REMOVE', id: string, date: Date |}
-    | {| type: 'EXPERIMENTS_DIALOGUE', id: string, dialogue: string |}
 
 export function initNewProject(): Action {
     return { type: 'NEWPROJECT_INIT' };
@@ -128,14 +127,6 @@ export function removeExperiment(id: string): Action {
         type: 'EXPERIMENTS_REMOVE',
         id,
         date: new Date(),
-    };
-}
-
-export function setExperimentDialogue(id: string, dialogue: string): Action {
-    return {
-        type: 'EXPERIMENTS_DIALOGUE',
-        id,
-        dialogue,
     };
 }
 
