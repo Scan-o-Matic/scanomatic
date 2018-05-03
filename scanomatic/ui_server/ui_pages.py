@@ -73,10 +73,17 @@ def add_routes(app):
 
     @app.route("/analysis")
     def _analysis():
+        compilation_file = request.args.get('compilationfile')
+        context = {
+            'compilation_file':
+                compilation_file if compilation_file is not None else '',
+            'compilation_file_readonly': compilation_file is not None,
+        }
         return render_template(
             'analysis.html',
             debug=app.debug,
             version=get_version(),
+            **context
         )
 
     @app.route("/experiment")
