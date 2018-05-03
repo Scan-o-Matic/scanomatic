@@ -20,7 +20,7 @@ class ProjectPanel extends React.Component {
             newExperimentErrors, scanners,
         } = this.props;
         let newExperimentPanel;
-        if (this.newExperiment) {
+        if (this.newExperiment && this.state.expanded) {
             newExperimentPanel = (
                 <NewExperimentPanel
                     errors={newExperimentErrors}
