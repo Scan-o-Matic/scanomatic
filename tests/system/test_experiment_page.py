@@ -73,12 +73,8 @@ class ExperimentPage(object):
         except NoSuchElementException:
             return False
 
-    @property
-    def main_heading(self):
-        return self.driver.find_element_by_tag_name('h1').text
 
-
-class AnalysisForm(object):
+class AnalysisPage(object):
     compile_file_locator = (By.ID, 'compilation')
 
     def __init__(self, driver):
@@ -86,7 +82,11 @@ class AnalysisForm(object):
         self.form = driver.find_element_by_tag_name('form')
 
     @property
-    def compile_file(self):
+    def main_heading(self):
+        return self.driver.find_element_by_tag_name('h1').text
+
+    @property
+    def compilation_file(self):
         return self.form.find_element(
             *self.compile_file_locator
         ).get_attribute('value')
@@ -199,6 +199,7 @@ class ScanningJobPanel(object):
         WebDriverWait(self.driver, 5).until(
             EC.presence_of_element_located((By.ID, 'analysis-directory'))
         )
+        return AnalysisPage(self.driver)
 
     def get_job_stats(self):
         info = {}
@@ -307,9 +308,9 @@ class TestCompletedJob:
         job_id = panel.job_id
         panel.start_job()
         panel.stop_job(confirm=True, reason=reason)
-        panel.click_analysis()
-        assert page.main_heading == 'Analysis'
-        form = AnalysisForm(page.driver)
-        assert form.compile_file == 'root/{0}/{0}.project.compilation'.format(
-            job_id,
+        analysis_page = panel.click_analysis()
+        assert analysis_page.main_heading == 'Analysis'
+        assert (
+            analysis_page.compilation_file
+            == 'root/{0}/{0}.project.compilation'.format(job_id)
         )
