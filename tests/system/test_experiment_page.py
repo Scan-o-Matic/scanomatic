@@ -73,6 +73,24 @@ class ExperimentPage(object):
         except NoSuchElementException:
             return False
 
+    @property
+    def main_heading(self):
+        return self.driver.find_element_by_tag_name('h1').text
+
+
+class AnalysisForm(object):
+    compile_file_locator = (By.ID, 'compilation')
+
+    def __init__(self, driver):
+        self.driver = driver
+        self.form = driver.find_element_by_tag_name('form')
+
+    @property
+    def compile_file(self):
+        return self.form.find_element(
+            *self.compile_file_locator
+        ).get_attribute('value')
+
 
 class ScanningJobPanel(object):
     job_info_locator = (By.CLASS_NAME, 'job-info')
@@ -92,6 +110,10 @@ class ScanningJobPanel(object):
     def __init__(self, element, driver):
         self.element = element
         self.driver = driver
+
+    @property
+    def job_id(self):
+        return self.element.get_attribute('id')[4:]
 
     def can_remove_job(self):
         try:
@@ -168,6 +190,15 @@ class ScanningJobPanel(object):
                     .find_element(*self.extract_features_cancel_locator)
                     .click()
             )
+
+    def click_analysis(self):
+        (
+            self.element.find_element_by_css_selector('.job-link-analysis')
+                .click()
+        )
+        WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located((By.ID, 'analysis-directory'))
+        )
 
     def get_job_stats(self):
         info = {}
@@ -264,3 +295,21 @@ class TestCompletedJob:
         panel.stop_job(confirm=True, reason=reason)
         panel.extract_features(confirm=True, keep_qc=True)
         assert 'Extraction refused:' in panel.get_warning_alert()
+
+    def test_requesting_analysis(self, scanomatic, browser):
+        jobname = 'Started test job that should be stopped {}'.format(uuid4())
+        scannerid = uuid4().hex
+        reason = "I don't want to do this anymore!"
+        create_scanner(scanomatic, scannerid)
+        page = ExperimentPage(browser, scanomatic)
+        page.add_job(name=jobname, scannerid=scannerid)
+        panel = page.find_job_panel_by_name(jobname)
+        job_id = panel.job_id
+        panel.start_job()
+        panel.stop_job(confirm=True, reason=reason)
+        panel.click_analysis()
+        assert page.main_heading == 'Analysis'
+        form = AnalysisForm(page.driver)
+        assert form.compile_file == 'root/{0}/{0}.project.compilation'.format(
+            job_id,
+        )

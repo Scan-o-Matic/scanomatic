@@ -72,13 +72,13 @@ export default function ScanningJobPanelBody(props) {
         );
         links = (
             <div className="text-right job-links">
-                <a href={`/compile?projectdirectory=root/${props.identifier}`}>
+                <a href={`/compile?projectdirectory=root/${props.identifier}`} className="job-link-compile">
                     Compile
                 </a>
-                <a href={`/analysis?compilationfile=root/${props.identifier}/${props.identifier}.project.compilation`}>
+                <a href={`/analysis?compilationfile=root/${props.identifier}/${props.identifier}.project.compilation`} className="job-link-analysis">
                     Analyse
                 </a>
-                <a href={`/qc_norm?analysisdirectory=${encodeURI(props.identifier)}/analysis&project=${encodeURI(props.name)}`}>
+                <a href={`/qc_norm?analysisdirectory=${encodeURI(props.identifier)}/analysis&project=${encodeURI(props.name)}`} className="job-link-qc">
                     Quality Control
                 </a>
                 <button type="button" className="btn btn-lg experiment-extract-features" onClick={props.onShowFeatureExtractDialogue}>
