@@ -7,6 +7,11 @@ import ProjectsRoot from './ProjectsRoot';
 describe('<ProjectsRoot />', () => {
     const props = {
         projects: [],
+        newExperimentActions: {
+            onChange: () => {},
+            onCancel: () => {},
+            onSubmit: () => {},
+        },
         newProject: null,
         newProjectActions: {
             onChange: () => {},
@@ -90,11 +95,13 @@ describe('<ProjectsRoot />', () => {
                 id: '1',
                 name: 'Test',
                 description: 'Testing',
+                experiments: [],
             },
             {
                 id: '2',
                 name: 'Old Test',
                 description: 'Bla bala bal',
+                experiments: [],
             },
         ];
 
@@ -119,11 +126,101 @@ describe('<ProjectsRoot />', () => {
         });
     });
 
-    it('should bing the <ProjectPanel/> onNewExperiment callback to the project id', () => {
-        const projects = [{ id: '147', name: 'Foo', description: 'bar' }];
+    it('should bind the <ProjectPanel/> onNewExperiment callback to the project id', () => {
+        const projects = [{
+            id: '147', name: 'Foo', description: 'bar', experiments: [],
+        }];
         const onNewExperiment = jasmine.createSpy('onNewExperiment');
-        const wrapper = shallow(<ProjectsRoot {...props} projects={projects} onNewExperiment={onNewExperiment} />);
+        const wrapper = shallow(<ProjectsRoot
+            {...props}
+            projects={projects}
+            onNewExperiment={onNewExperiment}
+        />);
         wrapper.find('ProjectPanel').prop('onNewExperiment')();
         expect(onNewExperiment).toHaveBeenCalledWith('147');
     });
+
+    it(
+        'should create <NewExperimentPanel/> under <ProjectPanel/> with corresponding id',
+        () => {
+            const projects = [
+                {
+                    id: '42', name: 'Foo', description: 'bar', experiments: [],
+                },
+                {
+                    id: '147', name: 'Bla', description: 'Bla bla bl', experiments: [],
+                },
+            ];
+            const newExperiment = {
+                name: 'grow stuff',
+                description: '',
+                duration: 123,
+                interval: 1,
+                scannerId: '',
+                projectId: '42',
+            };
+            const wrapper = shallow(<ProjectsRoot
+                {...props}
+                projects={projects}
+                newExperiment={newExperiment}
+            />);
+            expect(wrapper.find('ProjectPanel[id="42"]').find('NewExperimentPanel').exists())
+                .toBeTruthy();
+            expect(wrapper.find('ProjectPanel[id="147"]').find('NewExperimentPanel').exists())
+                .toBeFalsy();
+        },
+    );
+
+    it(
+        'should pass newExperimentDisabled=true to <ProjectPanel/> if there is a new experiment for project',
+        () => {
+            const projects = [
+                {
+                    id: '42', name: 'Foo', description: 'bar', experiments: [],
+                },
+            ];
+            const newExperiment = {
+                name: 'grow stuff',
+                description: '',
+                duration: 123,
+                interval: 1,
+                scannerId: '',
+                projectId: '42',
+            };
+            const wrapper = shallow(<ProjectsRoot
+                {...props}
+                projects={projects}
+                newExperiment={newExperiment}
+            />);
+            expect(wrapper.find('ProjectPanel[id="42"]').prop('newExperimentDisabled')).toBeTruthy();
+        },
+    );
+    it(
+        'should create an <ExperimentPanel/> under <ProjectPanel/> for each experiment',
+        () => {
+            const projects = [
+                {
+                    id: '42',
+                    name: 'Foo',
+                    description: 'bar',
+                    experiments: [{
+                        id: '01',
+                        name: 'First Experiment',
+                        description: 'Bla bla',
+                        duration: 36000000,
+                        interval: 500000,
+                        scanner: {
+                            identifier: 'S01', name: 'Scanny', power: true, owned: true,
+                        },
+                    }],
+                },
+            ];
+            const wrapper = shallow(<ProjectsRoot
+                {...props}
+                projects={projects}
+            />);
+            expect(wrapper.find('ProjectPanel[id="42"]').find('ExperimentPanel').exists())
+                .toBeTruthy();
+        },
+    );
 });

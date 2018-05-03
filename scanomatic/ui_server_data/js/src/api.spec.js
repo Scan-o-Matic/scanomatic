@@ -1056,4 +1056,46 @@ describe('API', () => {
             });
         });
     });
+
+    describe('extractFeatures', () => {
+        it('should query the correct URL', () => {
+            API.extractFeatures('job002', 'analysis', true);
+            expect(mostRecentRequest().url)
+                .toEqual('/api/project/feature_extract');
+        });
+
+        it('should send a POST request', () => {
+            API.extractFeatures('job002', 'analysis', true);
+            expect(mostRecentRequest().method).toEqual('POST');
+        });
+
+        it('should send the directory path', () => {
+            API.extractFeatures('job002', 'analysis', true);
+            const params = JSON.parse(mostRecentRequest().params);
+            expect(params.analysis_directory).toEqual('/root/job002/analysis');
+        });
+
+        it('should send the keepQC status', () => {
+            API.extractFeatures('job002', 'analysis', true);
+            const params = JSON.parse(mostRecentRequest().params);
+            expect(params.keep_qc).toBe(true);
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.extractFeatures('job002', 'analysis', true).then(done);
+            mostRecentRequest().respondWith({
+                status: 200, responseText: JSON.stringify(null),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.extractFeatures('job002', 'analysis', true).catch((reason) => {
+                expect(reason).toEqual('(+_+)');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400, responseText: JSON.stringify({ reason: '(+_+)' }),
+            });
+        });
+    });
 });

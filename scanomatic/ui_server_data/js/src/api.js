@@ -296,3 +296,13 @@ export function deleteScanningJob(job) {
 export function terminateScanningJob(jobid, message) {
     return API.postJSON(`/api/scan-jobs/${jobid}/terminate`, { message });
 }
+
+export function extractFeatures(jobId, analysis, keepQC) {
+    return API.postJSON(
+        '/api/project/feature_extract',
+        {
+            analysis_directory: `/root/${jobId}/${analysis}`,
+            keep_qc: keepQC,
+        },
+    );
+}

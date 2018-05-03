@@ -3,8 +3,6 @@ import React from 'react';
 import {
     deleteScanningJob,
     getScanningJobs,
-    startScanningJob,
-    terminateScanningJob,
 } from '../api';
 import { getScannersWithOwned } from '../helpers';
 import ScanningRoot from '../components/ScanningRoot';
@@ -23,8 +21,7 @@ export default class ScanningRootContainer extends React.Component {
         this.handleError = this.handleError.bind(this);
         this.handleNewJob = this.handleNewJob.bind(this);
         this.handleRemoveJob = this.handleRemoveJob.bind(this);
-        this.handleStartJob = this.handleStartJob.bind(this);
-        this.handleStopJob = this.handleStopJob.bind(this);
+        this.handleUpdateFeed = this.getJobStatusRequests.bind(this);
     }
 
     componentDidMount() {
@@ -50,14 +47,9 @@ export default class ScanningRootContainer extends React.Component {
             .catch(reason => this.setState({ error: `Error requesting scanners: ${reason}` }));
     }
 
-    getJobsStatus() {
-        this.setState({ error: null });
-        this.getJobStatusRequests();
-    }
-
     handleCloseNewJob() {
-        this.getJobsStatus();
-        this.setState({ newJob: false });
+        this.setState({ newJob: false, error: null });
+        this.getJobStatusRequests();
     }
 
     handleError(error) {
@@ -68,47 +60,9 @@ export default class ScanningRootContainer extends React.Component {
         this.setState({ newJob: true });
     }
 
-    handleStartJob(startingJob) {
-        const { jobs } = this.state;
-        const newJobs = [];
-        let foundJob = false;
-        jobs.forEach((job) => {
-            if (job.identifier === startingJob.identifier) {
-                newJobs.push(Object.assign({}, job, { disableStart: true }));
-                foundJob = true;
-            } else {
-                newJobs.push(job);
-            }
-        });
-        if (foundJob) {
-            this.setState({ jobs: newJobs });
-        } else {
-            this.setState({ error: `UI lost job '${startingJob.name}'` });
-            return;
-        }
-
-        startScanningJob(startingJob)
-            .then(() => {
-                this.getJobsStatus();
-            })
-            .catch((reason) => {
-                this.setState({ error: `Error starting job: ${reason}` });
-            });
-    }
-
     handleRemoveJob(jobId) {
         this.setState({ jobs: this.state.jobs.filter(job => job.identifier !== jobId) });
         deleteScanningJob(jobId)
-            .catch((message) => {
-                this.setState({ error: `Error deleting job: ${message}` });
-            })
-            .then(() => {
-                this.getJobStatusRequests();
-            });
-    }
-
-    handleStopJob(jobId, reason) {
-        terminateScanningJob(jobId, reason)
             .catch((message) => {
                 this.setState({ error: `Error deleting job: ${message}` });
             })
@@ -127,9 +81,8 @@ export default class ScanningRootContainer extends React.Component {
                 onError={this.handleError}
                 onCloseNewJob={this.handleCloseNewJob}
                 onNewJob={this.handleNewJob}
-                onStartJob={this.handleStartJob}
                 onRemoveJob={this.handleRemoveJob}
-                onStopJob={this.handleStopJob}
+                updateFeed={this.handleUpdateFeed}
             />
         );
     }

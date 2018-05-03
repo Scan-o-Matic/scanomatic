@@ -81,6 +81,9 @@ export default function ScanningJobPanelBody(props) {
                 <a href={`/qc_norm?analysisdirectory=${encodeURI(props.identifier)}/analysis&project=${encodeURI(props.name)}`}>
                     Quality Control
                 </a>
+                <button type="button" className="btn btn-lg experiment-extract-features" onClick={props.onShowFeatureExtractDialogue}>
+                    <span className="glyphicon glyphicon-flash" /> Extract Features
+                </button>
             </div>
         );
     } else if (props.disableStart || !scanner || scanner.owned || !scanner.power) {
@@ -204,6 +207,7 @@ ScanningJobPanelBody.propTypes = {
     identifier: PropTypes.string.isRequired,
     interval: PropTypes.instanceOf(Duration).isRequired,
     name: PropTypes.string.isRequired,
+    onShowFeatureExtractDialogue: PropTypes.func.isRequired,
     onRemoveJob: PropTypes.func.isRequired,
     onStartJob: PropTypes.func.isRequired,
     onStopJob: PropTypes.func.isRequired,
