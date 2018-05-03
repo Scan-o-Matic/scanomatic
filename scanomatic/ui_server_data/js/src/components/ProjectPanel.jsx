@@ -36,12 +36,17 @@ class ProjectPanel extends React.Component {
                 className="panel panel-default project-listing"
                 data-projectname={name}
             >
-                <div className="panel-heading" onClick={this.handleToggleExpand} role="button">
+                <div
+                    className="panel-heading"
+                    onClick={this.handleToggleExpand}
+                    role="button"
+                    tabIndex="-1"
+                >
                     <div
                         className={
-                            this.state.expanded ?
-                                'glyphicon glyphicon-collapse-up' :
-                                'glyphicon glyphicon-collapse-down'
+                            this.state.expanded
+                                ? 'glyphicon glyphicon-collapse-up'
+                                : 'glyphicon glyphicon-collapse-down'
                         }
                     /> <h3 className="panel-title">{name}</h3>
                 </div>
