@@ -6,15 +6,20 @@ import ProjectPanel from './ProjectPanel';
 
 describe('<ProjectPanel />', () => {
     let panel;
+    let wrapper;
     const onNewExperiment = jasmine.createSpy('onNewExperiment');
 
     beforeEach(() => {
         onNewExperiment.calls.reset();
-        const wrapper = shallow(<ProjectPanel
+        wrapper = shallow(<ProjectPanel
             name="Test"
             description="Debugging the system."
             onNewExperiment={onNewExperiment}
         />);
+        panel = wrapper.find('.panel');
+        const panelHeading = panel.find('.panel-heading');
+        panelHeading.simulate('click');
+        wrapper.update();
         panel = wrapper.find('.panel');
     });
 
@@ -26,7 +31,7 @@ describe('<ProjectPanel />', () => {
     it('renders a panel-heading with name', () => {
         const panelHeading = panel.find('.panel-heading');
         expect(panelHeading.exists()).toBeTruthy();
-        expect(panelHeading.text()).toEqual('Test');
+        expect(panelHeading.text()).toEqual(' Test');
     });
 
     it('renders a panel-body with the description', () => {
@@ -35,6 +40,22 @@ describe('<ProjectPanel />', () => {
         const description = panelBody.find('.project-description');
         expect(description.exists()).toBeTruthy();
         expect(description.text()).toEqual('Debugging the system.');
+    });
+
+    it('toggles panel-body when panel-heading is clicked', () => {
+        let panelBody = wrapper.find('.panel-body');
+        const panelHeading = wrapper.find('.panel-heading');
+        expect(panelBody.exists()).toBeTruthy();
+
+        panelHeading.simulate('click');
+        wrapper.update();
+        panelBody = wrapper.find('.panel-body');
+        expect(panelBody.exists()).toBeFalsy();
+
+        panelHeading.simulate('click');
+        wrapper.update();
+        panelBody = wrapper.find('.panel-body');
+        expect(panelBody.exists()).toBeTruthy();
     });
 
     describe('Add Experiment button', () => {
