@@ -51,7 +51,7 @@ jobs:
         - |
           if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ] ;
           then
-            echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" ;
+            echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin ;
             docker-compose push;
             curl "https://jenkins.molflow.com/buildByToken/buildWithParameters?job=INFRA&token=${JENKINS_TOKEN}";
           fi
