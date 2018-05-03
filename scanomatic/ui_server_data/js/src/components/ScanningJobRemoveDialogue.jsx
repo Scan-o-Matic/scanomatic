@@ -10,7 +10,7 @@ const ScanningJobRemoveDialogue = (props) => {
         >
             <h1>Remove Job?</h1>
             <p>
-                This will permanently remove the planned job {name} with no
+                This will permanently remove the planned job <em>{name}</em> with no
                 ability to undo this action.
             </p>
             <p>
