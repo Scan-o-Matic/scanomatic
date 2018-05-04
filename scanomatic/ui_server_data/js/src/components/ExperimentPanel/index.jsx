@@ -20,7 +20,7 @@ export default function ExperimentPanel({
                 <ScanningJobStatusLabel status={status} />
             </div>
             <div className="panel-body">
-                <div className="row">
+                <div className="row description-and-actions">
                     <div className="col-md-9">
                         <div className="text-justify experiment-description">{description}</div>
                     </div>
