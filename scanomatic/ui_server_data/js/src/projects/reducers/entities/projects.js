@@ -30,8 +30,9 @@ export default function projects(state: State = defaultState, action: Action): S
     case 'EXPERIMENTS_REMOVE':
     {
         let projectId;
+        const { id: eid } = action;
         state.forEach((value, key) => {
-            if (value.experimentIds.indexOf(action.id) > -1) {
+            if (value.experimentIds.indexOf(eid) > -1) {
                 projectId = key;
             }
         });
@@ -41,7 +42,7 @@ export default function projects(state: State = defaultState, action: Action): S
         const newState = new Map(state);
         newState.set(projectId, {
             ...project,
-            experimentIds: project.experimentIds.filter(id => id !== action.id),
+            experimentIds: project.experimentIds.filter(id => id !== eid),
         });
         return newState;
     }
