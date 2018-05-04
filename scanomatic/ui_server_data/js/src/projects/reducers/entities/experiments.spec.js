@@ -43,11 +43,31 @@ describe('projects/reducers/entities/experiments', () => {
         ]));
     });
 
+    it('should handle EXPERIMENTS_START', () => {
+        const date = new Date();
+        const action = {
+            type: 'EXPERIMENTS_START',
+            id: '002',
+            date,
+        };
+        expect(experiments(state, action)).toEqual(new Map([
+            ['002', {
+                name: 'Some experiment',
+                description: 'This is an experiment',
+                duration: 1200,
+                interval: 300,
+                started: date,
+                stopped: null,
+                reason: null,
+                scannerId: '001',
+            }],
+        ]));
+    });
+
     it('should handle EXPERIMENTS_REMOVE', () => {
         const action = {
             type: 'EXPERIMENTS_REMOVE',
             id: '002',
-            date: new Date(),
         };
         expect(experiments(state, action)).toEqual(new Map([]));
     });

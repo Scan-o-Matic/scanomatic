@@ -87,7 +87,7 @@ ProjectsRoot.propTypes = {
     onNewExperiment: PropTypes.func.isRequired,
     onNewProject: PropTypes.func.isRequired,
     projects: PropTypes.arrayOf(PropTypes.shape(myTypes.projectShape)),
-    scanners: PropTypes.arrayOf(PropTypes.shape(myTypes.newScannerShape)),
+    scanners: PropTypes.arrayOf(PropTypes.shape(myTypes.scannerShape)),
 };
 
 ProjectsRoot.defaultProps = {

@@ -83,7 +83,6 @@ describe('projects/reducers/entities/projects', () => {
         const action = {
             type: 'EXPERIMENTS_REMOVE',
             id: 'e34',
-            date: new Date(),
         };
         expect(reducer(state, action)).toEqual(new Map([
             ['p1', {

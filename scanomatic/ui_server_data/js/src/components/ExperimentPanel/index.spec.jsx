@@ -99,11 +99,13 @@ describe('<ExperimentPanel />', () => {
             let btn;
             beforeEach(() => {
                 const buttons = wrapper.find('.action-buttons');
-                btn = buttons.find('ScanningJobRemoveButton');
+                btn = buttons.find('.experiment-action-remove');
             });
 
             it('renders', () => {
                 expect(btn.exists()).toBeTruthy();
+                expect(btn.text()).toEqual(' Remove');
+                expect(btn.find('.glyphicon-remove').exists()).toBeTruthy();
             });
 
             it('formats correctly', () => {
@@ -111,7 +113,7 @@ describe('<ExperimentPanel />', () => {
             });
 
             it('triggers dialogue when onRemoveJob is called', () => {
-                btn.prop('onRemoveJob')();
+                btn.simulate('click');
                 wrapper.update();
                 const dialogue = wrapper.find('ScanningJobRemoveDialogue');
                 expect(dialogue.exists()).toBeTruthy();
@@ -120,7 +122,7 @@ describe('<ExperimentPanel />', () => {
             describe('remove dialogue', () => {
                 let dialogue;
                 beforeEach(() => {
-                    btn.prop('onRemoveJob')();
+                    btn.simulate('click');
                     wrapper.update();
                     dialogue = wrapper.find('ScanningJobRemoveDialogue');
                 });

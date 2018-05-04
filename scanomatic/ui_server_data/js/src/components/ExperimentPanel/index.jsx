@@ -4,7 +4,6 @@ import ScanningJobStatusLabel from '../ScanningJobStatusLabel';
 import { renderDuration } from '../ScanningJobPanelBody';
 import Duration from '../../Duration';
 import myProps from '../../prop-types';
-import ScanningJobRemoveButton from '../ScanningJobRemoveButton';
 import ScanningJobRemoveDialogue from '../ScanningJobRemoveDialogue';
 
 const millisecondsPerMinute = 60000;
@@ -15,10 +14,6 @@ export default class ExperimentPanel extends React.Component {
         this.state = { dialogue: null };
         this.handleDismissDialogue = () => this.setState({ dialogue: null });
         this.handleShowRemoveDialogue = () => this.setState({ dialogue: 'remove' });
-    }
-
-    handleDialogue(dialogue) {
-        this.setState({ dialogue });
     }
 
     render() {
@@ -42,12 +37,14 @@ export default class ExperimentPanel extends React.Component {
                 </button>
             ));
             actions.push((
-                <ScanningJobRemoveButton
-                    identifier={id}
-                    onRemoveJob={this.handleShowRemoveDialogue}
+                <button
                     key="action-remove"
+                    type="button"
                     className="btn btn-default btn-block experiment-action-remove"
-                />
+                    onClick={this.handleShowRemoveDialogue}
+                >
+                    <span className="glyphicon glyphicon-remove" /> Remove
+                </button>
             ));
         }
         return (

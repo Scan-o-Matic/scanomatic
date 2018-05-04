@@ -120,7 +120,6 @@ describe('projects/actions', () => {
             expect(actions.removeExperiment('123')).toEqual({
                 type: 'EXPERIMENTS_REMOVE',
                 id: '123',
-                date: new Date(),
             });
         });
     });

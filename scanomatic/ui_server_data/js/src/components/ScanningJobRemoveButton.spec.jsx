@@ -37,9 +37,4 @@ describe('<ScanningJobRemoveButton/>', () => {
         wrapper.simulate('click');
         expect(onRemoveJob).toHaveBeenCalled();
     });
-
-    it('overrides className of button is supplied', () => {
-        const wrapper = shallow(<ScanningJobRemoveButton {...props} className="test" />);
-        expect(wrapper.find('button').hasClass('test')).toBeTruthy();
-    });
 });
