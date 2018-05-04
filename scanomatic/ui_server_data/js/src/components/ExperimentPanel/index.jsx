@@ -5,6 +5,8 @@ import { renderDuration } from '../ScanningJobPanelBody';
 import Duration from '../../Duration';
 import myProps from '../../prop-types';
 import ScanningJobRemoveDialogue from '../ScanningJobRemoveDialogue';
+import ScanningJobFeatureExtractDialogue from '../ScanningJobFeatureExtractDialogue';
+import ScanningJobStopDialogue from '../ScanningJobStopDialogue';
 
 const millisecondsPerMinute = 60000;
 
@@ -14,6 +16,8 @@ export default class ExperimentPanel extends React.Component {
         this.state = { dialogue: null };
         this.handleDismissDialogue = () => this.setState({ dialogue: null });
         this.handleShowRemoveDialogue = () => this.setState({ dialogue: 'remove' });
+        this.handleShowStopDialogue = () => this.setState({ dialogue: 'stop' });
+        this.handleShowFeatureExtractDialogue = () => this.setState({ dialogue: 'extract' });
     }
 
     getStatus() {
@@ -29,7 +33,7 @@ export default class ExperimentPanel extends React.Component {
 
     getActionButtons(status) {
         const {
-            id, name, onStart, onStop, onReopen, onDone,
+            id, name, onStart, onReopen, onDone,
         } = this.props;
         const actions = [];
 
@@ -60,7 +64,7 @@ export default class ExperimentPanel extends React.Component {
                     key="action-stop"
                     type="button"
                     className="btn btn-default btn-block experiment-action-stop"
-                    onClick={() => onStop(id)}
+                    onClick={this.handleShowStopDialogue}
                 >
                     <span className="glyphicon glyphicon-stop" /> Stop
                 </button>
@@ -91,7 +95,7 @@ export default class ExperimentPanel extends React.Component {
                     key="action-extract"
                     type="button"
                     className="btn btn-default btn-block experiment-action-extract"
-                    onClick={() => {}}
+                    onClick={this.handleShowFeatureExtractDialogue}
                 >
                     <span className="glyphicon glyphicon-flash" /> Extract
                 </button>
@@ -134,7 +138,7 @@ export default class ExperimentPanel extends React.Component {
     render() {
         const {
             id, name, description, duration, interval, scanner, started, end,
-            onRemove, stopped,
+            onRemove, stopped, onStop, onFeatureExtract,
         } = this.props;
         const { dialogue } = this.state;
         const status = this.getStatus();
@@ -159,10 +163,24 @@ export default class ExperimentPanel extends React.Component {
                         </div>
                     </div>
                 </div>
-                {dialogue && dialogue === 'remove' &&
+                {dialogue === 'remove' &&
                     <ScanningJobRemoveDialogue
                         name={name}
                         onConfirm={() => onRemove(id)}
+                        onCancel={this.handleDismissDialogue}
+                    />
+                }
+                {dialogue === 'stop' &&
+                    <ScanningJobStopDialogue
+                        name={name}
+                        onConfirm={reason => onStop(id, reason)}
+                        onCancel={this.handleDismissDialogue}
+                    />
+                }
+                {dialogue === 'extract' &&
+                    <ScanningJobFeatureExtractDialogue
+                        name={name}
+                        onConfirm={keepQC => onFeatureExtract(id, keepQC)}
                         onCancel={this.handleDismissDialogue}
                     />
                 }
@@ -219,6 +237,7 @@ ExperimentPanel.propTypes = {
     onStop: PropTypes.func.isRequired,
     onDone: PropTypes.func.isRequired,
     onReopen: PropTypes.func.isRequired,
+    onFeatureExtract: PropTypes.func.isRequired,
     started: PropTypes.instanceOf(Date),
     end: PropTypes.instanceOf(Date),
     stopped: PropTypes.instanceOf(Date),

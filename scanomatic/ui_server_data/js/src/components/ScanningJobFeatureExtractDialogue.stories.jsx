@@ -20,6 +20,6 @@ storiesOf('ScanningJobFeatureExtractDialogue', module)
         <ScanningJobFeatureExtractDialogue
             projectPath="/root/12309sdaf09124dssfdw"
             onCancel={action('cancel')}
-            onExtractFeatures={action('extract-features')}
+            onConfirm={action('confirm')}
         />
     ));

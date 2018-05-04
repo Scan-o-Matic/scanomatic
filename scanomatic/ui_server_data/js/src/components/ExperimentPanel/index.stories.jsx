@@ -29,6 +29,7 @@ storiesOf('ExperimentPanel', module)
             onStop={action('stop')}
             onDone={action('done')}
             onReopen={action('reopen')}
+            onFeatureExtract={action('feture extract')}
             done={false}
         />
     ))
@@ -50,6 +51,7 @@ storiesOf('ExperimentPanel', module)
             onStop={action('stop')}
             onDone={action('done')}
             onReopen={action('reopen')}
+            onFeatureExtract={action('feture extract')}
         />
     ))
     .add('Stopped', () => (
@@ -71,6 +73,7 @@ storiesOf('ExperimentPanel', module)
             onStop={action('stop')}
             onDone={action('done')}
             onReopen={action('reopen')}
+            onFeatureExtract={action('feture extract')}
         />
     ))
     .add('Ended', () => (
@@ -91,6 +94,7 @@ storiesOf('ExperimentPanel', module)
             onStop={action('stop')}
             onDone={action('done')}
             onReopen={action('reopen')}
+            onFeatureExtract={action('feture extract')}
         />
     ))
     .add('Done', () => (
@@ -111,5 +115,6 @@ storiesOf('ExperimentPanel', module)
             onStop={action('stop')}
             onDone={action('done')}
             onReopen={action('reopen')}
+            onFeatureExtract={action('feture extract')}
         />
     ));
