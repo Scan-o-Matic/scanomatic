@@ -16,14 +16,22 @@ export default class ExperimentPanel extends React.Component {
         this.handleShowRemoveDialogue = () => this.setState({ dialogue: 'remove' });
     }
 
-    render() {
+    getStatus() {
         const {
-            id, name, description, duration, interval, scanner, started, end,
-            onStart, onRemove,
+            started, end, stopped, done,
         } = this.props;
-        const { dialogue } = this.state;
+        if (done) return 'Done';
+        if (!started) return 'Planned';
+        if (stopped) return 'Analysis';
+        if (end < new Date()) return 'Analysis';
+        return 'Running';
+    }
+
+    getActionButtons(status) {
+        const {
+            id, name, onStart, onStop,
+        } = this.props;
         const actions = [];
-        const status = started ? 'Running' : 'Planned';
 
         if (status === 'Planned') {
             actions.push((
@@ -46,7 +54,92 @@ export default class ExperimentPanel extends React.Component {
                     <span className="glyphicon glyphicon-remove" /> Remove
                 </button>
             ));
+        } else if (status === 'Running') {
+            actions.push((
+                <button
+                    key="action-stop"
+                    type="button"
+                    className="btn btn-default btn-block experiment-action-stop"
+                    onClick={() => onStop(id)}
+                >
+                    <span className="glyphicon glyphicon-stop" /> Stop
+                </button>
+            ));
+        } else if (status === 'Analysis') {
+            actions.push((
+                <a
+                    key="action-compile"
+                    role="button"
+                    className="btn btn-default btn-block experiment-action-compile"
+                    href={`/compile?projectdirectory=root/${encodeURI(id)}`}
+                >
+                    <span className="glyphicon glyphicon-flash" /> Compile
+                </a>
+            ));
+            actions.push((
+                <a
+                    key="action-analyse"
+                    role="button"
+                    className="btn btn-default btn-block experiment-action-analyse"
+                    href={`/analysis?compilationfile=root/${encodeURI(id)}/${encodeURI(id)}.project.compilation`}
+                >
+                    <span className="glyphicon glyphicon-flash" /> Analyse
+                </a>
+            ));
+            actions.push((
+                <button
+                    key="action-extract"
+                    type="button"
+                    className="btn btn-default btn-block experiment-action-extract"
+                    onClick={() => {}}
+                >
+                    <span className="glyphicon glyphicon-flash" /> Extract
+                </button>
+            ));
+            actions.push((
+                <a
+                    key="action-qc"
+                    role="button"
+                    className="btn btn-default btn-block experiment-action-qc"
+                    href={`/qc_norm?analysisdirectory=${encodeURI(id)}/analysis&project=${encodeURI(name)}`}
+                >
+                    <span className="glyphicon glyphicon-flash" /> Quality Control
+                </a>
+            ));
+            actions.push((
+                <button
+                    key="action-done"
+                    type="button"
+                    className="btn btn-default btn-block experiment-action-done"
+                    onClick={() => {}}
+                >
+                    <span className="glyphicon glyphicon-ok" /> Done
+                </button>
+            ));
+        } else if (status === 'Done') {
+            actions.push((
+                <button
+                    key="action-reopen"
+                    type="button"
+                    className="btn btn-default btn-block experiment-action-reopen"
+                    onClick={() => {}}
+                >
+                    <span className="glyphicon glyphicon-pencil" /> Re-open
+                </button>
+            ));
         }
+        return actions;
+    }
+
+    render() {
+        const {
+            id, name, description, duration, interval, scanner, started, end,
+            onRemove, stopped,
+        } = this.props;
+        const { dialogue } = this.state;
+        const status = this.getStatus();
+        const actions = this.getActionButtons(status);
+
         return (
             <div
                 className="panel panel-default experiment-listing"
@@ -100,6 +193,12 @@ export default class ExperimentPanel extends React.Component {
                                     <td>{end.toString()}</td>
                                 </tr>
                             }
+                            {stopped &&
+                                <tr className="experiment-stopped">
+                                    <td>Stopped</td>
+                                    <td>{stopped.toString()}</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 }
@@ -117,12 +216,16 @@ ExperimentPanel.propTypes = {
     scanner: PropTypes.shape(myProps.scannerShape).isRequired,
     onStart: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired,
+    onStop: PropTypes.func.isRequired,
     started: PropTypes.instanceOf(Date),
     end: PropTypes.instanceOf(Date),
+    stopped: PropTypes.instanceOf(Date),
+    done: PropTypes.bool.isRequired,
 };
 
 ExperimentPanel.defaultProps = {
     description: null,
     started: null,
     end: null,
+    stopped: null,
 };

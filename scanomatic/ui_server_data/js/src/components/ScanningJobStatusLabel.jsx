@@ -6,7 +6,7 @@ const ScanningJobStatusLabel = (props) => {
     const classNames = ['label', 'scanning-job-status-label'];
     if (status === 'Running') {
         classNames.push('label-info');
-    } else if (status === 'Completed') {
+    } else if (status === 'Completed' || status === 'Done') {
         classNames.push('label-success');
     } else {
         classNames.push('label-default');
@@ -15,7 +15,7 @@ const ScanningJobStatusLabel = (props) => {
 };
 
 ScanningJobStatusLabel.propTypes = {
-    status: PropTypes.oneOf(['Planned', 'Completed', 'Running']).isRequired,
+    status: PropTypes.oneOf(['Planned', 'Completed', 'Running', 'Analysis', 'Done']).isRequired,
 };
 
 export default ScanningJobStatusLabel;
