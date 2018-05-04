@@ -37,6 +37,7 @@ export default function projects(state: State = defaultState, action: Action): S
         });
         if (!projectId) return state;
         const project = state.get(projectId);
+        if (!project) return state;
         const newState = new Map(state);
         newState.set(projectId, {
             ...project,
