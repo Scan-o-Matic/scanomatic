@@ -31,6 +31,7 @@ type PartialExperiment = {
     duration?: number,
     interval?: number,
     scannerId?: string,
+    started?: Date,
 };
 
 type PartialScanner = {
@@ -45,7 +46,7 @@ type PartialNewExperiment = {
     description?: string,
     scannerId?: string,
     duration?: number,
-    interval?: number
+    interval?: number,
 };
 
 export default class StateBuilder {

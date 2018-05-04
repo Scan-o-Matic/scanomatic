@@ -1,23 +1,24 @@
 import experiments from './experiments';
 
 describe('projects/reducers/entities/experiments', () => {
+    const state = new Map([
+        ['002', {
+            name: 'Some experiment',
+            description: 'This is an experiment',
+            duration: 1200,
+            interval: 300,
+            started: null,
+            stopped: null,
+            reason: null,
+            scannerId: '001',
+        }],
+    ]);
+
     it('should return an empty initial state', () => {
         expect(experiments(undefined, {})).toEqual(new Map());
     });
 
     it('should handle EXPERIMENT_ADD', () => {
-        const state = new Map([
-            ['002', {
-                name: 'Some experiment',
-                description: 'This is an experiment',
-                duration: 1200,
-                interval: 300,
-                started: null,
-                stopped: null,
-                reason: null,
-                scannerId: '001',
-            }],
-        ]);
         const action = {
             type: 'EXPERIMENTS_ADD',
             description: '',
@@ -40,5 +41,14 @@ describe('projects/reducers/entities/experiments', () => {
                 scannerId: 'S04',
             }],
         ]));
+    });
+
+    it('should handle EXPERIMENTS_REMOVE', () => {
+        const action = {
+            type: 'EXPERIMENTS_REMOVE',
+            id: '002',
+            date: new Date(),
+        };
+        expect(experiments(state, action)).toEqual(new Map([]));
     });
 });

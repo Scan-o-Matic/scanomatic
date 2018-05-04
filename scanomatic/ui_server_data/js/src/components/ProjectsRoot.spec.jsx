@@ -7,6 +7,10 @@ import ProjectsRoot from './ProjectsRoot';
 describe('<ProjectsRoot />', () => {
     const props = {
         projects: [],
+        experimentActions: {
+            onStart: () => {},
+            onRemove: () => {},
+        },
         newExperimentActions: {
             onChange: () => {},
             onCancel: () => {},
@@ -195,32 +199,50 @@ describe('<ProjectsRoot />', () => {
             expect(wrapper.find('ProjectPanel[id="42"]').prop('newExperimentDisabled')).toBeTruthy();
         },
     );
-    it(
-        'should create an <ExperimentPanel/> under <ProjectPanel/> for each experiment',
-        () => {
-            const projects = [
-                {
-                    id: '42',
-                    name: 'Foo',
-                    description: 'bar',
-                    experiments: [{
-                        id: '01',
-                        name: 'First Experiment',
-                        description: 'Bla bla',
-                        duration: 36000000,
-                        interval: 500000,
-                        scanner: {
-                            identifier: 'S01', name: 'Scanny', power: true, owned: true,
-                        },
-                    }],
-                },
-            ];
-            const wrapper = shallow(<ProjectsRoot
-                {...props}
-                projects={projects}
-            />);
-            expect(wrapper.find('ProjectPanel[id="42"]').find('ExperimentPanel').exists())
-                .toBeTruthy();
-        },
-    );
+    describe('experiments', () => {
+        const projects = [
+            {
+                id: '42',
+                name: 'Foo',
+                description: 'bar',
+                experiments: [{
+                    id: '01',
+                    name: 'First Experiment',
+                    description: 'Bla bla',
+                    duration: 36000000,
+                    interval: 500000,
+                    scanner: {
+                        identifier: 'S01', name: 'Scanny', power: true, owned: true,
+                    },
+                }],
+            },
+        ];
+        let wrapper;
+
+        beforeEach(() => {
+            wrapper = shallow(<ProjectsRoot {...props} projects={projects} />);
+        });
+
+        it(
+            'should create an <ExperimentPanel/> under <ProjectPanel/> for each experiment',
+            () => {
+                expect(wrapper.find('ProjectPanel[id="42"]').find('ExperimentPanel').exists())
+                    .toBeTruthy();
+            },
+        );
+
+        it('should pass experiment action onStart', () => {
+            expect(wrapper
+                .find('ProjectPanel[id="42"]')
+                .find('ExperimentPanel')
+                .prop('onStart')).toEqual(props.experimentActions.onStart);
+        });
+
+        it('should pass experiment action onRemove', () => {
+            expect(wrapper
+                .find('ProjectPanel[id="42"]')
+                .find('ExperimentPanel')
+                .prop('onRemove')).toEqual(props.experimentActions.onRemove);
+        });
+    });
 });

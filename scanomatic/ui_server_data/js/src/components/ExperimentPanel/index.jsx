@@ -32,7 +32,12 @@ export default class ExperimentPanel extends React.Component {
 
         if (status === 'Planned') {
             actions.push((
-                <button key="action-start" type="button" className="btn btn-default btn-block experiment-action-start" onClick={() => onStart(id)}>
+                <button
+                    key="action-start"
+                    type="button"
+                    className="btn btn-default btn-block experiment-action-start"
+                    onClick={() => onStart(id)}
+                >
                     <span className="glyphicon glyphicon-play" /> Start
                 </button>
             ));
@@ -59,7 +64,7 @@ export default class ExperimentPanel extends React.Component {
                         <div className="col-md-9">
                             <div className="text-justify experiment-description">{description}</div>
                         </div>
-                        <div className="col-md-3">
+                        <div className="col-md-3 action-buttons">
                             {actions}
                         </div>
                     </div>
@@ -116,9 +121,11 @@ ExperimentPanel.propTypes = {
     onStart: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired,
     started: PropTypes.instanceOf(Date),
+    end: PropTypes.instanceOf(Date),
 };
 
 ExperimentPanel.defaultProps = {
     description: null,
     started: null,
+    end: null,
 };
