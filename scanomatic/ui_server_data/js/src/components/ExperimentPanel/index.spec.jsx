@@ -7,6 +7,10 @@ import ExperimentPanel from './index';
 describe('<ExperimentPanel />', () => {
     const onStart = jasmine.createSpy('onStart');
     const onRemove = jasmine.createSpy('onRemove');
+    const onDone = jasmine.createSpy('onDone');
+    const onReopen = jasmine.createSpy('onReopen');
+    const onStop = jasmine.createSpy('onStop');
+    const onFeatureExtract = jasmine.createSpy('onFeatureExtract');
 
     let wrapper;
     const props = {
@@ -15,6 +19,7 @@ describe('<ExperimentPanel />', () => {
         description: 'blablabla',
         interval: 60000,
         duration: 1200000,
+        done: false,
         scanner: {
             identifier: 'myScanner',
             name: 'myScanner',
@@ -23,11 +28,19 @@ describe('<ExperimentPanel />', () => {
         },
         onStart,
         onRemove,
+        onDone,
+        onReopen,
+        onStop,
+        onFeatureExtract,
     };
 
     beforeEach(() => {
         onStart.calls.reset();
         onRemove.calls.reset();
+        onDone.calls.reset();
+        onReopen.calls.reset();
+        onStop.calls.reset();
+        onFeatureExtract.calls.reset();
     });
 
     describe('planned', () => {
