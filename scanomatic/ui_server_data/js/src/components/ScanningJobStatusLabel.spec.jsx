@@ -24,5 +24,16 @@ describe('<ScanningJobStatusLabel />', () => {
         expect(wrapper.text()).toEqual('Completed');
         expect(wrapper.prop('className')).toContain('label-success');
     });
-});
 
+    it('should render Done as a success label', () => {
+        const wrapper = shallow(<ScanningJobStatusLabel status="Done" />);
+        expect(wrapper.text()).toEqual('Done');
+        expect(wrapper.prop('className')).toContain('label-success');
+    });
+
+    it('should render Analysis as a default label', () => {
+        const wrapper = shallow(<ScanningJobStatusLabel status="Analysis" />);
+        expect(wrapper.text()).toEqual('Analysis');
+        expect(wrapper.prop('className')).toContain('label-default');
+    });
+});
