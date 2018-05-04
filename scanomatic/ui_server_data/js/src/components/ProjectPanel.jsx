@@ -42,7 +42,7 @@ class ProjectPanel extends React.Component {
                 </div>
                 {this.state.expanded && (
                     <div className="panel-body">
-                        <div className="row">
+                        <div className="row description-and-actions">
                             <div className="col-md-9">
                                 <div className="text-justify project-description">
                                     {description}

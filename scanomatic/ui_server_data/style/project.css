@@ -26,3 +26,15 @@
 .form-group {
   margin-top: 2rem;
 }
+
+.panel-title {
+  display: inline-block;
+}
+
+.scanning-job-status-label {
+  float: right;
+}
+
+.description-and-actions {
+  margin-bottom: 0.5rem;
+}
