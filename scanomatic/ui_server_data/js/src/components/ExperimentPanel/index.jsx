@@ -29,7 +29,7 @@ export default class ExperimentPanel extends React.Component {
 
     getActionButtons(status) {
         const {
-            id, name, onStart, onStop,
+            id, name, onStart, onStop, onReopen, onDone,
         } = this.props;
         const actions = [];
 
@@ -111,7 +111,7 @@ export default class ExperimentPanel extends React.Component {
                     key="action-done"
                     type="button"
                     className="btn btn-default btn-block experiment-action-done"
-                    onClick={() => {}}
+                    onClick={() => onDone(id)}
                 >
                     <span className="glyphicon glyphicon-ok" /> Done
                 </button>
@@ -122,7 +122,7 @@ export default class ExperimentPanel extends React.Component {
                     key="action-reopen"
                     type="button"
                     className="btn btn-default btn-block experiment-action-reopen"
-                    onClick={() => {}}
+                    onClick={() => onReopen(id)}
                 >
                     <span className="glyphicon glyphicon-pencil" /> Re-open
                 </button>
@@ -217,6 +217,8 @@ ExperimentPanel.propTypes = {
     onStart: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired,
     onStop: PropTypes.func.isRequired,
+    onDone: PropTypes.func.isRequired,
+    onReopen: PropTypes.func.isRequired,
     started: PropTypes.instanceOf(Date),
     end: PropTypes.instanceOf(Date),
     stopped: PropTypes.instanceOf(Date),

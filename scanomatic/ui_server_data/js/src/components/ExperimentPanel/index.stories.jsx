@@ -26,6 +26,9 @@ storiesOf('ExperimentPanel', module)
             }}
             onStart={action('start')}
             onRemove={action('remove')}
+            onStop={action('stop')}
+            onDone={action('done')}
+            onReopen={action('reopen')}
             done={false}
         />
     ))
@@ -42,6 +45,11 @@ storiesOf('ExperimentPanel', module)
             started={new Date()}
             end={new Date(new Date().getTime() + 1200000)}
             done={false}
+            onStart={action('start')}
+            onRemove={action('remove')}
+            onStop={action('stop')}
+            onDone={action('done')}
+            onReopen={action('reopen')}
         />
     ))
     .add('Stopped', () => (
@@ -58,6 +66,11 @@ storiesOf('ExperimentPanel', module)
             end={new Date(new Date().getTime() + 1200000)}
             stopped={new Date()}
             done={false}
+            onStart={action('start')}
+            onRemove={action('remove')}
+            onStop={action('stop')}
+            onDone={action('done')}
+            onReopen={action('reopen')}
         />
     ))
     .add('Ended', () => (
@@ -73,6 +86,11 @@ storiesOf('ExperimentPanel', module)
             started={new Date(new Date().getTime() - 1200000)}
             end={new Date(new Date().getTime() - 200000)}
             done={false}
+            onStart={action('start')}
+            onRemove={action('remove')}
+            onStop={action('stop')}
+            onDone={action('done')}
+            onReopen={action('reopen')}
         />
     ))
     .add('Done', () => (
@@ -88,5 +106,10 @@ storiesOf('ExperimentPanel', module)
             started={new Date(new Date().getTime() - 1200000)}
             end={new Date(new Date().getTime() - 200000)}
             done
+            onStart={action('start')}
+            onRemove={action('remove')}
+            onStop={action('stop')}
+            onDone={action('done')}
+            onReopen={action('reopen')}
         />
     ));
