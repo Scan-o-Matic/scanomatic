@@ -72,6 +72,7 @@ describe('projects/actions', () => {
             });
         });
     });
+
     describe('addExperiment', () => {
         it('should return a EXPERIMENTS_ADD action with an id based on the current date', () => {
             expect(actions.addExperiment(
@@ -95,7 +96,7 @@ describe('projects/actions', () => {
     });
 
     describe('startExperiment', () => {
-        it('should return an EXPERIMENNTS_START action', () => {
+        it('should return an EXPERIMENTS_START action', () => {
             expect(actions.startExperiment('123')).toEqual({
                 type: 'EXPERIMENTS_START',
                 id: '123',
@@ -105,11 +106,20 @@ describe('projects/actions', () => {
     });
 
     describe('stopExperiment', () => {
-        it('should return an EXPERIMENNTS_STOP action', () => {
+        it('should return an EXPERIMENTS_STOP action', () => {
             expect(actions.stopExperiment('123')).toEqual({
                 type: 'EXPERIMENTS_STOP',
                 id: '123',
                 date: new Date(),
+            });
+        });
+    });
+
+    describe('removeExperiment', () => {
+        it('should return an EXPERIMENTS_REMOVE action', () => {
+            expect(actions.removeExperiment('123')).toEqual({
+                type: 'EXPERIMENTS_REMOVE',
+                id: '123',
             });
         });
     });

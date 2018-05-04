@@ -70,6 +70,31 @@ describe('projects/selectors', () => {
                     ],
                 })]);
         });
+
+        it('should return started and end if experiment is started', () => {
+            const started = new Date();
+            const duration = 200000;
+            const end = new Date(started.getTime() + duration);
+            const state = new StateBuilder()
+                .clearProjects()
+                .addProject({ id: 'P1', experimentIds: ['E1'] })
+                .addExperiment({
+                    id: 'E1', scannerId: 'S1', started, duration,
+                })
+                .addScanner({
+                    id: 'S1', name: 'Scanny', isOnline: true, isFree: false,
+                })
+                .build();
+            expect(selectors.getProjects(state)).toEqual([
+                jasmine.objectContaining({
+                    experiments: [
+                        jasmine.objectContaining({
+                            started,
+                            end,
+                        }),
+                    ],
+                })]);
+        });
     });
 
     describe('getScanners', () => {

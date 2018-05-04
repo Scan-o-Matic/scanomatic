@@ -9,6 +9,8 @@ import {
     initNewProject,
     submitNewExperiment,
     submitNewProject,
+    startExperiment,
+    removeExperiment,
 } from '../projects/actions';
 import {
     getNewExperiment,
@@ -44,6 +46,10 @@ function mapDispatchToProps(dispatch) {
             onCancel: () => dispatch(clearNewProject()),
             onChange: (field, value) => dispatch(changeNewProject(field, value)),
             onSubmit: () => dispatch(submitNewProject()),
+        },
+        experimentActions: {
+            onStart: experimentId => dispatch(startExperiment(experimentId)),
+            onRemove: experimentId => dispatch(removeExperiment(experimentId)),
         },
     };
 }

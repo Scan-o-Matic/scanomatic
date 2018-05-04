@@ -18,7 +18,7 @@ const cccMetadata = PropTypes.shape({
 });
 
 const scannerShape = {
-    identifier: PropTypes.string.isRequired,
+    identifier: PropTypes.string,
     name: PropTypes.string.isRequired,
     owned: PropTypes.bool.isRequired,
     power: PropTypes.bool.isRequired,

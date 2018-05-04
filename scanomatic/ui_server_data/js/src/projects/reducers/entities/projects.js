@@ -27,6 +27,25 @@ export default function projects(state: State = defaultState, action: Action): S
         });
         return newState;
     }
+    case 'EXPERIMENTS_REMOVE':
+    {
+        let projectId;
+        const { id: eid } = action;
+        state.forEach((value, key) => {
+            if (value.experimentIds.indexOf(eid) > -1) {
+                projectId = key;
+            }
+        });
+        if (!projectId) return state;
+        const project = state.get(projectId);
+        if (!project) return state;
+        const newState = new Map(state);
+        newState.set(projectId, {
+            ...project,
+            experimentIds: project.experimentIds.filter(id => id !== eid),
+        });
+        return newState;
+    }
     default:
         return state;
     }

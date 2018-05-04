@@ -11,7 +11,7 @@ export default class ProjectsRoot extends React.Component {
     renderProject(project) {
         const {
             onNewExperiment, newExperiment, newExperimentErrors, newExperimentActions,
-            scanners,
+            scanners, experimentActions,
         } = this.props;
         const hasNewExperiment = newExperiment && newExperiment.projectId === project.id;
         return (
@@ -31,7 +31,7 @@ export default class ProjectsRoot extends React.Component {
                     scanners={scanners}
                 />}
                 {project.experiments.map(experiment => (
-                    <ExperimentPanel key={experiment.id} {...experiment} />
+                    <ExperimentPanel key={experiment.id} {...experiment} {...experimentActions} />
                 ))}
             </ProjectPanel>);
     }
@@ -78,6 +78,10 @@ ProjectsRoot.propTypes = {
         onChange: PropTypes.func.isRequired,
         onCancel: PropTypes.func.isRequired,
         onSubmit: PropTypes.func.isRequired,
+    }).isRequired,
+    experimentActions: PropTypes.shape({
+        onStart: PropTypes.func.isRequired,
+        onRemove: PropTypes.func.isRequired,
     }).isRequired,
     newProjectErrors: PropTypes.instanceOf(Map),
     onNewExperiment: PropTypes.func.isRequired,

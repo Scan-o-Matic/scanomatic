@@ -66,4 +66,35 @@ describe('projects/reducers/entities/projects', () => {
             }],
         ]));
     });
+
+    it('should handle EXPERIMENTS_REMOVE', () => {
+        const state = new Map([
+            ['p1', {
+                name: 'Project',
+                description: '',
+                experimentIds: ['e12'],
+            }],
+            ['p2', {
+                name: 'Other Project',
+                description: '',
+                experimentIds: ['e34'],
+            }],
+        ]);
+        const action = {
+            type: 'EXPERIMENTS_REMOVE',
+            id: 'e34',
+        };
+        expect(reducer(state, action)).toEqual(new Map([
+            ['p1', {
+                name: 'Project',
+                description: '',
+                experimentIds: ['e12'],
+            }],
+            ['p2', {
+                name: 'Other Project',
+                description: '',
+                experimentIds: [],
+            }],
+        ]));
+    });
 });
