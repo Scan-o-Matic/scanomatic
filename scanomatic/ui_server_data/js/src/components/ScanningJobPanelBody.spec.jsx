@@ -276,14 +276,21 @@ describe('<ScanningJobPanelBody />', () => {
             const link = wrapper
                 .find('[href="/compile?projectdirectory=root/job0000"]');
             expect(link.exists()).toBeTruthy();
-            expect(link.text()).toEqual('Compile project');
+            expect(link.text()).toEqual('Compile');
         });
 
         it('should render a link to the qc page', () => {
             const link = wrapper
                 .find('[href="/qc_norm?analysisdirectory=job0000/analysis&project=Omnibus"]');
             expect(link.exists()).toBeTruthy();
-            expect(link.text()).toEqual('QC project');
+            expect(link.text()).toEqual('Quality Control');
+        });
+
+        it('should render a link to the analysis page', () => {
+            const link = wrapper
+                .find('[href="/analysis?compilationfile=root/job0000/job0000.project.compilation"]');
+            expect(link.exists()).toBeTruthy();
+            expect(link.text()).toEqual('Analyse');
         });
 
         it('should not show scanner info', () => {

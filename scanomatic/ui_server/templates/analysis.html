@@ -24,7 +24,10 @@
                   <input name="compilation" id="compilation" class="long"
                       onchange="set_file_path(this, '', /\.project\.(compilation(\.original)?|settings)$/, true);"
                       onfocus="set_file_path(this, '', /\.project\.(compilation(\.original)?|settings)$/, true);"
-                      onkeyup="set_file_path(this, '', /\.project\.(compilation(\.original)?|settings)$/, true);"/>
+                      onkeyup="set_file_path(this, '', /\.project\.(compilation(\.original)?|settings)$/, true);"
+                      value="{{ compilation_file }}"
+                      {% if compilation_file_readonly %}readonly{% endif %}
+                  />
                   <div class="indented"><em>
                       Either the original or a new re-compilation file
                   </em></div>
@@ -33,7 +36,9 @@
                   <input name="compile-instructions" id="compile-instructions" class="long"
                       onchange="set_file_path(this, 'project.compilation.instructions', null, false);"
                       onfocus="set_file_path(this, 'project.compilation.instructions', null, false);"
-                      onkeyup="set_file_path(this, 'project.compilation.instructions', null, false);"/>
+                      onkeyup="set_file_path(this, 'project.compilation.instructions', null, false);"
+                      {% if compilation_file_readonly %}readonly{% endif %}
+                  />
                   <div class="indented"><em>
                       This is optional, but if included should point to a
                       <code>.project.compilation.instructions</code>, else it

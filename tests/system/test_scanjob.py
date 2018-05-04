@@ -19,7 +19,7 @@ def test_compile_with_given_directory(scanomatic, browser):
     sleep(2)
     browser.get(scanomatic + '/experiment')
     browser.find_element_by_id('job-' + scanjobid).find_element_by_link_text(
-        "Compile project".format(scanjobname)
+        "Compile".format(scanjobname)
     ).click()
     input = browser.find_element_by_id('project-directory')
     assert input.get_attribute('value') == 'root/{}'.format(scanjobid)
@@ -38,7 +38,7 @@ def test_qc_with_given_directory(scanomatic, browser):
     sleep(2)
     browser.get(scanomatic + '/experiment')
     browser.find_element_by_id('job-' + scanjobid).find_element_by_link_text(
-        "QC project".format(scanjobname)
+        "Quality Control".format(scanjobname)
     ).click()
     WebDriverWait(browser, 2).until(
         EC.presence_of_element_located((By.ID, 'divLoading'))
