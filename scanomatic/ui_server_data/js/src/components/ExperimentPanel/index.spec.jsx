@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import React from 'react';
 
 import '../enzyme-setup';
-import ExperimentPanel from './index';
+import ExperimentPanel, { formatScannerStatus } from './index';
 
 describe('<ExperimentPanel />', () => {
     const onStart = jasmine.createSpy('onStart');
@@ -628,5 +628,39 @@ describe('<ExperimentPanel />', () => {
                 expect(panelBody.exists()).toBeTruthy();
             });
         });
+    });
+});
+
+describe('formatScannerStatus', () => {
+    let scanner = {
+        identifier: 'myScanner',
+        name: 'myScanner',
+    };
+
+    it('returns (online, occupied) when scanner is owned and on', () => {
+        scanner.owned = true;
+        scanner.power = true;
+
+        expect(formatScannerStatus(scanner)).toEqual('myScanner (online, occupied)');
+    });
+
+    it('returns (offline, occupied) when scanner is owned and off', () => {
+        scanner.owned = true;
+        scanner.power = false;
+
+        expect(formatScannerStatus(scanner)).toEqual('myScanner (offline, occupied)');
+    });
+
+    it('returns (online, free) when scanner is free and on', () => {
+        scanner.owned = false;
+        scanner.power = true;
+        expect(formatScannerStatus(scanner)).toEqual('myScanner (online, free)');
+    });
+
+    it('returns (offline, free) when scanner is free and off', () => {
+        scanner.owned = false;
+        scanner.power = false;
+
+        expect(formatScannerStatus(scanner)).toEqual('myScanner (offline, free)');
     });
 });

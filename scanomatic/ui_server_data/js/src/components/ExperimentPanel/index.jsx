@@ -10,7 +10,7 @@ import ScanningJobStopDialogue from '../ScanningJobStopDialogue';
 
 const millisecondsPerMinute = 60000;
 
-function formatScannerStatus(scanner) {
+export function formatScannerStatus(scanner) {
     const { name, power, owned } = scanner;
     return `${name} (${power ? 'online' : 'offline'}, ${owned ? 'occupied' : 'free'})`;
 }
