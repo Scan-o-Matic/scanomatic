@@ -632,7 +632,7 @@ describe('<ExperimentPanel />', () => {
 });
 
 describe('formatScannerStatus', () => {
-    let scanner = {
+    const scanner = {
         identifier: 'myScanner',
         name: 'myScanner',
     };
