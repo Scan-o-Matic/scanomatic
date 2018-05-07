@@ -8,9 +8,12 @@ class ProjectPanel extends React.Component {
         this.handleToggleExpand = this.handleToggleExpand.bind(this);
     }
 
+    getExpandedState() {
+        return this.state.expanded == null ? this.props.defaultExpanded : this.state.expanded;
+    }
+
     handleToggleExpand() {
-        const expanded = this.state.expanded == null ?
-            this.props.defaultExpanded : this.state.expanded;
+        const expanded = this.getExpandedState();
         this.setState({ expanded: !expanded });
     }
 
@@ -23,7 +26,7 @@ class ProjectPanel extends React.Component {
             onNewExperiment,
             defaultExpanded,
         } = this.props;
-        const expanded = this.state.expanded == null ? defaultExpanded : this.state.expanded;
+        const expanded = this.getExpandedState();
 
         return (
             <div
@@ -38,7 +41,7 @@ class ProjectPanel extends React.Component {
                 >
                     <div
                         className={
-                            this.state.expanded
+                            expanded
                                 ? 'glyphicon glyphicon-collapse-up'
                                 : 'glyphicon glyphicon-collapse-down'
                         }
