@@ -11,6 +11,10 @@ import {
     submitNewProject,
     startExperiment,
     removeExperiment,
+    stopExperiment,
+    featureExtact,
+    doneExperiment,
+    reopenExperiment,
 } from '../projects/actions';
 import {
     getNewExperiment,
@@ -50,6 +54,12 @@ function mapDispatchToProps(dispatch) {
         experimentActions: {
             onStart: experimentId => dispatch(startExperiment(experimentId)),
             onRemove: experimentId => dispatch(removeExperiment(experimentId)),
+            onStop:
+                (experimentId, reason) => dispatch(stopExperiment(experimentId, reason)),
+            onFeatureExtact:
+                (experimentId, keepQC) => dispatch(featureExtact(experimentId, keepQC)),
+            onDone: experimentId => dispatch(doneExperiment(experimentId)),
+            onReopen: experimentId => dispatch(reopenExperiment(experimentId)),
         },
     };
 }
