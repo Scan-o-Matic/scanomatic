@@ -13,7 +13,7 @@ const millisecondsPerMinute = 60000;
 export default class ExperimentPanel extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { dialogue: null, expanded: false };
+        this.state = { dialogue: null };
         this.handleDismissDialogue = () => this.setState({ dialogue: null });
         this.handleShowRemoveDialogue = () => this.setState({ dialogue: 'remove' });
         this.handleShowStopDialogue = () => this.setState({ dialogue: 'stop' });
@@ -22,7 +22,9 @@ export default class ExperimentPanel extends React.Component {
     }
 
     handleToggleExpand() {
-        this.setState({ expanded: !this.state.expanded });
+        const expanded = this.state.expanded == null ?
+            this.props.defaultExpanded : this.state.expanded;
+        this.setState({ expanded: !expanded });
     }
 
     getStatus() {
@@ -239,8 +241,9 @@ export default class ExperimentPanel extends React.Component {
     }
 
     render() {
-        const { name } = this.props;
+        const { name, defaultExpanded, } = this.props;
         const status = this.getStatus();
+        const expanded = this.state.expanded == null ? defaultExpanded : this.state.expanded;
 
         return (
             <div
@@ -262,7 +265,7 @@ export default class ExperimentPanel extends React.Component {
                     /> <h3 className="panel-title">{name}</h3>
                     <ScanningJobStatusLabel status={status} />
                 </div>
-                {this.state.expanded && this.getPanelContents(status)}
+                {expanded && this.getPanelContents(status)}
             </div>
         );
     }
@@ -285,6 +288,7 @@ ExperimentPanel.propTypes = {
     end: PropTypes.instanceOf(Date),
     stopped: PropTypes.instanceOf(Date),
     done: PropTypes.bool.isRequired,
+    defaultExpanded: PropTypes.bool,
 };
 
 ExperimentPanel.defaultProps = {
@@ -292,4 +296,5 @@ ExperimentPanel.defaultProps = {
     started: null,
     end: null,
     stopped: null,
+    defaultExpanded: false,
 };
