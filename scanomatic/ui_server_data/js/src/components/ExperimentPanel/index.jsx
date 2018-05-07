@@ -241,7 +241,7 @@ ExperimentPanel.propTypes = {
     started: PropTypes.instanceOf(Date),
     end: PropTypes.instanceOf(Date),
     stopped: PropTypes.instanceOf(Date),
-    done: PropTypes.bool.isRequired,
+    done: PropTypes.bool,
 };
 
 ExperimentPanel.defaultProps = {
@@ -249,4 +249,5 @@ ExperimentPanel.defaultProps = {
     started: null,
     end: null,
     stopped: null,
+    done: false,
 };
