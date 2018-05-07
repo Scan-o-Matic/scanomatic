@@ -10,6 +10,11 @@ import ScanningJobStopDialogue from '../ScanningJobStopDialogue';
 
 const millisecondsPerMinute = 60000;
 
+function formatScannerStatus(scanner) {
+    const { name, power, owned } = scanner;
+    return `${name} (${power ? 'online' : 'offline'}, ${owned ? 'occupied' : 'free'})`;
+}
+
 export default class ExperimentPanel extends React.Component {
     constructor(props) {
         super(props);
@@ -205,12 +210,7 @@ export default class ExperimentPanel extends React.Component {
                         </tr>
                         <tr className="experiment-scanner">
                             <td>Scanner</td>
-                            <td>
-                                {scanner.name} (
-                                {scanner.power ? 'online' : 'offline'},&nbsp;
-                                {scanner.owned ? 'occupied' : 'free'}
-                                )
-                            </td>
+                            <td>{formatScannerStatus(scanner)}</td>
                         </tr>
                         {started &&
                             <tr className="experiment-started">
