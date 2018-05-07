@@ -244,7 +244,7 @@ export default class ExperimentPanel extends React.Component {
     }
 
     render() {
-        const { name, defaultExpanded, } = this.props;
+        const { name } = this.props;
         const status = this.getStatus();
         const expanded = this.getExpandedState();
 
