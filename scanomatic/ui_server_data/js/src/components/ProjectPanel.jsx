@@ -8,12 +8,12 @@ class ProjectPanel extends React.Component {
         this.handleToggleExpand = this.handleToggleExpand.bind(this);
     }
 
-    getExpandedState() {
+    getExpanded() {
         return this.state.expanded == null ? this.props.defaultExpanded : this.state.expanded;
     }
 
     handleToggleExpand() {
-        const expanded = this.getExpandedState();
+        const expanded = this.getExpanded();
         this.setState({ expanded: !expanded });
     }
 
@@ -25,7 +25,7 @@ class ProjectPanel extends React.Component {
             newExperimentDisabled,
             onNewExperiment,
         } = this.props;
-        const expanded = this.getExpandedState();
+        const expanded = this.getExpanded();
 
         return (
             <div
