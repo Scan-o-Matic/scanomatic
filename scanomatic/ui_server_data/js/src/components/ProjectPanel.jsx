@@ -13,8 +13,7 @@ class ProjectPanel extends React.Component {
     }
 
     handleToggleExpand() {
-        const expanded = this.getExpanded();
-        this.setState({ expanded: !expanded });
+        this.setState({ expanded: !this.getExpanded() });
     }
 
     render() {
