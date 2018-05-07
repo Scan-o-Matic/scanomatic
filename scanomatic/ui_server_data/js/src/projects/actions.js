@@ -178,3 +178,9 @@ export function submitNewExperiment(): ThunkAction {
         dispatch(clearNewExperiment());
     };
 }
+
+export function featureExtact(id: string, keepQC: boolean): ThunkAction {
+    return (dispatch, getState) => {
+        // This is a stub since API-calls are not yet impleme3nted
+    };
+};
