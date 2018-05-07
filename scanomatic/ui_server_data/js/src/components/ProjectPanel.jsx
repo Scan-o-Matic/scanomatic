@@ -24,7 +24,6 @@ class ProjectPanel extends React.Component {
             name,
             newExperimentDisabled,
             onNewExperiment,
-            defaultExpanded,
         } = this.props;
         const expanded = this.getExpandedState();
 
