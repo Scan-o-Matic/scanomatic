@@ -33,6 +33,11 @@ describe('<ProjectPanel />', () => {
             expect(panelHeading.text()).toEqual(' Test');
         });
 
+		it('renders with glyphicon-collapse-up', () => {
+			const panelHeading = wrapper.find('.panel-heading');
+			expect(panelHeading.find('.glyphicon-collapse-up').exists()).toBeTruthy();
+		});
+
         it('renders a panel-body with the description', () => {
             const panelBody = panel.find('.panel-body');
             expect(panelBody.exists()).toBeTruthy();
@@ -82,7 +87,6 @@ describe('<ProjectPanel />', () => {
                 description="Debugging the system."
                 onNewExperiment={onNewExperiment}
             />);
-            panel = wrapper.find('.panel');
         });
 
         it('toggles panel-body when panel-heading is clicked', () => {
@@ -106,8 +110,12 @@ describe('<ProjectPanel />', () => {
                 onNewExperiment={onNewExperiment}
                 defaultExpanded={false}
             />);
-            panel = wrapper.find('.panel');
         });
+
+		it('renders with glyphicon-collapse-down', () => {
+			const panelHeading = wrapper.find('.panel-heading');
+			expect(panelHeading.find('.glyphicon-collapse-down').exists()).toBeTruthy();
+		});
 
         it('toggles panel-body when panel-heading is clicked', () => {
             let panelBody = wrapper.find('.panel-body');
