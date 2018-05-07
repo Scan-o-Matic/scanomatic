@@ -15,11 +15,8 @@ describe('<ProjectPanel />', () => {
             name="Test"
             description="Debugging the system."
             onNewExperiment={onNewExperiment}
+            defaultExpanded
         />);
-        panel = wrapper.find('.panel');
-        const panelHeading = panel.find('.panel-heading');
-        panelHeading.simulate('click');
-        wrapper.update();
         panel = wrapper.find('.panel');
     });
 
