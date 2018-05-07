@@ -21,7 +21,7 @@ class ProjectPanel extends React.Component {
             name,
             newExperimentDisabled,
             onNewExperiment,
-            defaultExpanded
+            defaultExpanded,
         } = this.props;
         const expanded = this.state.expanded == null ? defaultExpanded : this.state.expanded;
 
