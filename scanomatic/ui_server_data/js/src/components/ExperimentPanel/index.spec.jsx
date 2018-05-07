@@ -570,21 +570,19 @@ describe('<ExperimentPanel />', () => {
             onFeatureExtract,
         };
 
-        describe('planned', () => {
-            beforeEach(() => {
-                wrapper = shallow(<ExperimentPanel {...props} />);
-            });
+        beforeEach(() => {
+            wrapper = shallow(<ExperimentPanel {...props} />);
+        });
 
-            it('toggles panel-body when panel-heading is clicked', () => {
-                let panelBody = wrapper.find('.panel-body');
-                const panelHeading = wrapper.find('.panel-heading');
-                expect(panelBody.exists()).toBeFalsy();
+        it('toggles panel-body when panel-heading is clicked', () => {
+            let panelBody = wrapper.find('.panel-body');
+            const panelHeading = wrapper.find('.panel-heading');
+            expect(panelBody.exists()).toBeFalsy();
 
-                panelHeading.simulate('click');
-                wrapper.update();
-                panelBody = wrapper.find('.panel-body');
-                expect(panelBody.exists()).toBeTruthy();
-            });
+            panelHeading.simulate('click');
+            wrapper.update();
+            panelBody = wrapper.find('.panel-body');
+            expect(panelBody.exists()).toBeTruthy();
         });
     });
 
@@ -612,21 +610,19 @@ describe('<ExperimentPanel />', () => {
             defaultExpanded: false,
         };
 
-        describe('planned', () => {
-            beforeEach(() => {
-                wrapper = shallow(<ExperimentPanel {...props} />);
-            });
+        beforeEach(() => {
+            wrapper = shallow(<ExperimentPanel {...props} />);
+        });
 
-            it('toggles panel-body when panel-heading is clicked', () => {
-                let panelBody = wrapper.find('.panel-body');
-                const panelHeading = wrapper.find('.panel-heading');
-                expect(panelBody.exists()).toBeFalsy();
+        it('toggles panel-body when panel-heading is clicked', () => {
+            let panelBody = wrapper.find('.panel-body');
+            const panelHeading = wrapper.find('.panel-heading');
+            expect(panelBody.exists()).toBeFalsy();
 
-                panelHeading.simulate('click');
-                wrapper.update();
-                panelBody = wrapper.find('.panel-body');
-                expect(panelBody.exists()).toBeTruthy();
-            });
+            panelHeading.simulate('click');
+            wrapper.update();
+            panelBody = wrapper.find('.panel-body');
+            expect(panelBody.exists()).toBeTruthy();
         });
     });
 });
