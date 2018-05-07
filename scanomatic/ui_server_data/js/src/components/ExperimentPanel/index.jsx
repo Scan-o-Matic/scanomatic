@@ -102,7 +102,7 @@ export default class ExperimentPanel extends React.Component {
                     className="btn btn-default btn-block experiment-action-extract"
                     onClick={this.handleShowFeatureExtractDialogue}
                 >
-                    <span className="glyphicon glyphicon-flash" /> Extract
+                    <span className="glyphicon glyphicon-flash" /> Extract Features
                 </button>
             ));
             actions.push((

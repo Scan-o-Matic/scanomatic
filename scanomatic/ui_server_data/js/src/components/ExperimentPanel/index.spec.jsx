@@ -237,17 +237,11 @@ describe('<ExperimentPanel />', () => {
     describe('running', () => {
         const runningProps = {
             started: new Date(),
-            end: new Date(),
+            end: new Date(new Date().getTime() + 1200000),
         };
 
         beforeEach(() => {
             wrapper = shallow(<ExperimentPanel {...props} {...runningProps} />);
-        });
-
-        it('renders no action buttons', () => {
-            const buttons = wrapper.find('.action-buttons');
-            expect(buttons.exists()).toBeTruthy();
-            expect(buttons.children().length).toEqual(0);
         });
 
         describe('<ScanningJobStatusLabel />', () => {
@@ -281,21 +275,256 @@ describe('<ExperimentPanel />', () => {
                 expect(btn.hasClass('btn-block')).toBeTruthy();
             });
 
-            it('calls onStart on click', () => {
+            it('renders stop dialogue on click', () => {
                 btn.simulate('click');
-                expect(onStop).toHaveBeenCalledWith(props.id);
+                wrapper.update();
+                expect(wrapper.find('ScanningJobStopDialogue').exists()).toBeTruthy();
+            });
+
+            it('passes a dialogue dismiss function to onCancel', () => {
+                btn.simulate('click');
+                wrapper.update();
+                wrapper.find('ScanningJobStopDialogue').prop('onCancel')();
+                wrapper.update();
+                expect(wrapper.find('ScanningJobStopDialogue').exists()).toBeFalsy();
+                expect(onStop).not.toHaveBeenCalled();
+            });
+
+            it('calls onStop on onConfirm', () => {
+                btn.simulate('click');
+                wrapper.update();
+                wrapper.find('ScanningJobStopDialogue').prop('onConfirm')('test');
+                expect(onStop).toHaveBeenCalledWith(props.id, 'test');
             });
         });
 
-        it('renders started', () => {
+        it('renders start time', () => {
             const tr = wrapper.find('.experiment-started');
             expect(tr.exists()).toBeTruthy();
             expect(tr.find('td').at(0).text()).toEqual('Started');
             expect(tr.find('td').at(1).text()).toEqual(runningProps.started.toString());
         });
+
+        it('renders end time', () => {
+            const tr = wrapper.find('.experiment-end');
+            expect(tr.exists()).toBeTruthy();
+            expect(tr.find('td').at(0).text()).toEqual('Ends');
+            expect(tr.find('td').at(1).text()).toEqual(runningProps.end.toString());
+        });
     });
 
-    describe('stopped', () => {
+    describe('analysis', () => {
+        const stoppedProps = {
+            started: new Date(),
+            end: new Date(new Date().getTime() + 1200000),
+            stopped: new Date(new Date().getTime() + 200000),
+        };
 
+        beforeEach(() => {
+            wrapper = shallow(<ExperimentPanel {...props} {...stoppedProps} />);
+        });
+
+        it('renders experiment as analysis status', () => {
+            expect(wrapper.find('ScanningJobStatusLabel').prop('status'))
+                .toEqual('Analysis');
+        });
+
+        it('renders end time', () => {
+            const tr = wrapper.find('.experiment-end');
+            expect(tr.exists()).toBeTruthy();
+            expect(tr.find('td').at(0).text()).toEqual('Ended');
+            expect(tr.find('td').at(1).text()).toEqual(stoppedProps.end.toString());
+        });
+
+        it('renders stopped time', () => {
+            const tr = wrapper.find('.experiment-stopped');
+            expect(tr.exists()).toBeTruthy();
+            expect(tr.find('td').at(0).text()).toEqual('Stopped');
+            expect(tr.find('td').at(1).text()).toEqual(stoppedProps.stopped.toString());
+        });
+
+        describe('compile button', () => {
+            let btn;
+            beforeEach(() => {
+                const buttons = wrapper.find('.action-buttons');
+                btn = buttons.find('.experiment-action-compile');
+            });
+
+            it('renders', () => {
+                expect(btn.exists()).toBeTruthy();
+                expect(btn.text()).toEqual(' Compile');
+                expect(btn.find('.glyphicon-flash').exists()).toBeTruthy();
+            });
+
+            it('formats correctly', () => {
+                expect(btn.is('a')).toBeTruthy();
+                expect(btn.hasClass('btn')).toBeTruthy();
+                expect(btn.hasClass('btn-block')).toBeTruthy();
+            });
+
+            it('links correctly', () => {
+                expect(btn.prop('href')).toEqual('/compile?projectdirectory=root/job00010');
+            });
+        });
+
+        describe('analyse button', () => {
+            let btn;
+            beforeEach(() => {
+                const buttons = wrapper.find('.action-buttons');
+                btn = buttons.find('.experiment-action-analyse');
+            });
+
+            it('renders', () => {
+                expect(btn.exists()).toBeTruthy();
+                expect(btn.text()).toEqual(' Analyse');
+                expect(btn.find('.glyphicon-flash').exists()).toBeTruthy();
+            });
+
+            it('formats correctly', () => {
+                expect(btn.is('a')).toBeTruthy();
+                expect(btn.hasClass('btn')).toBeTruthy();
+                expect(btn.hasClass('btn-block')).toBeTruthy();
+            });
+
+            it('links correctly', () => {
+                expect(btn.prop('href'))
+                    .toEqual('/analysis?compilationfile=root/job00010/job00010.project.compilation');
+            });
+        });
+
+        describe('qc button', () => {
+            let btn;
+            beforeEach(() => {
+                const buttons = wrapper.find('.action-buttons');
+                btn = buttons.find('.experiment-action-qc');
+            });
+
+            it('renders', () => {
+                expect(btn.exists()).toBeTruthy();
+                expect(btn.text()).toEqual(' Quality Control');
+                expect(btn.find('.glyphicon-flash').exists()).toBeTruthy();
+            });
+
+            it('formats correctly', () => {
+                expect(btn.is('a')).toBeTruthy();
+                expect(btn.hasClass('btn')).toBeTruthy();
+                expect(btn.hasClass('btn-block')).toBeTruthy();
+            });
+
+            it('links correctly', () => {
+                expect(btn.prop('href'))
+                    .toEqual('/qc_norm?analysisdirectory=job00010/analysis&project=My%20name%20is');
+            });
+        });
+
+        describe('extract button', () => {
+            let btn;
+            beforeEach(() => {
+                const buttons = wrapper.find('.action-buttons');
+                btn = buttons.find('.experiment-action-extract');
+            });
+
+            it('renders', () => {
+                expect(btn.exists()).toBeTruthy();
+                expect(btn.text()).toEqual(' Extract Features');
+                expect(btn.find('.glyphicon-flash').exists()).toBeTruthy();
+            });
+
+            it('formats correctly', () => {
+                expect(btn.is('button')).toBeTruthy();
+                expect(btn.hasClass('btn')).toBeTruthy();
+                expect(btn.hasClass('btn-block')).toBeTruthy();
+            });
+
+            it('renders extract dialogue on click', () => {
+                btn.simulate('click');
+                wrapper.update();
+                expect(wrapper.find('ScanningJobFeatureExtractDialogue').exists()).toBeTruthy();
+            });
+
+            it('passes a dialogue dismiss function to onCancel', () => {
+                btn.simulate('click');
+                wrapper.update();
+                wrapper.find('ScanningJobFeatureExtractDialogue').prop('onCancel')();
+                wrapper.update();
+                expect(wrapper.find('ScanningJobFeatureExtractDialogue').exists()).toBeFalsy();
+                expect(onStop).not.toHaveBeenCalled();
+            });
+
+            it('calls onFeatureExtract on onConfirm', () => {
+                btn.simulate('click');
+                wrapper.update();
+                wrapper.find('ScanningJobFeatureExtractDialogue').prop('onConfirm')(true);
+                expect(onFeatureExtract).toHaveBeenCalledWith(props.id, true);
+            });
+        });
+
+        describe('done button', () => {
+            let btn;
+            beforeEach(() => {
+                const buttons = wrapper.find('.action-buttons');
+                btn = buttons.find('.experiment-action-done');
+            });
+
+            it('renders', () => {
+                expect(btn.exists()).toBeTruthy();
+                expect(btn.text()).toEqual(' Done');
+                expect(btn.find('.glyphicon-ok').exists()).toBeTruthy();
+            });
+
+            it('formats correctly', () => {
+                expect(btn.is('button')).toBeTruthy();
+                expect(btn.hasClass('btn')).toBeTruthy();
+                expect(btn.hasClass('btn-block')).toBeTruthy();
+            });
+
+            it('calls onDone on click', () => {
+                btn.simulate('click');
+                expect(onDone).toHaveBeenCalledWith(props.id);
+            });
+        });
+    });
+
+    describe('done', () => {
+        const doneProps = {
+            started: new Date(),
+            end: new Date(new Date().getTime() + 1200000),
+            stopped: new Date(new Date().getTime() + 200000),
+            done: true,
+        };
+
+        beforeEach(() => {
+            wrapper = shallow(<ExperimentPanel {...props} {...doneProps} />);
+        });
+
+        it('renders experiment as analysis status', () => {
+            expect(wrapper.find('ScanningJobStatusLabel').prop('status'))
+                .toEqual('Done');
+        });
+
+        describe('reopen button', () => {
+            let btn;
+            beforeEach(() => {
+                const buttons = wrapper.find('.action-buttons');
+                btn = buttons.find('.experiment-action-reopen');
+            });
+
+            it('renders', () => {
+                expect(btn.exists()).toBeTruthy();
+                expect(btn.text()).toEqual(' Re-open');
+                expect(btn.find('.glyphicon-pencil').exists()).toBeTruthy();
+            });
+
+            it('formats correctly', () => {
+                expect(btn.is('button')).toBeTruthy();
+                expect(btn.hasClass('btn')).toBeTruthy();
+                expect(btn.hasClass('btn-block')).toBeTruthy();
+            });
+
+            it('calls onReopen on click', () => {
+                btn.simulate('click');
+                expect(onReopen).toHaveBeenCalledWith(props.id);
+            });
+        });
     });
 });
