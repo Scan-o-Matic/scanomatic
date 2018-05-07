@@ -12,7 +12,7 @@ import {
     startExperiment,
     removeExperiment,
     stopExperiment,
-    featureExtact,
+    featureExtract,
     doneExperiment,
     reopenExperiment,
 } from '../projects/actions';
@@ -57,7 +57,7 @@ function mapDispatchToProps(dispatch) {
             onStop:
                 (experimentId, reason) => dispatch(stopExperiment(experimentId, reason)),
             onFeatureExtact:
-                (experimentId, keepQC) => dispatch(featureExtact(experimentId, keepQC)),
+                (experimentId, keepQC) => dispatch(featureExtract(experimentId, keepQC)),
             onDone: experimentId => dispatch(doneExperiment(experimentId)),
             onReopen: experimentId => dispatch(reopenExperiment(experimentId)),
         },
