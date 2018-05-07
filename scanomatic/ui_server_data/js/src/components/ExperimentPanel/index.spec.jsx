@@ -63,7 +63,7 @@ describe('<ExperimentPanel />', () => {
             });
 
             it('renders with glyphicon-collapse-up', () => {
-                let panelBody = wrapper.find('.panel-body');
+                const panelBody = wrapper.find('.panel-body');
                 const panelHeading = wrapper.find('.panel-heading');
                 expect(panelHeading.find('.glyphicon-collapse-up').exists()).toBeTruthy();
             });
@@ -592,7 +592,7 @@ describe('<ExperimentPanel />', () => {
         });
 
         it('renders with glyphicon-collapse-down', () => {
-            let panelBody = wrapper.find('.panel-body');
+            const panelBody = wrapper.find('.panel-body');
             const panelHeading = wrapper.find('.panel-heading');
             expect(panelHeading.find('.glyphicon-collapse-down').exists()).toBeTruthy();
         });
