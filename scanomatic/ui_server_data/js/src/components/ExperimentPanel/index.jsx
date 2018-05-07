@@ -10,6 +10,11 @@ import ScanningJobStopDialogue from '../ScanningJobStopDialogue';
 
 const millisecondsPerMinute = 60000;
 
+export function formatScannerStatus(scanner) {
+    const { name, power, owned } = scanner;
+    return `${name} (${power ? 'online' : 'offline'}, ${owned ? 'occupied' : 'free'})`;
+}
+
 export default class ExperimentPanel extends React.Component {
     constructor(props) {
         super(props);
@@ -18,6 +23,11 @@ export default class ExperimentPanel extends React.Component {
         this.handleShowRemoveDialogue = () => this.setState({ dialogue: 'remove' });
         this.handleShowStopDialogue = () => this.setState({ dialogue: 'stop' });
         this.handleShowFeatureExtractDialogue = () => this.setState({ dialogue: 'extract' });
+        this.handleToggleExpand = this.handleToggleExpand.bind(this);
+    }
+
+    getExpanded() {
+        return this.state.expanded == null ? this.props.defaultExpanded : this.state.expanded;
     }
 
     getStatus() {
@@ -135,91 +145,129 @@ export default class ExperimentPanel extends React.Component {
         return actions;
     }
 
-    render() {
+    getPanelContents(status) {
         const {
             id, name, description, duration, interval, scanner, started, end,
             onRemove, stopped, onStop, onFeatureExtract,
         } = this.props;
+        const contents = [];
         const { dialogue } = this.state;
-        const status = this.getStatus();
         const actions = this.getActionButtons(status);
+
+        contents.push(
+            <div className="panel-body" key="panel-body">
+                <div className="row description-and-actions">
+                    <div className="col-md-9">
+                        <div className="text-justify experiment-description">{description}</div>
+                    </div>
+                    <div className="col-md-3 action-buttons">
+                        {actions}
+                    </div>
+                </div>
+            </div>,
+        );
+        if (dialogue === 'remove') {
+            contents.push(
+                <ScanningJobRemoveDialogue
+                    name={name}
+                    onConfirm={() => onRemove(id)}
+                    onCancel={this.handleDismissDialogue}
+                    key="remove-dialouge"
+                />,
+            );
+        }
+        if (dialogue === 'stop') {
+            contents.push(
+                <ScanningJobStopDialogue
+                    name={name}
+                    onConfirm={reason => onStop(id, reason)}
+                    onCancel={this.handleDismissDialogue}
+                    key="stop-dialouge"
+                />,
+            );
+        }
+        if (dialogue === 'extract') {
+            contents.push(
+                <ScanningJobFeatureExtractDialogue
+                    name={name}
+                    onConfirm={keepQC => onFeatureExtract(id, keepQC)}
+                    onCancel={this.handleDismissDialogue}
+                    key="extract-dialogue"
+                />,
+            );
+        }
+        if (!dialogue) {
+            contents.push(
+                <table className="table experiment-stats" key="experiment-stats">
+                    <tbody>
+                        <tr className="experiment-duration">
+                            <td>Duration</td>
+                            <td>{renderDuration(Duration.fromMilliseconds(duration))}</td>
+                        </tr>
+                        <tr className="experiment-interval">
+                            <td>Interval</td>
+                            <td>{Math.round(interval / millisecondsPerMinute)} minutes</td>
+                        </tr>
+                        <tr className="experiment-scanner">
+                            <td>Scanner</td>
+                            <td>{formatScannerStatus(scanner)}</td>
+                        </tr>
+                        {started &&
+                            <tr className="experiment-started">
+                                <td>Started</td>
+                                <td>{started.toString()}</td>
+                            </tr>
+                        }
+                        {end &&
+                            <tr className="experiment-end">
+                                <td>{status === 'Running' ? 'Ends' : 'Ended'}</td>
+                                <td>{end.toString()}</td>
+                            </tr>
+                        }
+                        {stopped &&
+                            <tr className="experiment-stopped">
+                                <td>Stopped</td>
+                                <td>{stopped.toString()}</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>,
+            );
+        }
+
+        return contents;
+    }
+
+    handleToggleExpand() {
+        this.setState({ expanded: !this.getExpanded() });
+    }
+
+    render() {
+        const { name } = this.props;
+        const status = this.getStatus();
+        const expanded = this.getExpanded();
 
         return (
             <div
                 className="panel panel-default experiment-listing"
                 data-experimentname={name}
             >
-                <div className="panel-heading">
-                    <h3 className="panel-title">{name}</h3>
+                <div
+                    className="panel-heading"
+                    onClick={this.handleToggleExpand}
+                    role="button"
+                    tabIndex="-1"
+                >
+                    <div
+                        className={
+                            expanded
+                                ? 'glyphicon glyphicon-collapse-up'
+                                : 'glyphicon glyphicon-collapse-down'
+                        }
+                    /> <h3 className="panel-title">{name}</h3>
                     <ScanningJobStatusLabel status={status} />
                 </div>
-                <div className="panel-body">
-                    <div className="row description-and-actions">
-                        <div className="col-md-9">
-                            <div className="text-justify experiment-description">{description}</div>
-                        </div>
-                        <div className="col-md-3 action-buttons">
-                            {actions}
-                        </div>
-                    </div>
-                </div>
-                {dialogue === 'remove' &&
-                    <ScanningJobRemoveDialogue
-                        name={name}
-                        onConfirm={() => onRemove(id)}
-                        onCancel={this.handleDismissDialogue}
-                    />
-                }
-                {dialogue === 'stop' &&
-                    <ScanningJobStopDialogue
-                        name={name}
-                        onConfirm={reason => onStop(id, reason)}
-                        onCancel={this.handleDismissDialogue}
-                    />
-                }
-                {dialogue === 'extract' &&
-                    <ScanningJobFeatureExtractDialogue
-                        name={name}
-                        onConfirm={keepQC => onFeatureExtract(id, keepQC)}
-                        onCancel={this.handleDismissDialogue}
-                    />
-                }
-                {!dialogue &&
-                    <table className="table experiment-stats">
-                        <tbody>
-                            <tr className="experiment-duration">
-                                <td>Duration</td>
-                                <td>{renderDuration(Duration.fromMilliseconds(duration))}</td>
-                            </tr>
-                            <tr className="experiment-interval">
-                                <td>Interval</td>
-                                <td>{Math.round(interval / millisecondsPerMinute)} minutes</td>
-                            </tr>
-                            <tr className="experiment-scanner">
-                                <td>Scanner</td>
-                                <td>{scanner.name} ({scanner.power ? 'online' : 'offline'}, {scanner.owned ? 'occupied' : 'free'})</td>
-                            </tr>
-                            {started &&
-                                <tr className="experiment-started">
-                                    <td>Started</td>
-                                    <td>{started.toString()}</td>
-                                </tr>
-                            }
-                            {end &&
-                                <tr className="experiment-end">
-                                    <td>{status === 'Running' ? 'Ends' : 'Ended'}</td>
-                                    <td>{end.toString()}</td>
-                                </tr>
-                            }
-                            {stopped &&
-                                <tr className="experiment-stopped">
-                                    <td>Stopped</td>
-                                    <td>{stopped.toString()}</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
+                {expanded && this.getPanelContents(status)}
             </div>
         );
     }
@@ -242,6 +290,7 @@ ExperimentPanel.propTypes = {
     end: PropTypes.instanceOf(Date),
     stopped: PropTypes.instanceOf(Date),
     done: PropTypes.bool,
+    defaultExpanded: PropTypes.bool,
 };
 
 ExperimentPanel.defaultProps = {
@@ -250,4 +299,5 @@ ExperimentPanel.defaultProps = {
     end: null,
     stopped: null,
     done: false,
+    defaultExpanded: false,
 };
