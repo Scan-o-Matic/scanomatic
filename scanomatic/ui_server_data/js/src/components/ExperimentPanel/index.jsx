@@ -290,7 +290,7 @@ ExperimentPanel.propTypes = {
     started: PropTypes.instanceOf(Date),
     end: PropTypes.instanceOf(Date),
     stopped: PropTypes.instanceOf(Date),
-    done: PropTypes.bool.isRequired,
+    done: PropTypes.bool,
     defaultExpanded: PropTypes.bool,
 };
 
@@ -299,5 +299,6 @@ ExperimentPanel.defaultProps = {
     started: null,
     end: null,
     stopped: null,
+    done: false,
     defaultExpanded: false,
 };

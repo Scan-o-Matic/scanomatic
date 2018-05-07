@@ -15,6 +15,7 @@ export type Experiments = Map<string, {
     +started: ?Date,
     +stopped: ?Date,
     +reason: ?string,
+    +done: ?boolean,
 }>;
 
 export type Scanners = Map<string, {

@@ -13,6 +13,8 @@ type Project = {
         interval: number,
         started: ?Date,
         end: ?Date,
+        stopped: ?Date,
+        done: ?boolean,
         scanner: {
             name: string,
             power: boolean,
@@ -33,7 +35,7 @@ export function getProjects(state: State): Array<Project> {
                 if (!experiment) { throw Error(`Missing experiment with id ${eid}`); }
                 const {
                     name: ename, description: edescription, duration, interval, scannerId,
-                    started,
+                    started, stopped, done,
                 } = experiment;
                 const scanner = state.entities.scanners.get(scannerId);
                 if (!scanner) { throw Error(`Missing scanner with id ${scannerId}`); }
@@ -45,6 +47,8 @@ export function getProjects(state: State): Array<Project> {
                     interval,
                     started,
                     end: started && new Date(started.getTime() + duration),
+                    stopped,
+                    done,
                     scanner: {
                         id: scannerId,
                         name: scanner.name,

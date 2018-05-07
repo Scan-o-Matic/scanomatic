@@ -26,6 +26,9 @@ export type Action
     | {| type: 'EXPERIMENTS_START', id: string, date: Date |}
     | {| type: 'EXPERIMENTS_STOP', id: string, date: Date |}
     | {| type: 'EXPERIMENTS_REMOVE', id: string |}
+    | {| type: 'EXPERIMENTS_FEATUREEXTRACT', id: string, keepQC: boolean |}
+    | {| type: 'EXPERIMENTS_DONE', id: string |}
+    | {| type: 'EXPERIMENTS_REOPEN', id: string |}
 
 export function initNewProject(): Action {
     return { type: 'NEWPROJECT_INIT' };
@@ -125,6 +128,20 @@ export function stopExperiment(id: string): Action {
 export function removeExperiment(id: string): Action {
     return {
         type: 'EXPERIMENTS_REMOVE',
+        id,
+    };
+}
+
+export function doneExperiment(id: string) : Action {
+    return {
+        type: 'EXPERIMENTS_DONE',
+        id,
+    };
+}
+
+export function reopenExperiment(id: string) : Action {
+    return {
+        type: 'EXPERIMENTS_REOPEN',
         id,
     };
 }

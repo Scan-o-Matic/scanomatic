@@ -10,6 +10,10 @@ describe('<ProjectsRoot />', () => {
         experimentActions: {
             onStart: () => {},
             onRemove: () => {},
+            onStop: () => {},
+            onDone: () => {},
+            onReopen: () => {},
+            onFeatureExtract: () => {},
         },
         newExperimentActions: {
             onChange: () => {},

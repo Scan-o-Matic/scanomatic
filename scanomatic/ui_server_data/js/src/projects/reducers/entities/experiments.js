@@ -18,6 +18,8 @@ export default function experiments(state: State = initialState, action: Action)
             stopped: null,
             reason: null,
             scannerId: action.scannerId,
+            done: null,
+            end: null,
         });
         return newState;
     }
@@ -39,6 +41,34 @@ export default function experiments(state: State = initialState, action: Action)
     {
         const newState = new Map(state);
         newState.delete(action.id);
+        return newState;
+    }
+    case 'EXPERIMENTS_DONE':
+    {
+        const newState = new Map(state);
+        const experiment = state.get(action.id);
+        newState.set(
+            action.id,
+            Object.assign(
+                {},
+                experiment,
+                { done: true },
+            ),
+        );
+        return newState;
+    }
+    case 'EXPERIMENTS_REOPEN':
+    {
+        const newState = new Map(state);
+        const experiment = state.get(action.id);
+        newState.set(
+            action.id,
+            Object.assign(
+                {},
+                experiment,
+                { done: false },
+            ),
+        );
         return newState;
     }
     default:
