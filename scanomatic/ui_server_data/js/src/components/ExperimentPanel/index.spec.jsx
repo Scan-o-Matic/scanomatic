@@ -50,6 +50,24 @@ describe('<ExperimentPanel />', () => {
                 wrapper = shallow(<ExperimentPanel {...props} />);
             });
 
+            it('renders a heading', () => {
+                const heading = wrapper.find('.panel-heading');
+                expect(heading.exists()).toBeTruthy();
+            });
+
+            it('renders the name as a title in the heading', () => {
+                const heading = wrapper.find('.panel-heading');
+                const name = heading.find('.panel-title');
+                expect(name.exists()).toBeTruthy();
+                expect(name.text()).toEqual(props.name);
+            });
+
+            it('renders with glyphicon-collapse-up', () => {
+                let panelBody = wrapper.find('.panel-body');
+                const panelHeading = wrapper.find('.panel-heading');
+                expect(panelHeading.find('.glyphicon-collapse-up').exists()).toBeTruthy();
+            });
+
             it('toggles panel-body when panel-heading is clicked', () => {
                 let panelBody = wrapper.find('.panel-body');
                 const panelHeading = wrapper.find('.panel-heading');
@@ -64,18 +82,6 @@ describe('<ExperimentPanel />', () => {
                 wrapper.update();
                 panelBody = wrapper.find('.panel-body');
                 expect(panelBody.exists()).toBeTruthy();
-            });
-
-            it('renders a heading', () => {
-                const heading = wrapper.find('.panel-heading');
-                expect(heading.exists()).toBeTruthy();
-            });
-
-            it('renders the name as a title in the heading', () => {
-                const heading = wrapper.find('.panel-heading');
-                const name = heading.find('.panel-title');
-                expect(name.exists()).toBeTruthy();
-                expect(name.text()).toEqual(props.name);
             });
 
             describe('<ScanningJobStatusLabel />', () => {
@@ -583,6 +589,12 @@ describe('<ExperimentPanel />', () => {
             wrapper.update();
             panelBody = wrapper.find('.panel-body');
             expect(panelBody.exists()).toBeTruthy();
+        });
+
+        it('renders with glyphicon-collapse-down', () => {
+            let panelBody = wrapper.find('.panel-body');
+            const panelHeading = wrapper.find('.panel-heading');
+            expect(panelHeading.find('.glyphicon-collapse-down').exists()).toBeTruthy();
         });
     });
 
