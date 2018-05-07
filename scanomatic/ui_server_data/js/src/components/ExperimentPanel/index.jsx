@@ -25,11 +25,6 @@ export default class ExperimentPanel extends React.Component {
         return this.state.expanded == null ? this.props.defaultExpanded : this.state.expanded;
     }
 
-    handleToggleExpand() {
-        const expanded = this.getExpanded();
-        this.setState({ expanded: !expanded });
-    }
-
     getStatus() {
         const {
             started, end, stopped, done,
@@ -241,6 +236,10 @@ export default class ExperimentPanel extends React.Component {
         }
 
         return contents;
+    }
+
+    handleToggleExpand() {
+        this.setState({ expanded: !this.getExpanded() });
     }
 
     render() {
