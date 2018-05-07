@@ -261,5 +261,41 @@ describe('<ExperimentPanel />', () => {
                 expect(heading.find('ScanningJobStatusLabel').prop('status')).toEqual('Running');
             });
         });
+
+        describe('stop button', () => {
+            let btn;
+            beforeEach(() => {
+                const buttons = wrapper.find('.action-buttons');
+                btn = buttons.find('.experiment-action-stop');
+            });
+
+            it('renders', () => {
+                expect(btn.exists()).toBeTruthy();
+                expect(btn.text()).toEqual(' Stop');
+                expect(btn.find('.glyphicon-stop').exists()).toBeTruthy();
+            });
+
+            it('formats correctly', () => {
+                expect(btn.is('button')).toBeTruthy();
+                expect(btn.hasClass('btn')).toBeTruthy();
+                expect(btn.hasClass('btn-block')).toBeTruthy();
+            });
+
+            it('calls onStart on click', () => {
+                btn.simulate('click');
+                expect(onStop).toHaveBeenCalledWith(props.id);
+            });
+        });
+
+        it('renders started', () => {
+            const tr = wrapper.find('.experiment-started');
+            expect(tr.exists()).toBeTruthy();
+            expect(tr.find('td').at(0).text()).toEqual('Started');
+            expect(tr.find('td').at(1).text()).toEqual(runningProps.started.toString());
+        });
+    });
+
+    describe('stopped', () => {
+
     });
 });
