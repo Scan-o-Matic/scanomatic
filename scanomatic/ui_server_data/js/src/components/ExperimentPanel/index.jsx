@@ -164,7 +164,7 @@ export default class ExperimentPanel extends React.Component {
                         {actions}
                     </div>
                 </div>
-            </div>
+            </div>,
         );
         if (dialogue === 'remove') {
             contents.push(
@@ -173,7 +173,7 @@ export default class ExperimentPanel extends React.Component {
                     onConfirm={() => onRemove(id)}
                     onCancel={this.handleDismissDialogue}
                     key="remove-dialouge"
-                />
+                />,
             );
         }
         if (dialogue === 'stop') {
@@ -183,7 +183,7 @@ export default class ExperimentPanel extends React.Component {
                     onConfirm={reason => onStop(id, reason)}
                     onCancel={this.handleDismissDialogue}
                     key="stop-dialouge"
-                />
+                />,
             );
         }
         if (dialogue === 'extract') {
@@ -193,7 +193,7 @@ export default class ExperimentPanel extends React.Component {
                     onConfirm={keepQC => onFeatureExtract(id, keepQC)}
                     onCancel={this.handleDismissDialogue}
                     key="extract-dialogue"
-                />
+                />,
             );
         }
         if (!dialogue) {
@@ -212,8 +212,8 @@ export default class ExperimentPanel extends React.Component {
                             <td>Scanner</td>
                             <td>
                                 {scanner.name} (
-                                    {scanner.power ? 'online' : 'offline'},&nbsp;
-                                    {scanner.owned ? 'occupied' : 'free'}
+                                {scanner.power ? 'online' : 'offline'},&nbsp;
+                                {scanner.owned ? 'occupied' : 'free'}
                                 )
                             </td>
                         </tr>
@@ -236,7 +236,7 @@ export default class ExperimentPanel extends React.Component {
                             </tr>
                         }
                     </tbody>
-                </table>
+                </table>,
             );
         }
 
