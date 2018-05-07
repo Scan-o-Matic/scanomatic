@@ -98,7 +98,6 @@ describe('<ProjectPanel />', () => {
     });
 
     describe('explicit default collapsed', () => {
-
         beforeEach(() => {
             onNewExperiment.calls.reset();
             wrapper = shallow(<ProjectPanel
