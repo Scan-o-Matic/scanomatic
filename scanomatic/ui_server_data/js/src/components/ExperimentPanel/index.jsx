@@ -21,9 +21,12 @@ export default class ExperimentPanel extends React.Component {
         this.handleToggleExpand = this.handleToggleExpand.bind(this);
     }
 
+    getExpandedState() {
+        return this.state.expanded == null ? this.props.defaultExpanded : this.state.expanded;
+    }
+
     handleToggleExpand() {
-        const expanded = this.state.expanded == null ?
-            this.props.defaultExpanded : this.state.expanded;
+        const expanded = this.getExpandedState();
         this.setState({ expanded: !expanded });
     }
 
@@ -243,7 +246,7 @@ export default class ExperimentPanel extends React.Component {
     render() {
         const { name, defaultExpanded, } = this.props;
         const status = this.getStatus();
-        const expanded = this.state.expanded == null ? defaultExpanded : this.state.expanded;
+        const expanded = this.getExpandedState();
 
         return (
             <div
@@ -258,7 +261,7 @@ export default class ExperimentPanel extends React.Component {
                 >
                     <div
                         className={
-                            this.state.expanded
+                            expanded
                                 ? 'glyphicon glyphicon-collapse-up'
                                 : 'glyphicon glyphicon-collapse-down'
                         }
