@@ -39,6 +39,6 @@
   margin-bottom: 0.5rem;
 }
 
-.action-buttons button {
-  margin-left: 0 !important;
+.action-buttons button.btn {
+  margin-left: 0;
 }
