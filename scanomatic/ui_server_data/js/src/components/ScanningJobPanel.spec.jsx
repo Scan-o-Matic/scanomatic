@@ -337,7 +337,7 @@ describe('<ScanningJobPanel />', () => {
                 wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
                 wrapper.update();
                 wrapper.find('ScanningJobFeatureExtractDialogue')
-                    .prop('onExtractFeatures')(false);
+                    .prop('onConfirm')(false);
                 wrapper.update();
                 expect(onFeatureExtract).toHaveBeenCalledWith(false);
             });
@@ -347,7 +347,7 @@ describe('<ScanningJobPanel />', () => {
                 wrapper.find('ScanningJobPanelBody').prop('onShowFeatureExtractDialogue')();
                 wrapper.update();
                 wrapper.find('ScanningJobFeatureExtractDialogue')
-                    .prop('onExtractFeatures')(false);
+                    .prop('onConfirm')(false);
                 wrapper.update();
                 expect(wrapper.find('ScanningJobPanelBody').exists()).toBeTruthy();
                 expect(wrapper.find('ScanningJobFeatureExtractDialogue').exists()).toBeFalsy();

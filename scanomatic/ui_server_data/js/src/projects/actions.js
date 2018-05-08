@@ -26,6 +26,9 @@ export type Action
     | {| type: 'EXPERIMENTS_START', id: string, date: Date |}
     | {| type: 'EXPERIMENTS_STOP', id: string, date: Date |}
     | {| type: 'EXPERIMENTS_REMOVE', id: string |}
+    | {| type: 'EXPERIMENTS_FEATUREEXTRACT', id: string, keepQC: boolean |}
+    | {| type: 'EXPERIMENTS_DONE', id: string |}
+    | {| type: 'EXPERIMENTS_REOPEN', id: string |}
 
 export function initNewProject(): Action {
     return { type: 'NEWPROJECT_INIT' };
@@ -129,6 +132,20 @@ export function removeExperiment(id: string): Action {
     };
 }
 
+export function doneExperiment(id: string) : Action {
+    return {
+        type: 'EXPERIMENTS_DONE',
+        id,
+    };
+}
+
+export function reopenExperiment(id: string) : Action {
+    return {
+        type: 'EXPERIMENTS_REOPEN',
+        id,
+    };
+}
+
 type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
 
 export function submitNewProject(): ThunkAction {
@@ -161,3 +178,9 @@ export function submitNewExperiment(): ThunkAction {
         dispatch(clearNewExperiment());
     };
 }
+
+export function featureExtract(id: string, keepQC: boolean): ThunkAction {
+    return (dispatch, getState) => {
+        // This is a stub since API-calls are not yet impleme3nted
+    };
+};
