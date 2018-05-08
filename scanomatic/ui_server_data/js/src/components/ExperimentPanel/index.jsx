@@ -7,6 +7,7 @@ import myProps from '../../prop-types';
 import ScanningJobRemoveDialogue from '../ScanningJobRemoveDialogue';
 import ScanningJobFeatureExtractDialogue from '../ScanningJobFeatureExtractDialogue';
 import ScanningJobStopDialogue from '../ScanningJobStopDialogue';
+import Markup from '../Markup';
 
 const millisecondsPerMinute = 60000;
 
@@ -158,7 +159,9 @@ export default class ExperimentPanel extends React.Component {
             <div className="panel-body" key="panel-body">
                 <div className="row description-and-actions">
                     <div className="col-md-9">
-                        <div className="text-justify experiment-description">{description}</div>
+                        <div className="text-justify experiment-description">
+                            <Markup markdown={description} />
+                        </div>
                     </div>
                     <div className="col-md-3 action-buttons">
                         {actions}

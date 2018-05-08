@@ -97,8 +97,9 @@ describe('<ExperimentPanel />', () => {
 
             it('renders the description', () => {
                 const description = wrapper.find('.experiment-description');
-                expect(description.exists()).toBeTruthy();
-                expect(description.text()).toEqual('blablabla');
+                const markup = description.find('Markup');
+                expect(markup.exists()).toBeTruthy();
+                expect(markup.prop('markdown')).toEqual('blablabla');
             });
 
             it('renders stats table', () => {
