@@ -20,6 +20,7 @@ export default function experiments(state: State = initialState, action: Action)
             scannerId: action.scannerId,
             done: null,
             end: null,
+            pinning: action.pinning,
         });
         return newState;
     }
