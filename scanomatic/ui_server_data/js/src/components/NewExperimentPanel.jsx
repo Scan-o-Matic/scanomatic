@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import myTypes from '../prop-types';
 import DurationInput from './DurationInput';
+import PinningInputs from './PinningInputs';
 
 const milliSecondsPerMinute = 60000;
 
@@ -99,6 +100,7 @@ export default function NewExperimentPanel(props) {
                                 </span>
                             )}
                         </div>
+                        <PinningInputs onChange={v => props.onChange('pinning', v)} error={props.errors.get('pinning')} pinning={props.pinning} />
                         <div className="btn-toolbar" role="toolbar">
                             <button className="btn btn-primary experiment-add" onClick={props.onSubmit}>
                                 Add Experiment

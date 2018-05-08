@@ -46,6 +46,7 @@ const experimentShape = {
     duration: PropTypes.number.isRequired,
     interval: PropTypes.number.isRequired,
     scannerId: PropTypes.string,
+    pinning: PropTypes.instanceOf(Map).isRequired,
 };
 
 const newExperimentErrorsShape = {

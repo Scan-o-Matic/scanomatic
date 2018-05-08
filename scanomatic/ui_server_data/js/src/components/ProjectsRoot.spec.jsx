@@ -166,6 +166,7 @@ describe('<ProjectsRoot />', () => {
                 interval: 1,
                 scannerId: '',
                 projectId: '42',
+                pinning: new Map([[1, null]]),
             };
             const wrapper = shallow(<ProjectsRoot
                 {...props}
@@ -194,6 +195,7 @@ describe('<ProjectsRoot />', () => {
                 interval: 1,
                 scannerId: '',
                 projectId: '42',
+                pinning: new Map([[1, null]]),
             };
             const wrapper = shallow(<ProjectsRoot
                 {...props}

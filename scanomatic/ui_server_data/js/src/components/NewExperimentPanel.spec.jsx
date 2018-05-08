@@ -26,6 +26,7 @@ describe('<NewExperimentPanel/>', () => {
                 identifier: 'haha',
             },
         ],
+        pinning: new Map([[1: null, 2: '384']]),
         onChange: jasmine.createSpy('onNameChange'),
         onSubmit: jasmine.createSpy('onSubmit'),
         onCancel: jasmine.createSpy('onCancel'),
@@ -38,6 +39,7 @@ describe('<NewExperimentPanel/>', () => {
         ['duration', 'Need a minute'],
         ['interval', 'Takes at least five'],
         ['scannerId', 'Thats just a fake scanner'],
+        ['pinning', 'No wasting materials here!'],
     ]);
 
     let wrapper;
@@ -79,6 +81,11 @@ describe('<NewExperimentPanel/>', () => {
             const evt = { target: { value: 'myscanner' } };
             wrapper.find('select.scanner').simulate('change', evt);
             expect(defaultProps.onChange).toHaveBeenCalledWith('scannerId', evt.target.value);
+        });
+
+        it('should call onChange when pinnings are changed', () => {
+            wrapper.find('PinningInputs').prop('onChange')(44);
+            expect(defaultProps.onChange).toHaveBeenCalledWith('pinning', 44);
         });
 
         it('should call onSubmit when form is submitted', () => {
@@ -155,6 +162,23 @@ describe('<NewExperimentPanel/>', () => {
             it('passes the error', () => {
                 const duration = wrapperErrors.find('DurationInput');
                 expect(duration.prop('error')).toEqual(errors.get('duration'));
+            });
+        });
+
+        describe('<PinningInputs />', () => {
+            it('renders', () => {
+                const pinnings = wrapper.find('PinningInputs');
+                expect(pinnings.exists()).toBeTruthy();
+            });
+
+            it('passes pinning', () => {
+                const pinnings = wrapper.find('PinningInputs');
+                expect(pinnings.prop('pinning')).toEqual(defaultProps.pinning);
+            });
+
+            it('passes the error', () => {
+                const pinnings = wrapperErrors.find('PinningInputs');
+                expect(pinnings.prop('error')).toEqual(errors.get('pinning'));
             });
         });
 
