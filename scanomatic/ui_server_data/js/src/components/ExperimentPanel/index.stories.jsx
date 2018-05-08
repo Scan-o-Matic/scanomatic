@@ -24,6 +24,7 @@ storiesOf('ExperimentPanel', module)
             scanner={{
                 id: 'myscannerid', name: 'Fake scanner', owned: false, power: true,
             }}
+            pinning={new Map([[1, '384'], [2, '1536'], [3, ''], [4, '6144']])}
             onStart={action('start')}
             onRemove={action('remove')}
             onStop={action('stop')}
@@ -43,6 +44,7 @@ storiesOf('ExperimentPanel', module)
             scanner={{
                 id: 'myscannerid', name: 'Fake scanner', owned: false, power: true,
             }}
+            pinning={new Map([[1, '384'], [2, '1536'], [3, ''], [4, '6144']])}
             started={new Date()}
             end={new Date(new Date().getTime() + 1200000)}
             done={false}
@@ -64,6 +66,7 @@ storiesOf('ExperimentPanel', module)
             scanner={{
                 id: 'myscannerid', name: 'Fake scanner', owned: false, power: true,
             }}
+            pinning={new Map([[1, '384'], [2, '1536'], [3, ''], [4, '6144']])}
             started={new Date()}
             end={new Date(new Date().getTime() + 1200000)}
             stopped={new Date()}
@@ -86,6 +89,7 @@ storiesOf('ExperimentPanel', module)
             scanner={{
                 id: 'myscannerid', name: 'Fake scanner', owned: false, power: true,
             }}
+            pinning={new Map([[1, '384'], [2, '1536'], [3, ''], [4, '6144']])}
             started={new Date(new Date().getTime() - 1200000)}
             end={new Date(new Date().getTime() - 200000)}
             done={false}
@@ -107,6 +111,7 @@ storiesOf('ExperimentPanel', module)
             scanner={{
                 id: 'myscannerid', name: 'Fake scanner', owned: false, power: true,
             }}
+            pinning={new Map([[1, '384'], [2, '1536'], [3, ''], [4, '6144']])}
             started={new Date(new Date().getTime() - 1200000)}
             end={new Date(new Date().getTime() - 200000)}
             done
@@ -128,6 +133,7 @@ storiesOf('ExperimentPanel', module)
             scanner={{
                 id: 'myscannerid', name: 'Fake scanner', owned: false, power: true,
             }}
+            pinning={new Map([[1, '384'], [2, '1536'], [3, ''], [4, '6144']])}
             onStart={action('start')}
             onRemove={action('remove')}
             onStop={action('stop')}
@@ -147,6 +153,7 @@ storiesOf('ExperimentPanel', module)
             scanner={{
                 id: 'myscannerid', name: 'Fake scanner', owned: false, power: true,
             }}
+            pinning={new Map([[1, '384'], [2, '1536'], [3, ''], [4, '6144']])}
             onStart={action('start')}
             onRemove={action('remove')}
             onStop={action('stop')}
@@ -167,6 +174,7 @@ storiesOf('ExperimentPanel', module)
             scanner={{
                 id: 'myscannerid', name: 'Fake scanner', owned: false, power: true,
             }}
+            pinning={new Map([[1, '384'], [2, '1536'], [3, ''], [4, '6144']])}
             onStart={action('start')}
             onRemove={action('remove')}
             onStop={action('stop')}

@@ -15,6 +15,26 @@ export function formatScannerStatus(scanner) {
     return `${name} (${power ? 'online' : 'offline'}, ${owned ? 'occupied' : 'free'})`;
 }
 
+export function formatPinning(pinning) {
+    const spans = [];
+    pinning.forEach((value, plate) => {
+        if (value === '') {
+            spans.push((
+                <span className="pinning-format" key="plate-{plate}">
+                    Plate {plate}: <span className="glyphicon glyphicon-ban-circle" aria-hidden="true" />
+                </span>
+            ));
+        } else {
+            spans.push((
+                <span className="pinning-format" key="plate-{plate}">
+                    Plate {plate}: <em>{value}</em>
+                </span>
+            ));
+        }
+    });
+    return spans;
+}
+
 export default class ExperimentPanel extends React.Component {
     constructor(props) {
         super(props);
@@ -148,7 +168,7 @@ export default class ExperimentPanel extends React.Component {
     getPanelContents(status) {
         const {
             id, name, description, duration, interval, scanner, started, end,
-            onRemove, stopped, onStop, onFeatureExtract,
+            onRemove, stopped, onStop, onFeatureExtract, pinning,
         } = this.props;
         const contents = [];
         const { dialogue } = this.state;
@@ -211,6 +231,10 @@ export default class ExperimentPanel extends React.Component {
                         <tr className="experiment-scanner">
                             <td>Scanner</td>
                             <td>{formatScannerStatus(scanner)}</td>
+                        </tr>
+                        <tr className="experiment-pinning">
+                            <td>Pinning</td>
+                            <td>{formatPinning(pinning)}</td>
                         </tr>
                         {started &&
                             <tr className="experiment-started">
@@ -280,6 +304,7 @@ ExperimentPanel.propTypes = {
     duration: PropTypes.number.isRequired,
     interval: PropTypes.number.isRequired,
     scanner: PropTypes.shape(myProps.scannerShape).isRequired,
+    pinning: PropTypes.instanceOf(Map).isRequired,
     onStart: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired,
     onStop: PropTypes.func.isRequired,

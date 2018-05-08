@@ -217,6 +217,7 @@ describe('<ProjectsRoot />', () => {
                     description: 'Bla bla',
                     duration: 36000000,
                     interval: 500000,
+                    pinning: new Map([[1: ''], [2: '384'], [3: ''], [4: '']]),
                     scanner: {
                         identifier: 'S01', name: 'Scanny', power: true, owned: true,
                     },

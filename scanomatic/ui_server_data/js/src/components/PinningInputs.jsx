@@ -20,7 +20,7 @@ export default class PinningInputs extends React.Component {
         const { error, pinning } = this.props;
         const pinnings = [];
         pinning.forEach((value, key) => pinnings.push((
-            <div key={`plate-${key}`} className="input-group">
+            <div key="plate-{key}" className="input-group">
                 <span className="input-group-addon">Plate {key}</span>
                 <select
                     className="pinning form-control"
