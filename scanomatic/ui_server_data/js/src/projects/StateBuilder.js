@@ -50,6 +50,7 @@ type PartialNewExperiment = {
     scannerId?: string,
     duration?: number,
     interval?: number,
+    pinning?: Map<number, string>,
 };
 
 export default class StateBuilder {
@@ -219,6 +220,7 @@ export default class StateBuilder {
                 duration: 1000,
                 interval: 100,
                 scannerId: 'scnr01',
+                pinning: new Map([[1, '384']]),
                 ...this.newExperimentValues,
             },
             projectId: this.newExperimentProjectId,

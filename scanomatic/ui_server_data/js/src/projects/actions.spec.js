@@ -82,6 +82,7 @@ describe('projects/actions', () => {
                 300,
                 60,
                 'sc042',
+                new Map([[1, '6144']]),
             )).toEqual({
                 type: 'EXPERIMENTS_ADD',
                 id: new Date().getTime().toString(),
@@ -91,6 +92,7 @@ describe('projects/actions', () => {
                 duration: 300,
                 interval: 60,
                 scannerId: 'sc042',
+                pinning: new Map([[1, '6144']]),
             });
         });
     });
@@ -236,6 +238,7 @@ describe('projects/actions', () => {
                     interval: 500,
                     description: 'bla bla bla',
                     projectId: 'P0',
+                    pinning: new Map([[1, '384']]),
                 }));
             });
 

@@ -16,6 +16,7 @@ describe('projects/reducers/forms/newExperiment.js', () => {
                 duration: 0,
                 interval: 0,
                 scannerId: '',
+                pinning: new Map([[1, '1536'], [2, '1536'], [3, '1536'], [4, '1536']]),
             },
         });
     });
@@ -32,7 +33,7 @@ describe('projects/reducers/forms/newExperiment.js', () => {
         },
     };
 
-    it('should update description on NEWEXPERIMENT_CHANGE', () => {
+    it('should update name on NEWEXPERIMENT_CHANGE', () => {
         const oldState = {
             ...defaultState,
             fields: { ...defaultState.fields, name: 'foo' },
@@ -89,6 +90,18 @@ describe('projects/reducers/forms/newExperiment.js', () => {
         expect(newExperiment(oldState, action)).toEqual({
             ...defaultState,
             fields: { ...defaultState.fields, interval: 2 },
+        });
+    });
+
+    it('should change pinning on NEWEXPERIMENT_CHANGE', () => {
+        const oldState = {
+            ...defaultState,
+            fields: { ...defaultState.fields, pinning: new Map([[1, '384'], [2, '1536']]) },
+        };
+        const action = { type: 'NEWEXPERIMENT_CHANGE', field: 'pinning', value: new Map([[1, '384'], [2, '6144']]) };
+        expect(newExperiment(oldState, action)).toEqual({
+            ...defaultState,
+            fields: { ...defaultState.fields, pinning: action.value },
         });
     });
 

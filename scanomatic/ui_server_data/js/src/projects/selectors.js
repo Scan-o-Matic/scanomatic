@@ -112,6 +112,7 @@ export function getNewExperiment(state: State): ?{
     +duration: number,
     +interval: number,
     +projectId: string,
+    +pinning: Map<number, string>,
 } {
     if (state.forms.newExperiment == null) return null;
     return {

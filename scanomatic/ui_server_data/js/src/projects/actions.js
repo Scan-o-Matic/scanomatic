@@ -11,6 +11,7 @@ export type Action
     | {| type: 'NEWEXPERIMENT_INIT', projectId: string |}
     | {| type: 'NEWEXPERIMENT_CHANGE', field: 'name'|'description'|'scannerId', value: string |}
     | {| type: 'NEWEXPERIMENT_CHANGE', field: 'duration'|'interval', value: number |}
+    | {| type: 'NEWEXPERIMENT_CHANGE', field: 'pinning', value: Map<number, string> |}
     | {| type: 'NEWEXPERIMENT_SUBMIT' |}
     | {| type: 'NEWEXPERIMENT_CLEAR' |}
     | {|
@@ -22,6 +23,7 @@ export type Action
         name: string,
         projectId: string,
         scannerId: string,
+        pinning: Map<number, string>,
     |}
     | {| type: 'EXPERIMENTS_START', id: string, date: Date |}
     | {| type: 'EXPERIMENTS_STOP', id: string, date: Date |}
@@ -96,6 +98,7 @@ export function addExperiment(
     duration: number,
     interval: number,
     scannerId: string,
+    pinning: Map<number, string>,
 ): Action {
     return {
         type: 'EXPERIMENTS_ADD',
@@ -106,6 +109,7 @@ export function addExperiment(
         duration,
         interval,
         scannerId,
+        pinning,
     };
 }
 
@@ -174,6 +178,7 @@ export function submitNewExperiment(): ThunkAction {
             newExperiment.duration,
             newExperiment.interval,
             newExperiment.scannerId,
+            newExperiment.pinning,
         ));
         dispatch(clearNewExperiment());
     };

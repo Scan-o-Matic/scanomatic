@@ -188,6 +188,7 @@ describe('projects/selectors', () => {
                     scannerId: 'scnr01',
                     duration: 500,
                     interval: 20,
+                    pinning: new Map([[1, '6144']]),
                 })
                 .setNewExperimentProjectId('P123')
                 .build();
@@ -198,6 +199,7 @@ describe('projects/selectors', () => {
                 duration: 500,
                 interval: 20,
                 projectId: 'P123',
+                pinning: new Map([[1, '6144']]),
             });
         });
     });

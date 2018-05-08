@@ -41,6 +41,7 @@ export type NewExperiment = ?{
         +duration: number,
         +interval: number,
         +scannerId: string,
+        +pinning: Map<number, string>,
     },
 };
 
