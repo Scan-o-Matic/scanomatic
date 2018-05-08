@@ -128,6 +128,11 @@ describe('<ProjectsRoot />', () => {
             expect(projectPanels.at(0).prop('description')).toEqual(projects[0].description);
             expect(projectPanels.at(1).prop('description')).toEqual(projects[1].description);
         });
+
+        it('sets the first project as default expanded', () => {
+            expect(projectPanels.at(0).prop('defaultExpanded')).toBeTruthy();
+            expect(projectPanels.at(1).prop('defaultExpanded')).toBeFalsy();
+        });
     });
 
     it('should bind the <ProjectPanel/> onNewExperiment callback to the project id', () => {
@@ -214,6 +219,16 @@ describe('<ProjectsRoot />', () => {
                     scanner: {
                         identifier: 'S01', name: 'Scanny', power: true, owned: true,
                     },
+                },
+                {
+                    id: '02',
+                    name: 'Second Experiment',
+                    description: 'Bla bla',
+                    duration: 36000000,
+                    interval: 500000,
+                    scanner: {
+                        identifier: 'S01', name: 'Scanny', power: true, owned: true,
+                    },
                 }],
             },
         ];
@@ -224,25 +239,41 @@ describe('<ProjectsRoot />', () => {
         });
 
         it(
-            'should create an <ExperimentPanel/> under <ProjectPanel/> for each experiment',
+            'should create two <ExperimentPanel/>s under <ProjectPanel/> for each experiment',
             () => {
                 expect(wrapper.find('ProjectPanel[id="42"]').find('ExperimentPanel').exists())
                     .toBeTruthy();
+                expect(wrapper.find('ProjectPanel[id="42"]').find('ExperimentPanel').length)
+                    .toEqual(2);
             },
         );
 
         it('should pass experiment action onStart', () => {
             expect(wrapper
                 .find('ProjectPanel[id="42"]')
-                .find('ExperimentPanel')
+                .find('ExperimentPanel').at(0)
                 .prop('onStart')).toEqual(props.experimentActions.onStart);
         });
 
         it('should pass experiment action onRemove', () => {
             expect(wrapper
                 .find('ProjectPanel[id="42"]')
-                .find('ExperimentPanel')
+                .find('ExperimentPanel').at(0)
                 .prop('onRemove')).toEqual(props.experimentActions.onRemove);
+        });
+
+        it('should set first experiment as defaultExpanded', () => {
+            expect(wrapper
+                .find('ProjectPanel[id="42"]')
+                .find('ExperimentPanel').at(0)
+                .prop('defaultExpanded')).toBeTruthy();
+        });
+
+        it('should set other experiments as not defaultExpanded', () => {
+            expect(wrapper
+                .find('ProjectPanel[id="42"]')
+                .find('ExperimentPanel').at(1)
+                .prop('defaultExpanded')).toBeFalsy();
         });
     });
 });
