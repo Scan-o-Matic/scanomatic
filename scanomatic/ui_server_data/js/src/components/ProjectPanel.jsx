@@ -4,12 +4,16 @@ import PropTypes from 'prop-types';
 class ProjectPanel extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { expanded: false };
+        this.state = {};
         this.handleToggleExpand = this.handleToggleExpand.bind(this);
     }
 
+    getExpanded() {
+        return this.state.expanded == null ? this.props.defaultExpanded : this.state.expanded;
+    }
+
     handleToggleExpand() {
-        this.setState({ expanded: !this.state.expanded });
+        this.setState({ expanded: !this.getExpanded() });
     }
 
     render() {
@@ -20,6 +24,7 @@ class ProjectPanel extends React.Component {
             newExperimentDisabled,
             onNewExperiment,
         } = this.props;
+        const expanded = this.getExpanded();
 
         return (
             <div
@@ -34,13 +39,13 @@ class ProjectPanel extends React.Component {
                 >
                     <div
                         className={
-                            this.state.expanded
+                            expanded
                                 ? 'glyphicon glyphicon-collapse-up'
                                 : 'glyphicon glyphicon-collapse-down'
                         }
                     /> <h3 className="panel-title">{name}</h3>
                 </div>
-                {this.state.expanded && (
+                {expanded && (
                     <div className="panel-body">
                         <div className="row description-and-actions">
                             <div className="col-md-9">
@@ -72,11 +77,13 @@ ProjectPanel.propTypes = {
     name: PropTypes.string.isRequired,
     newExperimentDisabled: PropTypes.bool,
     onNewExperiment: PropTypes.func.isRequired,
+    defaultExpanded: PropTypes.bool,
 };
 
 ProjectPanel.defaultProps = {
     newExperimentDisabled: false,
     children: null,
+    defaultExpanded: false,
 };
 
 export default ProjectPanel;
