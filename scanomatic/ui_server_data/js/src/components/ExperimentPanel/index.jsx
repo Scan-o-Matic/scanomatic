@@ -148,7 +148,7 @@ export default class ExperimentPanel extends React.Component {
     getPanelContents(status) {
         const {
             id, name, description, duration, interval, scanner, started, end,
-            onRemove, stopped, onStop, onFeatureExtract,
+            onRemove, stopped, reason, onStop, onFeatureExtract,
         } = this.props;
         const contents = [];
         const { dialogue } = this.state;
@@ -197,6 +197,10 @@ export default class ExperimentPanel extends React.Component {
             );
         }
         if (!dialogue) {
+            let endLabel = 'Ended';
+            if (stopped) endLabel = 'Planned end';
+            if (status === 'Running') endLabel = 'Ending';
+
             contents.push(
                 <table className="table experiment-stats" key="experiment-stats">
                     <tbody>
@@ -220,7 +224,7 @@ export default class ExperimentPanel extends React.Component {
                         }
                         {end &&
                             <tr className="experiment-end">
-                                <td>{status === 'Running' ? 'Ends' : 'Ended'}</td>
+                                <td>{endLabel}</td>
                                 <td>{end.toString()}</td>
                             </tr>
                         }
@@ -228,6 +232,12 @@ export default class ExperimentPanel extends React.Component {
                             <tr className="experiment-stopped">
                                 <td>Stopped</td>
                                 <td>{stopped.toString()}</td>
+                            </tr>
+                        }
+                        {reason &&
+                            <tr className="experiment-stop-reason">
+                                <td>Stop reason</td>
+                                <td>{reason}</td>
                             </tr>
                         }
                     </tbody>

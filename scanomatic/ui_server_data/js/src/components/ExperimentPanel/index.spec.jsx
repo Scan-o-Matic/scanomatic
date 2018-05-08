@@ -331,7 +331,7 @@ describe('<ExperimentPanel />', () => {
             it('renders end time', () => {
                 const tr = wrapper.find('.experiment-end');
                 expect(tr.exists()).toBeTruthy();
-                expect(tr.find('td').at(0).text()).toEqual('Ends');
+                expect(tr.find('td').at(0).text()).toEqual('Ending');
                 expect(tr.find('td').at(1).text()).toEqual(runningProps.end.toString());
             });
         });
@@ -341,6 +341,7 @@ describe('<ExperimentPanel />', () => {
                 started: new Date(),
                 end: new Date(new Date().getTime() + 1200000),
                 stopped: new Date(new Date().getTime() + 200000),
+                reason: 'Everything is fine',
             };
 
             beforeEach(() => {
@@ -355,7 +356,7 @@ describe('<ExperimentPanel />', () => {
             it('renders end time', () => {
                 const tr = wrapper.find('.experiment-end');
                 expect(tr.exists()).toBeTruthy();
-                expect(tr.find('td').at(0).text()).toEqual('Ended');
+                expect(tr.find('td').at(0).text()).toEqual('Planned end');
                 expect(tr.find('td').at(1).text()).toEqual(stoppedProps.end.toString());
             });
 
@@ -364,6 +365,13 @@ describe('<ExperimentPanel />', () => {
                 expect(tr.exists()).toBeTruthy();
                 expect(tr.find('td').at(0).text()).toEqual('Stopped');
                 expect(tr.find('td').at(1).text()).toEqual(stoppedProps.stopped.toString());
+            });
+
+            it('renders stop reason time', () => {
+                const tr = wrapper.find('.experiment-stop-reason');
+                expect(tr.exists()).toBeTruthy();
+                expect(tr.find('td').at(0).text()).toEqual('Stop reason');
+                expect(tr.find('td').at(1).text()).toEqual(stoppedProps.reason);
             });
 
             describe('compile button', () => {
