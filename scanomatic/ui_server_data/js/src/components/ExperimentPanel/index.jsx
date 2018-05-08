@@ -24,6 +24,10 @@ export default class ExperimentPanel extends React.Component {
         this.handleShowStopDialogue = () => this.setState({ dialogue: 'stop' });
         this.handleShowFeatureExtractDialogue = () => this.setState({ dialogue: 'extract' });
         this.handleToggleExpand = this.handleToggleExpand.bind(this);
+        this.handleStopExperiment = (reason) => {
+            this.setState({ dialogue: null });
+            props.onStop(props.id, reason);
+        };
     }
 
     getExpanded() {
@@ -148,7 +152,7 @@ export default class ExperimentPanel extends React.Component {
     getPanelContents(status) {
         const {
             id, name, description, duration, interval, scanner, started, end,
-            onRemove, stopped, reason, onStop, onFeatureExtract,
+            onRemove, stopped, reason, onFeatureExtract,
         } = this.props;
         const contents = [];
         const { dialogue } = this.state;
@@ -180,7 +184,7 @@ export default class ExperimentPanel extends React.Component {
             contents.push(
                 <ScanningJobStopDialogue
                     name={name}
-                    onConfirm={reason => onStop(id, reason)}
+                    onConfirm={this.handleStopExperiment}
                     onCancel={this.handleDismissDialogue}
                     key="stop-dialouge"
                 />,
@@ -299,6 +303,7 @@ ExperimentPanel.propTypes = {
     started: PropTypes.instanceOf(Date),
     end: PropTypes.instanceOf(Date),
     stopped: PropTypes.instanceOf(Date),
+    reason: PropTypes.string,
     done: PropTypes.bool,
     defaultExpanded: PropTypes.bool,
 };
@@ -310,4 +315,5 @@ ExperimentPanel.defaultProps = {
     stopped: null,
     done: false,
     defaultExpanded: false,
+    reason: null,
 };
