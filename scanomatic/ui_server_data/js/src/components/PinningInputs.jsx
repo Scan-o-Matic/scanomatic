@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-const pinningFormats = [
+export const pinningFormats = [
     { val: '', txt: '  --- EMPTY --  ' },
     { val: '96', txt: '96 (8 x 12)' },
     { val: '386', txt: '364 (16 x 24)' },
@@ -19,22 +19,24 @@ export default class PinningInputs extends React.Component {
     render() {
         const { error, pinning } = this.props;
         const pinnings = [];
-        pinning.forEach((value, key) => pinnings.push(<div key={`plate-${key}`} className="input-group">
-            <span className="input-group-addon">Plate {key}</span>
-            <select
-                className="pinning form-control"
-                onChange={e => this.handleChange(key, e.target.value)}
-                value={value || ''}
-                name="new-exp-pinning-plate-1"
-            >
-                {pinningFormats
-                    .map(p => (
-                        <option key={p.val} value={p.val}>
-                            {p.txt}
-                        </option>
-                    ))}
-            </select>
-        </div>));
+        pinning.forEach((value, key) => pinnings.push((
+            <div key={`plate-${key}`} className="input-group">
+                <span className="input-group-addon">Plate {key}</span>
+                <select
+                    className="pinning form-control"
+                    onChange={e => this.handleChange(key, e.target.value)}
+                    value={value || ''}
+                    name="new-exp-pinning-plate-{key}"
+                >
+                    {pinningFormats
+                        .map(p => (
+                            <option key={p.val} value={p.val}>
+                                {p.txt}
+                            </option>
+                        ))}
+                </select>
+            </div>
+        )));
         return (
             <div className={`form-group group-pinning ${error ? 'has-error' : ''}`}>
                 <label className="control-label">Pinning</label>
