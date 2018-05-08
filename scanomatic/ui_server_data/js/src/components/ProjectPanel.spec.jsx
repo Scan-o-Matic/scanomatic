@@ -10,7 +10,6 @@ describe('<ProjectPanel />', () => {
     const onNewExperiment = jasmine.createSpy('onNewExperiment');
 
     describe('default expanded', () => {
-
         beforeEach(() => {
             onNewExperiment.calls.reset();
             wrapper = shallow(<ProjectPanel
@@ -79,7 +78,6 @@ describe('<ProjectPanel />', () => {
     });
 
     describe('implicit default collapsed', () => {
-
         beforeEach(() => {
             onNewExperiment.calls.reset();
             wrapper = shallow(<ProjectPanel
