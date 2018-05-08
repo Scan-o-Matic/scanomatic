@@ -10,6 +10,8 @@ describe('projects/reducers/entities/experiments', () => {
             started: null,
             stopped: null,
             reason: null,
+            end: null,
+            done: null,
             scannerId: '001',
         }],
     ]);
@@ -38,6 +40,8 @@ describe('projects/reducers/entities/experiments', () => {
                 started: null,
                 stopped: null,
                 reason: null,
+                end: null,
+                done: null,
                 scannerId: 'S04',
             }],
         ]));
@@ -59,6 +63,50 @@ describe('projects/reducers/entities/experiments', () => {
                 started: date,
                 stopped: null,
                 reason: null,
+                end: null,
+                done: null,
+                scannerId: '001',
+            }],
+        ]));
+    });
+
+    it('should handle EXPERIMENTS_DONE', () => {
+        const action = {
+            type: 'EXPERIMENTS_DONE',
+            id: '002',
+        };
+        expect(experiments(state, action)).toEqual(new Map([
+            ['002', {
+                name: 'Some experiment',
+                description: 'This is an experiment',
+                duration: 1200,
+                interval: 300,
+                started: null,
+                stopped: null,
+                reason: null,
+                end: null,
+                done: true,
+                scannerId: '001',
+            }],
+        ]));
+    });
+
+    it('should handle EXPERIMENTS_REOPEN', () => {
+        const action = {
+            type: 'EXPERIMENTS_REOPEN',
+            id: '002',
+        };
+        expect(experiments(state, action)).toEqual(new Map([
+            ['002', {
+                name: 'Some experiment',
+                description: 'This is an experiment',
+                duration: 1200,
+                interval: 300,
+                started: null,
+                stopped: null,
+                reason: null,
+                end: null,
+                done: false,
                 scannerId: '001',
             }],
         ]));
@@ -71,4 +119,5 @@ describe('projects/reducers/entities/experiments', () => {
         };
         expect(experiments(state, action)).toEqual(new Map([]));
     });
+
 });

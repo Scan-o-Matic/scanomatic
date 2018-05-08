@@ -124,6 +124,24 @@ describe('projects/actions', () => {
         });
     });
 
+    describe('doneExperiment', () => {
+        it('should return an EXPERIMENTS_DONE action', () => {
+            expect(actions.doneExperiment('123')).toEqual({
+                type: 'EXPERIMENTS_DONE',
+                id: '123',
+            });
+        });
+    });
+
+    describe('reopenExperiment', () => {
+        it('should return an EXPERIMENTS_REOPEN action', () => {
+            expect(actions.reopenExperiment('123')).toEqual({
+                type: 'EXPERIMENTS_REOPEN',
+                id: '123',
+            });
+        });
+    });
+
     describe('submitNewProject', () => {
         const getState = jasmine.createSpy('getState').and.returnValue(new StateBuilder().build());
 

@@ -6,16 +6,16 @@ import ScanningJobFeatureExtractDialogue from './ScanningJobFeatureExtractDialog
 
 describe('<ScanningJobFeatureExtractDialogue />', () => {
     let wrapper;
-    const onExtractFeatures = jasmine.createSpy('onExtractFeatures');
+    const onConfirm = jasmine.createSpy('onConfirm');
     const onCancel = jasmine.createSpy('onCancel');
 
     const props = {
-        onExtractFeatures,
+        onConfirm,
         onCancel,
     };
 
     beforeEach(() => {
-        onExtractFeatures.calls.reset();
+        onConfirm.calls.reset();
         onCancel.calls.reset();
         wrapper = shallow(<ScanningJobFeatureExtractDialogue {...props} />);
     });
@@ -49,18 +49,18 @@ describe('<ScanningJobFeatureExtractDialogue />', () => {
             expect(btn.hasClass('btn-primary')).toBeTruthy();
         });
 
-        it('calls onExtractFeatures', () => {
+        it('calls onConfirm', () => {
             const btn = wrapper.find('.feature-extract-button');
             btn.simulate('click');
-            expect(onExtractFeatures).toHaveBeenCalledWith(false);
+            expect(onConfirm).toHaveBeenCalledWith(false);
         });
 
-        it('calls onExtractFeatures with updated keep qc value', () => {
+        it('calls onConfirm with updated keep qc value', () => {
             const checkbox = wrapper.find('input.keep-qc');
             checkbox.simulate('change', { target: { checked: true } });
             const btn = wrapper.find('.feature-extract-button');
             btn.simulate('click');
-            expect(onExtractFeatures).toHaveBeenCalledWith(true);
+            expect(onConfirm).toHaveBeenCalledWith(true);
         });
     });
 

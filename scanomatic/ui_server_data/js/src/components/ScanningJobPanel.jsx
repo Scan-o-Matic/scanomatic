@@ -114,7 +114,7 @@ class ScanningJobPanel extends React.Component {
                 {dialogue === 'featureExtact' &&
                     <ScanningJobFeatureExtractDialogue
                         onCancel={this.handleCancel}
-                        onExtractFeatures={this.handleFeatureExtract}
+                        onConfirm={this.handleFeatureExtract}
                     />
                 }
             </div>

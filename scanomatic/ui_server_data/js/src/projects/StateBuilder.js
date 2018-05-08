@@ -32,6 +32,9 @@ type PartialExperiment = {
     interval?: number,
     scannerId?: string,
     started?: Date,
+    end?: Date,
+    stopped?: Date,
+    done?: boolean,
 };
 
 type PartialScanner = {

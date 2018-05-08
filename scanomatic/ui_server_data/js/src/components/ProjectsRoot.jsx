@@ -82,6 +82,10 @@ ProjectsRoot.propTypes = {
     experimentActions: PropTypes.shape({
         onStart: PropTypes.func.isRequired,
         onRemove: PropTypes.func.isRequired,
+        onStop: PropTypes.func.isRequired,
+        onDone: PropTypes.func.isRequired,
+        onReopen: PropTypes.func.isRequired,
+        onFeatureExtract: PropTypes.func.isRequired,
     }).isRequired,
     newProjectErrors: PropTypes.instanceOf(Map),
     onNewExperiment: PropTypes.func.isRequired,
