@@ -80,6 +80,15 @@ export function changeNewExperiment(field: string, value: string|number): Action
             };
         }
         throw TypeError(`Invalid type ${typeof (value)} for field ${field}`);
+    case 'pinning':
+        if (typeof value === 'object') {
+            return {
+                type: 'NEWEXPERIMENT_CHANGE',
+                field,
+                value: (value: Map<number, string>),
+            };
+        }
+        throw TypeError(`Invalid type ${typeof (value)} for field ${field}`);
     default:
         throw Error(`Unknown field ${field}`);
     }
