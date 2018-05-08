@@ -12,6 +12,7 @@ export type Experiments = Map<string, {
     +duration: number,
     +interval: number,
     +scannerId: string,
+    +pinning: Map<number, string>,
     +started: ?Date,
     +stopped: ?Date,
     +reason: ?string,

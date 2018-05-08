@@ -16,6 +16,7 @@ const experimentDefaults = {
     stopped: null,
     reason: null,
     scannerId: '001',
+    pinning: new Map([[1, '384']]),
 };
 
 const scannerDefaults = {
