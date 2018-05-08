@@ -12,7 +12,7 @@ const md = require('markdown-it')({
 export default function Markup({ markdown }) {
     return (<div
         className="markup"
-        dangerouslySetInnerHTML={{__html:md.renderInline(markdown) }}
+        dangerouslySetInnerHTML={{ __html: md.renderInline(markdown) }}
     />);
 }
 
