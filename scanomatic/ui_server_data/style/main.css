@@ -154,7 +154,7 @@ nav span {
     margin-bottom: 2px;
 }
 
-#version-info {
+.version-info {
 	float: right;
 	font-size: 80%;
 }
