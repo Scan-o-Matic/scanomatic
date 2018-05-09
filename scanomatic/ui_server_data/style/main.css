@@ -41,14 +41,6 @@ img.icon-large {
     width: 50px;
 }
 
-#holder {
-    position: absolute;
-    left: 0px;
-    top: 0px;
-    width: 100%;
-    height: 100%;
-}
-
 #header {
     position: absolute;
     width: 100%;
@@ -82,22 +74,6 @@ a, .linky {
 	transition: box-shadow 1s ease;
 }
 
-.linkOut:hover {
-	text-decoration: underline;
-	box-shadow: 0px 0px 20px #e7d2b7;
-}
-
-blockquote {
-    margin-left: 40px;
-    margin-right: 40px;
-}
-
-code {
-	background: #a45e60;
-	color: #e7d2b7;
-	padding: 3px;
-}
-
 li {
 	margin-bottom: 6px;
 }
@@ -116,7 +92,7 @@ nav {
 }
 
 nav a, nav .linky {
-    padding: 3px 12px;
+    padding: 1px 12px;
 }
 
 nav span {
@@ -178,9 +154,9 @@ nav span {
     margin-bottom: 2px;
 }
 
-nav #version-info {
-    right: 12px;
-    position: absolute;
+#version-info {
+	float: right;
+	font-size: 80%;
 }
 
 ul {
@@ -244,12 +220,6 @@ label {
     padding: 6px;
 }
 
-#logo {
-    position: fixed;
-    top: 0;
-    z-index: -1;
-}
-
 .section {
     margin-bottom: 0.5em;
 }
@@ -294,47 +264,6 @@ label {
     border: 1px solid #541f0f;
     padding: 6px;
     margin-bottom: 20px;
-}
-
-#toc {
-	position: fixed;
-	right: 10px;
-	background: #f8e03e;
-	color: #541f0f;
-	bottom: 20px;
-	min-width: 180px;
-	max-width: 200px;
-	min-height: 200px;
-	font-size: 70%;
-	box-shadow: 5px 5px 15px #541f0f;
-	padding-bottom: 32px;
-}
-
-#toc h1 {
-	text-transform: uppercase;
-	letter-spacing: 0px;
-	font-size: 200%;
-	display: block;
-	width: 100%;
-	text-align: center;
-	margin-top: 24px;
-	margin-bottom: 12px;
-}
-
-#toc a {
-    text-decoration: none;
-	color: #f8e03e;
-	background: #cd8b34;
-	padding: 6px;
-}
-
-#toc a:hover {
-	box-shadow: 0px 0px 20px #541f0f;
-}
-
-#toc h2 {
-    margin-top: 6px;
-    margin-bottom: 18px;
 }
 
 .ui-dialog-content {
