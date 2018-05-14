@@ -1,9 +1,9 @@
 import { shallow } from 'enzyme';
 import React from 'react';
+import Timeline from 'react-calendar-timeline/lib';
 
 import './enzyme-setup';
 import ScannersStatus from './ScannersStatus';
-import Timeline from 'react-calendar-timeline/lib';
 
 const milliPerDay = 1000 * 3600 * 24;
 const milliPerHour = 1000 * 3600;
