@@ -2,10 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import myTypes from '../prop-types';
-
+import FixtureImage from './FixtureImage';
 
 export default function FixturesRoot({
-    scanners, scannerId, onSelectScanner, onScanOneImage,
+    scanners, scannerId, onSelectScanner, onScanOneImage, imageData, imageActions,
 }) {
     const contents = [];
     if (scanners.length === 0) {
@@ -38,7 +38,7 @@ export default function FixturesRoot({
                     <div className="row">
                         <div className="col-md-6">
                             <div className="btn-group" role="group">
-                                <button type="button" className="btn btn-default" onClick={() => onScanOneImage(scannerId)}>Record Image</button>
+                                <button type="button" className="btn btn-default" onClick={onScanOneImage}>Record Image</button>
                             </div>
                         </div>
                     </div>
@@ -63,6 +63,9 @@ export default function FixturesRoot({
                 ));
             }
         }
+        if (imageData) {
+            contents.push(<FixtureImage {...imageData} {...imageActions} />);
+        }
     }
     return (
         <div>
@@ -77,9 +80,30 @@ FixturesRoot.propTypes = {
     scanners: PropTypes.arrayOf(PropTypes.shape(myTypes.scannerShape)),
     onSelectScanner: PropTypes.func.isRequired,
     onScanOneImage: PropTypes.func.isRequired,
+    imageData: PropTypes.shape({
+        uri: PropTypes.string.isRequired,
+        grayScaleType: PropTypes.string.isRequired,
+        grayScale: PropTypes.shape({
+            x: PropTypes.arrayOf(PropTypes.number),
+            y: PropTypes.arrayOf(PropTypes.number),
+            valid: PropTypes.bool.isRequired,
+        }),
+        plates: PropTypes.arrayOf(PropTypes.shape({
+            x1: PropTypes.number.isRequired,
+            y1: PropTypes.number.isRequired,
+            x2: PropTypes.number.isRequired,
+            y2: PropTypes.number.isRequired,
+        })),
+    }),
+    imageActions: PropTypes.shape({
+        onChange: PropTypes.func.isRequired,
+        onReset: PropTypes.func.isRequired,
+        onSave: PropTypes.func.isRequired,
+    }).isRequired,
 };
 
 FixturesRoot.defaultProps = {
     scannerId: '',
     scanners: [],
+    imageData: null,
 };
