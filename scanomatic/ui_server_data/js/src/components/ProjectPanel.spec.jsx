@@ -37,12 +37,18 @@ describe('<ProjectPanel />', () => {
             expect(panelHeading.find('.glyphicon-collapse-up').exists()).toBeTruthy();
         });
 
-        it('renders a panel-body with the description', () => {
+        it('renders a panel-body', () => {
             const panelBody = panel.find('.panel-body');
             expect(panelBody.exists()).toBeTruthy();
+        });
+
+        it('renders the description', () => {
+            const panelBody = panel.find('.panel-body');
             const description = panelBody.find('.project-description');
             expect(description.exists()).toBeTruthy();
-            expect(description.text()).toEqual('Debugging the system.');
+            const markup = description.find('Markup');
+            expect(markup.exists()).toBeTruthy();
+            expect(markup.prop('markdown')).toEqual('Debugging the system.');
         });
 
         it('toggles panel-body when panel-heading is clicked', () => {
