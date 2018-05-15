@@ -48,3 +48,82 @@ img {
     vertical-align: middle;
     float: none;
 }
+
+.react-calendar-timeline .scanner-job {
+  color: #eee;
+  border: #111;
+}
+
+.react-calendar-timeline .scanner-job-running {
+  background: #2b3;
+}
+
+.react-calendar-timeline .scanner-job-ended {
+  background: #888;
+}
+
+.react-calendar-timeline .scanner-job-stopped {
+  background: #774;
+}
+
+.react-calendar-timeline .rct-header-container .rct-sidebar-header {
+  background: #fff;
+  color: #111;
+  font-weight: bold;
+  text-align: center;
+  padding-top: 2rem;
+}
+
+.react-calendar-timeline .rct-header-container .rct-header .top-header .rct-label-group {
+  background: #fff;
+  color: #111;
+}
+
+.scanner-online {
+  background: #2b3;
+  color: #eee;
+  padding: 0.3rem 1rem .1rem 0.75rem;
+  border-radius: 4px;
+  font-size: 90%;
+  font-weight: bold;
+}
+
+.scanner-offline {
+  background: #b23;
+  color: #eee;
+  padding: 0.3rem 1rem .1rem 0.75rem;
+  border-radius: 4px;
+  font-size: 90%;
+  font-weight: bold;
+}
+
+.legend {
+  margin-top: 1rem;
+}
+
+.legend-job-running {
+  font-size: 80%;
+  color: #eee;
+  background: #2b3;
+  padding: 0.5rem 2rem;
+  margin: 0.5rem;
+  display: inline-block;
+}
+
+.legend-job-ended {
+  font-size: 80%;
+  color: #eee;
+  background: #888;
+  padding: 0.5rem 2rem;
+  margin: 0.5rem;
+  display: inline-block;
+}
+
+.legend-job-stopped {
+  font-size: 80%;
+  color: #eee;
+  background: #774;
+  padding: 0.5rem 2rem;
+  margin: 0.5rem;
+  display: inline-block;
+}

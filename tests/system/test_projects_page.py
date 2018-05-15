@@ -205,7 +205,6 @@ def test_create_project(scanomatic, browser):
     form.click_submit()
     panel = page.get_project_panel('My project')
     assert panel.heading == 'My project'
-    panel.toggle_expanded()
     assert 'bla bla bla bla bla' in panel.body
 
 
@@ -225,7 +224,6 @@ def test_create_experiment(scanomatic, browser):
     form.set_description('bla bla bla bla bla')
     form.click_submit()
     project_panel = page.get_project_panel('My project')
-    project_panel.toggle_expanded()
     form = project_panel.click_add_experiment()
     form.set_name('My Experiment')
     form.set_description('Lorem ipsum dolor sit amet')
@@ -234,7 +232,6 @@ def test_create_experiment(scanomatic, browser):
     form.set_scanner('0000')
     form.click_submit()
     experiment_panel = project_panel.get_experiment_panel('My Experiment')
-    experiment_panel.toggle_expanded()
     assert 'My Experiment' in experiment_panel.heading
     assert 'Lorem ipsum dolor sit amet' in experiment_panel.body
     assert '1 days 2 hours 3 minutes' in experiment_panel.stats['Duration']
@@ -249,7 +246,6 @@ def test_create_experiment_without_name(scanomatic, browser):
     form.set_description('bla bla bla bla bla')
     form.click_submit()
     project_panel = page.get_project_panel('My project')
-    project_panel.toggle_expanded()
     form = project_panel.click_add_experiment()
     form.set_name('')
     form.set_description('Lorem ipsum dolor sit amet')
