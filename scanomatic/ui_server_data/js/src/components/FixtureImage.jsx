@@ -1,87 +1,82 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+
 export default class FixtureImage extends React.Component {
     constructor(props) {
         super(props);
         this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleMouseUp = this.handleMouseUp.bind(this);
+        this.handleMouseDown = this.handleMouseDown.bind(this);
     }
 
-    handleMouseMove(e) {
-
+    componentDidMount() {
+        this.ctx = this.canvas.getContext('2d');
+        this.ctx.strokeStyle = '#F00';
+        this.ctx.lineWidth = 3;
+        this.addMouseEvents();
     }
 
-    getGrayScaleGraph() {
-        return <div className="grayscale-graph" />;
+    componentWillUnmount() {
+        this.removeMouseEvents();
+    }
+
+    getMouseImagePosition(evt) {
+        if (!this.canvas) return null;
+        const { left, top } = this.canvas.getBoundingClientRect();
+        return { x: evt.clientX - left, y: evt.clientY - top };
+    }
+
+    addMouseEvents() {
+        document.addEventListener('mousemove', this.handleMouseMove, false);
+        document.addEventListener('mouseup', this.handleMouseUp, false);
+        document.addEventListener('mousedown', this.handleMouseDown, false);
+    }
+
+    removeMouseEvents() {
+        document.removeEventListener('mousemove', this.handleMouseMove, false);
+        document.remoteEventListener('mouseup', this.handleMouseUp, false);
+        document.removeEventListener('mousedown', this.handleMouseDown, false);
+    }
+
+    handleMouseMove(evt) {
+        const pos = this.getMouseImagePosition(evt);
+        this.props.onMouse(pos);
+    }
+
+    handleMouseDown(evt) {
+        const pos = this.getMouseImagePosition(evt);
+        this.props.onAreaStart(pos);
+    }
+
+    handleMouseUp(evt) {
+        const pos = this.getMouseImagePosition(evt);
+        this.props.onAreaEnd(pos);
+    }
+
+    updateCanvas() {
+
     }
 
     render() {
-        const {
-            grayScaleType, grayScale, plates, uri,
-            onSave, onReset, onChange,
-        } = this.props;
-        const canFinalize = grayScale && grayScale.valid && plates && plates.length > 0;
-        const canEdit = onSave && onReset && onChange;
         return (
-            <div className="fixture-image">
-                <div className="row">
-                    <div className="col-md-10">
-                        <div className="input-group">
-                            <div className="input-group-addon">Gray Scale</div>
-                            <select className="form-control" value={grayScaleType}>
-                                <option value="">System Default</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div className="row">
-                    <div className="col-md-10">
-                        <img src={uri} alt="Full resolution view" />
-                    </div>
-                    {canEdit &&
-                        <div className="col-md-2">
-                            <div className="fixture-image-instrucitons">
-                                <h2>Instructions</h2>
-                                <ol>
-                                    <li>Mark area containing the gray scale</li>
-                                    <li>Verify that the result from the gray scale analysis seems valid</li>
-                                    <li>Mark plate areas</li>
-                                </ol>
-                                Click on area to undo it.
-                            </div>
-                            {this.getGrayScaleGraph()}
-                            <button className="btn button-primary" onClick={onSave} disabled={canFinalize} >Finalize</button>
-                        </div>
-                    }
-                </div>
-            </div>
+            <canvas
+                ref={(canvas) => {
+                    this.canvas = canvas;
+                }}
+            />
         );
     }
 }
 
 FixtureImage.propTypes = {
-    uri: PropTypes.string.isRequired,
-    grayScaleType: PropTypes.string.isRequired,
-    grayScale: PropTypes.shape({
-        x: PropTypes.arrayOf(PropTypes.number),
-        y: PropTypes.arrayOf(PropTypes.number),
-        valid: PropTypes.bool.isRequired,
-    }),
-    plates: PropTypes.arrayOf(PropTypes.shape({
-        x1: PropTypes.number.isRequired,
-        y1: PropTypes.number.isRequired,
-        x2: PropTypes.number.isRequired,
-        y2: PropTypes.number.isRequired,
-    })),
-    onChange: PropTypes.func,
-    onReset: PropTypes.func,
-    onSave: PropTypes.func,
+    onAreaStart: PropTypes.func,
+    onAreaEnd: PropTypes.func,
+    onMouse: PropTypes.func,
 };
 
 FixtureImage.defaultProps = {
-    grayScale: null,
-    plates: null,
-    onSave: null,
-    onReset: null,
-    onChange: null,
+    onAreaStart: null,
+    onAreaEnd: null,
+    onMouse: null,
 };

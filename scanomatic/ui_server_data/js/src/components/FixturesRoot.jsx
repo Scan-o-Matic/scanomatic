@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import myTypes from '../prop-types';
-import FixtureImage from './FixtureImage';
+import FixtureImageEditor from './FixtureImage';
 
 export default function FixturesRoot({
     scanners, scannerId, onSelectScanner, onScanOneImage, imageData, imageActions,
@@ -64,7 +64,7 @@ export default function FixturesRoot({
             }
         }
         if (imageData) {
-            contents.push(<FixtureImage {...imageData} {...imageActions} />);
+            contents.push(<FixtureImageEditor {...imageData} {...imageActions} />);
         }
     }
     return (
@@ -96,7 +96,7 @@ FixturesRoot.propTypes = {
         })),
     }),
     imageActions: PropTypes.shape({
-        onChange: PropTypes.func.isRequired,
+        onAddArea: PropTypes.func.isRequired,
         onReset: PropTypes.func.isRequired,
         onSave: PropTypes.func.isRequired,
     }).isRequired,
