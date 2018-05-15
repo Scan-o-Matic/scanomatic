@@ -8,6 +8,7 @@ export default class FixtureImage extends React.Component {
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.handleMouseDown = this.handleMouseDown.bind(this);
+        this.setState({ editMode: props.onAreaStart && props.onAreaEnd });
     }
 
     componentDidMount() {
@@ -24,8 +25,17 @@ export default class FixtureImage extends React.Component {
     getMouseImagePosition(evt) {
         if (!this.canvas) return null;
         const { left, top } = this.canvas.getBoundingClientRect();
-        return { x: evt.clientX - left, y: evt.clientY - top };
+        let x = Math.max(0, this.props.width - (evt.clientX - left));
+        x = Math.min(x, this.props.width - 1);
+        let y = Math.max(0, evt.clientY - top);
+        y = Math.min(y, this.props.height - 1);
+        return { x, y };
     }
+
+    canvas = null;
+    isDragging = false;
+    startPos = null;
+    currentPos = null;
 
     addMouseEvents() {
         document.addEventListener('mousemove', this.handleMouseMove, false);
@@ -40,18 +50,28 @@ export default class FixtureImage extends React.Component {
     }
 
     handleMouseMove(evt) {
+        if (!this.isDragging) return;
         const pos = this.getMouseImagePosition(evt);
-        this.props.onMouse(pos);
+        this.currentPos = pos;
+        if (this.props.onMouse) this.props.onMouse(pos);
     }
 
     handleMouseDown(evt) {
+        if (!this.state.editMode) return;
         const pos = this.getMouseImagePosition(evt);
-        this.props.onAreaStart(pos);
+        this.isDragging = true;
+        this.startPos = pos;
+        this.currentPos = pos;
+        if (this.props.onAreaStart) this.props.onAreaStart(pos);
     }
 
     handleMouseUp(evt) {
+        if (!this.state.editMode) return;
         const pos = this.getMouseImagePosition(evt);
-        this.props.onAreaEnd(pos);
+        this.isDragging = false;
+        this.startPos = null;
+        this.currentPos = null;
+        if (this.props.onAreaEnd) this.props.onAreaEnd(pos);
     }
 
     updateCanvas() {
@@ -61,6 +81,8 @@ export default class FixtureImage extends React.Component {
     render() {
         return (
             <canvas
+                width={this.props.width}
+                height={this.props.height}
                 ref={(canvas) => {
                     this.canvas = canvas;
                 }}
@@ -70,12 +92,16 @@ export default class FixtureImage extends React.Component {
 }
 
 FixtureImage.propTypes = {
+    height: PropTypes.number,
+    width: PropTypes.number,
     onAreaStart: PropTypes.func,
     onAreaEnd: PropTypes.func,
     onMouse: PropTypes.func,
 };
 
 FixtureImage.defaultProps = {
+    width: 480,
+    height: 600,
     onAreaStart: null,
     onAreaEnd: null,
     onMouse: null,
