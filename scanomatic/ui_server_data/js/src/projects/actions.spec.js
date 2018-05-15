@@ -107,10 +107,11 @@ describe('projects/actions', () => {
 
     describe('stopExperiment', () => {
         it('should return an EXPERIMENTS_STOP action', () => {
-            expect(actions.stopExperiment('123')).toEqual({
+            expect(actions.stopExperiment('123', 'mymy')).toEqual({
                 type: 'EXPERIMENTS_STOP',
                 id: '123',
                 date: new Date(),
+                reason: 'mymy',
             });
         });
     });

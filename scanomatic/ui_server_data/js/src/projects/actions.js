@@ -24,7 +24,7 @@ export type Action
         scannerId: string,
     |}
     | {| type: 'EXPERIMENTS_START', id: string, date: Date |}
-    | {| type: 'EXPERIMENTS_STOP', id: string, date: Date |}
+    | {| type: 'EXPERIMENTS_STOP', id: string, reason: string, date: Date |}
     | {| type: 'EXPERIMENTS_REMOVE', id: string |}
     | {| type: 'EXPERIMENTS_FEATUREEXTRACT', id: string, keepQC: boolean |}
     | {| type: 'EXPERIMENTS_DONE', id: string |}
@@ -117,10 +117,11 @@ export function startExperiment(id: string): Action {
     };
 }
 
-export function stopExperiment(id: string): Action {
+export function stopExperiment(id: string, reason: string): Action {
     return {
         type: 'EXPERIMENTS_STOP',
         id,
+        reason,
         date: new Date(),
     };
 }

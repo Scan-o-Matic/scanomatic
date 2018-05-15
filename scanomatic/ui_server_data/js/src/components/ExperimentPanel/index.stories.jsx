@@ -31,6 +31,7 @@ storiesOf('ExperimentPanel', module)
             onReopen={action('reopen')}
             onFeatureExtract={action('feture extract')}
             done={false}
+            defaultExpanded
         />
     ))
     .add('Running', () => (
@@ -52,6 +53,7 @@ storiesOf('ExperimentPanel', module)
             onDone={action('done')}
             onReopen={action('reopen')}
             onFeatureExtract={action('feture extract')}
+            defaultExpanded
         />
     ))
     .add('Stopped', () => (
@@ -67,6 +69,7 @@ storiesOf('ExperimentPanel', module)
             started={new Date()}
             end={new Date(new Date().getTime() + 1200000)}
             stopped={new Date()}
+            reason="It was done anyways."
             done={false}
             onStart={action('start')}
             onRemove={action('remove')}
@@ -74,6 +77,7 @@ storiesOf('ExperimentPanel', module)
             onDone={action('done')}
             onReopen={action('reopen')}
             onFeatureExtract={action('feture extract')}
+            defaultExpanded
         />
     ))
     .add('Ended', () => (
@@ -95,6 +99,7 @@ storiesOf('ExperimentPanel', module)
             onDone={action('done')}
             onReopen={action('reopen')}
             onFeatureExtract={action('feture extract')}
+            defaultExpanded
         />
     ))
     .add('Done', () => (

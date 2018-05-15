@@ -56,7 +56,7 @@ function mapDispatchToProps(dispatch) {
             onRemove: experimentId => dispatch(removeExperiment(experimentId)),
             onStop:
                 (experimentId, reason) => dispatch(stopExperiment(experimentId, reason)),
-            onFeatureExtact:
+            onFeatureExtract:
                 (experimentId, keepQC) => dispatch(featureExtract(experimentId, keepQC)),
             onDone: experimentId => dispatch(doneExperiment(experimentId)),
             onReopen: experimentId => dispatch(reopenExperiment(experimentId)),
