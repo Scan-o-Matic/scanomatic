@@ -15,7 +15,7 @@ type Project = {
         end: ?Date,
         stopped: ?Date,
         done: ?boolean,
-        pinning: Map<number, string>,
+        pinning: Array<string>,
         reason: ?string,
         scanner: {
             name: string,
@@ -116,7 +116,7 @@ export function getNewExperiment(state: State): ?{
     +duration: number,
     +interval: number,
     +projectId: string,
-    +pinning: Map<number, string>,
+    +pinning: Array<string>,
 } {
     if (state.forms.newExperiment == null) return null;
     return {

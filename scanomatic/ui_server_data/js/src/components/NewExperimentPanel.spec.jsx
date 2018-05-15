@@ -26,7 +26,7 @@ describe('<NewExperimentPanel/>', () => {
                 identifier: 'haha',
             },
         ],
-        pinning: new Map([[1: null, 2: '384']]),
+        pinning: [null, '384'],
         onChange: jasmine.createSpy('onNameChange'),
         onSubmit: jasmine.createSpy('onSubmit'),
         onCancel: jasmine.createSpy('onCancel'),

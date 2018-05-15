@@ -8,7 +8,7 @@ import PinningInputs, { pinningFormats } from './PinningInputs';
 describe('<PinningInputs />', () => {
     const onChange = jasmine.createSpy('onChange');
     const props = {
-        pinning: new Map([[1, null], [2, '1536']]),
+        pinning: [null, '1536'],
         onChange,
     };
 
@@ -45,7 +45,7 @@ describe('<PinningInputs />', () => {
                 inputs = wrapper.find('.input-group');
             });
 
-            it('renders one per key in pinning Map', () => {
+            it('renders one per key in pinnings', () => {
                 expect(inputs.exists()).toBeTruthy();
                 expect(inputs.length).toEqual(2);
             });
@@ -78,7 +78,7 @@ describe('<PinningInputs />', () => {
                 const evt = { target: { value: '384' } };
                 const select = inputs.at(0).find('select');
                 select.simulate('change', evt);
-                expect(onChange).toHaveBeenCalledWith(new Map([[1, '384'], [2, '1536']]));
+                expect(onChange).toHaveBeenCalledWith(['384', '1536']);
             });
 
             it('should set the correct values of the expected options of the selects', () => {

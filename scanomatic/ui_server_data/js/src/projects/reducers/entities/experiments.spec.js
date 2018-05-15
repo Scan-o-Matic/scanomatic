@@ -29,7 +29,7 @@ describe('projects/reducers/entities/experiments', () => {
             interval: 24,
             name: 'Other experiment',
             scannerId: 'S04',
-            pinning: new Map([[1: '6144']]),
+            pinning: ['6144'],
         };
         expect(experiments(state, action)).toEqual(new Map([
             ...state,
@@ -44,7 +44,7 @@ describe('projects/reducers/entities/experiments', () => {
                 end: null,
                 done: null,
                 scannerId: 'S04',
-                pinning: new Map([[1: '6144']]),
+                pinning: ['6144'],
             }],
         ]));
     });
@@ -169,5 +169,4 @@ describe('projects/reducers/entities/experiments', () => {
         };
         expect(experiments(state, action)).toEqual(new Map([]));
     });
-
 });

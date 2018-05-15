@@ -17,7 +17,8 @@ export function formatScannerStatus(scanner) {
 
 export function formatPinning(pinning) {
     const spans = [];
-    pinning.forEach((value, plate) => {
+    pinning.forEach((value, idx) => {
+        const plate = idx + 1;
         if (value === '') {
             spans.push((
                 <span className="pinning-format" key="plate-{plate}">
@@ -318,7 +319,7 @@ ExperimentPanel.propTypes = {
     duration: PropTypes.number.isRequired,
     interval: PropTypes.number.isRequired,
     scanner: PropTypes.shape(myProps.scannerShape).isRequired,
-    pinning: PropTypes.instanceOf(Map).isRequired,
+    pinning: PropTypes.arrayOf(PropTypes.string).isRequired,
     onStart: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired,
     onStop: PropTypes.func.isRequired,

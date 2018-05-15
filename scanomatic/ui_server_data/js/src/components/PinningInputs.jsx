@@ -10,33 +10,36 @@ export const pinningFormats = [
 ];
 
 export default class PinningInputs extends React.Component {
-    handleChange(plate, value) {
-        const pinning = new Map(this.props.pinning);
-        pinning.set(plate, value);
+    handleChange(idx, value) {
+        const pinning = Array.from(this.props.pinning);
+        pinning[idx] = value;
         this.props.onChange(pinning);
     }
 
     render() {
         const { error, pinning } = this.props;
         const pinnings = [];
-        pinning.forEach((value, key) => pinnings.push((
-            <div key="plate-{key}" className="input-group">
-                <span className="input-group-addon">Plate {key}</span>
-                <select
-                    className="pinning form-control"
-                    onChange={e => this.handleChange(key, e.target.value)}
-                    value={value || ''}
-                    name="new-exp-pinning-plate-{key}"
-                >
-                    {pinningFormats
-                        .map(p => (
-                            <option key={p.val} value={p.val}>
-                                {p.txt}
-                            </option>
-                        ))}
-                </select>
-            </div>
-        )));
+        pinning.forEach((value, idx) => {
+            const plate = idx + 1;
+            pinnings.push((
+                <div key="plate-{plate}" className="input-group">
+                    <span className="input-group-addon">Plate {plate}</span>
+                    <select
+                        className="pinning form-control"
+                        onChange={e => this.handleChange(idx, e.target.value)}
+                        value={value || ''}
+                        name="new-exp-pinning-plate-{plate}"
+                    >
+                        {pinningFormats
+                            .map(p => (
+                                <option key={p.val} value={p.val}>
+                                    {p.txt}
+                                </option>
+                            ))}
+                    </select>
+                </div>
+            ));
+        });
         return (
             <div className={`form-group group-pinning ${error ? 'has-error' : ''}`}>
                 <label className="control-label">Pinning</label>
@@ -53,7 +56,7 @@ export default class PinningInputs extends React.Component {
 
 PinningInputs.propTypes = {
     error: PropTypes.string,
-    pinning: PropTypes.instanceOf(Map).isRequired,
+    pinning: PropTypes.arrayOf(PropTypes.string).isRequired,
     onChange: PropTypes.func.isRequired,
 };
 

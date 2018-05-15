@@ -83,10 +83,10 @@ describe('projects/actions', () => {
         });
 
         it('should return a NEWEXPERIMENT_CHANGE action for object-based fields', () => {
-            expect(actions.changeNewExperiment('pinning', new Map([[1, 'test']]))).toEqual({
+            expect(actions.changeNewExperiment('pinning', ['test'])).toEqual({
                 type: 'NEWEXPERIMENT_CHANGE',
                 field: 'pinning',
-                value: new Map([[1, 'test']]),
+                value: ['test'],
             });
         });
 
@@ -113,7 +113,7 @@ describe('projects/actions', () => {
                 300,
                 60,
                 'sc042',
-                new Map([[1, '6144']]),
+                ['6144'],
             )).toEqual({
                 type: 'EXPERIMENTS_ADD',
                 id: new Date().getTime().toString(),
@@ -123,7 +123,7 @@ describe('projects/actions', () => {
                 duration: 300,
                 interval: 60,
                 scannerId: 'sc042',
-                pinning: new Map([[1, '6144']]),
+                pinning: ['6144'],
             });
         });
     });
@@ -270,7 +270,7 @@ describe('projects/actions', () => {
                     interval: 500,
                     description: 'bla bla bla',
                     projectId: 'P0',
-                    pinning: new Map([[1, '384']]),
+                    pinning: ['384'],
                 }));
             });
 

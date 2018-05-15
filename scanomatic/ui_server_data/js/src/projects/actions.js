@@ -11,7 +11,7 @@ export type Action
     | {| type: 'NEWEXPERIMENT_INIT', projectId: string |}
     | {| type: 'NEWEXPERIMENT_CHANGE', field: 'name'|'description'|'scannerId', value: string |}
     | {| type: 'NEWEXPERIMENT_CHANGE', field: 'duration'|'interval', value: number |}
-    | {| type: 'NEWEXPERIMENT_CHANGE', field: 'pinning', value: Map<number, string> |}
+    | {| type: 'NEWEXPERIMENT_CHANGE', field: 'pinning', value: Array<string> |}
     | {| type: 'NEWEXPERIMENT_SUBMIT' |}
     | {| type: 'NEWEXPERIMENT_CLEAR' |}
     | {|
@@ -23,7 +23,7 @@ export type Action
         name: string,
         projectId: string,
         scannerId: string,
-        pinning: Map<number, string>,
+        pinning: Array<string>,
     |}
     | {| type: 'EXPERIMENTS_START', id: string, date: Date |}
     | {| type: 'EXPERIMENTS_STOP', id: string, reason: string, date: Date |}
@@ -57,7 +57,7 @@ export function initNewExperiment(projectId: string): Action {
     return { type: 'NEWEXPERIMENT_INIT', projectId };
 }
 
-export function changeNewExperiment(field: string, value: string|number): Action {
+export function changeNewExperiment(field: string, value: string|number|Array<string>): Action {
     switch (field) {
     case 'description':
     case 'name':
@@ -85,7 +85,7 @@ export function changeNewExperiment(field: string, value: string|number): Action
             return {
                 type: 'NEWEXPERIMENT_CHANGE',
                 field,
-                value: (value: Map<number, string>),
+                value: (value: Array<string>),
             };
         }
         throw TypeError(`Invalid type ${typeof (value)} for field ${field}`);
@@ -107,7 +107,7 @@ export function addExperiment(
     duration: number,
     interval: number,
     scannerId: string,
-    pinning: Map<number, string>,
+    pinning: Array<string>,
 ): Action {
     return {
         type: 'EXPERIMENTS_ADD',

@@ -12,7 +12,7 @@ export type Experiments = Map<string, {
     +duration: number,
     +interval: number,
     +scannerId: string,
-    +pinning: Map<number, string>,
+    +pinning: Array<string>,
     +started: ?Date,
     +stopped: ?Date,
     +reason: ?string,
@@ -42,7 +42,7 @@ export type NewExperiment = ?{
         +duration: number,
         +interval: number,
         +scannerId: string,
-        +pinning: Map<number, string>,
+        +pinning: Array<string>,
     },
 };
 
