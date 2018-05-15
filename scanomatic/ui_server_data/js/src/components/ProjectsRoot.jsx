@@ -8,7 +8,7 @@ import NewProjectPanel from './NewProjectPanel';
 import NewExperimentPanel from './NewExperimentPanel';
 
 export default class ProjectsRoot extends React.Component {
-    renderProject(project) {
+    renderProject(project, defaultExpanded) {
         const {
             onNewExperiment, newExperiment, newExperimentErrors, newExperimentActions,
             scanners, experimentActions,
@@ -21,6 +21,7 @@ export default class ProjectsRoot extends React.Component {
                 onNewExperiment={() => onNewExperiment(project.id)}
                 newExperimentDisabled={hasNewExperiment}
                 scanners={scanners}
+                defaultExpanded={defaultExpanded}
             >
                 {hasNewExperiment &&
                 <NewExperimentPanel
@@ -30,8 +31,13 @@ export default class ProjectsRoot extends React.Component {
                     errors={newExperimentErrors}
                     scanners={scanners}
                 />}
-                {project.experiments.map(experiment => (
-                    <ExperimentPanel key={experiment.id} {...experiment} {...experimentActions} />
+                {project.experiments.map((experiment, eIdx) => (
+                    <ExperimentPanel
+                        key={experiment.id}
+                        {...experiment}
+                        {...experimentActions}
+                        defaultExpanded={eIdx === 0}
+                    />
                 ))}
             </ProjectPanel>);
     }
@@ -59,7 +65,7 @@ export default class ProjectsRoot extends React.Component {
                 <h1>Projects</h1>
                 {newProjectButton}
                 {newProjectForm}
-                {projects.map(p => this.renderProject(p))}
+                {projects.map((p, pIdx) => this.renderProject(p, pIdx === 0))}
             </div>
         );
     }
@@ -92,6 +98,7 @@ ProjectsRoot.propTypes = {
     onNewProject: PropTypes.func.isRequired,
     projects: PropTypes.arrayOf(PropTypes.shape(myTypes.projectShape)),
     scanners: PropTypes.arrayOf(PropTypes.shape(myTypes.scannerShape)),
+    defaultExpanded: PropTypes.bool,
 };
 
 ProjectsRoot.defaultProps = {
@@ -101,4 +108,5 @@ ProjectsRoot.defaultProps = {
     newProjectErrors: null,
     projects: [],
     scanners: [],
+    defaultExpanded: false,
 };
