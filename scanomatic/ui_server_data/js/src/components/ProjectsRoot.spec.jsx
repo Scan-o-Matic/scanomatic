@@ -171,6 +171,7 @@ describe('<ProjectsRoot />', () => {
                 interval: 1,
                 scannerId: '',
                 projectId: '42',
+                pinning: [null],
             };
             const wrapper = shallow(<ProjectsRoot
                 {...props}
@@ -199,6 +200,7 @@ describe('<ProjectsRoot />', () => {
                 interval: 1,
                 scannerId: '',
                 projectId: '42',
+                pinning: [null],
             };
             const wrapper = shallow(<ProjectsRoot
                 {...props}
@@ -220,6 +222,7 @@ describe('<ProjectsRoot />', () => {
                     description: 'Bla bla',
                     duration: 36000000,
                     interval: 500000,
+                    pinning: ['', '384', '', ''],
                     scanner: {
                         identifier: 'S01', name: 'Scanny', power: true, owned: true,
                     },
@@ -230,6 +233,7 @@ describe('<ProjectsRoot />', () => {
                     description: 'Bla bla',
                     duration: 36000000,
                     interval: 500000,
+                    pinning: ['', '384', '', ''],
                     scanner: {
                         identifier: 'S01', name: 'Scanny', power: true, owned: true,
                     },

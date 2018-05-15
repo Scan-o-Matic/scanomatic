@@ -39,6 +39,7 @@ storiesOf('NewExperimentPanel', module)
                     identifier: 'haha',
                 },
             ]}
+            pinning={[null, '1536', null, '1536']}
         />
     ))
     .add('with errors', () => (
@@ -73,7 +74,9 @@ storiesOf('NewExperimentPanel', module)
                 ['duration', 'I do not like days, I want nights'],
                 ['interval', 'Must be at least 5 minutes'],
                 ['scannerId', 'Can not be empty'],
+                ['pinning', 'Why not put them in order?'],
             ])}
+            pinning={[null, '1536', null, '1536']}
         />
     ))
     .add('new experiment with only duration error', () => (
@@ -104,5 +107,6 @@ storiesOf('NewExperimentPanel', module)
             errors={new Map([
                 ['duration', 'There should be at least 25h / day'],
             ])}
+            pinning={[null, '1536', null, '1536']}
         />
     ));

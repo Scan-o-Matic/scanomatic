@@ -56,12 +56,43 @@ describe('projects/actions', () => {
     });
 
     describe('changeNewExperiment', () => {
-        it('should return a NEWEXPERIMENT_CHANGE action', () => {
+        it('should return a NEWEXPERIMENT_CHANGE action for string-based fields', () => {
             expect(actions.changeNewExperiment('name', 'Foobar')).toEqual({
                 type: 'NEWEXPERIMENT_CHANGE',
                 field: 'name',
                 value: 'Foobar',
             });
+        });
+
+        it('should throw for non-string type on string-type fields', () => {
+            expect(() => actions.changeNewExperiment('name', 555))
+                .toThrow(new TypeError('Invalid type number for field name'));
+        });
+
+        it('should return a NEWEXPERIMENT_CHANGE action for number-based fields', () => {
+            expect(actions.changeNewExperiment('duration', 1000)).toEqual({
+                type: 'NEWEXPERIMENT_CHANGE',
+                field: 'duration',
+                value: 1000,
+            });
+        });
+
+        it('should throw for non-number type on number-type fields', () => {
+            expect(() => actions.changeNewExperiment('duration', new Date()))
+                .toThrow(new TypeError('Invalid type object for field duration'));
+        });
+
+        it('should return a NEWEXPERIMENT_CHANGE action for object-based fields', () => {
+            expect(actions.changeNewExperiment('pinning', ['test'])).toEqual({
+                type: 'NEWEXPERIMENT_CHANGE',
+                field: 'pinning',
+                value: ['test'],
+            });
+        });
+
+        it('should throw for non-object type on object-type fields', () => {
+            expect(() => actions.changeNewExperiment('pinning', 5))
+                .toThrow(new TypeError('Invalid type number for field pinning'));
         });
     });
 
@@ -82,6 +113,7 @@ describe('projects/actions', () => {
                 300,
                 60,
                 'sc042',
+                ['6144'],
             )).toEqual({
                 type: 'EXPERIMENTS_ADD',
                 id: new Date().getTime().toString(),
@@ -91,6 +123,7 @@ describe('projects/actions', () => {
                 duration: 300,
                 interval: 60,
                 scannerId: 'sc042',
+                pinning: ['6144'],
             });
         });
     });
@@ -237,6 +270,7 @@ describe('projects/actions', () => {
                     interval: 500,
                     description: 'bla bla bla',
                     projectId: 'P0',
+                    pinning: ['384'],
                 }));
             });
 

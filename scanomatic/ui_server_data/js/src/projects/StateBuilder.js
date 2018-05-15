@@ -16,6 +16,7 @@ const experimentDefaults = {
     stopped: null,
     reason: null,
     scannerId: '001',
+    pinning: ['384'],
 };
 
 const scannerDefaults = {
@@ -50,6 +51,7 @@ type PartialNewExperiment = {
     scannerId?: string,
     duration?: number,
     interval?: number,
+    pinning?: Array<string>,
 };
 
 export default class StateBuilder {
@@ -219,6 +221,7 @@ export default class StateBuilder {
                 duration: 1000,
                 interval: 100,
                 scannerId: 'scnr01',
+                pinning: ['384'],
                 ...this.newExperimentValues,
             },
             projectId: this.newExperimentProjectId,

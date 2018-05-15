@@ -14,6 +14,7 @@ export default function newExperiment(state: State = null, action: Action): Stat
                 duration: 0,
                 interval: 0,
                 scannerId: '',
+                pinning: ['1536', '1536', '1536', '1536'],
             },
         };
     case 'NEWEXPERIMENT_CHANGE':
@@ -31,6 +32,14 @@ export default function newExperiment(state: State = null, action: Action): Stat
             };
         case 'duration':
         case 'interval':
+            return {
+                ...state,
+                fields: {
+                    ...state.fields,
+                    [action.field]: action.value,
+                },
+            };
+        case 'pinning':
             return {
                 ...state,
                 fields: {
