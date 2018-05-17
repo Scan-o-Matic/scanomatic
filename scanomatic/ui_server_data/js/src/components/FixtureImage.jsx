@@ -1,7 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import { loadImage } from '../helpers.js';
+
 const MIN_SELECTION = 10;
+const MARKER_RADIUS_600DPI = 70;
+const MIN_FONT_SIZE = 14;
 
 function getRect(pos1, pos2) {
     return {
@@ -20,7 +24,7 @@ function getCenter(rect) {
 }
 
 function getFontSize({ w, h }) {
-    return Math.round(Math.max(10, (Math.min(Math.abs(w), Math.abs(h)) * 0.7)));
+    return Math.round(Math.max(MIN_FONT_SIZE, (Math.min(Math.abs(w), Math.abs(h)) * 0.7)));
 }
 
 export default class FixtureImage extends React.Component {
@@ -30,28 +34,82 @@ export default class FixtureImage extends React.Component {
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.state = { editMode: props.onAreaStart && props.onAreaEnd };
+        this.imageCanvas = null;
         this.overlayCanvas = null;
         this.isDragging = false;
         this.startPos = null;
         this.currentPos = null;
         this.scale = 10;
+        this.state = { loaded: false };
     }
 
     componentDidMount() {
+        loadImage(this.props.imageUri)
+            .then((img) => {
+                this.setState({
+                    loaded: true,
+                    width: img.width / this.scale,
+                    height: img.height / this.scale,
+                    img,
+                });
+            })
+            .catch(() => this.setState({ error: 'Could not load fixture image!' }));
+    }
+
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.imageUri !== this.props.imageUri) {
+            this.setState({
+                loaded: false,
+            });
+            loadImage(nextProps.imageUri).then((img) => {
+                this.setState({
+                    loaded: true,
+                    img,
+                    width: img.width / this.scale,
+                    height: img.height / this.scale,
+                    forceRender:
+                        img.width / this.scale !== this.state.width
+                        || img.height / this.scale !== this.state.height,
+                });
+                this.drawBackground();
+            })
+            .catch(() => this.setState({ error: 'Could not load fixture imag!e' }));
+        }
+        // Could check if theres are diffs in areas and markers...
+        this.updateCanvas();
+    }
+
+    shouldComponentUpdate(nextProps, nextState) {
+        const need = (
+            nextState.forceRender || (
+                nextState.error !== this.state.error ||
+                (nextState.loaded && !this.imageCanvas)
+            )
+        );
+        if (nextState.forceRender) this.setState({ forceRender: false });
+        return need;
+    }
+
+    componentDidUpdate() {
+        if (!this.overlayCanvas) return;
+
         this.ctx = this.overlayCanvas.getContext('2d');
         this.ctx.strokeStyle = '#0e0';
         this.ctx.lineWidth = 2;
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.addMouseEvents();
-        this.updateCanvas();
-        this.bgCtx = this.imageCanvas.getContext('2d');
-        this.props.image.onload = () => this.drawBackground();
-        this.drawBackground();
-    }
+        this.ctx.fillStyle = '#fff';
+        this.ctx.shadowColor = '#000';
+        this.ctx.shadowBlur = 8;
 
-    componentDidUpdate() {
+        this.bgCtx = this.imageCanvas.getContext('2d');
+        this.bgCtx.translate(this.state.width, 0);
+        this.bgCtx.scale(-1, 1);
+
+        this.drawBackground();
         this.updateCanvas();
+        this.addMouseEvents();
+        if (this.props.onLoaded) this.props.onLoaded();
     }
 
     componentWillUnmount() {
@@ -61,10 +119,10 @@ export default class FixtureImage extends React.Component {
     getMouseImagePosition(evt) {
         if (!this.overlayCanvas) return null;
         const { left, top } = this.overlayCanvas.getBoundingClientRect();
-        let x = Math.max(0, this.props.width - (evt.clientX - left));
-        x = Math.min(x, this.props.width - 1) * this.scale;
+        let x = Math.max(0, this.state.width - (evt.clientX - left));
+        x = Math.min(x, this.state.width - 1) * this.scale;
         let y = Math.max(0, evt.clientY - top);
-        y = Math.min(y, this.props.height - 1) * this.scale;
+        y = Math.min(y, this.state.height - 1) * this.scale;
         return { x, y };
     }
 
@@ -109,18 +167,21 @@ export default class FixtureImage extends React.Component {
         if (this.props.onAreaEnd) {
             this.props.onAreaEnd(rect.w > MIN_SELECTION && rect.h > MIN_SELECTION ? pos : null);
         }
+        if (rect.w < MIN_SELECTION && rect.h < MIN_SELECTION && this.props.onClick) {
+            this.props.onClick(pos);
+        }
         this.updateCanvas();
     }
 
     imagePosToCanvasPos({ x, y }) {
-        return { x: ((this.props.width * this.scale) - x) / this.scale, y: y / this.scale };
+        return { x: ((this.state.width * this.scale) - x) / this.scale, y: y / this.scale };
     }
 
     imageRectToCanvasRect({
         x, y, w, h,
     }) {
         return {
-            x: ((this.props.width * this.scale) - x) / this.scale,
+            x: ((this.state.width * this.scale) - x) / this.scale,
             y: y / this.scale,
             w: -w / this.scale,
             h: h / this.scale,
@@ -128,23 +189,19 @@ export default class FixtureImage extends React.Component {
     }
 
     drawBackground() {
-        const { width, height, image } = this.props;
-        this.bgCtx.clearRect(0, 0, width, height);
-        this.bgCtx.drawImage(image, 0, 0, width, height);
-        this.bgCtx.translate(width, 0);
-        this.bgCtx.scale(-1, 1);
+        const { width, height, img } = this.state;
+        this.bgCtx.drawImage(img, 0, 0, width, height);
     }
 
     updateCanvas() {
         // All positions are in image coordinates.
-        const {
-            areas, markers, width, height,
-        } = this.props;
+        const { areas, markers } = this.props;
+        const { width, height } = this.state;
 
         this.ctx.clearRect(0, 0, width, height);
 
         // Paint markers
-        const radius = 70 / this.scale;
+        const radius = MARKER_RADIUS_600DPI / this.scale;
         markers.forEach((m) => {
             const center = this.imagePosToCanvasPos(m);
             this.ctx.beginPath();
@@ -163,7 +220,7 @@ export default class FixtureImage extends React.Component {
         areas.forEach((a) => {
             const rect = this.imageRectToCanvasRect(a.rect);
             this.ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-            this.ctx.font = `${getFontSize(rect)} pt Calibri`;
+            this.ctx.font = `${getFontSize(rect)}pt Calibri`;
             const center = getCenter(rect);
             this.ctx.fillText(a.name, center.x, center.y);
         });
@@ -175,17 +232,29 @@ export default class FixtureImage extends React.Component {
             this.ctx.strokeRect(cRect.x, cRect.y, cRect.w, cRect.h);
             this.ctx.font = `${getFontSize(cRect)}pt Calibri`;
             const center = getCenter(cRect);
-            this.ctx.fillStyle = '#0e0';
             this.ctx.fillText('?', center.x, center.y);
         }
     }
 
     render() {
+        if (this.state.error) {
+            return (
+                <div className="alert alert-danger">
+                    {this.state.error}
+                </div>
+            );
+        } else if (!this.state.loaded) {
+            return (
+                <div className="alert alert-info">
+                    Loading...
+                </div>
+            );
+        }
         return (
             <div>
                 <canvas
-                    width={this.props.width}
-                    height={this.props.height}
+                    width={this.state.width}
+                    height={this.state.height}
                     ref={(canvas) => {
                         this.imageCanvas = canvas;
                     }}
@@ -197,8 +266,8 @@ export default class FixtureImage extends React.Component {
                     }}
                 />
                 <canvas
-                    width={this.props.width}
-                    height={this.props.height}
+                    width={this.state.width}
+                    height={this.state.height}
                     ref={(canvas) => {
                         this.overlayCanvas = canvas;
                     }}
@@ -215,7 +284,7 @@ export default class FixtureImage extends React.Component {
 }
 
 FixtureImage.propTypes = {
-    image: PropTypes.instanceOf(Image).isRequired,
+    imageUri: PropTypes.string.isRequired,
     markers: PropTypes.arrayOf(PropTypes.shape({
         x: PropTypes.number.isRequired,
         y: PropTypes.number.isRequired,
@@ -228,18 +297,18 @@ FixtureImage.propTypes = {
             w: PropTypes.number.isRequired,
             h: PropTypes.number.isRequired,
         }).isRequired,
-    })),
-    height: PropTypes.number,
-    width: PropTypes.number,
+    })).isRequired,
     onAreaStart: PropTypes.func,
     onAreaEnd: PropTypes.func,
     onMouse: PropTypes.func,
+    onClick: PropTypes.func,
+    onLoaded: PropTypes.func,
 };
 
 FixtureImage.defaultProps = {
-    width: 480,
-    height: 600,
     onAreaStart: null,
     onAreaEnd: null,
     onMouse: null,
+    onClick: null,
+    onLoaded: null,
 };
