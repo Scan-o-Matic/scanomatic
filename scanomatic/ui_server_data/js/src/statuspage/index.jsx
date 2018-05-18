@@ -16,10 +16,10 @@ const store = createStore(
 
 const updater = () => {
     store.dispatch(retrieveStatus());
-    setTimeout(updater, 6000);
 };
 
 updater();
+setInterval(updater, 300000);
 
 document.addEventListener('DOMContentLoaded', () => {
     ReactDOM.render(

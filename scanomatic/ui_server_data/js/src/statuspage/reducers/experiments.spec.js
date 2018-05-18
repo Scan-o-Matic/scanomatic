@@ -22,6 +22,7 @@ describe('/statuspage/reducers/experiments', () => {
     });
 
     it('should filter out experiments that have not started', () => {
+        const started = new Date().getTime();
         const action = {
             type: 'EXPERIMENTS_SET',
             experiments: [
@@ -29,7 +30,7 @@ describe('/statuspage/reducers/experiments', () => {
                     id: 'job001',
                     name: 'console.log',
                     scannerId: 'scanner001',
-                    started: new Date().getTime(),
+                    started,
                 },
                 {
                     id: 'job002',
@@ -45,7 +46,7 @@ describe('/statuspage/reducers/experiments', () => {
                     id: 'job001',
                     name: 'console.log',
                     scannerId: 'scanner001',
-                    started: new Date().getTime(),
+                    started,
                 },
             ]);
     });
