@@ -11,6 +11,7 @@ export type Action
     | {| type: 'NEWEXPERIMENT_INIT', projectId: string |}
     | {| type: 'NEWEXPERIMENT_CHANGE', field: 'name'|'description'|'scannerId', value: string |}
     | {| type: 'NEWEXPERIMENT_CHANGE', field: 'duration'|'interval', value: number |}
+    | {| type: 'NEWEXPERIMENT_CHANGE', field: 'pinning', value: Array<string> |}
     | {| type: 'NEWEXPERIMENT_SUBMIT' |}
     | {| type: 'NEWEXPERIMENT_CLEAR' |}
     | {|
@@ -22,9 +23,10 @@ export type Action
         name: string,
         projectId: string,
         scannerId: string,
+        pinning: Array<string>,
     |}
     | {| type: 'EXPERIMENTS_START', id: string, date: Date |}
-    | {| type: 'EXPERIMENTS_STOP', id: string, date: Date |}
+    | {| type: 'EXPERIMENTS_STOP', id: string, reason: string, date: Date |}
     | {| type: 'EXPERIMENTS_REMOVE', id: string |}
     | {| type: 'EXPERIMENTS_FEATUREEXTRACT', id: string, keepQC: boolean |}
     | {| type: 'EXPERIMENTS_DONE', id: string |}
@@ -55,7 +57,7 @@ export function initNewExperiment(projectId: string): Action {
     return { type: 'NEWEXPERIMENT_INIT', projectId };
 }
 
-export function changeNewExperiment(field: string, value: string|number): Action {
+export function changeNewExperiment(field: string, value: string|number|Array<string>): Action {
     switch (field) {
     case 'description':
     case 'name':
@@ -78,6 +80,15 @@ export function changeNewExperiment(field: string, value: string|number): Action
             };
         }
         throw TypeError(`Invalid type ${typeof (value)} for field ${field}`);
+    case 'pinning':
+        if (typeof value === 'object') {
+            return {
+                type: 'NEWEXPERIMENT_CHANGE',
+                field,
+                value: (value: Array<string>),
+            };
+        }
+        throw TypeError(`Invalid type ${typeof (value)} for field ${field}`);
     default:
         throw Error(`Unknown field ${field}`);
     }
@@ -96,6 +107,7 @@ export function addExperiment(
     duration: number,
     interval: number,
     scannerId: string,
+    pinning: Array<string>,
 ): Action {
     return {
         type: 'EXPERIMENTS_ADD',
@@ -106,6 +118,7 @@ export function addExperiment(
         duration,
         interval,
         scannerId,
+        pinning,
     };
 }
 
@@ -117,10 +130,11 @@ export function startExperiment(id: string): Action {
     };
 }
 
-export function stopExperiment(id: string): Action {
+export function stopExperiment(id: string, reason: string): Action {
     return {
         type: 'EXPERIMENTS_STOP',
         id,
+        reason,
         date: new Date(),
     };
 }
@@ -174,6 +188,7 @@ export function submitNewExperiment(): ThunkAction {
             newExperiment.duration,
             newExperiment.interval,
             newExperiment.scannerId,
+            newExperiment.pinning,
         ));
         dispatch(clearNewExperiment());
     };

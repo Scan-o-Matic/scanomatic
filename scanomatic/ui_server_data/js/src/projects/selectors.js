@@ -15,6 +15,8 @@ type Project = {
         end: ?Date,
         stopped: ?Date,
         done: ?boolean,
+        pinning: Array<string>,
+        reason: ?string,
         scanner: {
             name: string,
             power: boolean,
@@ -35,7 +37,7 @@ export function getProjects(state: State): Array<Project> {
                 if (!experiment) { throw Error(`Missing experiment with id ${eid}`); }
                 const {
                     name: ename, description: edescription, duration, interval, scannerId,
-                    started, stopped, done,
+                    started, stopped, done, pinning, reason,
                 } = experiment;
                 const scanner = state.entities.scanners.get(scannerId);
                 if (!scanner) { throw Error(`Missing scanner with id ${scannerId}`); }
@@ -49,6 +51,8 @@ export function getProjects(state: State): Array<Project> {
                     end: started && new Date(started.getTime() + duration),
                     stopped,
                     done,
+                    pinning,
+                    reason,
                     scanner: {
                         id: scannerId,
                         name: scanner.name,
@@ -112,6 +116,7 @@ export function getNewExperiment(state: State): ?{
     +duration: number,
     +interval: number,
     +projectId: string,
+    +pinning: Array<string>,
 } {
     if (state.forms.newExperiment == null) return null;
     return {

@@ -36,6 +36,7 @@ describe('<ExperimentPanel />', () => {
                 owned: true,
                 power: true,
             },
+            pinning: ['', '384', '', ''],
             onStart,
             onRemove,
             onDone,
@@ -255,6 +256,51 @@ describe('<ExperimentPanel />', () => {
                     expect(tds.at(1).text()).toEqual('myScanner (online, occupied)');
                 });
             });
+
+            describe('pinning', () => {
+                it('renders the table row', () => {
+                    const table = wrapper.find('.experiment-stats');
+                    const tr = table.find('.experiment-pinning');
+                    expect(tr.exists()).toBeTruthy();
+                    const tds = tr.find('td');
+                    expect(tds.exists()).toBeTruthy();
+                    expect(tds.length).toEqual(2);
+                });
+
+                it('renders the row title', () => {
+                    const table = wrapper.find('.experiment-stats');
+                    const tr = table.find('.experiment-pinning');
+                    const tds = tr.find('td');
+                    expect(tds.at(0).text()).toEqual('Pinning');
+                });
+
+                it('renders the row info', () => {
+                    const table = wrapper.find('.experiment-stats');
+                    const tr = table.find('.experiment-pinning');
+                    const tds = tr.find('td');
+                    const pinningFormats = tds.at(1).find('.pinning-format');
+                    expect(pinningFormats.exists()).toBeTruthy();
+                    expect(pinningFormats.length).toEqual(4);
+                });
+
+                it('renders empty plate info', () => {
+                    const table = wrapper.find('.experiment-stats');
+                    const tr = table.find('.experiment-pinning');
+                    const tds = tr.find('td');
+                    const pinningFormats = tds.at(1).find('.pinning-format');
+                    expect(pinningFormats.at(0).text()).toEqual('Plate 1: ');
+                    expect(pinningFormats.at(0).find('.glyphicon-ban-circle').exists()).toBeTruthy();
+                });
+
+                it('renders plate pinning info', () => {
+                    const table = wrapper.find('.experiment-stats');
+                    const tr = table.find('.experiment-pinning');
+                    const tds = tr.find('td');
+                    const pinningFormats = tds.at(1).find('.pinning-format');
+                    expect(pinningFormats.at(1).text()).toEqual('Plate 2: 384');
+                    expect(pinningFormats.at(1).html()).toContain('<em>384</em>');
+                });
+            });
         });
 
         describe('running', () => {
@@ -331,7 +377,7 @@ describe('<ExperimentPanel />', () => {
             it('renders end time', () => {
                 const tr = wrapper.find('.experiment-end');
                 expect(tr.exists()).toBeTruthy();
-                expect(tr.find('td').at(0).text()).toEqual('Ends');
+                expect(tr.find('td').at(0).text()).toEqual('Ending');
                 expect(tr.find('td').at(1).text()).toEqual(runningProps.end.toString());
             });
         });
@@ -341,6 +387,7 @@ describe('<ExperimentPanel />', () => {
                 started: new Date(),
                 end: new Date(new Date().getTime() + 1200000),
                 stopped: new Date(new Date().getTime() + 200000),
+                reason: 'Everything is fine',
             };
 
             beforeEach(() => {
@@ -355,7 +402,7 @@ describe('<ExperimentPanel />', () => {
             it('renders end time', () => {
                 const tr = wrapper.find('.experiment-end');
                 expect(tr.exists()).toBeTruthy();
-                expect(tr.find('td').at(0).text()).toEqual('Ended');
+                expect(tr.find('td').at(0).text()).toEqual('Planned end');
                 expect(tr.find('td').at(1).text()).toEqual(stoppedProps.end.toString());
             });
 
@@ -364,6 +411,13 @@ describe('<ExperimentPanel />', () => {
                 expect(tr.exists()).toBeTruthy();
                 expect(tr.find('td').at(0).text()).toEqual('Stopped');
                 expect(tr.find('td').at(1).text()).toEqual(stoppedProps.stopped.toString());
+            });
+
+            it('renders stop reason time', () => {
+                const tr = wrapper.find('.experiment-stop-reason');
+                expect(tr.exists()).toBeTruthy();
+                expect(tr.find('td').at(0).text()).toEqual('Stop reason');
+                expect(tr.find('td').at(1).text()).toEqual(stoppedProps.reason);
             });
 
             describe('compile button', () => {
@@ -567,6 +621,7 @@ describe('<ExperimentPanel />', () => {
                 owned: true,
                 power: true,
             },
+            pinning: ['', '384', '', ''],
             onStart,
             onRemove,
             onDone,
@@ -605,6 +660,7 @@ describe('<ExperimentPanel />', () => {
             interval: 60000,
             duration: 1200000,
             done: false,
+            pinning: ['', '384', '', ''],
             scanner: {
                 identifier: 'myScanner',
                 name: 'myScanner',

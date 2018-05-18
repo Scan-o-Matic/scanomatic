@@ -15,6 +15,27 @@ export function formatScannerStatus(scanner) {
     return `${name} (${power ? 'online' : 'offline'}, ${owned ? 'occupied' : 'free'})`;
 }
 
+export function formatPinning(pinning) {
+    const spans = [];
+    pinning.forEach((value, idx) => {
+        const plate = idx + 1;
+        if (value === '') {
+            spans.push((
+                <span className="pinning-format" key="plate-{plate}">
+                    Plate {plate}: <span className="glyphicon glyphicon-ban-circle" aria-hidden="true" />
+                </span>
+            ));
+        } else {
+            spans.push((
+                <span className="pinning-format" key="plate-{plate}">
+                    Plate {plate}: <em>{value}</em>
+                </span>
+            ));
+        }
+    });
+    return spans;
+}
+
 export default class ExperimentPanel extends React.Component {
     constructor(props) {
         super(props);
@@ -24,6 +45,10 @@ export default class ExperimentPanel extends React.Component {
         this.handleShowStopDialogue = () => this.setState({ dialogue: 'stop' });
         this.handleShowFeatureExtractDialogue = () => this.setState({ dialogue: 'extract' });
         this.handleToggleExpand = this.handleToggleExpand.bind(this);
+        this.handleStopExperiment = (reason) => {
+            this.setState({ dialogue: null });
+            props.onStop(props.id, reason);
+        };
     }
 
     getExpanded() {
@@ -148,7 +173,7 @@ export default class ExperimentPanel extends React.Component {
     getPanelContents(status) {
         const {
             id, name, description, duration, interval, scanner, started, end,
-            onRemove, stopped, onStop, onFeatureExtract,
+            onRemove, stopped, onFeatureExtract, pinning, reason,
         } = this.props;
         const contents = [];
         const { dialogue } = this.state;
@@ -158,7 +183,9 @@ export default class ExperimentPanel extends React.Component {
             <div className="panel-body" key="panel-body">
                 <div className="row description-and-actions">
                     <div className="col-md-9">
-                        <div className="text-justify experiment-description">{description}</div>
+                        <div className="text-justify experiment-description description">
+                            {description}
+                        </div>
                     </div>
                     <div className="col-md-3 action-buttons">
                         {actions}
@@ -180,7 +207,7 @@ export default class ExperimentPanel extends React.Component {
             contents.push(
                 <ScanningJobStopDialogue
                     name={name}
-                    onConfirm={reason => onStop(id, reason)}
+                    onConfirm={this.handleStopExperiment}
                     onCancel={this.handleDismissDialogue}
                     key="stop-dialouge"
                 />,
@@ -197,6 +224,10 @@ export default class ExperimentPanel extends React.Component {
             );
         }
         if (!dialogue) {
+            let endLabel = 'Ended';
+            if (stopped) endLabel = 'Planned end';
+            if (status === 'Running') endLabel = 'Ending';
+
             contents.push(
                 <table className="table experiment-stats" key="experiment-stats">
                     <tbody>
@@ -212,6 +243,10 @@ export default class ExperimentPanel extends React.Component {
                             <td>Scanner</td>
                             <td>{formatScannerStatus(scanner)}</td>
                         </tr>
+                        <tr className="experiment-pinning">
+                            <td>Pinning</td>
+                            <td>{formatPinning(pinning)}</td>
+                        </tr>
                         {started &&
                             <tr className="experiment-started">
                                 <td>Started</td>
@@ -220,7 +255,7 @@ export default class ExperimentPanel extends React.Component {
                         }
                         {end &&
                             <tr className="experiment-end">
-                                <td>{status === 'Running' ? 'Ends' : 'Ended'}</td>
+                                <td>{endLabel}</td>
                                 <td>{end.toString()}</td>
                             </tr>
                         }
@@ -228,6 +263,12 @@ export default class ExperimentPanel extends React.Component {
                             <tr className="experiment-stopped">
                                 <td>Stopped</td>
                                 <td>{stopped.toString()}</td>
+                            </tr>
+                        }
+                        {reason &&
+                            <tr className="experiment-stop-reason">
+                                <td>Stop reason</td>
+                                <td>{reason}</td>
                             </tr>
                         }
                     </tbody>
@@ -280,6 +321,7 @@ ExperimentPanel.propTypes = {
     duration: PropTypes.number.isRequired,
     interval: PropTypes.number.isRequired,
     scanner: PropTypes.shape(myProps.scannerShape).isRequired,
+    pinning: PropTypes.arrayOf(PropTypes.string).isRequired,
     onStart: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired,
     onStop: PropTypes.func.isRequired,
@@ -289,6 +331,7 @@ ExperimentPanel.propTypes = {
     started: PropTypes.instanceOf(Date),
     end: PropTypes.instanceOf(Date),
     stopped: PropTypes.instanceOf(Date),
+    reason: PropTypes.string,
     done: PropTypes.bool,
     defaultExpanded: PropTypes.bool,
 };
@@ -300,4 +343,5 @@ ExperimentPanel.defaultProps = {
     stopped: null,
     done: false,
     defaultExpanded: false,
+    reason: null,
 };

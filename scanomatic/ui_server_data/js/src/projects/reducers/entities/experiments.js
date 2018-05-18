@@ -20,6 +20,7 @@ export default function experiments(state: State = initialState, action: Action)
             scannerId: action.scannerId,
             done: null,
             end: null,
+            pinning: action.pinning,
         });
         return newState;
     }
@@ -41,6 +42,26 @@ export default function experiments(state: State = initialState, action: Action)
     {
         const newState = new Map(state);
         newState.delete(action.id);
+        return newState;
+    }
+    case 'EXPERIMENTS_STOP':
+    {
+        const { reason, date, id } = action;
+        const newState = new Map(state);
+        const experiment = state.get(action.id);
+        let storeReason = null;
+        if (reason != null && reason.length > 0) storeReason = reason;
+        newState.set(
+            id,
+            Object.assign(
+                {},
+                experiment,
+                {
+                    stopped: date,
+                    reason: storeReason,
+                },
+            ),
+        );
         return newState;
     }
     case 'EXPERIMENTS_DONE':

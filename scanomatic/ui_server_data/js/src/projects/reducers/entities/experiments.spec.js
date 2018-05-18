@@ -29,6 +29,7 @@ describe('projects/reducers/entities/experiments', () => {
             interval: 24,
             name: 'Other experiment',
             scannerId: 'S04',
+            pinning: ['6144'],
         };
         expect(experiments(state, action)).toEqual(new Map([
             ...state,
@@ -43,6 +44,7 @@ describe('projects/reducers/entities/experiments', () => {
                 end: null,
                 done: null,
                 scannerId: 'S04',
+                pinning: ['6144'],
             }],
         ]));
     });
@@ -62,6 +64,54 @@ describe('projects/reducers/entities/experiments', () => {
                 interval: 300,
                 started: date,
                 stopped: null,
+                reason: null,
+                end: null,
+                done: null,
+                scannerId: '001',
+            }],
+        ]));
+    });
+
+    it('should handle EXPERIMENTS_STOP with reason', () => {
+        const date = new Date();
+        const action = {
+            type: 'EXPERIMENTS_STOP',
+            id: '002',
+            date,
+            reason: 'time for service',
+        };
+        expect(experiments(state, action)).toEqual(new Map([
+            ['002', {
+                name: 'Some experiment',
+                description: 'This is an experiment',
+                duration: 1200,
+                interval: 300,
+                started: null,
+                stopped: date,
+                reason: 'time for service',
+                end: null,
+                done: null,
+                scannerId: '001',
+            }],
+        ]));
+    });
+
+    it('should handle EXPERIMENTS_STOP with no reason', () => {
+        const date = new Date();
+        const action = {
+            type: 'EXPERIMENTS_STOP',
+            id: '002',
+            date,
+            reason: '',
+        };
+        expect(experiments(state, action)).toEqual(new Map([
+            ['002', {
+                name: 'Some experiment',
+                description: 'This is an experiment',
+                duration: 1200,
+                interval: 300,
+                started: null,
+                stopped: date,
                 reason: null,
                 end: null,
                 done: null,
@@ -119,5 +169,4 @@ describe('projects/reducers/entities/experiments', () => {
         };
         expect(experiments(state, action)).toEqual(new Map([]));
     });
-
 });

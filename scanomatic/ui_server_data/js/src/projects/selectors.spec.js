@@ -95,6 +95,35 @@ describe('projects/selectors', () => {
                     ],
                 })]);
         });
+
+        it('should return stopped and reason if experiment got stopped', () => {
+            const started = new Date();
+            const duration = 200000;
+            const end = new Date(started.getTime() + duration);
+            const stopped = new Date(started.getTime() + 0.5 * duration);
+            const reason = 'TGIF';
+            const state = new StateBuilder()
+                .clearProjects()
+                .addProject({ id: 'P1', experimentIds: ['E1'] })
+                .addExperiment({
+                    id: 'E1', scannerId: 'S1', started, duration, stopped, reason,
+                })
+                .addScanner({
+                    id: 'S1', name: 'Scanny', isOnline: true, isFree: false,
+                })
+                .build();
+            expect(selectors.getProjects(state)).toEqual([
+                jasmine.objectContaining({
+                    experiments: [
+                        jasmine.objectContaining({
+                            started,
+                            end,
+                            stopped,
+                            reason,
+                        }),
+                    ],
+                })]);
+        });
     });
 
     describe('getScanners', () => {
@@ -188,6 +217,7 @@ describe('projects/selectors', () => {
                     scannerId: 'scnr01',
                     duration: 500,
                     interval: 20,
+                    pinning: ['6144'],
                 })
                 .setNewExperimentProjectId('P123')
                 .build();
@@ -198,6 +228,7 @@ describe('projects/selectors', () => {
                 duration: 500,
                 interval: 20,
                 projectId: 'P123',
+                pinning: ['6144'],
             });
         });
     });

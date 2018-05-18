@@ -49,7 +49,7 @@ class ProjectPanel extends React.Component {
                     <div className="panel-body">
                         <div className="row description-and-actions">
                             <div className="col-md-9">
-                                <div className="text-justify project-description">
+                                <div className="text-justify project-description description">
                                     {description}
                                 </div>
                             </div>
