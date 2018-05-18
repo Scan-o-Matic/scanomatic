@@ -16,7 +16,6 @@ describe('statuspage/actions', () => {
                 name: 'Hollowborn Heron',
                 id: 'scanner001',
                 isOnline: true,
-                isFree: true,
             },
         ];
         expect(actions.setScanners(scanners)).toEqual({
@@ -29,12 +28,10 @@ describe('statuspage/actions', () => {
     it('should return an EXPERIMENTS_SET action', () => {
         const experiments = [
             {
+                id: 'aaa',
                 name: 'A quick test',
-                description: 'Manual testing FTW!',
-                duration: 55,
-                interval: 1,
                 scannerId: 'scanner001',
-                started: new Date(),
+                started: new Date().getTime(),
             },
         ];
         expect(actions.setExperiments(experiments)).toEqual({

@@ -48,13 +48,11 @@ describe('statuspage/selectors', () => {
                     name: 'Hollowborn Heron',
                     id: 'scanner001',
                     isOnline: true,
-                    isFree: true,
                 },
                 {
                     name: 'Eclectic Eevee',
                     id: 'scanner002',
                     isOnline: false,
-                    isFree: true,
                 },
             ]);
         });

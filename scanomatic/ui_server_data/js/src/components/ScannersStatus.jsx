@@ -4,7 +4,6 @@ import Timeline from 'react-calendar-timeline/lib';
 import moment from 'moment';
 import 'react-calendar-timeline/lib/Timeline.css';
 
-import myTypes from '../prop-types';
 import '../../../style/status.css';
 
 export function classNameForJob(job) {
@@ -29,9 +28,9 @@ export default function ScannersStatus({ scanners, jobs }) {
     const groups = scanners
         .sort((a, b) => a.name > b.name)
         .map(s => ({
-            id: s.identifier,
+            id: s.id,
             title: s.name,
-            rightTitle: s.power ? <span className="label label-info">On</span> : <span className="label label-danger">Off</span>,
+            rightTitle: s.isOnline ? <span className="label label-info">On</span> : <span className="label label-danger">Off</span>,
         }));
 
     const commonItemProps = {
@@ -85,10 +84,15 @@ export default function ScannersStatus({ scanners, jobs }) {
 }
 
 ScannersStatus.propTypes = {
-    scanners: PropTypes.arrayOf(PropTypes.shape(myTypes.scannerShape)).isRequired,
+    scanners: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        name: PropTypes.string.isRequired,
+        isOnline: PropTypes.bool.isRequired,
+    })).isRequired,
     jobs: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string.isRequired,
         name: PropTypes.string.isRequired,
+        scannerId: PropTypes.string.isRequired,
         started: PropTypes.number,
         stopped: PropTypes.number,
         end: PropTypes.number,

@@ -2,7 +2,10 @@ import updateStatus from './updateStatus';
 
 describe('/statuspage/reducers/updateStatus', () => {
     it('should return empty state initially', () => {
-        expect(updateStatus(undefined, {})).toEqual({});
+        expect(updateStatus(undefined, {})).toEqual({
+            scanners: null,
+            experiments: null,
+        });
     });
 
     it('should handle SCANNERS_SET', () => {
@@ -13,12 +16,12 @@ describe('/statuspage/reducers/updateStatus', () => {
                     name: 'Hollowborn Heron',
                     id: 'scanner001',
                     isOnline: true,
-                    isFree: true,
                 },
             ],
             date: new Date(),
         };
-        expect(updateStatus(undefined, action)).toEqual({ scanners: action.date });
+        expect(updateStatus(undefined, action))
+            .toEqual({ scanners: action.date, experiments: null });
     });
 
     it('should handle EXPERIMENTS_SET', () => {
@@ -26,16 +29,15 @@ describe('/statuspage/reducers/updateStatus', () => {
             type: 'EXPERIMENTS_SET',
             experiments: [
                 {
+                    id: 'job0001',
                     name: 'A quick test',
-                    description: 'Manual testing FTW!',
-                    duration: 55,
-                    interval: 1,
                     scannerId: 'scanner001',
                     started: new Date(),
                 },
             ],
             date: new Date(),
         };
-        expect(updateStatus(undefined, action)).toEqual({ experiments: action.date });
+        expect(updateStatus(undefined, action))
+            .toEqual({ experiments: action.date, scanners: null });
     });
 });

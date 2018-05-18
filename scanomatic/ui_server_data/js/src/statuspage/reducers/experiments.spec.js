@@ -10,12 +10,10 @@ describe('/statuspage/reducers/experiments', () => {
             type: 'EXPERIMENTS_SET',
             experiments: [
                 {
+                    id: 'job001',
                     name: 'A quick test',
-                    description: 'Manual testing FTW!',
-                    duration: 55,
-                    interval: 1,
                     scannerId: 'scanner001',
-                    started: new Date(),
+                    started: new Date().getTime(),
                 },
             ],
             date: new Date(),
@@ -28,18 +26,14 @@ describe('/statuspage/reducers/experiments', () => {
             type: 'EXPERIMENTS_SET',
             experiments: [
                 {
-                    name: 'A quick test',
-                    description: 'Manual testing FTW!',
-                    duration: 55,
-                    interval: 1,
+                    id: 'job001',
+                    name: 'console.log',
                     scannerId: 'scanner001',
-                    started: new Date(),
+                    started: new Date().getTime(),
                 },
                 {
-                    name: 'Planned',
-                    description: 'Reading the docs',
-                    duration: 55,
-                    interval: 1,
+                    id: 'job002',
+                    name: 'Reading the docs',
                     scannerId: 'scanner001',
                 },
             ],
@@ -48,12 +42,10 @@ describe('/statuspage/reducers/experiments', () => {
         expect(experiments(undefined, action))
             .toEqual([
                 {
-                    name: 'A quick test',
-                    description: 'Manual testing FTW!',
-                    duration: 55,
-                    interval: 1,
+                    id: 'job001',
+                    name: 'console.log',
                     scannerId: 'scanner001',
-                    started: new Date(),
+                    started: new Date().getTime(),
                 },
             ]);
     });

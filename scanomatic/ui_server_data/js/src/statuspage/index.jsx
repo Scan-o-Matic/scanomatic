@@ -5,7 +5,8 @@ import { createStore, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
 
 import reducer from './reducers';
-import StatusPageContainer from '../containers/StatusPageContainer';
+import StatusRootContainer from '../containers/StatusRootContainer';
+import { retrieveStatus } from '../statuspage/actions';
 
 const store = createStore(
     reducer,
@@ -13,10 +14,17 @@ const store = createStore(
     applyMiddleware(thunk),
 );
 
+const updater = () => {
+    store.dispatch(retrieveStatus());
+    setTimeout(updater, 6000);
+};
+
+updater();
+
 document.addEventListener('DOMContentLoaded', () => {
     ReactDOM.render(
         <Provider store={store}>
-            <StatusPageContainer />
+            <StatusRootContainer />
         </Provider>,
         document.getElementById('react-root'),
     );

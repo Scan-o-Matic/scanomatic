@@ -26,22 +26,19 @@ storiesOf('ScannersStatus', module)
         <ScannersStatus
             scanners={[
                 {
-                    identifier: 'scanner001',
+                    id: 'scanner001',
                     name: 'Resourceful Red robin',
-                    owned: false,
-                    power: true,
+                    isOnline: true,
                 },
                 {
-                    identifier: 'scanner002',
+                    id: 'scanner002',
                     name: 'Lazy Lark',
-                    owned: false,
-                    power: false,
+                    isOnline: false,
                 },
                 {
-                    identifier: 'scanner003',
+                    id: 'scanner003',
                     name: 'Boiserous Bowerbird',
-                    owned: true,
-                    power: true,
+                    isOnline: true,
                 },
             ]}
             jobs={[]}
@@ -51,22 +48,19 @@ storiesOf('ScannersStatus', module)
         <ScannersStatus
             scanners={[
                 {
-                    identifier: 'scanner001',
+                    id: 'scanner001',
                     name: 'Resourceful Red robin',
-                    owned: false,
-                    power: true,
+                    isOnline: true,
                 },
                 {
-                    identifier: 'scanner002',
+                    id: 'scanner002',
                     name: 'Lazy Lark',
-                    owned: false,
-                    power: false,
+                    isOnline: false,
                 },
                 {
-                    identifier: 'scanner003',
+                    id: 'scanner003',
                     name: 'Boiserous Bowerbird',
-                    owned: true,
-                    power: true,
+                    isOnline: true,
                 },
             ]}
             jobs={[

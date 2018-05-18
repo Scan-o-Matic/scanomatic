@@ -9,7 +9,10 @@ export default class StateBuilder {
     constructor() {
         this.experiments = [];
         this.scanners = [];
-        this.updateStatus = {};
+        this.updateStatus = {
+            scanners: null,
+            experiments: null,
+        };
     }
 
     populateScanners() {
@@ -18,41 +21,37 @@ export default class StateBuilder {
                 name: 'Hollowborn Heron',
                 id: 'scanner001',
                 isOnline: true,
-                isFree: true,
             },
             {
                 name: 'Eclectic Eevee',
                 id: 'scanner002',
                 isOnline: false,
-                isFree: true,
             },
         ];
-        this.updateStatus.scanners = new Date();
+        this.updateStatus = Object.assign({}, this.updateStatus, { scanners: new Date() });
         return this;
     }
 
     populateExperiments() {
         this.experiments = [
             {
+                id: 'aaa',
                 name: 'A quick test',
-                description: 'Manual testing FTW!',
-                duration: 55,
-                interval: 1,
                 scannerId: 'scanner001',
-                started: new Date(),
+                started: new Date().getTime(),
+                stopped: null,
+                end: null,
             },
             {
+                id: 'bbb',
                 name: 'Sun and Moon',
-                description: 'Yellow',
-                duration: 55,
-                interval: 1,
                 scannerId: 'scanner001',
-                started: new Date(),
-                stopped: new Date(),
-                end: new Date(),
+                started: new Date().getTime(),
+                stopped: new Date().getTime(),
+                end: new Date().getTime(),
             },
         ];
-        this.updateStatus.experiments = new Date();
+        this.updateStatus = Object.assign({}, this.updateStatus, { experiments: new Date() });
         return this;
     }
 
