@@ -4,6 +4,7 @@ import React from 'react';
 import './enzyme-setup';
 import { loadImage } from '../helpers';
 import toLookLikeImage from '../helpers/toLookLikeImage';
+import GlobalEventsSpy from '../helpers/GlobalEventsSpy';
 
 import FixtureImage from './FixtureImage';
 
@@ -207,10 +208,6 @@ describe('<FixtureImage />', () => {
             expect(alert.exists()).toBeTruthy();
             expect(alert.text()).toContain('Loading...');
         });
-
-        it('converts to image coordinates', () => {
-
-        });
     });
 
     describe('Loading bad image', () => {
@@ -323,5 +320,67 @@ describe('<FixtureImage />', () => {
             expect(canvases.at(0).prop('height')).toEqual(60);
             expect(canvases.at(1).prop('height')).toEqual(60);
         }, WAIT_FOR_IMAGE_LOAD);
+    });
+
+    describe('mouse interaction in edit-mode', () => {
+        let globalEventsSpy;
+        beforeEach((done) => {
+            globalEventsSpy = new GlobalEventsSpy();
+            wrapper = mount((
+                <FixtureImage
+                    imageUri={imageUri}
+                    markers={markers}
+                    areas={areas}
+                    onAreaStart={onAreaStart}
+                    onAreaEnd={onAreaEnd}
+                    onMouse={onMouse}
+                    onClick={onClick}
+                    onLoaded={onLoaded}
+                />
+            ));
+            const loaded = () => {
+                if (onLoaded.calls.any()) {
+                    wrapper.update();
+                    done();
+                } else {
+                    setTimeout(loaded, 100);
+                }
+            };
+            loaded();
+        });
+
+        it('registers global mouse events', () => {
+            expect(globalEventsSpy.size).toEqual(3);
+            expect(globalEventsSpy.hasEvents(['mouseup', 'mousedown', 'mousemove'])).toBeTruthy();
+        });
+
+        it('removes mouse events when unmouning', () => {
+            wrapper.unmount();
+            expect(globalEventsSpy.size).toEqual(0);
+        });
+
+        it('calls onMouse on mouse moves', () => {
+            globalEventsSpy.simulate('mousemove', { clientX: 40, clientY: 70 });
+            expect(onMouse).toHaveBeenCalledWith({ x: 4400, y: 700 });
+            globalEventsSpy.simulate('mousemove', { clientX: 40, clientY: 50 });
+            expect(onMouse.calls.count()).toEqual(2);
+        });
+
+        it('calls onAreaStart on mouse press', () => {
+            globalEventsSpy.simulate('mousedown', { clientX: 40, clientY: 10 });
+            expect(onAreaStart).toHaveBeenCalledWith({ x: 4400, y: 100 });
+        });
+
+        it('calls onAreaEnd with null on mouse release if marking an area is too small', () => {
+            globalEventsSpy.simulate('mousedown', { clientX: 40, clientY: 10 });
+            globalEventsSpy.simulate('mouseup', { clientX: 40, clientY: 10 });
+            expect(onAreaEnd).toHaveBeenCalledWith(null);
+        });
+
+        it('calls onClick if mouse up next to mouse down', () => {
+            globalEventsSpy.simulate('mousedown', { clientX: 40, clientY: 10 });
+            globalEventsSpy.simulate('mouseup', { clientX: 40, clientY: 10 });
+            expect(onClick).toHaveBeenCalledWith({ x: 4400, y: 100 });
+        });
     });
 });

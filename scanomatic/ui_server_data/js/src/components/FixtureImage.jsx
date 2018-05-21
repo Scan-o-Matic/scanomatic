@@ -7,7 +7,7 @@ const MIN_SELECTION = 10;
 const MARKER_RADIUS_600DPI = 70;
 const MIN_FONT_SIZE = 14;
 
-export function getRect(pos1, pos2) {
+function getRect(pos1, pos2) {
     return {
         x: Math.min(pos1.x, pos2.x),
         y: Math.min(pos1.y, pos2.y),
@@ -16,14 +16,14 @@ export function getRect(pos1, pos2) {
     };
 }
 
-export function getCenter(rect) {
+function getCenter(rect) {
     return {
         x: rect.x + (0.5 * rect.w),
         y: rect.y + (0.5 * rect.h),
     };
 }
 
-export function getFontSize({ w, h }) {
+function getFontSize({ w, h }) {
     return Math.round(Math.max(MIN_FONT_SIZE, (Math.min(Math.abs(w), Math.abs(h)) * 0.7)));
 }
 
@@ -43,6 +43,7 @@ export default class FixtureImage extends React.Component {
     }
 
     componentDidMount() {
+        this.addMouseEvents();
         loadImage(this.props.imageUri)
             .then((img) => {
                 this.setState({
@@ -138,7 +139,7 @@ export default class FixtureImage extends React.Component {
     handleMouseUp(evt) {
         if (!this.state.editMode) return;
         const pos = this.getMouseImagePosition(evt);
-        if (!this.startPos && this.props.onAreaEnd) this.props.onAreaEnd(null);
+        if ((!pos || !this.startPos) && this.props.onAreaEnd) this.props.onAreaEnd(null);
         const rect = getRect(this.startPos, pos);
         this.isDragging = false;
         this.startPos = null;
@@ -168,7 +169,6 @@ export default class FixtureImage extends React.Component {
 
         this.drawBackground();
         this.updateCanvas();
-        this.addMouseEvents();
         if (this.props.onLoaded) this.props.onLoaded();
     }
 
