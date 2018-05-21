@@ -73,7 +73,7 @@ export default class FixtureImage extends React.Component {
                 });
                 this.drawBackground();
             })
-            .catch(() => this.setState({ error: 'Could not load fixture imag!e' }));
+                .catch(() => this.setState({ error: 'Could not load fixture imag!e' }));
         }
         // Could check if theres are diffs in areas and markers...
         this.updateCanvas();
