@@ -383,4 +383,39 @@ describe('<FixtureImage />', () => {
             expect(onClick).toHaveBeenCalledWith({ x: 4400, y: 100 });
         });
     });
+
+    describe('mouse interaction in view mode', () => {
+        let globalEventsSpy;
+        beforeEach((done) => {
+            globalEventsSpy = new GlobalEventsSpy();
+            wrapper = mount((
+                <FixtureImage
+                    imageUri={imageUri}
+                    markers={markers}
+                    areas={areas}
+                    onMouse={onMouse}
+                    onLoaded={onLoaded}
+                />
+            ));
+            const loaded = () => {
+                if (onLoaded.calls.any()) {
+                    wrapper.update();
+                    done();
+                } else {
+                    setTimeout(loaded, 100);
+                }
+            };
+            loaded();
+        });
+
+        it('registers global mouse events', () => {
+            expect(globalEventsSpy.size).toEqual(3);
+            expect(globalEventsSpy.hasEvents(['mouseup', 'mousedown', 'mousemove'])).toBeTruthy();
+        });
+
+        it('calls onMouse on mouse moves', () => {
+            globalEventsSpy.simulate('mousemove', { clientX: 40, clientY: 70 });
+            expect(onMouse).toHaveBeenCalledWith({ x: 4400, y: 700 });
+        });
+    });
 });
