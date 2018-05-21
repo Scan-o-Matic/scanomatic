@@ -4,18 +4,16 @@ import PropTypes from 'prop-types';
 import ScannersStatus from './ScannersStatus';
 
 export default function StatusRoot({ hasLoaded, scanners, experiments }) {
+    let content;
     if (hasLoaded) {
-        return (
-            <div>
-                <h2>Scanners</h2>
-                <ScannersStatus scanners={scanners} jobs={experiments} />
-            </div>
-        );
+        content = <ScannersStatus scanners={scanners} jobs={experiments} />;
+    } else {
+        content = <div className="alert alert-info">Loading...</div>;
     }
     return (
         <div>
             <h2>Scanners</h2>
-            <div className="alert alert-info">Loading...</div>
+            {content}
         </div>
     );
 }

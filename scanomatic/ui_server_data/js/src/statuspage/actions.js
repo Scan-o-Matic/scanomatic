@@ -3,15 +3,15 @@ import type { State, Experiments, Scanners } from './state';
 import { getScanners, getScanningJobs } from '../api';
 
 export type Action
-    = {| type: 'SCANNERS_SET', scanners: Scanners, date: Date |}
-    | {| type: 'EXPERIMENTS_SET', experiments: Experiments, date: Date |}
+    = {| type: 'SCANNERS_SET', scanners: Scanners |}
+    | {| type: 'EXPERIMENTS_SET', experiments: Experiments |}
 
 export function setExperiments(experiments: Experiments) : Action {
-    return { type: 'EXPERIMENTS_SET', experiments, date: new Date() };
+    return { type: 'EXPERIMENTS_SET', experiments };
 }
 
 export function setScanners(scanners : Scanners) : Action {
-    return { type: 'SCANNERS_SET', scanners, date: new Date() };
+    return { type: 'SCANNERS_SET', scanners };
 }
 
 type ThunkAction = (dispatch: Action => any, getState: () => State) => any;

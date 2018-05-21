@@ -10,8 +10,8 @@ export default class StateBuilder {
         this.experiments = [];
         this.scanners = [];
         this.updateStatus = {
-            scanners: null,
-            experiments: null,
+            scanners: false,
+            experiments: false,
         };
     }
 
@@ -28,7 +28,7 @@ export default class StateBuilder {
                 isOnline: false,
             },
         ];
-        this.updateStatus = Object.assign({}, this.updateStatus, { scanners: new Date() });
+        this.updateStatus = Object.assign({}, this.updateStatus, { scanners: true });
         return this;
     }
 
@@ -51,7 +51,7 @@ export default class StateBuilder {
                 end: new Date().getTime(),
             },
         ];
-        this.updateStatus = Object.assign({}, this.updateStatus, { experiments: new Date() });
+        this.updateStatus = Object.assign({}, this.updateStatus, { experiments: true });
         return this;
     }
 

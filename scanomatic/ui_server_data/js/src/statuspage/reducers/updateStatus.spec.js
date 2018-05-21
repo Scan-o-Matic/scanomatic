@@ -3,8 +3,8 @@ import updateStatus from './updateStatus';
 describe('/statuspage/reducers/updateStatus', () => {
     it('should return empty state initially', () => {
         expect(updateStatus(undefined, {})).toEqual({
-            scanners: null,
-            experiments: null,
+            scanners: false,
+            experiments: false,
         });
     });
 
@@ -18,10 +18,9 @@ describe('/statuspage/reducers/updateStatus', () => {
                     isOnline: true,
                 },
             ],
-            date: new Date(),
         };
         expect(updateStatus(undefined, action))
-            .toEqual({ scanners: action.date, experiments: null });
+            .toEqual({ scanners: true, experiments: false });
     });
 
     it('should handle EXPERIMENTS_SET', () => {
@@ -35,9 +34,8 @@ describe('/statuspage/reducers/updateStatus', () => {
                     started: new Date(),
                 },
             ],
-            date: new Date(),
         };
         expect(updateStatus(undefined, action))
-            .toEqual({ experiments: action.date, scanners: null });
+            .toEqual({ experiments: true, scanners: false });
     });
 });

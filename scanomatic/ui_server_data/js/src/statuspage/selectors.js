@@ -11,5 +11,5 @@ export function getScanners(state: State): Scanners {
 
 export function hasLoadedScannersAndExperiments(state : State): boolean {
     const { scanners, experiments } = state.updateStatus;
-    return !!scanners && !!experiments;
+    return scanners && experiments;
 }

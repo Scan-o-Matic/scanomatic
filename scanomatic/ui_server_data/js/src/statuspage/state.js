@@ -15,8 +15,8 @@ export type Experiments = Array<{
 }>;
 
 export type UpdateStatus = {
-    +scanners: ?Date,
-    +experiments: ?Date,
+    +scanners: boolean,
+    +experiments: boolean,
 };
 
 export type State = {
