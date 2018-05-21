@@ -34,6 +34,7 @@ data/config/rpc.admin
 /scanomatic/ui_server_data/js/ccc.js
 /scanomatic/ui_server_data/js/scanning.js
 /scanomatic/ui_server_data/js/projects.js
+/scanomatic/ui_server_data/js/statuspage.js
 /scanomatic/ui_server_data/coverage
 geckodriver.log
 /node_modules

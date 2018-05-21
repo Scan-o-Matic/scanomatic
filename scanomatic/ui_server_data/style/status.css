@@ -1,12 +1,3 @@
-.scanner {
-    display: inline-block;
-    margin-right: 12px;
-    margin-bottom: 12px;
-    box-shadow: 5px 5px 15px #541f0f;
-    padding: 6px;
-    background: url("/images/scanner.png") no-repeat right bottom;
-}
-
 .job {
     margin-bottom: 12px;
     box-shadow: 5px 5px 15px #541f0f;
@@ -49,6 +40,13 @@ img {
     float: none;
 }
 
+.timeline-group {
+  margin: 0.25rem;
+  color: #111;
+  background: #fff;
+  padding: 1rem;
+}
+
 .react-calendar-timeline .scanner-job {
   color: #eee;
   border: #111;
@@ -72,6 +70,7 @@ img {
   font-weight: bold;
   text-align: center;
   padding-top: 2rem;
+  font-size: 70%;
 }
 
 .react-calendar-timeline .rct-header-container .rct-header .top-header .rct-label-group {
