@@ -1,0 +1,11 @@
+.fixture-editor {
+  display: flex;
+}
+
+.fixture-editor-main {
+  width: 490px;
+}
+
+.image-detail {
+  border: 1px solid #000;
+}

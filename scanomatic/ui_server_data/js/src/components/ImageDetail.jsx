@@ -75,15 +75,20 @@ export default class ImageDetail extends React.Component {
     render() {
         const { width, height } = this.props;
         return (
-            <canvas ref={(canvas) => { this.canvas = canvas; }} width={width} height={height} />
+            <canvas
+                className="image-detail"
+                ref={(canvas) => { this.canvas = canvas; }}
+                width={width}
+                height={height}
+            />
         );
     }
 }
 
 ImageDetail.propTypes = {
     crossHair: PropTypes.bool,
-    x: PropTypes.number.isRequired,
-    y: PropTypes.number.isRequired,
+    x: PropTypes.number,
+    y: PropTypes.number,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
     imageUri: PropTypes.string.isRequired,
@@ -93,4 +98,6 @@ ImageDetail.propTypes = {
 ImageDetail.defaultProps = {
     crossHair: false,
     onLoaded: () => {},
+    x: null,
+    y: null,
 };
