@@ -7,7 +7,7 @@ const MIN_SELECTION = 10;
 const MARKER_RADIUS_600DPI = 70;
 const MIN_FONT_SIZE = 14;
 
-function getRect(pos1, pos2) {
+export function getRect(pos1, pos2) {
     return {
         x: Math.min(pos1.x, pos2.x),
         y: Math.min(pos1.y, pos2.y),
@@ -16,14 +16,14 @@ function getRect(pos1, pos2) {
     };
 }
 
-function getCenter(rect) {
+export function getCenter(rect) {
     return {
         x: rect.x + (0.5 * rect.w),
         y: rect.y + (0.5 * rect.h),
     };
 }
 
-function getFontSize({ w, h }) {
+export function getFontSize({ w, h }) {
     return Math.round(Math.max(MIN_FONT_SIZE, (Math.min(Math.abs(w), Math.abs(h)) * 0.7)));
 }
 
@@ -33,14 +33,13 @@ export default class FixtureImage extends React.Component {
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.handleMouseDown = this.handleMouseDown.bind(this);
-        this.state = { editMode: props.onAreaStart && props.onAreaEnd };
+        this.state = { editMode: props.onAreaStart && props.onAreaEnd, loaded: false };
         this.imageCanvas = null;
         this.overlayCanvas = null;
         this.isDragging = false;
         this.startPos = null;
         this.currentPos = null;
         this.scale = 10;
-        this.state = { loaded: false };
     }
 
     componentDidMount() {
@@ -53,63 +52,43 @@ export default class FixtureImage extends React.Component {
                     img,
                 });
             })
-            .catch(() => this.setState({ error: 'Could not load fixture image!' }));
+            .catch(() => {
+                this.setState({ error: 'Could not load fixture image!' });
+                if (this.props.onLoaded) this.props.onLoaded();
+            });
     }
 
     componentWillReceiveProps(nextProps) {
-        if (nextProps.imageUri !== this.props.imageUri) {
+        if (nextProps.imageUri && nextProps.imageUri !== this.props.imageUri) {
             this.setState({
                 loaded: false,
             });
-            loadImage(nextProps.imageUri).then((img) => {
-                this.setState({
-                    loaded: true,
-                    img,
-                    width: img.width / this.scale,
-                    height: img.height / this.scale,
-                    forceRender:
-                        img.width / this.scale !== this.state.width
-                        || img.height / this.scale !== this.state.height,
+            loadImage(nextProps.imageUri)
+                .then((img) => {
+                    const width = img.width / this.scale;
+                    const height = img.height / this.scale;
+                    if (this.state.width !== width || this.state.height !== height) {
+                        this.ctx = null;
+                        this.bgCtx = null;
+                    }
+                    this.setState({
+                        loaded: true,
+                        img,
+                        width,
+                        height,
+                    });
+                })
+                .catch(() => {
+                    this.setState({ error: 'Could not load fixture image!' });
+                    if (this.props.onLoaded) this.props.onLoaded();
                 });
-                this.drawBackground();
-            })
-                .catch(() => this.setState({ error: 'Could not load fixture imag!e' }));
         }
-        // Could check if theres are diffs in areas and markers...
-        this.updateCanvas();
-    }
-
-    shouldComponentUpdate(nextProps, nextState) {
-        const need = (
-            nextState.forceRender || (
-                nextState.error !== this.state.error ||
-                (nextState.loaded && !this.imageCanvas)
-            )
-        );
-        if (nextState.forceRender) this.setState({ forceRender: false });
-        return need;
     }
 
     componentDidUpdate() {
         if (!this.overlayCanvas) return;
-
-        this.ctx = this.overlayCanvas.getContext('2d');
-        this.ctx.strokeStyle = '#0e0';
-        this.ctx.lineWidth = 2;
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillStyle = '#fff';
-        this.ctx.shadowColor = '#000';
-        this.ctx.shadowBlur = 8;
-
-        this.bgCtx = this.imageCanvas.getContext('2d');
-        this.bgCtx.translate(this.state.width, 0);
-        this.bgCtx.scale(-1, 1);
-
-        this.drawBackground();
+        if (!this.ctx || !this.bgCtx) this.initCanvases();
         this.updateCanvas();
-        this.addMouseEvents();
-        if (this.props.onLoaded) this.props.onLoaded();
     }
 
     componentWillUnmount() {
@@ -171,6 +150,26 @@ export default class FixtureImage extends React.Component {
             this.props.onClick(pos);
         }
         this.updateCanvas();
+    }
+
+    initCanvases() {
+        this.ctx = this.overlayCanvas.getContext('2d');
+        this.ctx.strokeStyle = '#0e0';
+        this.ctx.lineWidth = 2;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillStyle = '#fff';
+        this.ctx.shadowColor = '#000';
+        this.ctx.shadowBlur = 8;
+
+        this.bgCtx = this.imageCanvas.getContext('2d');
+        this.bgCtx.translate(this.state.width, 0);
+        this.bgCtx.scale(-1, 1);
+
+        this.drawBackground();
+        this.updateCanvas();
+        this.addMouseEvents();
+        if (this.props.onLoaded) this.props.onLoaded();
     }
 
     imagePosToCanvasPos({ x, y }) {
@@ -250,6 +249,7 @@ export default class FixtureImage extends React.Component {
                 </div>
             );
         }
+
         return (
             <div>
                 <canvas
