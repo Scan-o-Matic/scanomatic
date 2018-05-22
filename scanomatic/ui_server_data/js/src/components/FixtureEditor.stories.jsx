@@ -14,6 +14,11 @@ const editActions = {
     onClick: action('click'),
 };
 
+const editorActions = {
+    onFinalize: action('finalize'),
+    onResetAreas: action('reset-areas'),
+};
+
 const markerAndAreas = {
     markers: [
         {
@@ -89,6 +94,17 @@ storiesOf('FixtureEditor', module)
             {...markerAndAreas}
             editActions={editActions}
             scannerName="Monsterous Magpie"
+            {...editorActions}
+        />
+    ))
+    .add('Grayscale not detected, no plates', () => (
+        <FixtureEditor
+            imageUri={imageUri}
+            markers={markerAndAreas.markers}
+            areas={[]}
+            editActions={editActions}
+            scannerName="Monsterous Magpie"
+            {...editorActions}
         />
     ))
     .add('Grayscale detected', () => (
@@ -101,9 +117,11 @@ storiesOf('FixtureEditor', module)
                 referenceValues: [0, 10, 30, 60, 95],
                 pixelValues: [10, 30, 100, 150, 240],
             }}
+            {...editorActions}
+            validFixture
         />
     ))
-    .add('Live random Grayscale detected', () => (
+    .add('Live redetect Grayscale detected', () => (
         <LiveUpdater
             Target={FixtureEditor}
             updateFunction={(props, idx) => Object.assign(
@@ -125,6 +143,7 @@ storiesOf('FixtureEditor', module)
                     pixelValues: [10, 30, 100, 150, 240],
                 },
                 ...markerAndAreas,
+                ...editorActions,
             }}
             frequency={500}
         />

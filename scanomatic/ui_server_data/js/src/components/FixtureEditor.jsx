@@ -25,6 +25,7 @@ export default class FixtureEditor extends React.Component {
     render() {
         const {
             imageUri, editActions, markers, areas, grayscaleType, scannerName, grayscaleDetection,
+            validFixture, onFinalize, onResetAreas,
         } = this.props;
         const { hover } = this.state;
         return (
@@ -72,8 +73,10 @@ export default class FixtureEditor extends React.Component {
                             || <FixtureGrayscalePlot />
                         }
                         <div className="flex-spacer" />
-                        <button className="btn sidebar-btn" onClick={() => {}}>Reset all areas</button>
-                        <button className="btn btn-primary sidebar-btn" onClick={() => {}}>Finalize</button>
+                        <button className="btn sidebar-btn" onClick={onResetAreas} disabled={areas.length === 0}>Reset all areas</button>
+                        <button className="btn btn-primary sidebar-btn" onClick={onFinalize} disabled={!validFixture}>
+                            Finalize
+                        </button>
                     </div>
                 </div>
             </div>
@@ -82,11 +85,6 @@ export default class FixtureEditor extends React.Component {
 }
 
 FixtureEditor.propTypes = {
-    imageUri: PropTypes.string.isRequired,
-    markers: PropTypes.arrayOf(PropTypes.shape({
-        x: PropTypes.number.isRequired,
-        y: PropTypes.number.isRequired,
-    })).isRequired,
     areas: PropTypes.arrayOf(PropTypes.shape({
         name: PropTypes.string.isRequired,
         rect: PropTypes.shape({
@@ -101,15 +99,24 @@ FixtureEditor.propTypes = {
         onAreaEnd: PropTypes.func.isRequired,
         onClick: PropTypes.func.isRequired,
     }).isRequired,
-    grayscaleType: PropTypes.string,
     grayscaleDetection: PropTypes.shape({
         referenceValues: PropTypes.arrayOf(PropTypes.number).isRequired,
         pixelValues: PropTypes.arrayOf(PropTypes.number).isRequired,
     }),
+    grayscaleType: PropTypes.string,
+    imageUri: PropTypes.string.isRequired,
+    markers: PropTypes.arrayOf(PropTypes.shape({
+        x: PropTypes.number.isRequired,
+        y: PropTypes.number.isRequired,
+    })).isRequired,
+    onFinalize: PropTypes.func.isRequired,
+    onResetAreas: PropTypes.func.isRequired,
     scannerName: PropTypes.string.isRequired,
+    validFixture: PropTypes.bool,
 };
 
 FixtureEditor.defaultProps = {
     grayscaleType: 'silverfast',
     grayscaleDetection: null,
+    validFixture: false,
 };
