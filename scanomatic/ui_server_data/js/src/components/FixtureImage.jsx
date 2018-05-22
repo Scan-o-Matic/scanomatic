@@ -251,7 +251,7 @@ export default class FixtureImage extends React.Component {
         }
 
         return (
-            <div>
+            <div style={{ position: 'relative', height: this.state.height }}>
                 <canvas
                     width={this.state.width}
                     height={this.state.height}

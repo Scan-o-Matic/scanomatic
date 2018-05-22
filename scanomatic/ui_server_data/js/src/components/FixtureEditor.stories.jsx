@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import FixtureEditor from './FixtureEditor';
@@ -50,11 +51,81 @@ const markerAndAreas = {
     ],
 };
 
+class LiveUpdater extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { idx: 0 };
+    }
+
+    componentDidMount() {
+        const { frequency } = this.props;
+        setInterval(() => this.setState({ idx: this.state.idx + 1 }), frequency);
+    }
+
+    render() {
+        const {
+            Target, updateFunction, targetProps,
+        } = this.props;
+        const { idx } = this.state;
+        return <Target {...updateFunction(targetProps, idx)} />;
+    }
+}
+
+LiveUpdater.propTypes = {
+    Target: PropTypes.element.isRequired,
+    updateFunction: PropTypes.func.isRequired,
+    frequency: PropTypes.number.isRequired,
+    targetProps: PropTypes.shape({}),
+};
+
+LiveUpdater.defaultProps = {
+    targetProps: {},
+};
+
 storiesOf('FixtureEditor', module)
+    .add('Grayscale not detected', () => (
+        <FixtureEditor
+            imageUri={imageUri}
+            {...markerAndAreas}
+            editActions={editActions}
+            scannerName="Monsterous Magpie"
+        />
+    ))
     .add('Grayscale detected', () => (
         <FixtureEditor
             imageUri={imageUri}
             {...markerAndAreas}
             editActions={editActions}
+            scannerName="Monsterous Magpie"
+            grayscaleDetection={{
+                referenceValues: [0, 10, 30, 60, 95],
+                pixelValues: [10, 30, 100, 150, 240],
+            }}
+        />
+    ))
+    .add('Live random Grayscale detected', () => (
+        <LiveUpdater
+            Target={FixtureEditor}
+            updateFunction={(props, idx) => Object.assign(
+                {},
+                props,
+                {
+                    grayscaleDetection: {
+                        referenceValues: [0, 10, 30, 60, 95],
+                        pixelValues: [10, 20, 80, 200, 4 * idx],
+                    },
+                },
+            )}
+            targetProps={{
+                imageUri,
+                editActions,
+                scannerName: 'Monsterous Magpie',
+                grayscaleDetection: {
+                    referenceValues: [0, 10, 30, 60, 95],
+                    pixelValues: [10, 30, 100, 150, 240],
+                },
+                ...markerAndAreas,
+            }}
+            frequency={500}
         />
     ));
