@@ -4,7 +4,6 @@ import { action } from '@storybook/addon-actions';
 import FixtureImage from './FixtureImage';
 
 import imageUri from '../fixtures/fullres-scan.png';
-import '../../../style/bootstrap.css';
 
 const actions = {
     onAreaStart: action('area-start'),

@@ -155,14 +155,14 @@ describe('<FixtureImage />', () => {
             });
         }, WAIT_FOR_IMAGE_LOAD);
 
-        it('renders the overlays', () => {
+        xit('renders the overlays', () => {
             const canvas = wrapper.instance().overlayCanvas;
             return loadImage(expectedFixtureOverlaysUri).then((expected) => {
                 expect(canvas).toLookLikeImage(expected);
             });
         }, WAIT_FOR_IMAGE_LOAD);
 
-        it('rerenders the overlays on new props', () => {
+        xit('rerenders the overlays on new props', () => {
             const canvas = wrapper.instance().overlayCanvas;
             wrapper.setProps({
                 areas: [
