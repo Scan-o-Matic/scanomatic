@@ -70,7 +70,7 @@ export default class FixtureEditor extends React.Component {
                                 grayscaleDetection
                                 && <FixtureGrayscalePlot height={180} {...grayscaleDetection} />
                             )
-                            || <FixtureGrayscalePlot />
+                            || <div className="alert alert-info fixture-grayscale">No grayscale detected</div>
                         }
                         <div className="flex-spacer" />
                         <button className="btn sidebar-btn reset-all-button" onClick={onResetAreas} disabled={areas.length === 0}>Reset all areas</button>

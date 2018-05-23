@@ -177,29 +177,20 @@ describe('<FixtureEditor />', () => {
         });
     });
 
-    describe('No grayscale detected', () => {
+    describe('No grayscale detected causes alert', () => {
+        let alert;
         beforeEach(() => {
             wrapper = shallow(<FixtureEditor {...props} />);
+            alert = wrapper.find('.fixture-grayscale');
         });
 
-        describe('<FixtureGrayscalePlot />', () => {
-            let plot;
+        it('renders', () => {
+            expect(alert.exists()).toBeTruthy();
+            expect(alert.text()).toEqual('No grayscale detected');
+        });
 
-            beforeEach(() => {
-                plot = wrapper.find('FixtureGrayscalePlot');
-            });
-
-            it('renders', () => {
-                expect(plot.exists()).toBeTruthy();
-            });
-
-            it('passes the detection pixelValues', () => {
-                expect(plot.prop('pixelValues')).toEqual(null);
-            });
-
-            it('passes the detection referenceValues', () => {
-                expect(plot.prop('referenceValues')).toEqual(null);
-            });
+        it('has correct class', () => {
+            expect(alert.hasClass('alert')).toBeTruthy();
         });
     });
 
