@@ -35,7 +35,7 @@ export default class FixtureEditor extends React.Component {
                     <div className="fixture-editor-main">
                         <div className="form-group">
                             <label htmlFor="grayscale-type-select" className="control-label">Select Gray Scale</label>
-                            <select className="form-control custom-inline-group" value={grayscaleType} id="grayscale-type-select" disabled>
+                            <select className="form-control custom-inline-group grayscale-type" value={grayscaleType} id="grayscale-type-select" disabled>
                                 <option value="silverfast">SilverFast</option>
                             </select>
                             <span className="help-block">Support for different types of grayscales implemented upon request</span>
@@ -73,8 +73,8 @@ export default class FixtureEditor extends React.Component {
                             || <FixtureGrayscalePlot />
                         }
                         <div className="flex-spacer" />
-                        <button className="btn sidebar-btn" onClick={onResetAreas} disabled={areas.length === 0}>Reset all areas</button>
-                        <button className="btn btn-primary sidebar-btn" onClick={onFinalize} disabled={!validFixture}>
+                        <button className="btn sidebar-btn reset-all-button" onClick={onResetAreas} disabled={areas.length === 0}>Reset all areas</button>
+                        <button className="btn btn-primary sidebar-btn finalize-button" onClick={onFinalize} disabled={!validFixture}>
                             Finalize
                         </button>
                     </div>

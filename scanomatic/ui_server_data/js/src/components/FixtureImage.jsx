@@ -96,13 +96,22 @@ export default class FixtureImage extends React.Component {
         this.removeMouseEvents();
     }
 
-    getMouseImagePosition(evt) {
+    getMouseImagePosition(evt, clipping = true) {
         if (!this.overlayCanvas) return null;
         const { left, top } = this.overlayCanvas.getBoundingClientRect();
-        let x = Math.max(0, this.state.width - (evt.clientX - left));
-        x = Math.min(x, this.state.width - 1) * this.scale;
-        let y = Math.max(0, evt.clientY - top);
-        y = Math.min(y, this.state.height - 1) * this.scale;
+        if (clipping) {
+            let x = Math.max(0, this.state.width - (evt.clientX - left));
+            x = Math.min(x, this.state.width - 1) * this.scale;
+            let y = Math.max(0, evt.clientY - top);
+            y = Math.min(y, this.state.height - 1) * this.scale;
+            return { x, y };
+        }
+        let x = this.state.width - (evt.clientX - left);
+        if (x < 0 || x >= this.state.width) return null;
+        x *= this.scale;
+        let y = evt.clientY - top;
+        if (y < 0 || y >= this.state.height) return null;
+        y *= this.scale;
         return { x, y };
     }
 
@@ -119,9 +128,10 @@ export default class FixtureImage extends React.Component {
     }
 
     handleMouseMove(evt) {
-        const pos = this.getMouseImagePosition(evt);
+        let pos = this.getMouseImagePosition(evt, false);
         if (this.props.onMouse) this.props.onMouse(pos);
         if (!this.isDragging) return;
+        pos = this.getMouseImagePosition(evt);
         this.currentPos = pos;
         this.updateCanvas();
     }
@@ -138,17 +148,16 @@ export default class FixtureImage extends React.Component {
 
     handleMouseUp(evt) {
         if (!this.state.editMode) return;
-        const pos = this.getMouseImagePosition(evt);
+        let pos = this.getMouseImagePosition(evt);
         if ((!pos || !this.startPos) && this.props.onAreaEnd) this.props.onAreaEnd(null);
         const rect = getRect(this.startPos, pos);
         this.isDragging = false;
-        this.startPos = null;
-        this.currentPos = null;
         if (this.props.onAreaEnd) {
             this.props.onAreaEnd(rect.w > MIN_SELECTION && rect.h > MIN_SELECTION ? pos : null);
         }
         if (rect.w < MIN_SELECTION && rect.h < MIN_SELECTION && this.props.onClick) {
-            this.props.onClick(pos);
+            pos = this.getMouseImagePosition(evt, false);
+            if (pos) this.props.onClick(pos);
         }
         this.updateCanvas();
     }

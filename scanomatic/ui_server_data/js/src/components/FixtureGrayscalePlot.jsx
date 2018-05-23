@@ -63,7 +63,7 @@ export default class FixtureGrayscalePlot extends React.PureComponent {
             this.ref = null;
             return <div className="alert alert-info fixture-grayscale">No grayscale detected</div>;
         }
-        return <div className="fixture-grayscale" ref={(elem) => { this.ref = elem; }} />;
+        return <div className="grayscale-graph fixture-grayscale" ref={(elem) => { this.ref = elem; }} />;
     }
 }
 
