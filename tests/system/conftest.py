@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 
 import os
+import shutil
+import uuid
 
 import py.path
 import pytest
@@ -120,3 +122,13 @@ def pytest_runtest_makereport(item, call):
     # set an report attribute for each phase of a call, which can
     # be "setup", "call", "teardown"
     setattr(item, "{}_result".format(result.when), result)
+
+
+@pytest.fixture(scope='function')
+def with_analysis():
+    project = str(uuid.uuid4())
+    shutil.copytree(
+        os.path.join(os.path.dirname(__file__), 'data', 'analysis'),
+        os.path.join('/', 'tmp', 'som-analysis-testdata', project, 'analysis'),
+        )
+    return ['with_analysis', project]
