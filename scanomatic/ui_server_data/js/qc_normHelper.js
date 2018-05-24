@@ -171,8 +171,7 @@ function setExperimentByCoord(row, col) {
 }
 
 function isQualityControlOn() {
-    var on = $("#divMarkStates").is(':visible');
-    return on;
+    return $('#ckMarkExperiments').is(':checked');
 }
 
 function getQIndexCoord(operation) {
@@ -215,7 +214,7 @@ function isPlateAllNull(plateData) {
     return true;
 }
 
-function createMarkButton(buttonId, type) {
+function createMarkButton(buttonId, type, oneOnly) {
     const btn = d3.select(buttonId)
         .append('svg')
         .attr({
@@ -231,10 +230,14 @@ function createMarkButton(buttonId, type) {
             width: 25,
             height: 25,
         });
+    if (oneOnly) {
+        $(buttonId).append('<div class="mark-this-phenotype">1</div>');
+    }
 }
 
 function createMarkButtons() {
     createMarkButton('#btnMarkOK', plateMetaDataType.OK);
+    createMarkButton('#btnMarkOKOne', plateMetaDataType.OK, true);
     createMarkButton('#btnMarkBad', plateMetaDataType.BadData);
     createMarkButton('#btnMarkEmpty', plateMetaDataType.Empty);
     createMarkButton('#btnMarkNoGrowth', plateMetaDataType.NoGrowth);
@@ -248,8 +251,6 @@ function projectSelectionStage(level) {
         $('.loPhenotypeSelection').hide();
         $('.loPlateSelection').hide();
         $('#tbProjectDetails').hide();
-        $('#divMarkStates').hide();
-        $('#qidxHint').hide();
 
         break;
     case 'Phenotypes':

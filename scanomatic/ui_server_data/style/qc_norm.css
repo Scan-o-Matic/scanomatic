@@ -52,6 +52,26 @@ div.tooltip {
     pointer-events: none;
 }
 
+.mark-experiments-toggle {
+  margin: 0 1rem 0.5rem 0;
+  display: inline-block;
+}
+
+.mark-experiments-action-group {
+  display: inline-block;
+}
+
+.mark-this-phenotype {
+  position: absolute;
+  top: -5px;
+  color: #541f0f;
+  background: #f8e03e;
+  font-size: 8pt;
+  font-weight: bold;
+  margin-left: 20px;
+
+}
+
 rect.selection {
     stroke          : black;
     stroke-dasharray: 10px;
