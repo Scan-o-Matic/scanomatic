@@ -131,4 +131,4 @@ def with_analysis():
         os.path.join(os.path.dirname(__file__), 'data', 'analysis'),
         os.path.join('/', 'tmp', 'som-analysis-testdata', project, 'analysis'),
         )
-    return ['with_analysis', project]
+    return ['with_analysis', project, 'analysis']
