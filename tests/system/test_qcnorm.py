@@ -1,10 +1,14 @@
 from urllib.parse import quote_plus
 from time import sleep
+from enum import Enum
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
+
+CurveMark = Enum('CurveMark', ['OK', 'OK_THIS', 'BAD', 'EMPTY', 'NO_GROWTH'])
 
 
 class AnalysisNotFoundError(Exception):
@@ -67,7 +71,15 @@ class QCNormPageBase(object):
         self.wait_until_project_loaded()
         return PlateDisplayArea(
             self.driver.find_element(By.CSS_SELECTOR, '#displayArea'),
+            self,
         )
+
+    def set_phenotype(self, phenotype_name):
+        self.wait_until_project_loaded()
+        id = '#selRunPhenotypes'
+        select = Select(self.driver.find_element(By.CSS_SELECTOR, id))
+        select.select_by_visible_text(phenotype_name)
+        self.wait_until_not_talking_to_server()
 
 
 class QCNormPage(QCNormPageBase):
@@ -105,6 +117,7 @@ class QCNormPagePreloadedProject(QCNormPageBase):
 
 
 class ProjectDetails(object):
+
     def __init__(self, elem):
         self.elem = elem
 
@@ -114,12 +127,83 @@ class ProjectDetails(object):
 
 
 class PlateDisplayArea(object):
-    def __init__(self, elem):
+    mark_experiments_toggle_selector = (
+        By.CSS_SELECTOR, '.mark-experiments-toggle',
+    )
+    mark_states_action_group_selector = (
+        By.CSS_SELECTOR, '.mark-experiments-action-group',
+    )
+
+    def __init__(self, elem, page):
         self.elem = elem
+        self.page = page
 
     @property
     def number(self):
         return self.elem.find_element(By.CSS_SELECTOR, '#spnPlateIdx').text
+
+    @property
+    def has_marking_enabled(self):
+        return self.elem.find_element(
+            *self.mark_states_action_group_selector).is_displayed()
+
+    def toggle_mark_experiments(self):
+        span = self.elem.find_element(*self.mark_experiments_toggle_selector)
+        span.find_element(By.CSS_SELECTOR, '.toggle').click()
+
+    def show_mark_experiments(self):
+        self.toggle_mark_experiments()
+        while not self.has_marking_enabled:
+            self.toggle_mark_experiments()
+
+    def mark_selected_curve(self, mark):
+        id = ''
+        if mark == CurveMark.OK:
+            id = '#btnMarkOK'
+        elif mark == CurveMark.OK_THIS:
+            id = '#btnMarkOKOne'
+        elif mark == CurveMark.BAD:
+            id = '#btnMarkBad'
+        elif mark == CurveMark.EMPTY:
+            id = '#btnMarkEmpty'
+        elif mark == CurveMark.NO_GROWTH:
+            id = '#btnMarkNoGrowth'
+        self.elem.find_element(By.CSS_SELECTOR, id).click()
+        self.page.wait_until_not_talking_to_server()
+
+    def get_plate_position(self, row, col):
+        """Positions from upper left corner as is_displayed
+
+        Starting index 1
+        """
+        id = '#id{}_{}'.format(row - 1, col - 1)
+        return PlatePosition(
+            self.elem.find_element(By.CSS_SELECTOR, id),
+            self.page,
+        )
+
+
+class PlatePosition(object):
+    def __init__(self, elem, page):
+        self.elem = elem
+        self.page = page
+
+    @property
+    def mark(self):
+        mark = self.elem.get_attribute('data-meta-type')
+        if mark == 'OK':
+            return CurveMark.OK
+        elif mark == 'BadData':
+            return CurveMark.BAD
+        elif mark == 'Empty':
+            return CurveMark.EMPTY
+        elif mark == 'NoGrowth':
+            return CurveMark.NO_GROWTH
+
+    def click(self):
+        ActionChains(
+            self.page.driver,
+        ).move_to_element(self.elem).click()
 
 
 class TestQCNormPage:
@@ -186,3 +270,50 @@ class TestQCNormPagePlates:
         plate = page.get_plate_display_area()
         page.set_plate(3)
         assert plate.number == '3'
+
+
+class TestQCNormCurveMarking:
+    def test_action_buttons_can_toggle_visibility(
+        self, browser, scanomatic, with_analysis
+    ):
+        page = QCNormPagePreloadedProject(
+            browser,
+            scanomatic,
+            with_analysis,
+            with_analysis[-2],
+        )
+        plate = page.get_plate_display_area()
+        plate.toggle_mark_experiments()
+        visible = plate.has_marking_enabled
+        plate.toggle_mark_experiments()
+        assert plate.has_marking_enabled != visible
+
+    def test_mark_current_curve_as_ok(
+        self, browser, scanomatic, with_analysis
+    ):
+        page = QCNormPagePreloadedProject(
+            browser,
+            scanomatic,
+            with_analysis,
+            with_analysis[-2],
+        )
+        plate = page.get_plate_display_area()
+        plate.show_mark_experiments()
+        plate.mark_selected_curve(CurveMark.OK)
+
+    def test_marking_curve_updates_plate_view(
+        self, browser, scanomatic, with_analysis
+    ):
+        page = QCNormPagePreloadedProject(
+            browser,
+            scanomatic,
+            with_analysis,
+            with_analysis[-2],
+        )
+        plate = page.get_plate_display_area()
+        plate.show_mark_experiments()
+        position = plate.get_plate_position(5, 10)
+        assert position.mark == CurveMark.OK
+        position.click()
+        position = plate.get_plate_position(5, 10)
+        assert position.mark == CurveMark.BAD
