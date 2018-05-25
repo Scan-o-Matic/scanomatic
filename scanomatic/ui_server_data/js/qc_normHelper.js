@@ -375,6 +375,7 @@ function drawRunPhenotypeSelection(path) {
         options.text(d => d.name);
         selPhen.on('change', drawPhenotypePlatesSelection);
         $(`#${selRunPhenotypesName}`).selectedIndex = 0;
+        drawPhenotypePlatesSelection();
     });
 }
 
@@ -394,6 +395,7 @@ function drawRunNormalizedPhenotypeSelection(path) {
         options.text(d => d.name);
         selPhen.on('change', drawPhenotypePlatesSelection);
         $(`#${selRunNormPhenotypesName}`).toggle();
+        drawPhenotypePlatesSelection();
     });
 }
 
