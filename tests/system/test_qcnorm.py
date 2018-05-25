@@ -1,4 +1,5 @@
 from urllib.parse import quote_plus
+from time import sleep
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -10,13 +11,15 @@ class AnalysisNotFoundError(Exception):
     pass
 
 
-class QCNormPage(object):
-    path = '/qc_norm'
+class QCNormPageBase(object):
+    TALKING_TO_SERVER_TIMEOUT = 10
+    PROJECT_LOAD_CHECKS_TIMEOUT = 60
+    details_selector = (By.CSS_SELECTOR, '#tbProjectDetails')
 
-    def __init__(self, driver, base_url):
+    def __init__(self, driver, base_url, path):
         self.driver = driver
         self.base_url = base_url
-        driver.get(base_url + self.path)
+        driver.get(base_url + path)
 
     @property
     def is_visible_project_selection(self):
@@ -29,24 +32,66 @@ class QCNormPage(object):
     def title(self):
         return self.driver.find_element(By.TAG_NAME, 'h1').text
 
+    def wait_until_not_talking_to_server(self):
+        loading_selector = (
+            By.XPATH,
+            "//*[@id='divLoading' and contains(., 'Talking to server')]",
+        )
+
+        WebDriverWait(self.driver, self.TALKING_TO_SERVER_TIMEOUT).until_not(
+            EC.visibility_of_element_located(loading_selector),
+        )
+
+    def wait_until_project_loaded(self):
+        WebDriverWait(self.driver, self.PROJECT_LOAD_CHECKS_TIMEOUT).until(
+            EC.visibility_of_element_located(self.details_selector),
+        )
+        WebDriverWait(self.driver, self.PROJECT_LOAD_CHECKS_TIMEOUT).until(
+            EC.visibility_of_element_located(
+                self._get_plate_btn_selector(1),
+            )
+        )
+        self.wait_until_not_talking_to_server()
+
+    def get_details(self):
+        self.wait_until_project_loaded()
+        return ProjectDetails(self.driver.find_element(*self.details_selector))
+
+    def set_plate(self, plate):
+        """Setting plate by number as shown in UI (1 = first)
+        """
+        self.driver.find_element(*self._get_plate_btn_selector(plate)).click()
+        self.wait_until_not_talking_to_server()
+
+    def get_plate_display_area(self):
+        self.wait_until_project_loaded()
+        return PlateDisplayArea(
+            self.driver.find_element(By.CSS_SELECTOR, '#displayArea'),
+        )
+
+
+class QCNormPage(QCNormPageBase):
+    path = '/qc_norm'
+
+    def __init__(self, driver, base_url):
+        super().__init__(driver, base_url, self.path)
+
     def toggle_select_project(self):
         self.driver.find_element(By.CSS_SELECTOR, '#btnBrowseProject').click()
 
 
-class QCNormPagePreloadedProject(object):
-    TALKING_TO_SERVER_TIMEOUT = 60
+class QCNormPagePreloadedProject(QCNormPageBase):
     path = '/qc_norm?analysisdirectory={}&project={}'
 
     def __init__(self, driver, base_url, project_path, project_name):
-        self.driver = driver
-        self.base_url = base_url
-        driver.get(
-            base_url +
-            self.path.format(
-                quote_plus('/'.join(project_path)),
-                quote_plus(project_name),
-            )
+        path = self.path.format(
+            quote_plus('/'.join(project_path)),
+            quote_plus(project_name),
         )
+        super().__init__(driver, base_url, path)
+
+    def _get_plate_btn_selector(self, button):
+        return (By.CSS_SELECTOR, '#btnPlate{}'.format(button - 1))
 
     @property
     def has_analysis(self):
@@ -58,24 +103,6 @@ class QCNormPagePreloadedProject(object):
         except NoSuchElementException:
             return True
 
-    def wait_until_loaded(self):
-        loading_selector = (
-            By.XPATH,
-            "//*[@id='divLoading' and contains(., 'Talking to server')]",
-        )
-
-        WebDriverWait(self.driver, self.TALKING_TO_SERVER_TIMEOUT).until_not(
-            EC.visibility_of_element_located(loading_selector),
-        )
-
-    def get_details(self):
-        self.wait_until_loaded()
-        elem_selector = (By.CSS_SELECTOR, '#tbProjectDetails')
-        WebDriverWait(self.driver, 5).until(
-            EC.presence_of_element_located(elem_selector),
-        )
-        return ProjectDetails(self.driver.find_element(*elem_selector))
-
 
 class ProjectDetails(object):
     def __init__(self, elem):
@@ -84,6 +111,15 @@ class ProjectDetails(object):
     @property
     def name(self):
         return self.elem.find_element(By.CSS_SELECTOR, '#spProject_name').text
+
+
+class PlateDisplayArea(object):
+    def __init__(self, elem):
+        self.elem = elem
+
+    @property
+    def number(self):
+        return self.elem.find_element(By.CSS_SELECTOR, '#spnPlateIdx').text
 
 
 class TestQCNormPage:
@@ -127,3 +163,26 @@ class TestQCNormPagePreloadedProject:
         )
         details = page.get_details()
         assert details.name == with_analysis[-2]
+
+
+class TestQCNormPagePlates:
+    def test_loads_first_plate(self, browser, scanomatic, with_analysis):
+        page = QCNormPagePreloadedProject(
+            browser,
+            scanomatic,
+            with_analysis,
+            with_analysis[-2],
+        )
+        plate = page.get_plate_display_area()
+        assert plate.number == '1'
+
+    def test_switches_plate(self, browser, scanomatic, with_analysis):
+        page = QCNormPagePreloadedProject(
+            browser,
+            scanomatic,
+            with_analysis,
+            with_analysis[-2],
+        )
+        plate = page.get_plate_display_area()
+        page.set_plate(3)
+        assert plate.number == '3'

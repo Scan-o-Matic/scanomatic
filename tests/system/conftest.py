@@ -126,7 +126,7 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture(scope='function')
 def with_analysis():
-    project = str(uuid.uuid4())
+    project = str(uuid.uuid4()).replace('-', '')
     shutil.copytree(
         os.path.join(os.path.dirname(__file__), 'data', 'analysis'),
         os.path.join('/', 'tmp', 'som-analysis-testdata', project, 'analysis'),
