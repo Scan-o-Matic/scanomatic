@@ -1,5 +1,4 @@
 from urllib.parse import quote_plus
-from time import sleep
 from enum import Enum
 
 from selenium.common.exceptions import NoSuchElementException

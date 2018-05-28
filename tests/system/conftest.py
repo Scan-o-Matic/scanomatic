@@ -138,5 +138,5 @@ def with_analysis():
     shutil.copytree(
         os.path.join(os.path.dirname(__file__), 'data', 'analysis'),
         os.path.join('/', 'tmp', 'som-analysis-testdata', project, 'analysis'),
-        )
+    )
     return ['with_analysis', project, 'analysis']
