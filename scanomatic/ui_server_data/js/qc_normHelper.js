@@ -175,13 +175,11 @@ function isQualityControlOn() {
 }
 
 function getQIndexCoord(operation) {
-    qIndexCurrent = qIndexCurrent + operation;
-    var maxQueueSize = qIndexQueue.length - 1;
-    if (qIndexCurrent < 0)
-        qIndexCurrent = maxQueueSize;
-    if (qIndexCurrent > maxQueueSize)
-        qIndexCurrent = 0;
-    var item = qIndexQueue[qIndexCurrent];
+    qIndexCurrent += operation;
+    const maxQueueSize = qIndexQueue.length - 1;
+    if (qIndexCurrent < 0) { qIndexCurrent = maxQueueSize; }
+    if (qIndexCurrent > maxQueueSize) { qIndexCurrent = 0; }
+    const item = qIndexQueue[qIndexCurrent];
     return item;
 }
 
