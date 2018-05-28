@@ -252,28 +252,11 @@ class TestQCNormPagePreloadedProject:
             with_analysis[-2],
         )
         assert page.has_analysis
-
-    def test_has_correct_name(self, browser, scanomatic, with_analysis):
-        page = QCNormPagePreloadedProject(
-            browser,
-            scanomatic,
-            with_analysis,
-            with_analysis[-2],
-        )
         details = page.get_details()
         assert details.name == with_analysis[-2]
 
 
 class TestQCNormPagePlates:
-    def test_loads_first_plate(self, browser, scanomatic, with_analysis):
-        page = QCNormPagePreloadedProject(
-            browser,
-            scanomatic,
-            with_analysis,
-            with_analysis[-2],
-        )
-        plate = page.get_plate_display_area()
-        assert plate.number == '1'
 
     def test_switches_plate(self, browser, scanomatic, with_analysis):
         page = QCNormPagePreloadedProject(
@@ -288,51 +271,6 @@ class TestQCNormPagePlates:
 
 
 class TestQCNormCurveMarking:
-    def test_action_buttons_can_toggle_visibility(
-        self, browser, scanomatic, with_analysis
-    ):
-        page = QCNormPagePreloadedProject(
-            browser,
-            scanomatic,
-            with_analysis,
-            with_analysis[-2],
-        )
-        plate = page.get_plate_display_area()
-        plate.toggle_mark_experiments()
-        visible = plate.has_marking_enabled
-        plate.toggle_mark_experiments()
-        assert plate.has_marking_enabled != visible
-
-    def test_mark_current_curve_as_ok(
-        self, browser, scanomatic, with_analysis
-    ):
-        page = QCNormPagePreloadedProject(
-            browser,
-            scanomatic,
-            with_analysis,
-            with_analysis[-2],
-        )
-        plate = page.get_plate_display_area()
-        plate.show_mark_experiments()
-        plate.mark_selected_curve(CurveMark.OK)
-
-    def test_marking_curve_updates_plate_view(
-        self, browser, scanomatic, with_analysis
-    ):
-        page = QCNormPagePreloadedProject(
-            browser,
-            scanomatic,
-            with_analysis,
-            with_analysis[-2],
-        )
-        plate = page.get_plate_display_area()
-        plate.show_mark_experiments()
-        position = plate.get_plate_position(5, 10)
-        assert position.mark == CurveMark.OK
-        position.click()
-        plate.mark_selected_curve(CurveMark.BAD)
-        position = plate.get_plate_position(5, 10)
-        assert position.mark == CurveMark.BAD
 
     def test_marking_ok_this_only_ok_current_phenotype(
         self, browser, scanomatic, with_analysis
