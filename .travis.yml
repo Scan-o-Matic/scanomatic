@@ -30,7 +30,7 @@ jobs:
       after_success:
         - codecov
     - stage: "Docker build & system tests"
-      python: "2.7"
+      python: "3.6"
       services: ["docker"]
       addons:
         apt:
