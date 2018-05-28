@@ -288,12 +288,13 @@ class TestQCNormCurveMarking:
         assert position.mark == CurveMark.OK
         position.click()
         plate.mark_selected_curve(CurveMark.BAD)
+        page.set_phenotype('Experiment Growth Yield')
         position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.BAD
         position.click()
         plate.mark_selected_curve(CurveMark.OK_THIS)
         position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.OK
-        page.set_phenotype('Experiment Growth Yield')
+        page.set_phenotype('Generation Time')
         position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.BAD

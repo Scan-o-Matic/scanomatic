@@ -12,7 +12,15 @@ from selenium.common.exceptions import WebDriverException
 
 
 @pytest.fixture(scope='session')
-def docker_compose_file(pytestconfig):
+def docker_mounts_preparation():
+    path = os.path.join('/', 'tmp', 'som-analysis-testdata')
+    os.makedirs(path)
+    yield
+    shutil.rmtree(path)
+
+
+@pytest.fixture(scope='session')
+def docker_compose_file(docker_mounts_preparation, pytestconfig):
     return [
         pytestconfig.rootdir.join('docker-compose.yml'),
         py.path.local(__file__).dirpath().join('docker-compose.override.yml'),
@@ -124,15 +132,8 @@ def pytest_runtest_makereport(item, call):
     setattr(item, "{}_result".format(result.when), result)
 
 
-@pytest.fixture(scope='session')
-def with_analysis_cleanup():
-    yield
-    path = os.path.join('/', 'tmp', 'som-analysis-testdata')
-    shutil.rmtree(path)
-
-
 @pytest.fixture(scope='function')
-def with_analysis(with_analysis_cleanup):
+def with_analysis():
     project = str(uuid.uuid4()).replace('-', '')
     shutil.copytree(
         os.path.join(os.path.dirname(__file__), 'data', 'analysis'),
