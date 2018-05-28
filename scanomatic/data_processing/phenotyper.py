@@ -228,31 +228,16 @@ def path_has_saved_project_state(directory_path, require_phenotypes=True):
         try:
             unpickle_with_unpickler(np.load, os.path.join(directory_path, _p.phenotypes_raw_npy))
         except IOError:
-            print('No phenotypes {}'.format(_p.phenotypes_raw_npy))
             return False
 
     try:
         unpickle_with_unpickler(np.load, os.path.join(directory_path,  _p.phenotypes_input_data))
-    except IOError:
-        print('No phenotypes {}'.format(_p.phenotypes_input_data))
-        return False
-    try:
         unpickle_with_unpickler(np.load, os.path.join(directory_path, _p.phenotype_times))
-    except IOError:
-        print('No phenotypes {}'.format(_p.phenotype_times))
-        return False
-
-    try:
         unpickle_with_unpickler(np.load, os.path.join(directory_path, _p.phenotypes_input_smooth))
-    except IOError:
-        print('No phenotypes {}'.format(_p.phenotypes_input_smooth))
-        return False
-
-    try:
         unpickle_with_unpickler(np.load, os.path.join(directory_path, _p.phenotypes_extraction_params))
     except IOError:
-        print('No phenotypes {}'.format(_p.phenotypes_extraction_params))
         return False
+
     return True
 
 
