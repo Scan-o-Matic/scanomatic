@@ -180,13 +180,17 @@ class PlateDisplayArea(object):
         return PlatePosition(
             self.elem.find_element(By.CSS_SELECTOR, id),
             self.page,
+            row,
+            col,
         )
 
 
 class PlatePosition(object):
-    def __init__(self, elem, page):
+    def __init__(self, elem, page, row, col):
         self.elem = elem
         self.page = page
+        self.row = row - 1
+        self.col = col - 1
 
     @property
     def mark(self):
@@ -203,7 +207,18 @@ class PlatePosition(object):
     def click(self):
         ActionChains(
             self.page.driver,
-        ).move_to_element(self.elem).click()
+        ).move_to_element(self.elem).click().perform()
+        WebDriverWait(self.page.driver, 5).until(
+            EC.presence_of_element_located(
+                (
+                    By.XPATH,
+                    "//*[@id='sel' and contains(., '[{},{}]')]".format(
+                        self.row,
+                        self.col,
+                    ),
+                )
+            )
+        )
 
 
 class TestQCNormPage:
@@ -315,5 +330,32 @@ class TestQCNormCurveMarking:
         position = plate.get_plate_position(5, 10)
         assert position.mark == CurveMark.OK
         position.click()
+        plate.mark_selected_curve(CurveMark.BAD)
         position = plate.get_plate_position(5, 10)
+        assert position.mark == CurveMark.BAD
+
+    def test_marking_ok_this_only_ok_current_phenotype(
+        self, browser, scanomatic, with_analysis
+    ):
+        pos = (5, 10)
+        page = QCNormPagePreloadedProject(
+            browser,
+            scanomatic,
+            with_analysis,
+            with_analysis[-2],
+        )
+        plate = page.get_plate_display_area()
+        plate.show_mark_experiments()
+        position = plate.get_plate_position(*pos)
+        assert position.mark == CurveMark.OK
+        position.click()
+        plate.mark_selected_curve(CurveMark.BAD)
+        position = plate.get_plate_position(*pos)
+        assert position.mark == CurveMark.BAD
+        position.click()
+        plate.mark_selected_curve(CurveMark.OK_THIS)
+        position = plate.get_plate_position(*pos)
+        assert position.mark == CurveMark.OK
+        page.set_phenotype('Experiment Growth Yield')
+        position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.BAD
