@@ -40,7 +40,9 @@ export function setSmoothCurveData(
 type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
 
 export function retrievePlateCurves() : ThunkAction {
-    return (dispatch, getState) => {
+    return () => {
+        // dispatch arg if needed
+        // getState second arg if needed
         // Perform fetching
         // Set plate curves
     };

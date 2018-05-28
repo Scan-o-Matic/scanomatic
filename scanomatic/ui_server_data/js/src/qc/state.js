@@ -1,5 +1,7 @@
 // @flow
-export type TimeSeries = Array<Number>;
+export type TimeSeries = Array<number>;
+
+export type PlateOfTimeSeries = Array<Array<TimeSeries>>;
 
 export type Settings = {
     +project: string,
@@ -7,8 +9,8 @@ export type Settings = {
 
 export type Plate = {
     +number: Number,
-    +raw: Array<Array<TimeSeries>>,
-    +smooth: Array<Array<TimeSeries>>,
+    +raw: PlateOfTimeSeries,
+    +smooth: PlateOfTimeSeries,
 }
 
 export type State = {

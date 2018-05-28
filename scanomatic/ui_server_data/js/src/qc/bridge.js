@@ -35,5 +35,10 @@ export class Actions {
 export default function Bridge(store: State) {
     const actions = new Actions(store);
     const selectors = new Selectors(store);
-    return { actions, selectors };
+    const subscribe: (() => void) => void = callback => this.store.subscribe(callback);
+    return {
+        actions,
+        selectors,
+        subscribe,
+    };
 }

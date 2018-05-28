@@ -7,13 +7,13 @@ export function getPlate(state: State): Number {
 }
 
 export function getRawCurve(state: State, plate: Number, row: Number, col: Number): TimeSeries {
-    const { raw, number: plateNumber } = this.state.plate;
+    const { raw, number: plateNumber } = state.plate;
     if (!raw || plate !== plateNumber) return null;
     return raw[row][col];
 }
 
 export function getSmoothCurve(state: State, plate: Number, row: Number, col: Number): TimeSeries {
-    const { smooth, number: plateNumber } = this.state.plate;
+    const { smooth, number: plateNumber } = state.plate;
     if (!smooth || plate !== plateNumber) return null;
     return smooth[row][col];
 }
