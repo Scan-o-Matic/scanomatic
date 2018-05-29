@@ -239,11 +239,16 @@ class TestQCNormPagePreloadedProject:
 
     def test_correctly_alerts_to_missing_analysis(self, browser, scanomatic):
         page = QCNormPagePreloadedProject(
-            browser, scanomatic, 'experiments_only_analysis', 'has no analysis',
+            browser,
+            scanomatic,
+            'experiments_only_analysis',
+            'has no analysis',
         )
         assert page.has_analysis is False
 
-    def test_can_load_analysis(self, browser, scanomatic, experiment_only_analysis):
+    def test_can_load_analysis(
+        self, browser, scanomatic, experiment_only_analysis
+    ):
         page = QCNormPagePreloadedProject(
             browser,
             scanomatic,
@@ -257,7 +262,9 @@ class TestQCNormPagePreloadedProject:
 
 class TestQCNormPagePlates:
 
-    def test_switches_plate(self, browser, scanomatic, experiment_only_analysis):
+    def test_switches_plate(
+        self, browser, scanomatic, experiment_only_analysis
+    ):
         page = QCNormPagePreloadedProject(
             browser,
             scanomatic,
