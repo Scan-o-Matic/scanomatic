@@ -227,7 +227,7 @@ class TestQCNormPage:
         assert page.title == 'Quality Control'
 
     def test_clicking_select_a_project_shows_selector(
-        self, scanomatic, browser, with_analysis
+        self, scanomatic, browser, experiment_only_analysis
     ):
         page = QCNormPage(browser, scanomatic)
         assert not page.is_visible_project_selection
@@ -239,30 +239,30 @@ class TestQCNormPagePreloadedProject:
 
     def test_correctly_alerts_to_missing_analysis(self, browser, scanomatic):
         page = QCNormPagePreloadedProject(
-            browser, scanomatic, 'with_analysis', 'has no analysis',
+            browser, scanomatic, 'experiments_only_analysis', 'has no analysis',
         )
         assert page.has_analysis is False
 
-    def test_can_load_analysis(self, browser, scanomatic, with_analysis):
+    def test_can_load_analysis(self, browser, scanomatic, experiment_only_analysis):
         page = QCNormPagePreloadedProject(
             browser,
             scanomatic,
-            with_analysis,
-            with_analysis[-2],
+            experiment_only_analysis,
+            experiment_only_analysis[-2],
         )
         assert page.has_analysis
         details = page.get_details()
-        assert details.name == with_analysis[-2]
+        assert details.name == experiment_only_analysis[-2]
 
 
 class TestQCNormPagePlates:
 
-    def test_switches_plate(self, browser, scanomatic, with_analysis):
+    def test_switches_plate(self, browser, scanomatic, experiment_only_analysis):
         page = QCNormPagePreloadedProject(
             browser,
             scanomatic,
-            with_analysis,
-            with_analysis[-2],
+            experiment_only_analysis,
+            experiment_only_analysis[-2],
         )
         plate = page.get_plate_display_area()
         page.set_plate(3)
@@ -272,14 +272,14 @@ class TestQCNormPagePlates:
 class TestQCNormCurveMarking:
 
     def test_marking_ok_this_only_ok_current_phenotype(
-        self, browser, scanomatic, with_analysis
+        self, browser, scanomatic, experiment_only_analysis
     ):
         pos = (5, 10)
         page = QCNormPagePreloadedProject(
             browser,
             scanomatic,
-            with_analysis,
-            with_analysis[-2],
+            experiment_only_analysis,
+            experiment_only_analysis[-2],
         )
         plate = page.get_plate_display_area()
         plate.show_mark_experiments()

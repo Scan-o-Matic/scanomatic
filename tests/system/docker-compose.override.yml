@@ -5,7 +5,7 @@ services:
       - my-project:/somprojects/my/project
       - ./tests/system/data/testproject.project.compilation:/somprojects/testproject/testproject.project.compilation
       - ./tests/system/data/testproject.project.compilation.instructions:/somprojects/testproject/testproject.project.compilation.instructions
-      - /tmp/som-analysis-testdata/:/somprojects/with_analysis/
+      - /tmp/som-analysis-testdata/:/somprojects/experiments_only_analysis/
 
   scanomatic-backend:
     volumes:
