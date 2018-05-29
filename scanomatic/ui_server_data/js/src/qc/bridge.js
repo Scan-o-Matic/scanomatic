@@ -1,36 +1,52 @@
 // @flow
 
-import { retrievePlateCurves, setProject, setPlate } from './actions';
-import { getRawCurve, getSmoothCurve, getTimes, getPlate } from './selectors';
-import type { State, TimeSeries } from './state';
+import {
+    retrievePlateCurves, setProject, setPlate, setPinning,
+} from './actions';
+import {
+    getRawCurve, getSmoothCurve, getTimes, getPlate,
+} from './selectors';
 
+import type { Action } from './actions';
+import type { State, TimeSeries, Pinning } from './state';
+
+type Store = {
+    +dispatch: Action => any,
+    +getState: () => State,
+    +subscribe: (() => any) => any,
+}
 export class Selectors {
-    store: State;
+    store : Store
 
-    constructor(store : State) {
+    constructor(store : Store) {
         this.store = store;
     }
 
     getRawCurve(plate: number, row : number, col : number) : TimeSeries {
-        if (getPlate(this.store) !== plate) return null;
-        return getRawCurve(this.store, row, col);
+        const state = this.store.getState();
+        return getRawCurve(state, plate, row, col);
     }
 
     getSmoothCurve(plate: Number, row : Number, col : Number) : TimeSeries {
-        if (getPlate(this.store) !== plate) return null;
-        return getSmoothCurve(this.store, row, col);
+        const state = this.store.getState();
+        return getSmoothCurve(state, plate, row, col);
     }
 
     getTimes(plate: number) : TimeSeries {
-        if (getPlate(this.store) !== plate) return null;
-        return getTimes(this.store);
+        const state = this.store.getState();
+        return getTimes(state, plate);
+    }
+
+    getPlate() : number {
+        const state = this.store.getState();
+        return getPlate(state);
     }
 }
 
 export class Actions {
-    store: State;
+    store: Store;
 
-    constructor(store : State) {
+    constructor(store : Store) {
         this.store = store;
     }
 
@@ -42,15 +58,23 @@ export class Actions {
         this.store.dispatch(setPlate(plate));
     }
 
-    retrievePlateCurves(plate: Number) {
-        this.store.dispatch(retrievePlateCurves(plate));
+    setPinning(plate: number, rows: number, cols: number) {
+        this.store.dispatch(setPinning(plate, rows, cols));
+    }
+
+    retrievePlateCurves(plate: ?number = null, pinning: ?Pinning = null) {
+        if (plate != null) {
+            this.store.dispatch(setPlate(plate));
+            if (pinning != null) this.store.dispatch(setPinning(plate, pinning.rows, pinning.cols));
+        }
+        this.store.dispatch(retrievePlateCurves());
     }
 }
 
-export default function Bridge(store: State) {
+export default function Bridge(store: Store) {
     const actions = new Actions(store);
     const selectors = new Selectors(store);
-    const subscribe: (() => void) => void = callback => this.store.subscribe(callback);
+    const subscribe: (() => void) => void = callback => store.subscribe(callback);
     return {
         actions,
         selectors,

@@ -61,11 +61,12 @@ const POLL_INTERVAL = 50;
 
 export function retrievePlateCurves() : ThunkAction {
     return (dispatch, getState) => {
-        const project = getProject(getState());
-        const plate = getPlate(getState());
-        const { rows, cols } = getPinning(getState());
+        const state = getState();
+        const project = getProject(state);
+        const plate = getPlate(state);
+        const { rows, cols } = getPinning(state) || { rows: 0, cols: 0 };
         let row = 0;
-        let col = 0;
+        let col = -1; // It will be increased to 0 on first poll
         let pending = 0;
 
         const success = (r) => {
@@ -85,9 +86,10 @@ export function retrievePlateCurves() : ThunkAction {
             while (pending < MAX_CONCURRENT_CONNECTIONS) {
                 // Next position
                 col += 1;
-                if (col === cols) {
+                if (col >= cols) {
                     row += 1;
-                    if (row === rows) return;
+                    col = 0;
+                    if (row >= rows) return;
                 }
 
                 pending += 1;

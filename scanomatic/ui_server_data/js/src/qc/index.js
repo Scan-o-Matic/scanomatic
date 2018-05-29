@@ -6,6 +6,7 @@ import Bridge from './bridge';
 
 const store = createStore(
     reducer,
+    // { plate: {}, settings: {} },
     {},
     applyMiddleware(thunk),
 );
