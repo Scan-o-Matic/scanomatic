@@ -10,5 +10,12 @@ class AnalysisLoader(object):
 
     @property
     def times(self):
-        try:
-            return np.load(os.path.join(self.path, '.npy'))
+        return np.load(os.path.join(self.path, 'phenotype_times.npy'))
+
+    @property
+    def raw_growth_data(self):
+        return np.load(os.path.join(self.path, 'curves_raw.npy'))
+
+    @property
+    def smooth_growth_data(self):
+        return np.load(os.path.join(self.path, 'curves_smooth.npy'))

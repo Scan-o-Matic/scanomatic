@@ -1536,9 +1536,9 @@ def add_routes(app):
             )
 
         return jsonify(
-            times_data=times_data,
-            raw_data=raw_data,
-            smooth_data=smooth_data,
+            times_data=times_data.tolist(),
+            raw_data=raw_data.tolist(),
+            smooth_data=smooth_data.tolist(),
         )
 
     # End of UI extension with qc-functionality
