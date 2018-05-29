@@ -15,6 +15,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from werkzeug.datastructures import FileStorage
 
 from scanomatic.data_processing import phenotyper
+from scanomatic.data_processing import analysis
 from scanomatic.data_processing.norm import Offsets, infer_offset
 from scanomatic.data_processing.phenotypes import (
     PhenotypeDataType, get_sort_order, infer_phenotype_from_name
@@ -24,7 +25,7 @@ from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
 from scanomatic.ui_server.general import (
     convert_path_to_url, convert_url_to_path, get_project_name,
-    get_search_results, json_response, serve_zip_file
+    get_search_results, json_response, serve_zip_file, json_abort,
 )
 
 RESERVATION_TIME = 60 * 5
@@ -1508,6 +1509,37 @@ def add_routes(app):
                     reason="Saving phenotypes failed for some unknown reason"
                 ),
                 success=False))
+
+    @app.route("/api/results/growthcurves/<int:plate>/<path:project>")
+    def get_plate_curves_and_time(plate, project):
+        try:
+            times_data = analysis.get_times(project)
+        except analysis.CorruptAnalysisError:
+            return json_abort(
+                400,
+                reason="Could not locate scan times.",
+            )
+        try:
+            raw_data = analysis.get_raw_curves(project, plate)
+        except analysis.CorruptAnalysisError:
+            return json_abort(
+                400,
+                reason="Could not locate raw growth curves for plate.",
+            )
+
+        try:
+            smooth_data = analysis.get_smooth_curves(project, plate)
+        except analysis.CorruptAnalysisError:
+            return json_abort(
+                400,
+                reason="Could not locate smooth growth curves for plate.",
+            )
+
+        return jsonify(
+            times_data=times_data,
+            raw_data=raw_data,
+            smooth_data=smooth_data,
+        )
 
     # End of UI extension with qc-functionality
     return True
