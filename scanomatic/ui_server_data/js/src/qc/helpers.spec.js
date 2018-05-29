@@ -30,12 +30,11 @@ describe('qc/helpers', () => {
                 [null, null, null, null],
                 [null, null, null, [4, 5]],
             ];
-            getUpdated2DArrayCopy(data, 3, 0, [1, 2]);
+            getUpdated2DArrayCopy(data, 0, 0, [1, 2]);
             expect(data).toEqual([
                 [null, null, null, null],
                 [null, null, null, null],
                 [null, null, null, [4, 5]],
-                [[1, 2], null, null, null],
             ]);
         });
     });

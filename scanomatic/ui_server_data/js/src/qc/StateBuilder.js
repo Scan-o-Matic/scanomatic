@@ -6,12 +6,23 @@ export default class StateBuilder {
     settings: Settings;
 
     constructor() {
-        this.plate = { number: 1 };
+        this.plate = { number: 0 };
         this.settings = {};
+    }
+
+    setProject(project: string) {
+        this.settings = { project };
+        this.plate = { number: 0 };
+        return this;
     }
 
     setPlate(plate: number) {
         this.plate = { number: plate };
+        return this;
+    }
+
+    setPinning(rows: number, cols: number) {
+        this.plate = Object.assign({}, this.plate, { pinning: { rows, cols } });
         return this;
     }
 
@@ -24,6 +35,12 @@ export default class StateBuilder {
     setSmoothCurveData(plate: number, row: number, col: number, data: TimeSeries) {
         if (plate !== this.plate.number) return this;
         this.plate.smooth = getUpdated2DArrayCopy(this.plate.smooth, row, col, data);
+        return this;
+    }
+
+    setTimes(plate: number, times: TimeSeries) {
+        if (plate !== this.plate.number) return this;
+        this.plate.times = times;
         return this;
     }
 
