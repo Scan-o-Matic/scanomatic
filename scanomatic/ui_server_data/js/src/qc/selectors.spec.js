@@ -12,9 +12,16 @@ describe('/qc/selectors', () => {
         expect(selectors.getPlate(state)).toEqual(2);
     });
 
-    it('should get the pinning', () => {
-        const state = new StateBuilder().setPinning(2, 1).build();
-        expect(selectors.getPinning(state)).toEqual({ rows: 2, cols: 1 });
+    describe('pinning', () => {
+        it('should get the pinning if plate is right', () => {
+            const state = new StateBuilder().setPinning(2, 1).build();
+            expect(selectors.getPinning(state, 0)).toEqual({ rows: 2, cols: 1 });
+        });
+
+        it('should return null if plate is wrong', () => {
+            const state = new StateBuilder().setPinning(2, 1).build();
+            expect(selectors.getPinning(state, 1)).toEqual(null);
+        });
     });
 
     describe('raw data', () => {
@@ -60,9 +67,14 @@ describe('/qc/selectors', () => {
     });
 
     describe('times', () => {
-        it('should get the times of the growth curve', () => {
+        it('should get the times of the growth curve if plate is right', () => {
             const state = new StateBuilder().setTimes(0, [1, 2, 3]);
-            expect(selectors.getTimes(state)).toEqual([1, 2, 3]);
+            expect(selectors.getTimes(state, 0)).toEqual([1, 2, 3]);
+        });
+
+        it('should return null if plate is wrong', () => {
+            const state = new StateBuilder().setTimes(0, [1, 2, 3]);
+            expect(selectors.getTimes(state, 1)).toEqual(null);
         });
     });
 });

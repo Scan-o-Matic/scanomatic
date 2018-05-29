@@ -1,8 +1,8 @@
 // @flow
-import { TimeSeries, PlateOfTimeSeries } from './state';
+import type { TimeSeries, PlateOfTimeSeries } from './state';
 
 export const getUpdated2DArrayCopy = (
-    old: PlateOfTimeSeries,
+    old: ?PlateOfTimeSeries,
     row: number,
     col: number,
     data: TimeSeries,

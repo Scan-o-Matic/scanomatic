@@ -7,32 +7,33 @@ import {
     getRawCurve, getSmoothCurve, getTimes, getPlate,
 } from './selectors';
 
-import type { Action } from './actions';
+import type { Action, ThunkAction } from './actions';
 import type { State, TimeSeries, Pinning } from './state';
 
 type Store = {
-    +dispatch: Action => any,
+    +dispatch: (Action | ThunkAction) => any,
     +getState: () => State,
     +subscribe: (() => any) => any,
 }
-export class Selectors {
+
+class Selectors {
     store : Store
 
     constructor(store : Store) {
         this.store = store;
     }
 
-    getRawCurve(plate: number, row : number, col : number) : TimeSeries {
+    getRawCurve(plate: number, row : number, col : number) : ?TimeSeries {
         const state = this.store.getState();
         return getRawCurve(state, plate, row, col);
     }
 
-    getSmoothCurve(plate: Number, row : Number, col : Number) : TimeSeries {
+    getSmoothCurve(plate: number, row : number, col : number) : ?TimeSeries {
         const state = this.store.getState();
         return getSmoothCurve(state, plate, row, col);
     }
 
-    getTimes(plate: number) : TimeSeries {
+    getTimes(plate: number) : ?TimeSeries {
         const state = this.store.getState();
         return getTimes(state, plate);
     }
@@ -43,7 +44,7 @@ export class Selectors {
     }
 }
 
-export class Actions {
+class Actions {
     store: Store;
 
     constructor(store : Store) {
@@ -64,8 +65,8 @@ export class Actions {
 
     retrievePlateCurves(plate: ?number = null, pinning: ?Pinning = null) {
         if (plate != null) {
-            this.store.dispatch(setPlate(plate));
-            if (pinning != null) this.store.dispatch(setPinning(plate, pinning.rows, pinning.cols));
+            this.setPlate(plate);
+            if (pinning != null) this.setPinning(plate, pinning.rows, pinning.cols);
         }
         this.store.dispatch(retrievePlateCurves());
     }

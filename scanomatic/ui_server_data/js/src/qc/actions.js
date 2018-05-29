@@ -53,7 +53,7 @@ export function setSmoothCurveData(
     };
 }
 
-type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
+export type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
 
 // Limit on FF and Chrome (IE has more, but who cares?)
 const MAX_CONCURRENT_CONNECTIONS = 6;
@@ -63,8 +63,11 @@ export function retrievePlateCurves() : ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
         const project = getProject(state);
+        if (project == null) {
+            throw new Error('Cannot retrieve curves if project not set');
+        }
         const plate = getPlate(state);
-        const { rows, cols } = getPinning(state) || { rows: 0, cols: 0 };
+        const { rows, cols } = getPinning(state, plate) || { rows: 0, cols: 0 };
         let row = 0;
         let col = -1; // It will be increased to 0 on first poll
         let pending = 0;

@@ -4,7 +4,7 @@ export type TimeSeries = Array<number>;
 export type PlateOfTimeSeries = Array<Array<TimeSeries>>;
 
 export type Settings = {
-    +project: string,
+    +project?: string,
 }
 
 export type Pinning = {
@@ -13,10 +13,11 @@ export type Pinning = {
 }
 
 export type Plate = {
-    +number: Number,
-    +raw: PlateOfTimeSeries,
-    +smooth: PlateOfTimeSeries,
-    +pinning: Pinning,
+    +number: number,
+    +raw?: PlateOfTimeSeries,
+    +smooth?: PlateOfTimeSeries,
+    +pinning?: Pinning,
+    +times?: TimeSeries,
 }
 
 export type State = {

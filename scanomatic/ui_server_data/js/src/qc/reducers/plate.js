@@ -9,7 +9,7 @@ export default function plate(state: State = initialState, action: Action) {
     case 'PROJECT_SET':
         return initialState;
     case 'PLATE_SET':
-        return Object.assign({}, state, { number: action.plate });
+        return { number: action.plate };
     case 'CURVE_RAW_SET': {
         if (action.plate !== state.number) return state;
         const raw = getUpdated2DArrayCopy(state.raw, action.row, action.col, action.data);
