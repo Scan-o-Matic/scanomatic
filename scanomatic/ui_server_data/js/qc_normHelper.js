@@ -108,6 +108,7 @@ function getLock(callback) {
 
 function fillProjectDetails(projectDetails) {
     console.log("Project details:" + projectDetails.project);
+    window.qc.actions.setProject(projectDetails.project);
     $("#spProject_name").text(projectDetails.project_name);
     $("#spProject").text(projectDetails.project);
     $("#spExtraction_date").text(projectDetails.extraction_date);
@@ -449,6 +450,7 @@ function showGrid() {
 function renderPlate(phenotypePlates) {
     const path = phenotypePlates.url;
     const plateIdx = phenotypePlates.index;
+    window.qc.actions.setPlate(parseInt(plateIdx, 10));
     const project = $('#spProject').text();
     console.log(`experiment: ${path}`);
     $('#currentSelection').data('plateIdx', plateIdx);
@@ -488,7 +490,14 @@ function renderPlate(phenotypePlates) {
             $('#currentSelection').data('col', col);
             $('#currentSelection').data('phenotype', datah.phenotype);
             $('#currentSelection').data('project', $('#spProject').text());
-                // e.g. /api/results/curves/1/31/0/Martin_wt1/analysis
+            const pos = {
+                plate: parseInt(plateIdx, 10),
+                row: parseInt(row, 10),
+                col: parseInt(col, 10),
+            };
+            DrawCurves('#graph', pos, datah.metaDataGt, datah.metaDataGtWhen, datah.metaDataYield);
+            // e.g. /api/results/curves/1/31/0/Martin_wt1/analysis
+            /*
             const expPath = `/api/results/curves/${plateIdx}/${row}/${col}/${project}`;
             console.log(`curve path:${expPath}`);
             const lockKey = getLock_key();
@@ -496,6 +505,7 @@ function renderPlate(phenotypePlates) {
                 $('#graph').empty();
                 DrawCurves('#graph', gData, datah.metaDataGt, datah.metaDataGtWhen, datah.metaDataYield);
             });
+            */
         });
     });
 }
