@@ -11,7 +11,7 @@ import time
 import uuid
 
 from dateutil import tz
-from flask import Flask, jsonify, request, send_from_directory, Blueprint
+from flask import jsonify, request, send_from_directory, Blueprint
 from werkzeug.datastructures import FileStorage
 
 from scanomatic.data_processing import phenotyper
