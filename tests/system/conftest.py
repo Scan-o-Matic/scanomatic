@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 
 import os
+import shutil
+import uuid
 
 import py.path
 import pytest
@@ -10,7 +12,15 @@ from selenium.common.exceptions import WebDriverException
 
 
 @pytest.fixture(scope='session')
-def docker_compose_file(pytestconfig):
+def docker_mounts_preparation():
+    path = os.path.join('/', 'tmp', 'som-analysis-testdata')
+    os.makedirs(path)
+    yield
+    shutil.rmtree(path)
+
+
+@pytest.fixture(scope='session')
+def docker_compose_file(docker_mounts_preparation, pytestconfig):
     return [
         pytestconfig.rootdir.join('docker-compose.yml'),
         py.path.local(__file__).dirpath().join('docker-compose.override.yml'),
@@ -120,3 +130,13 @@ def pytest_runtest_makereport(item, call):
     # set an report attribute for each phase of a call, which can
     # be "setup", "call", "teardown"
     setattr(item, "{}_result".format(result.when), result)
+
+
+@pytest.fixture(scope='function')
+def experiment_only_analysis():
+    project = str(uuid.uuid4()).replace('-', '')
+    shutil.copytree(
+        os.path.join(os.path.dirname(__file__), 'data', 'analysis'),
+        os.path.join('/', 'tmp', 'som-analysis-testdata', project, 'analysis'),
+    )
+    return ['experiments_only_analysis', project, 'analysis']
