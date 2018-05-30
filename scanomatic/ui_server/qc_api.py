@@ -15,7 +15,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from werkzeug.datastructures import FileStorage
 
 from scanomatic.data_processing import phenotyper
-from scanomatic.data_processing import analysis
+from scanomatic.data_processing import analysis_loader
 from scanomatic.data_processing.norm import Offsets, infer_offset
 from scanomatic.data_processing.phenotypes import (
     PhenotypeDataType, get_sort_order, infer_phenotype_from_name
@@ -1512,33 +1512,32 @@ def add_routes(app):
 
     @app.route("/api/results/growthcurves/<int:plate>/<path:project>")
     def get_plate_curves_and_time(plate, project):
+        loader = analysis_loader.AnalysisLoader(project)
         try:
-            times_data = analysis.get_times(project)
-        except analysis.CorruptAnalysisError:
+            times_data = loader.times
+        except analysis_loader.CorruptAnalysisError:
             return json_abort(
                 400,
                 reason="Could not locate scan times.",
             )
-        try:
-            raw_data = analysis.get_raw_curves(project, plate)
-        except analysis.CorruptAnalysisError:
-            return json_abort(
-                400,
-                reason="Could not locate raw growth curves for plate.",
-            )
 
         try:
-            smooth_data = analysis.get_smooth_curves(project, plate)
-        except analysis.CorruptAnalysisError:
+            plate_data = loader.get_plate_data(plate)
+        except analysis_loader.CorruptAnalysisError:
             return json_abort(
                 400,
-                reason="Could not locate smooth growth curves for plate.",
+                reason="Could not locate growth curves data files.",
+            )
+        except analysis_loader.PlateNotFoundError:
+            return json_abort(
+                400,
+                reason='Plate not part of experiment.'
             )
 
         return jsonify(
             times_data=times_data.tolist(),
-            raw_data=raw_data.tolist(),
-            smooth_data=smooth_data.tolist(),
+            raw_data=plate_data.raw.tolist(),
+            smooth_data=plate_data.smooth.tolist(),
         )
 
     # End of UI extension with qc-functionality
