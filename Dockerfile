@@ -31,6 +31,7 @@ COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/ccc.js /tmp/scanomatic/
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/scanning.js /tmp/scanomatic/ui_server_data/js/scanning.js
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/projects.js /tmp/scanomatic/ui_server_data/js/projects.js
 COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/statuspage.js /tmp/scanomatic/ui_server_data/js/statuspage.js
+COPY --from=npmbuilder /src/scanomatic/ui_server_data/js/qc.js /tmp/scanomatic/ui_server_data/js/qc.js
 RUN cd /tmp && python setup.py install
 
 COPY scripts/entrypoint.sh /entrypoint.sh
