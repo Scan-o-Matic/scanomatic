@@ -11,7 +11,7 @@ import time
 import uuid
 
 from dateutil import tz
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, Blueprint
 from werkzeug.datastructures import FileStorage
 
 from scanomatic.data_processing import phenotyper
@@ -33,6 +33,41 @@ FILM_TYPES = {'colony': 'animate_colony_growth("{save_target}", {pos}, "{path}")
               'detection': 'animate_blob_detection("{save_target}", {pos}, "{path}")',
               '3d': 'animate_3d_colony("{save_target}", {pos}, "{path}")'}
 
+blueprint = Blueprint('qc_api', __name__)
+
+
+@blueprint.route(
+    "/growthcurves/<int:plate>/<path:project>",
+    methods=['GET'],
+)
+def get_plate_curves_and_time(plate, project):
+    loader = analysis_loader.AnalysisLoader(project)
+    try:
+        times_data = loader.times
+    except analysis_loader.CorruptAnalysisError:
+        return json_abort(
+            400,
+            reason="Could not locate scan times.",
+        )
+
+    try:
+        plate_data = loader.get_plate_data(plate)
+    except analysis_loader.CorruptAnalysisError:
+        return json_abort(
+            400,
+            reason="Could not locate growth curves data files.",
+        )
+    except analysis_loader.PlateNotFoundError:
+        return json_abort(
+            400,
+            reason='Plate not part of experiment.'
+        )
+
+    return jsonify(
+        times_data=times_data.tolist(),
+        raw_data=plate_data.raw.tolist(),
+        smooth_data=plate_data.smooth.tolist(),
+    )
 
 class LockState(Enum):
 
@@ -1509,36 +1544,6 @@ def add_routes(app):
                     reason="Saving phenotypes failed for some unknown reason"
                 ),
                 success=False))
-
-    @app.route("/api/results/growthcurves/<int:plate>/<path:project>")
-    def get_plate_curves_and_time(plate, project):
-        loader = analysis_loader.AnalysisLoader(project)
-        try:
-            times_data = loader.times
-        except analysis_loader.CorruptAnalysisError:
-            return json_abort(
-                400,
-                reason="Could not locate scan times.",
-            )
-
-        try:
-            plate_data = loader.get_plate_data(plate)
-        except analysis_loader.CorruptAnalysisError:
-            return json_abort(
-                400,
-                reason="Could not locate growth curves data files.",
-            )
-        except analysis_loader.PlateNotFoundError:
-            return json_abort(
-                400,
-                reason='Plate not part of experiment.'
-            )
-
-        return jsonify(
-            times_data=times_data.tolist(),
-            raw_data=plate_data.raw.tolist(),
-            smooth_data=plate_data.smooth.tolist(),
-        )
 
     # End of UI extension with qc-functionality
     return True
