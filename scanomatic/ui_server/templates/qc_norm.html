@@ -77,10 +77,13 @@
 
               $("#divLockRemoving").hide();
               $("#ckMarkExperiments").change(function () {
-                  $("#divMarkStates").toggle();
-                  $("#qidxHint").toggle();
                   if (this.checked) {
+                      $("#divMarkStates").show();
+                      $("#qidxHint").show();
                       setExperimentByQidx(qIdxOperations.Current);
+                  } else {
+                      $("#divMarkStates").hide();
+                      $("#qidxHint").hide();
                   }
               });
               $("#ckNormalized").change(function () {
@@ -91,9 +94,6 @@
                       $("#" + selRunNormPhenotypesName).change();
                       drawPhenotypePlatesSelection();
                   }
-              });
-              $("#inMarkArea").change(function () {
-                  allowMarking = this.checked;
               });
               $("#btnNormalizeProject").click(function () {
                   if (confirm("This will overwrite any previous normalization data, are you sure?")) {
@@ -135,11 +135,14 @@
               $("#btnRefreshKey").click(function () {
                   getLock(function () { });
               });
-              $("#btnMarkOK").click(function () {
+              $("#btnMarkOKOne").click(function () {
                   markExperiemnt(plateMetaDataType.OK, false);
               });
+              $("#btnMarkOK").click(function () {
+                  markExperiemnt(plateMetaDataType.OK, true);
+              });
               $("#btnMarkBad").click(function () {
-                  markExperiemnt(plateMetaDataType.BadData, false);
+                  markExperiemnt(plateMetaDataType.BadData, true);
               });
               $("#btnMarkEmpty").click(function () {
                   markExperiemnt(plateMetaDataType.Empty, true);
@@ -157,10 +160,13 @@
                   var char = getChar(event).toLowerCase();
                   switch (char) {
                       case 'q':
+                          markExperiemnt(plateMetaDataType.OK, true);
+                          break;
+                      case 'a':
                           markExperiemnt(plateMetaDataType.OK, false);
                           break;
                       case 'w':
-                          markExperiemnt(plateMetaDataType.BadData, false);
+                          markExperiemnt(plateMetaDataType.BadData, true);
                           break;
                       case 'e':
                           markExperiemnt(plateMetaDataType.Empty, true);
@@ -327,28 +333,25 @@
                       </div>
                   </div>
                   <div class="row">
-                      <div class="col-md-4">
-                          <div>
-                              Mark experiments
-                              <input id="ckMarkExperiments" type="checkbox" data-toggle="toggle" data-size="mini"/>
-                          </div>
-                      </div>
-                      <div id="divMarkStates" class="col-md-8">
+                      <div class="col-md-12">
+                        <span class="mark-experiments-toggle">
+                          Mark experiments
+                          <input id="ckMarkExperiments" type="checkbox" data-toggle="toggle" data-size="mini"/>
+                        </span>
+                        <span id="divMarkStates" class="mark-experiments-action-group">
                           <div id="currentSelection"></div>
-                          <span class="vcenter" style="padding-right: 8px;visibility:collapse">
-                              Area selection
-                              <input class="vcenter" id="inMarkArea" type="checkbox" />
-                          </span>
-                          <button id="btnMarkOK" class="markButton vcenter" title="Mark with metadata: OK [hotkey: q]"></button>
-                          <button id="btnMarkBad" class="markButton vcenter" title="Mark with metadata: Bad [hotkey: w]"></button>
-                          <button id="btnMarkEmpty" class="markButton vcenter" title="Mark with metadata: Empty [hotkey: e]"></button>
-                          <button id="btnMarkNoGrowth" class="markButton vcenter" title="Mark with metadata: NoGrowth [hotkey: r]"></button>
+                          <button id="btnMarkOK" class="markButton vcenter" title="Mark all phenotypes as OK [hotkey: q]"></button>
+                          <button id="btnMarkOKOne" class="markButton vcenter" title="Mark this phenotype as OK [hotkey: a]"></button>
+                          <button id="btnMarkBad" class="markButton vcenter" title="Mark all phenotypes as Bad [hotkey: w]"></button>
+                          <button id="btnMarkEmpty" class="markButton vcenter" title="Mark all phenotypes as Empty [hotkey: e]"></button>
+                          <button id="btnMarkNoGrowth" class="markButton vcenter" title="Mark all phenotypes as NoGrowth [hotkey: r]"></button>
                           <button id="btnQidxNext" style="margin-left:10px" class="btn btn-default btn-xs" title="Next in Qidx position [hotkey: <right>/<up>]">
                               <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
                           </button>
                           <button id="btnQidxPrev" class="btn btn-default btn-xs" title="Back in Qidx position [hotkey: <left>/<down>]">
                               <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
                           </button>
+                        </span>
                       </div>
                   </div>
                   <div class="row">
