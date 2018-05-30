@@ -336,7 +336,6 @@ function GetReferenceOffsets(callback) {
             }
             callback(offsets);
         }
-        return console.warn(error);
     });
 };
 

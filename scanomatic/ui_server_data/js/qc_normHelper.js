@@ -171,18 +171,15 @@ function setExperimentByCoord(row, col) {
 }
 
 function isQualityControlOn() {
-    var on = $("#divMarkStates").is(':visible');
-    return on;
+    return $('#ckMarkExperiments').is(':checked');
 }
 
 function getQIndexCoord(operation) {
-    qIndexCurrent = qIndexCurrent + operation;
-    var maxQueueSize = qIndexQueue.length - 1;
-    if (qIndexCurrent < 0)
-        qIndexCurrent = maxQueueSize;
-    if (qIndexCurrent > maxQueueSize)
-        qIndexCurrent = 0;
-    var item = qIndexQueue[qIndexCurrent];
+    qIndexCurrent += operation;
+    const maxQueueSize = qIndexQueue.length - 1;
+    if (qIndexCurrent < 0) { qIndexCurrent = maxQueueSize; }
+    if (qIndexCurrent > maxQueueSize) { qIndexCurrent = 0; }
+    const item = qIndexQueue[qIndexCurrent];
     return item;
 }
 
@@ -215,7 +212,7 @@ function isPlateAllNull(plateData) {
     return true;
 }
 
-function createMarkButton(buttonId, type) {
+function createMarkButton(buttonId, type, oneOnly) {
     const btn = d3.select(buttonId)
         .append('svg')
         .attr({
@@ -231,10 +228,14 @@ function createMarkButton(buttonId, type) {
             width: 25,
             height: 25,
         });
+    if (oneOnly) {
+        $(buttonId).append('<div class="mark-this-phenotype">1</div>');
+    }
 }
 
 function createMarkButtons() {
     createMarkButton('#btnMarkOK', plateMetaDataType.OK);
+    createMarkButton('#btnMarkOKOne', plateMetaDataType.OK, true);
     createMarkButton('#btnMarkBad', plateMetaDataType.BadData);
     createMarkButton('#btnMarkEmpty', plateMetaDataType.Empty);
     createMarkButton('#btnMarkNoGrowth', plateMetaDataType.NoGrowth);
@@ -248,8 +249,6 @@ function projectSelectionStage(level) {
         $('.loPhenotypeSelection').hide();
         $('.loPlateSelection').hide();
         $('#tbProjectDetails').hide();
-        $('#divMarkStates').hide();
-        $('#qidxHint').hide();
 
         break;
     case 'Phenotypes':
@@ -374,6 +373,7 @@ function drawRunPhenotypeSelection(path) {
         options.text(d => d.name);
         selPhen.on('change', drawPhenotypePlatesSelection);
         $(`#${selRunPhenotypesName}`).selectedIndex = 0;
+        drawPhenotypePlatesSelection();
     });
 }
 
@@ -393,6 +393,7 @@ function drawRunNormalizedPhenotypeSelection(path) {
         options.text(d => d.name);
         selPhen.on('change', drawPhenotypePlatesSelection);
         $(`#${selRunNormPhenotypesName}`).toggle();
+        drawPhenotypePlatesSelection();
     });
 }
 
