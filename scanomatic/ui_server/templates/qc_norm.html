@@ -149,6 +149,9 @@
               $("#btnMarkNoGrowth").click(function () {
                   markExperiemnt(plateMetaDataType.NoGrowth, true);
               });
+              $("#btnQidxReset").click(function () {
+                  setExperimentByQidx(qIdxOperations.Reset);
+              });
               $("#btnQidxNext").click(function () {
                   setExperimentByQidx(qIdxOperations.Next);
               });
@@ -194,6 +197,9 @@
               $(document).keydown(function (e) {
                   if (!isQualityControlOn()) return;
                   switch (e.which) {
+                      case 36: // home
+                          setExperimentByQidx(qIdxOperations.Reset);
+                          break;
                       case 37: // left
                       case 40: // down
                           setExperimentByQidx(qIdxOperations.Prev);
@@ -344,7 +350,7 @@
                           <button id="btnMarkBad" class="markButton vcenter" title="Mark all phenotypes as Bad [hotkey: w]"></button>
                           <button id="btnMarkEmpty" class="markButton vcenter" title="Mark all phenotypes as Empty [hotkey: e]"></button>
                           <button id="btnMarkNoGrowth" class="markButton vcenter" title="Mark all phenotypes as NoGrowth [hotkey: r]"></button>
-                          <button id="btnQidxZero" style="margin-left:10px" class="btn btn-default btn-xs" title="Go to first Qidx [hotkey: 0]">
+                          <button id="btnQidxReset" style="margin-left:10px" class="btn btn-default btn-xs" title="Go to first Qidx [hotkey: <home>]">
                               <span class="glyphicon glyphicon-asterisk" aria-hidden="true"></span>
                           </button>
                           <button id="btnQidxPrev" class="btn btn-default btn-xs" title="Back in Qidx position [hotkey: <left>/<down>]">

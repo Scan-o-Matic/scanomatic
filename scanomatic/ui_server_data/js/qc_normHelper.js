@@ -10,6 +10,7 @@ const qIdxOperations = {
     Current: 0,
     Prev: -1,
     Next: 1,
+    Reset: '',
 };
 
 function initSpinner() {
@@ -161,9 +162,9 @@ function fillProjectDetails(projectDetails) {
 }
 
 function setExperimentByQidx(operation) {
-    var queue = getQIndexCoord(operation);
-    var row = queue.row;
-    var col = queue.col;
+    const queueCurrent = getQIndexCoord(operation);
+    const row = queueCurrent.row;
+    const col = queueCurrent.col;
     dispatch.setExp("id" + row + "_" + col);
 }
 
@@ -180,16 +181,21 @@ function updateQIndexLabel(qIndex) {
 }
 
 function getQIndexCoord(operation) {
-    qIndexCurrent += operation;
-    const qIndexMax = qIndexQueue.length - 1;
-    if (qIndexCurrent < 0) {
-        qIndexCurrent = qIndexMax;
-    } else if (qIndexCurrent > qIndexMax) {
+    if (operation === qIdxOperations.Reset) {
         qIndexCurrent = 0;
+    } else {
+        qIndexCurrent += operation;
+
+        const qIndexMax = qIndexQueue.length - 1;
+        if (qIndexCurrent < 0) {
+            qIndexCurrent = qIndexMax;
+        } else if (qIndexCurrent > qIndexMax) {
+            qIndexCurrent = 0;
+        };
     };
-    const item = qIndexQueue[qIndexCurrent];
+
     updateQIndexLabel(qIndexCurrent);
-    return item;
+    return qIndexQueue[qIndexCurrent];
 }
 
 function getChar(event) {
@@ -289,7 +295,11 @@ function markExperiemnt(mark, all) {
         if (gData.success === true) {
             dispatch.reDrawExp(`id${row}_${col}`, mark);
             const queueCurrent = getQIndexCoord(qIdxOperations.Current);
-            if (queueCurrent.row == row && queueCurrent.col == col) { setExperimentByQidx(qIdxOperations.Next); } else { setExperimentByQidx(qIdxOperations.Current); }
+            if (queueCurrent.row == row && queueCurrent.col == col) {
+                setExperimentByQidx(qIdxOperations.Next);
+            } else {
+                setExperimentByQidx(qIdxOperations.Current);
+            }
         } else { alert(`${gData.success} : ${gData.reason}`); }
         stopWait();
     });
