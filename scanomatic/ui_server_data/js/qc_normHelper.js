@@ -25,7 +25,7 @@ function initSpinner() {
         className: 'spinner', // The CSS class to assign to the spinner
     }).spin(spinTarget);
 }
-﻿
+
 function getUrlParameter(sParam) {
     var sPageUrl = decodeURIComponent(window.location.search.substring(1));
     var sUrlVariables = sPageUrl.split('&');
