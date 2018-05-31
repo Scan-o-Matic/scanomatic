@@ -165,11 +165,11 @@ function setExperimentByQidx(operation) {
     const queueCurrent = getQIndexCoord(operation);
     const row = queueCurrent.row;
     const col = queueCurrent.col;
-    dispatch.setExp("id" + row + "_" + col);
+    dispatch.setExp(`id${row}_${col}`);
 }
 
 function setExperimentByCoord(row, col) {
-    dispatch.setExp("id" + row + "_" + col);
+    dispatch.setExp(`id${row}_${col}`);
 }
 
 function isQualityControlOn() {
@@ -177,7 +177,7 @@ function isQualityControlOn() {
 }
 
 function updateQIndexLabel(qIndex) {
-    $("#qIndexCurrent").text(qIndex + 1);
+    $('#qIndexCurrent').text(qIndex + 1);
 }
 
 function getQIndexCoord(operation) {
@@ -191,8 +191,8 @@ function getQIndexCoord(operation) {
             qIndexCurrent = qIndexMax;
         } else if (qIndexCurrent > qIndexMax) {
             qIndexCurrent = 0;
-        };
-    };
+        }
+    }
 
     updateQIndexLabel(qIndexCurrent);
     return qIndexQueue[qIndexCurrent];
