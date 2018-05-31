@@ -136,7 +136,12 @@ def pytest_runtest_makereport(item, call):
 def experiment_only_analysis():
     project = str(uuid.uuid4()).replace('-', '')
     shutil.copytree(
-        os.path.join(os.path.dirname(__file__), 'data', 'analysis'),
+        os.path.join(
+            os.path.dirname(__file__),
+            os.pardir,
+            'fixtures',
+            'analysis',
+        ),
         os.path.join('/', 'tmp', 'som-analysis-testdata', project, 'analysis'),
     )
     return ['experiments_only_analysis', project, 'analysis']

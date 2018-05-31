@@ -55,6 +55,9 @@ def create_app():
         scanners_api.blueprint, url_prefix="/api/scanners"
     )
     app.register_blueprint(scans_api.blueprint, url_prefix="/api/scans")
+    app.register_blueprint(
+        qc_api.blueprint, url_prefix="/api/results",
+    )
     return app
 
 
