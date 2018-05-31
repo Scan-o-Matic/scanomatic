@@ -65,4 +65,15 @@ describe('/qc/actions', () => {
                 });
         });
     });
+
+    describe('focusCurve', () => {
+        it('should return a CURVE_FOCUS action', () => {
+            expect(actions.focusCurve(0, 1, 2)).toEqual({
+                type: 'CURVE_FOCUS',
+                plate: 0,
+                row: 1,
+                col: 2,
+            });
+        });
+    });
 });

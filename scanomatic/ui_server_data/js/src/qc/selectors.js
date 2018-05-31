@@ -1,6 +1,6 @@
 // @flow
 
-import type { State, TimeSeries, Pinning } from './state';
+import type { State, TimeSeries, Pinning, PlatePosition } from './state';
 
 export function getProject(state: State): ?string {
     return state.settings.project;
@@ -36,4 +36,8 @@ export function getSmoothCurve(state: State, plate: number, row: number, col: nu
     const { smooth, number: plateNumber } = state.plate;
     if (!smooth || plate !== plateNumber) return null;
     return smooth[row][col];
+}
+
+export function getFocus(state: State) : ?PlatePosition {
+    return state.plate.focus;
 }

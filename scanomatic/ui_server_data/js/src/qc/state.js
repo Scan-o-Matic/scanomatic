@@ -12,12 +12,18 @@ export type Pinning = {
     +cols: number,
 }
 
+export type PlatePosition = {
+    +row: number,
+    +col: number,
+}
+
 export type Plate = {
     +number: number,
     +raw?: PlateOfTimeSeries,
     +smooth?: PlateOfTimeSeries,
     +pinning?: Pinning,
     +times?: TimeSeries,
+    +focus?: PlatePosition,
 }
 
 export type State = {

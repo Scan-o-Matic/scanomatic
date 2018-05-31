@@ -10,6 +10,7 @@ export type Action
     | {| type: 'CURVE_SMOOTH_SET', plate: number, row: number, col: number, data: TimeSeries |}
     | {| type: 'PINNING_SET', plate: number, rows: number, cols: number |}
     | {| type: 'TIMES_SET', times: TimeSeries, plate: number |}
+    | {| type: 'CURVE_FOCUS', plate: number, row: number, col: number |}
 
 export function setPlate(plate : number) : Action {
     return { type: 'PLATE_SET', plate };
@@ -50,6 +51,16 @@ export function setSmoothCurveData(
 ) : Action {
     return {
         type: 'CURVE_SMOOTH_SET', plate, row, col, data,
+    };
+}
+
+export function focusCurve(
+    plate: number,
+    row: number,
+    col: number,
+) : Action {
+    return {
+        type: 'CURVE_FOCUS', plate, row, col,
     };
 }
 

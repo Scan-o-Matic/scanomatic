@@ -75,6 +75,30 @@ describe('/qc/reducers/plate', () => {
         });
     });
 
+    describe('CURVE_FOCUS', () => {
+        it('sets curve focus', () => {
+            const action = {
+                type: 'CURVE_FOCUS', plate: 0, row: 1, col: 2,
+            };
+            expect(plate(undefined, action)).toEqual({
+                number: 0,
+                focus: {
+                    row: 1,
+                    col: 2,
+                },
+            });
+        });
+
+        it('doesnt do a thing if wrong plate', () => {
+            const action = {
+                type: 'CURVE_FOCUS', plate: 2, row: 1, col: 2,
+            };
+            expect(plate(undefined, action)).toEqual({
+                number: 0,
+            });
+        });
+    });
+
     describe('PINNING_SET', () => {
         it('sets the pinning', () => {
             const action = {

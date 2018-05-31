@@ -24,6 +24,18 @@ describe('/qc/selectors', () => {
         });
     });
 
+    describe('focus', () => {
+        it('should return null if no focus', () => {
+            const state = new StateBuilder().build();
+            expect(selectors.getFocus(state)).toEqual(null);
+        });
+
+        it('should return the focused curve', () => {
+            const state = new StateBuilder().setFocus(0, 2, 1).build();
+            expect(selectors.getFocus(state)).toEqual(null);
+        });
+    });
+
     describe('hasStartedLoadingPlate', () => {
         it('should be false if pinning unknown', () => {
             const state = new StateBuilder().build();

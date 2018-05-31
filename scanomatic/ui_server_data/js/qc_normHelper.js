@@ -482,7 +482,6 @@ function renderPlate(phenotypePlates) {
         if (row && col) { setExperimentByCoord(row, col); }
         stopWait();
         plate.on('SelectedExperiment', (datah) => {
-            console.log(`dispatched:${datah.coord}`);
             const arr = datah.coord.split(',');
             const row = arr[0];
             const col = arr[1];
@@ -492,22 +491,11 @@ function renderPlate(phenotypePlates) {
             $('#currentSelection').data('col', col);
             $('#currentSelection').data('phenotype', datah.phenotype);
             $('#currentSelection').data('project', $('#spProject').text());
-            const pos = {
-                plate: parseInt(plateIdx, 10),
-                row: parseInt(row, 10),
-                col: parseInt(col, 10),
-            };
-            DrawCurves('#graph', pos, datah.metaDataGt, datah.metaDataGtWhen, datah.metaDataYield);
-            // e.g. /api/results/curves/1/31/0/Martin_wt1/analysis
-            /*
-            const expPath = `/api/results/curves/${plateIdx}/${row}/${col}/${project}`;
-            console.log(`curve path:${expPath}`);
-            const lockKey = getLock_key();
-            GetExperimentGrowthData(expPath, lockKey, (gData) => {
-                $('#graph').empty();
-                DrawCurves('#graph', gData, datah.metaDataGt, datah.metaDataGtWhen, datah.metaDataYield);
-            });
-            */
+            window.qc.actions.setFocus(
+                parseInt(plateIdx, 10),
+                parseInt(row, 10),
+                parseInt(col, 10),
+            );
         });
     });
 }

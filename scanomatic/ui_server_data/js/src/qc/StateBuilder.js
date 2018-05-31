@@ -26,6 +26,12 @@ export default class StateBuilder {
         return this;
     }
 
+    setFocus(plate: number, row: number, col: number) {
+        if (plate !== this.plate.number) return this;
+        this.plate.focus = { row, col };
+        return this;
+    }
+
     setRawCurveData(plate: number, row: number, col: number, data: TimeSeries) {
         if (plate !== this.plate.number) return this;
         this.plate.raw = getUpdated2DArrayCopy(this.plate.raw, row, col, data);

@@ -1,10 +1,10 @@
 // @flow
 
 import {
-    retrievePlateCurves, setProject, setPlate, setPinning,
+    retrievePlateCurves, setProject, setPlate, setPinning, focusCurve
 } from './actions';
 import {
-    getRawCurve, getSmoothCurve, getTimes, getPlate,
+    getRawCurve, getSmoothCurve, getTimes, getPlate, getFocus,
 } from './selectors';
 
 import type { Action, ThunkAction } from './actions';
@@ -42,6 +42,11 @@ class Selectors {
         const state = this.store.getState();
         return getPlate(state);
     }
+
+    getFocus() : number {
+        const state = this.store.getState();
+        return getFocus(state);
+    }
 }
 
 class Actions {
@@ -57,6 +62,10 @@ class Actions {
 
     setPlate(plate: number) {
         this.store.dispatch(setPlate(plate));
+    }
+
+    setFocus(plate: number, row: number, col: number) {
+        this.store.dispatch(focusCurve(plate, row, col));
     }
 
     setPinning(plate: number, rows: number, cols: number) {
