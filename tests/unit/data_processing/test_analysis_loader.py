@@ -63,7 +63,10 @@ class TestAnalysisLoader:
         loader = AnalysisLoader('test')
         plate = loader.get_plate_data(1)
         expect = [
-            28670.644118, 30694.83756341, 31778.23297606, 31825.43530291,
+            28670.644118,
+            30694.83756341,
+            31778.23297606,
+            31825.43530291,
             33754.40538746,
         ]
         assert plate.raw[3, 2, :5] == pytest.approx(expect)
