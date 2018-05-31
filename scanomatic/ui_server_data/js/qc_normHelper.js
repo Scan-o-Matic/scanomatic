@@ -450,9 +450,8 @@ function showGrid() {
 function renderPlate(phenotypePlates) {
     const path = phenotypePlates.url;
     const plateIdx = phenotypePlates.index;
-    window.qc.actions.setPlate(parseInt(plateIdx, 10));
     const project = $('#spProject').text();
-    console.log(`experiment: ${path}`);
+    console.log(`experiment: ${path}`, phenotypePlates);
     $('#currentSelection').data('plateIdx', plateIdx);
     $('#currentSelection').data('project', project);
     $('#spnPlateIdx').text((plateIdx + 1));
@@ -474,6 +473,9 @@ function renderPlate(phenotypePlates) {
         const growthMetaData = data.Growth_metaData;
         const phenotypeName = data.plate_phenotype;
         qIndexQueue = data.plate_qIdxSort;
+        const rows = plateData.length;
+        const cols = plateData[0].length;
+        window.qc.actions.retrievePlateCurves(parseInt(plateIdx, 10), { rows, cols });
         const plate = DrawPlate('#plate', plateData, growthMetaData, plateMetaData, phenotypeName, dispatch);
         const row = $('#currentSelection').data('row');
         const col = $('#currentSelection').data('col');

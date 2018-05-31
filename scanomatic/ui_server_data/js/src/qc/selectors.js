@@ -10,6 +10,12 @@ export function getPlate(state: State): number {
     return state.plate.number;
 }
 
+export function hasStartedLoadingPlate(state: State): boolean {
+    const { pinning, raw } = state.plate;
+    if (!pinning || !raw) return false;
+    return raw.length > 0;
+}
+
 export function getPinning(state: State, plate: number): ?Pinning {
     if (plate === state.plate.number) return state.plate.pinning;
     return null;

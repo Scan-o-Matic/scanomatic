@@ -7,7 +7,7 @@ function DrawCurves(container, pos, gt, gtWhen, yld) {
     var chartMargin = { top: chartMarginAll, right: chartMarginAll, bottom: chartMarginAll, left: chartMarginAll };
     var chartwidth = 350;
     var chartheight = 294;
-
+    d3.select(container).select('svg').remove();
     var chart = d3.select(container)
         .append("svg")
         .attr({
@@ -48,18 +48,17 @@ function DrawCurves(container, pos, gt, gtWhen, yld) {
                 .attr("class", "arrowHead");
 
     // chart
-    var gChart = d3.scanomatic.growthChart();
+    var gChart = d3.scanomatic.growthChart(pos);
     gChart.width(chartwidth);
     gChart.height(chartheight);
     gChart.margin(chartMargin);
     gChart.generationTimeWhen(gtWhen);
     gChart.generationTime(gt);
     gChart.growthYield(yld);
-    gChart.pos(pos);
     gChart(chart);
 }
 
-d3.scanomatic.growthChart = function () {
+d3.scanomatic.growthChart = function (pos) {
 
     //properties
     var margin;
@@ -68,8 +67,6 @@ d3.scanomatic.growthChart = function () {
     var generationTimeWhen;
     var generationTime;
     var growthYield;
-    let pos;
-
 
     //local variables
     var g;
@@ -85,14 +82,15 @@ d3.scanomatic.growthChart = function () {
     }
 
     chart.update = update;
-    window.qc.subscribe(chart.update);
 
     function update() {
         //data
         const { plate, row, col } = pos;
+        console.log('Update', plate, row, col);
         const time = window.qc.selectors.getTimes(plate);
         const serRaw = window.qc.selectors.getRawCurve(plate, row, col);
         const serSmooth = window.qc.selectors.getSmoothCurve(plate, row, col);
+        if (!serSmooth || !serRaw || !time) return;
         //chart
         var w = width - margin.left - margin.right;
         var h = height - margin.top - margin.bottom;
@@ -359,12 +357,7 @@ d3.scanomatic.growthChart = function () {
         return chart;
     }
 
-    chart.pos = (val) => {
-        if (!arguments.length) return pos;
-        pos = val;
-        return chart;
-    }
-
+    window.qc.subscribe(chart.update);
     return chart;
 
 }

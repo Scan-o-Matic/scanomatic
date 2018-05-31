@@ -9,6 +9,7 @@ export default function plate(state: State = initialState, action: Action) {
     case 'PROJECT_SET':
         return initialState;
     case 'PLATE_SET':
+        if (action.plate === state.number) return state;
         return { number: action.plate };
     case 'CURVE_RAW_SET': {
         if (action.plate !== state.number) return state;

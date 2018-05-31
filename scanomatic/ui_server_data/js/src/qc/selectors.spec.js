@@ -24,6 +24,26 @@ describe('/qc/selectors', () => {
         });
     });
 
+    describe('hasStartedLoadingPlate', () => {
+        it('should be false if pinning unknown', () => {
+            const state = new StateBuilder().build();
+            expect(selectors.hasStartedLoadingPlate(state)).toEqual(false);
+        });
+
+        it('should be false if no curve entered', () => {
+            const state = new StateBuilder().setPinning(2, 1).build();
+            expect(selectors.hasStartedLoadingPlate(state)).toEqual(false);
+        });
+
+        it('should be true if curve entered', () => {
+            const state = new StateBuilder()
+                .setPinning(2, 1)
+                .setRawCurveData(0, 0, 0, [1, 2])
+                .build();
+            expect(selectors.hasStartedLoadingPlate(state)).toEqual(true);
+        });
+    });
+
     describe('raw data', () => {
         it('should return null if curve is on wrong plate', () => {
             const state = new StateBuilder().build();

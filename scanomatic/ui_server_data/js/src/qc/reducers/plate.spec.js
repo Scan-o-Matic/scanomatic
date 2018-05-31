@@ -10,6 +10,19 @@ describe('/qc/reducers/plate', () => {
         expect(plate({ number: 4 }, action)).toEqual({ number: 0 });
     });
 
+    describe('PLATE_SET', () => {
+        it('sets the plate number and removes curves', () => {
+            const action = { type: 'PLATE_SET', plate: 3 };
+            expect(plate({ number: 2, raw: [[[1, 2]]] }, action)).toEqual({ number: 3 });
+        });
+
+        it('doesnt do a thing if trying to set current plate', () => {
+            const action = { type: 'PLATE_SET', plate: 3 };
+            expect(plate({ number: 3, raw: [[[1, 2]]] }, action))
+                .toEqual({ number: 3, raw: [[[1, 2]]] });
+        });
+    });
+
     describe('CURVE_RAW_SET', () => {
         it('sets raw curve data', () => {
             const action = {

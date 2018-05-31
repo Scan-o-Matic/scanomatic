@@ -1,5 +1,5 @@
 // @flow
-import { getProject, getPlate, getPinning } from './selectors';
+import { getProject, getPlate, getPinning, hasStartedLoadingPlate } from './selectors';
 import type { State, TimeSeries } from './state';
 import { getCurveData } from './api';
 
@@ -66,6 +66,8 @@ export function retrievePlateCurves() : ThunkAction {
         if (project == null) {
             throw new Error('Cannot retrieve curves if project not set');
         }
+        if (hasStartedLoadingPlate(getState())) return;
+
         const plate = getPlate(state);
         const { rows, cols } = getPinning(state, plate) || { rows: 0, cols: 0 };
         let row = 0;
