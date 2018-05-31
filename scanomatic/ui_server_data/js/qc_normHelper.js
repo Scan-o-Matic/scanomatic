@@ -473,9 +473,7 @@ function renderPlate(phenotypePlates) {
         const growthMetaData = data.Growth_metaData;
         const phenotypeName = data.plate_phenotype;
         qIndexQueue = data.plate_qIdxSort;
-        const rows = plateData.length;
-        const cols = plateData[0].length;
-        window.qc.actions.retrievePlateCurves(parseInt(plateIdx, 10), { rows, cols });
+        window.qc.actions.retrievePlateCurves(parseInt(plateIdx, 10));
         const plate = DrawPlate('#plate', plateData, growthMetaData, plateMetaData, phenotypeName, dispatch);
         const row = $('#currentSelection').data('row');
         const col = $('#currentSelection').data('col');

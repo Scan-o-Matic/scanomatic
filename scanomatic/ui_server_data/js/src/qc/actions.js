@@ -1,7 +1,7 @@
 // @flow
-import { getProject, getPlate, getPinning, hasStartedLoadingPlate } from './selectors';
-import type { State, TimeSeries } from './state';
-import { getCurveData } from './api';
+import { getProject, getPlate } from './selectors';
+import type { State, TimeSeries, PlateOfTimeSeries } from './state';
+import { getPlateGrowthData } from './api';
 
 export type Action
     = {| type: 'PLATE_SET', plate: number |}
@@ -11,6 +11,13 @@ export type Action
     | {| type: 'PINNING_SET', plate: number, rows: number, cols: number |}
     | {| type: 'TIMES_SET', times: TimeSeries, plate: number |}
     | {| type: 'CURVE_FOCUS', plate: number, row: number, col: number |}
+    | {|
+        type: 'PLATE_GROWTHDATA_SET',
+        plate: number,
+        times: TimeSeries,
+        smooth: PlateOfTimeSeries,
+        raw: PlateOfTimeSeries,
+    |}
 
 export function setPlate(plate : number) : Action {
     return { type: 'PLATE_SET', plate };
@@ -54,6 +61,21 @@ export function setSmoothCurveData(
     };
 }
 
+export function setPlateGrothData(
+    plate: number,
+    times: TimeSeries,
+    smooth: PlateOfTimeSeries,
+    raw: PlateOfTimeSeries,
+) : Action {
+    return {
+        type: 'PLATE_GROWTHDATA_SET',
+        plate,
+        times,
+        smooth,
+        raw,
+    };
+}
+
 export function focusCurve(
     plate: number,
     row: number,
@@ -67,8 +89,8 @@ export function focusCurve(
 export type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
 
 // Limit on FF and Chrome (IE has more, but who cares?)
-const MAX_CONCURRENT_CONNECTIONS = 6;
-const POLL_INTERVAL = 50;
+// const MAX_CONCURRENT_CONNECTIONS = 6;
+// const POLL_INTERVAL = 50;
 
 export function retrievePlateCurves() : ThunkAction {
     return (dispatch, getState) => {
@@ -77,9 +99,16 @@ export function retrievePlateCurves() : ThunkAction {
         if (project == null) {
             throw new Error('Cannot retrieve curves if project not set');
         }
-        if (hasStartedLoadingPlate(getState())) return;
-
         const plate = getPlate(state);
+        getPlateGrowthData(project, plate).then((r) => {
+            const { smooth, raw, times } = r;
+            dispatch(setPlateGrothData(plate, times, smooth, raw));
+            const rows = raw.length;
+            const cols = raw[0].length;
+            dispatch(setPinning(plate, rows, cols));
+        });
+
+        /*
         const { rows, cols } = getPinning(state, plate) || { rows: 0, cols: 0 };
         let row = 0;
         let col = -1; // It will be increased to 0 on first poll
@@ -121,5 +150,6 @@ export function retrievePlateCurves() : ThunkAction {
             setTimeout(poller, POLL_INTERVAL);
         };
         poller();
+        */
     };
 }
