@@ -11,10 +11,11 @@ import time
 import uuid
 
 from dateutil import tz
-from flask import Flask, jsonify, request, send_from_directory
+from flask import jsonify, request, send_from_directory, Blueprint
 from werkzeug.datastructures import FileStorage
 
 from scanomatic.data_processing import phenotyper
+from scanomatic.data_processing import analysis_loader
 from scanomatic.data_processing.norm import Offsets, infer_offset
 from scanomatic.data_processing.phenotypes import (
     PhenotypeDataType, get_sort_order, infer_phenotype_from_name
@@ -24,7 +25,7 @@ from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
 from scanomatic.ui_server.general import (
     convert_path_to_url, convert_url_to_path, get_project_name,
-    get_search_results, json_response, serve_zip_file
+    get_search_results, json_response, serve_zip_file, json_abort,
 )
 
 RESERVATION_TIME = 60 * 5
@@ -32,6 +33,41 @@ FILM_TYPES = {'colony': 'animate_colony_growth("{save_target}", {pos}, "{path}")
               'detection': 'animate_blob_detection("{save_target}", {pos}, "{path}")',
               '3d': 'animate_3d_colony("{save_target}", {pos}, "{path}")'}
 
+blueprint = Blueprint('qc_api', __name__)
+
+
+@blueprint.route(
+    "/growthcurves/<int:plate>/<path:project>",
+    methods=['GET'],
+)
+def get_plate_curves_and_time(plate, project):
+    loader = analysis_loader.AnalysisLoader(project)
+    try:
+        times_data = loader.times
+    except analysis_loader.CorruptAnalysisError:
+        return json_abort(
+            400,
+            reason="Could not locate scan times.",
+        )
+
+    try:
+        plate_data = loader.get_plate_data(plate)
+    except analysis_loader.CorruptAnalysisError:
+        return json_abort(
+            400,
+            reason="Could not locate growth curves data files.",
+        )
+    except analysis_loader.PlateNotFoundError:
+        return json_abort(
+            400,
+            reason='Plate not part of experiment.'
+        )
+
+    return jsonify(
+        times_data=times_data.tolist(),
+        raw_data=plate_data.raw.tolist(),
+        smooth_data=plate_data.smooth.tolist(),
+    )
 
 class LockState(Enum):
 

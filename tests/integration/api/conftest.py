@@ -9,7 +9,7 @@ import pytest
 from scanomatic.io.imagestore import ImageStore
 from scanomatic.models.scanner import Scanner
 from scanomatic.ui_server import (
-    calibration_api, scan_jobs_api, scanners_api, scans_api
+    calibration_api, scan_jobs_api, scanners_api, scans_api, qc_api,
 )
 import scanomatic.ui_server.database as db
 
@@ -21,6 +21,7 @@ def app(tmpdir, database):
     app.register_blueprint(scanners_api.blueprint, url_prefix="/scanners")
     app.register_blueprint(scan_jobs_api.blueprint, url_prefix="/scan-jobs")
     app.register_blueprint(scans_api.blueprint, url_prefix="/scans")
+    app.register_blueprint(qc_api.blueprint, url_prefix="/qc")
     app.register_blueprint(
         calibration_api.blueprint, url_prefix='/calibration')
     app.config['DATABASE_URL'] = database
