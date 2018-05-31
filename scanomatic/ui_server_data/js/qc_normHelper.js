@@ -156,6 +156,7 @@ function fillProjectDetails(projectDetails) {
         drawRunPhenotypeSelection(projectDetails.phenotype_names);
         drawRunNormalizedPhenotypeSelection(projectDetails.phenotype_normalized_names);
         drawReferenceOffsetSelecton();
+        updateQIndexLabel(qIndexCurrent);
     });
 }
 
@@ -174,12 +175,20 @@ function isQualityControlOn() {
     return $('#ckMarkExperiments').is(':checked');
 }
 
+function updateQIndexLabel(qIndex) {
+    $("#qIndexCurrent").text(qIndex + 1);
+}
+
 function getQIndexCoord(operation) {
     qIndexCurrent += operation;
-    const maxQueueSize = qIndexQueue.length - 1;
-    if (qIndexCurrent < 0) { qIndexCurrent = maxQueueSize; }
-    if (qIndexCurrent > maxQueueSize) { qIndexCurrent = 0; }
+    const qIndexMax = qIndexQueue.length - 1;
+    if (qIndexCurrent < 0) {
+        qIndexCurrent = qIndexMax;
+    } else if (qIndexCurrent > qIndexMax) {
+        qIndexCurrent = 0;
+    };
     const item = qIndexQueue[qIndexCurrent];
+    updateQIndexLabel(qIndexCurrent);
     return item;
 }
 
