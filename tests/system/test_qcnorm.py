@@ -1,6 +1,7 @@
 from urllib.parse import quote_plus
 from enum import Enum
 
+import pytest
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
@@ -8,6 +9,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
 CurveMark = Enum('CurveMark', ['OK', 'OK_THIS', 'BAD', 'EMPTY', 'NO_GROWTH'])
+Navigations = Enum('Navigations', ['NEXT', 'PREV', 'RESET'])
 
 
 class AnalysisNotFoundError(Exception):
@@ -183,6 +185,20 @@ class PlateDisplayArea(object):
             col,
         )
 
+    def get_qindex(self):
+        id = "#qIndexCurrent"
+        return self.elem.find_element(By.CSS_SELECTOR, id).text
+
+    def update_qindex(self, operation):
+        id = ''
+        if operation == Navigations.NEXT:
+            id = '#btnQidxNext'
+        elif operation == Navigations.PREV:
+            id = '#btnQidxPrev'
+        elif operation == Navigations.RESET:
+            id = '#btnQidxReset'
+        self.elem.find_element(By.CSS_SELECTOR, id).click()
+
 
 class PlatePosition(object):
     def __init__(self, elem, page, row, col):
@@ -304,3 +320,40 @@ class TestQCNormCurveMarking:
         page.set_phenotype('Generation Time')
         position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.BAD
+
+
+@pytest.fixture(scope='function')
+def plate_page(browser, scanomatic, experiment_only_analysis):
+    page = QCNormPagePreloadedProject(
+        browser,
+        scanomatic,
+        experiment_only_analysis,
+        experiment_only_analysis[-2],
+    )
+    return page.get_plate_display_area()
+
+
+class TestQCNormNavigateQidx:
+
+    def test_qindex_navigation(self, plate_page):
+        # Page starts at first Qindex:
+        assert plate_page.get_qindex() == "1"
+
+        # Pressing buttons works as expected:
+        plate_page.update_qindex(Navigations.NEXT)
+        assert plate_page.get_qindex() == "2"
+        plate_page.update_qindex(Navigations.PREV)
+        assert plate_page.get_qindex() == "1"
+
+        # Qindex wraps as expexted:
+        plate_page.update_qindex(Navigations.PREV)
+        assert plate_page.get_qindex() == "1536"
+        plate_page.update_qindex(Navigations.NEXT)
+        assert plate_page.get_qindex() == "1"
+
+        # Pressing reset goes back to first index:
+        plate_page.update_qindex(Navigations.NEXT)
+        plate_page.update_qindex(Navigations.NEXT)
+        assert plate_page.get_qindex() == "3"
+        plate_page.update_qindex(Navigations.RESET)
+        assert plate_page.get_qindex() == "1"

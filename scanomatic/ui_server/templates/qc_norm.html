@@ -149,11 +149,14 @@
               $("#btnMarkNoGrowth").click(function () {
                   markExperiemnt(plateMetaDataType.NoGrowth, true);
               });
+              $("#btnQidxReset").click(function () {
+                  setExperimentByQidx(qIdxOperations.Reset);
+              });
               $("#btnQidxNext").click(function () {
-                  setExperimentByQidx(qIdxOperations.Prev);
+                  setExperimentByQidx(qIdxOperations.Next);
               });
               $("#btnQidxPrev").click(function () {
-                  setExperimentByQidx(qIdxOperations.Next);
+                  setExperimentByQidx(qIdxOperations.Prev);
               });
               $(document).keypress(function (event) {
                   var char = getChar(event).toLowerCase();
@@ -194,6 +197,9 @@
               $(document).keydown(function (e) {
                   if (!isQualityControlOn()) return;
                   switch (e.which) {
+                      case 36: // home
+                          setExperimentByQidx(qIdxOperations.Reset);
+                          break;
                       case 37: // left
                       case 40: // down
                           setExperimentByQidx(qIdxOperations.Prev);
@@ -344,10 +350,14 @@
                           <button id="btnMarkBad" class="markButton vcenter" title="Mark all phenotypes as Bad [hotkey: w]"></button>
                           <button id="btnMarkEmpty" class="markButton vcenter" title="Mark all phenotypes as Empty [hotkey: e]"></button>
                           <button id="btnMarkNoGrowth" class="markButton vcenter" title="Mark all phenotypes as NoGrowth [hotkey: r]"></button>
-                          <button id="btnQidxNext" style="margin-left:10px" class="btn btn-default btn-xs" title="Next in Qidx position [hotkey: <right>/<up>]">
-                              <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                          <button id="btnQidxReset" style="margin-left:10px" class="btn btn-default btn-xs" title="Go to first Qidx [hotkey: <home>]">
+                              <span class="glyphicon glyphicon-asterisk" aria-hidden="true"></span>
                           </button>
                           <button id="btnQidxPrev" class="btn btn-default btn-xs" title="Back in Qidx position [hotkey: <left>/<down>]">
+                              <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                          </button>
+                          <span id="qIndexCurrent"></span>
+                          <button id="btnQidxNext" class="btn btn-default btn-xs" title="Next in Qidx position [hotkey: <right>/<up>]">
                               <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
                           </button>
                         </span>
