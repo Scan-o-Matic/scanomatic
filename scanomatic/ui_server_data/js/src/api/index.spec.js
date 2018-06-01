@@ -1,7 +1,7 @@
 import 'jasmine-ajax';
 
-import * as API from '../src/api';
-import Duration from '../src/Duration';
+import * as API from '.';
+import Duration from '../Duration';
 
 const toHaveMethod = (util, customEqualityTesters) => ({
     compare: (request, expected) => {
