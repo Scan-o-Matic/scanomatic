@@ -1,6 +1,7 @@
 from urllib.parse import quote_plus
 from enum import Enum
 
+import pytest
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
@@ -8,6 +9,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
 CurveMark = Enum('CurveMark', ['OK', 'OK_THIS', 'BAD', 'EMPTY', 'NO_GROWTH'])
+Navigations = Enum('Navigations', ['NEXT', 'PREV', 'RESET'])
 
 
 class AnalysisNotFoundError(Exception):
@@ -183,6 +185,20 @@ class PlateDisplayArea(object):
             col,
         )
 
+    def get_qindex(self):
+        id = "#qIndexCurrent"
+        return self.elem.find_element(By.CSS_SELECTOR, id).text()
+
+    def update_qindex(self, operation):
+        id = ''
+        if operation == CurveMark.NEXT:
+            id = '#btnQidxNext'
+        elif operation == CurveMark.PREV:
+            id = '#btnQidxPrev'
+        elif operation == CurveMark.RESET:
+            id = '#btnQidxReset'
+        self.elem.find_element(By.CSS_SELECTOR, id).click()
+
 
 class PlatePosition(object):
     def __init__(self, elem, page, row, col):
@@ -304,3 +320,39 @@ class TestQCNormCurveMarking:
         page.set_phenotype('Generation Time')
         position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.BAD
+
+
+class TestQCNormNavigateQidx:
+
+    @classmethod
+    @pytest.fixture(scope='function')
+    def plate_page(browser, scanomatic, experiment_only_analysis):
+        page = QCNormPagePreloadedProject(
+            browser,
+            scanomatic,
+            experiment_only_analysis,
+            experiment_only_analysis[-2],
+        )
+        return page
+
+    def test_page_starts_on_lowest_qindex(self, plate_page):
+        assert plate_page.get_qindex == "1"
+
+    def test_pressing_btns_changes_qindex(self, plate_page):
+        plate_page.update_qindex(Navigations.NEXT)
+        assert plate_page.get_qindex == "2"
+        plate_page.update_qindex(Navigations.PREV)
+        assert plate_page.get_qindex == "1"
+
+    def test_qindex_overflow_wraps(self, plate_page):
+        plate_page.update_qindex(Navigations.PREV)
+        assert plate_page.get_qindex == "1536"
+        plate_page.update_qindex(Navigations.NEXT)
+        assert plate_page.get_qindex == "1"
+
+    def test_pressing_reset_goes_to_first_qindex(self, plate_page):
+        plate_page.update_qindex(Navigations.NEXT)
+        plate_page.update_qindex(Navigations.NEXT)
+        assert plate_page.get_qindex == "3"
+        plate_page.update_qindex(Navigations.RESET)
+        assert plate_page.get_qindex == "1"
