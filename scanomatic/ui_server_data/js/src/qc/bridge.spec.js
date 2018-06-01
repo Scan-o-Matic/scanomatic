@@ -44,16 +44,6 @@ describe('/qc/bridge', () => {
             });
         });
 
-        it('dispatches, a PINNING_SET on setPinning', () => {
-            bridge.actions.setPinning(0, 4, 2);
-            expect(store.dispatch).toHaveBeenCalledWith({
-                type: 'PINNING_SET',
-                plate: 0,
-                rows: 4,
-                cols: 2,
-            });
-        });
-
         it('dispatches a retrievePlateCurves ThunkAction on retrievePlateCurves', () => {
             bridge.actions.retrievePlateCurves();
             expect(store.dispatch).toHaveBeenCalled();

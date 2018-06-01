@@ -1,7 +1,7 @@
 // @flow
 
 import {
-    retrievePlateCurves, setProject, setPlate, setPinning, focusCurve,
+    retrievePlateCurves, setProject, setPlate, focusCurve,
 } from './actions';
 import {
     getRawCurve, getSmoothCurve, getTimes, getPlate, getFocus,
@@ -66,10 +66,6 @@ class Actions {
 
     setFocus(plate: number, row: number, col: number) {
         this.store.dispatch(focusCurve(plate, row, col));
-    }
-
-    setPinning(plate: number, rows: number, cols: number) {
-        this.store.dispatch(setPinning(plate, rows, cols));
     }
 
     retrievePlateCurves(plate: ?number = null) {
