@@ -2,7 +2,9 @@ import $ from 'jquery';
 import Duration from '../Duration';
 import API from './API';
 
-export { default as getPlateGrowthData } from './getPlateGrowthData';
+import _getPlateGrowthData from './getPlateGrowthData';
+
+export const getPlateGrowthData = _getPlateGrowthData;
 
 const GetSliceImagePath = '/api/calibration/#0#/image/#1#/slice/get/#2#';
 const GetTranposedMarkerPath = '/api/data/fixture/calculate/';

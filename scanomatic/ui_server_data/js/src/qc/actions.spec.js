@@ -1,5 +1,5 @@
 import * as actions from './actions';
-import * as partialAPI from '../api/getPlateGrowthData';
+import * as API from '../api';
 import StateBuilder from './StateBuilder';
 import FakePromise from '../helpers/FakePromise';
 
@@ -78,7 +78,7 @@ describe('/qc/actions', () => {
 
         beforeEach(() => {
             dispatch.calls.reset();
-            getPlateGrowthData = spyOn(partialAPI, 'default').and
+            getPlateGrowthData = spyOn(API, 'getPlateGrowthData').and
                 .returnValue(FakePromise.resolve(plateGrowthData));
         });
 
