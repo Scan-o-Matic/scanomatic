@@ -1,5 +1,5 @@
 import * as actions from './actions';
-import * as API from './api';
+import * as partialAPI from '../api/getPlateGrowthData';
 import StateBuilder from './StateBuilder';
 import FakePromise from '../helpers/FakePromise';
 
@@ -69,6 +69,7 @@ describe('/qc/actions', () => {
 
     describe('retrievePlateCurves ThunkAction', () => {
         const dispatch = jasmine.createSpy('dispatch');
+        let getPlateGrowthData;
         const plateGrowthData = {
             times: [1, 2, 3],
             raw: [[[5, 5, 5]]],
@@ -77,7 +78,7 @@ describe('/qc/actions', () => {
 
         beforeEach(() => {
             dispatch.calls.reset();
-            spyOn(API, 'getPlateGrowthData').and
+            getPlateGrowthData = spyOn(partialAPI, 'default').and
                 .returnValue(FakePromise.resolve(plateGrowthData));
         });
 
@@ -98,7 +99,7 @@ describe('/qc/actions', () => {
             const getState = () => state;
             const thunk = actions.retrievePlateCurves();
             thunk(dispatch, getState);
-            expect(API.getPlateGrowthData)
+            expect(getPlateGrowthData)
                 .toHaveBeenCalledWith(project, 66);
         });
 

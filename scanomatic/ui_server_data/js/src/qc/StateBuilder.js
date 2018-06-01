@@ -29,7 +29,7 @@ export default class StateBuilder {
 
     setFocus(plate: number, row: number, col: number) {
         if (plate !== this.plate.number) return this;
-        this.plate.focus = { row, col };
+        this.plate = Object.assign({}, this.plate, { focus: { row, col } });
         return this;
     }
 
@@ -40,9 +40,7 @@ export default class StateBuilder {
         smooth: PlateOfTimeSeries,
     ) {
         if (plate !== this.plate.number) return this;
-        this.plate.times = times;
-        this.plate.raw = raw;
-        this.plate.smooth = smooth;
+        this.plate = Object.assign({}, this.plate, { times, raw, smooth });
         return this;
     }
 

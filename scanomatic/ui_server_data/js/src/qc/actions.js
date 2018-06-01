@@ -1,7 +1,7 @@
 // @flow
 import { getProject, getPlate } from './selectors';
 import type { State, TimeSeries, PlateOfTimeSeries } from './state';
-import { getPlateGrowthData } from './api';
+import { getPlateGrowthData } from '../api';
 
 export type Action
     = {| type: 'PLATE_SET', plate: number |}
