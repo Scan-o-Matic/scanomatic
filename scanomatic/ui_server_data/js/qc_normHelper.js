@@ -10,7 +10,7 @@ const qIdxOperations = {
     Current: 0,
     Prev: -1,
     Next: 1,
-    Reset: '',
+    Reset: 'reset',
 };
 
 function initSpinner() {
