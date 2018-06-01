@@ -30,42 +30,6 @@ describe('/qc/actions', () => {
         });
     });
 
-    describe('setTimes', () => {
-        it('should return a TIMES_SET action', () => {
-            expect(actions.setTimes(0, [1, 2, 3])).toEqual({
-                type: 'TIMES_SET',
-                plate: 0,
-                times: [1, 2, 3],
-            });
-        });
-    });
-
-    describe('setRawCurveData', () => {
-        it('should return a CURVE_RAW_SET action', () => {
-            expect(actions.setRawCurveData(1, 2, 3, [4, 5, 6]))
-                .toEqual({
-                    type: 'CURVE_RAW_SET',
-                    plate: 1,
-                    row: 2,
-                    col: 3,
-                    data: [4, 5, 6],
-                });
-        });
-    });
-
-    describe('setSmoothCurveData', () => {
-        it('should return a CURVE_SMOOTH_SET action', () => {
-            expect(actions.setSmoothCurveData(1, 2, 3, [4, 5, 6]))
-                .toEqual({
-                    type: 'CURVE_SMOOTH_SET',
-                    plate: 1,
-                    row: 2,
-                    col: 3,
-                    data: [4, 5, 6],
-                });
-        });
-    });
-
     describe('focusCurve', () => {
         it('should return a CURVE_FOCUS action', () => {
             expect(actions.focusCurve(0, 1, 2)).toEqual({

@@ -1,5 +1,4 @@
-import type { State, TimeSeries, Plate, Settings } from './state';
-import { getUpdated2DArrayCopy } from './helpers';
+import type { State, TimeSeries, PlateOfTimeSeries, Plate, Settings } from './state';
 
 export default class StateBuilder {
     plate: Plate;
@@ -32,21 +31,16 @@ export default class StateBuilder {
         return this;
     }
 
-    setRawCurveData(plate: number, row: number, col: number, data: TimeSeries) {
-        if (plate !== this.plate.number) return this;
-        this.plate.raw = getUpdated2DArrayCopy(this.plate.raw, row, col, data);
-        return this;
-    }
-
-    setSmoothCurveData(plate: number, row: number, col: number, data: TimeSeries) {
-        if (plate !== this.plate.number) return this;
-        this.plate.smooth = getUpdated2DArrayCopy(this.plate.smooth, row, col, data);
-        return this;
-    }
-
-    setTimes(plate: number, times: TimeSeries) {
+    setPlateGrothData(
+        plate: number,
+        times: TimeSeries,
+        raw: PlateOfTimeSeries,
+        smooth: PlateOfTimeSeries,
+    ) {
         if (plate !== this.plate.number) return this;
         this.plate.times = times;
+        this.plate.raw = raw;
+        this.plate.smooth = smooth;
         return this;
     }
 
