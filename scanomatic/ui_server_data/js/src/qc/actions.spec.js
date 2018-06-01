@@ -44,14 +44,14 @@ describe('/qc/actions', () => {
         });
     });
 
-    describe('setPlateGrothData', () => {
+    describe('setPlateGrowthData', () => {
         it('should return a PLATE_GROWTHDATA_SET action', () => {
             const times = [1, 2, 3];
             const smooth = [[[2, 3, 4]]];
             const raw = [[[5, 4, 3]]];
             const plate = 3;
 
-            expect(actions.setPlateGrothData(
+            expect(actions.setPlateGrowthData(
                 plate,
                 times,
                 raw,
@@ -102,7 +102,7 @@ describe('/qc/actions', () => {
                 .toHaveBeenCalledWith(project, 66);
         });
 
-        it('should dispatch setPlateGrothData and setPinning on promise resolve', (done) => {
+        it('should dispatch setPlateGrowthData and setPinning on promise resolve', (done) => {
             const state = new StateBuilder()
                 .setProject('/my/little/experiment')
                 .setPlate(66)
@@ -113,7 +113,7 @@ describe('/qc/actions', () => {
                 expect(dispatch)
                     .toHaveBeenCalledWith(actions.setPinning(66, 1, 1));
                 expect(dispatch)
-                    .toHaveBeenCalledWith(actions.setPlateGrothData(
+                    .toHaveBeenCalledWith(actions.setPlateGrowthData(
                         66,
                         plateGrowthData.times,
                         plateGrowthData.raw,

@@ -30,7 +30,7 @@ export function setPinning(plate : number, rows: number, cols: number) : Action 
     };
 }
 
-export function setPlateGrothData(
+export function setPlateGrowthData(
     plate: number,
     times: TimeSeries,
     raw: PlateOfTimeSeries,
@@ -74,7 +74,7 @@ export function retrievePlateCurves() : ThunkAction {
 
         return getPlateGrowthData(project, plate).then((r) => {
             const { smooth, raw, times } = r;
-            dispatch(setPlateGrothData(plate, times, raw, smooth));
+            dispatch(setPlateGrowthData(plate, times, raw, smooth));
             const rows = raw.length;
             const cols = raw[0].length;
             dispatch(setPinning(plate, rows, cols));
