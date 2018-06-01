@@ -9,7 +9,7 @@ const secondsPerMinute = 60;
 const secondsPerHour = 3600;
 const secondsPerDay = 86400;
 
-class API {
+export class API {
     static get(url) {
         return new Promise((resolve, reject) => $.ajax({
             url,
