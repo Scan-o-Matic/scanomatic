@@ -1,5 +1,6 @@
 from urllib.parse import quote_plus
 from enum import Enum
+import re
 
 import pytest
 from selenium.common.exceptions import NoSuchElementException
@@ -199,6 +200,76 @@ class PlateDisplayArea(object):
             id = '#btnQidxReset'
         self.elem.find_element(By.CSS_SELECTOR, id).click()
 
+    def get_graph(self):
+        return Graph(self.elem)
+
+
+class Graph(object):
+    graph_selector = '#graph'
+
+    def __init__(self, plate_display_area):
+        self.elem = plate_display_area
+        if self.visible:
+            self.state = {
+                'visible': True,
+                'title': self.title,
+                'raw': self.get_raw_growth_data(),
+                'smooth': self.get_smooth_growth_data(),
+            }
+        else:
+            self.state = {
+                'visible': False,
+                'title': self.title,
+            }
+
+    def __eq__(self, other):
+        if (
+            self.state['visible'] != other.state['visible']
+            and self.state['title'] != other.state['title']
+        ):
+            return False
+        if not self.state['visible']:
+            return True
+        return (
+            self.state['raw'] != other.state['raw']
+            and self.state['smooth'] != other.state['smooth']
+        )
+
+    def __ne__(self, other):
+        if not self.state['visible']:
+            return self.state['title'] != other.state['title']
+
+        return (
+            self.state['title'] != other.state['title']
+            and self.state['raw'] != other.state.get('raw')
+            and self.state['smooth'] != other.state.get('smooth')
+        )
+
+    @property
+    def title(self):
+        return self.elem.find_element(By.CSS_SELECTOR, '#sel').text
+
+    @property
+    def position(self):
+        pos = re.findall(r'\[([0-9]+),([0-9]+)\]', self.title)
+        if not len(pos):
+            return None
+        return map(int, pos[0])
+
+    @property
+    def visible(self):
+        return self.elem.find_element(
+            By.CSS_SELECTOR, self.graph_selector,
+        ).is_displayed()
+
+    def get_raw_growth_data(self):
+        graph = self.find_element(By.CSS_SELECTOR, self.graph_selector)
+        return graph.find_element(By.CSS_SELECTOR, '#raw').get_attribute('d')
+
+    def get_smooth_growth_data(self):
+        graph = self.find_element(By.CSS_SELECTOR, self.graph_selector)
+        return graph.find_element(By.CSS_SELECTOR, '#raw').get_attribute('d')
+
 
 class PlatePosition(object):
     def __init__(self, elem, page, row, col):
@@ -290,6 +361,7 @@ class TestQCNormPagePlates:
         plate = page_with_plate.get_plate_display_area()
         page_with_plate.set_plate(3)
         assert plate.number == '3'
+        assert not plate.get_graph().visible
 
 
 class TestQCNormCurveMarking:
@@ -324,12 +396,15 @@ class TestQCNormNavigateQidx:
 
         # Page starts at first Qindex:
         assert plate.get_qindex() == "1"
+        graph_for_qindex1 = plate.get_graph()
 
         # Pressing buttons works as expected:
         plate.update_qindex(Navigations.NEXT)
         assert plate.get_qindex() == "2"
+        assert plate.get_graph() != graph_for_qindex1
         plate.update_qindex(Navigations.PREV)
         assert plate.get_qindex() == "1"
+        assert plate.get_graph() == graph_for_qindex1
 
         # Qindex wraps as expexted:
         plate.update_qindex(Navigations.PREV)
