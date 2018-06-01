@@ -1,4 +1,4 @@
-import * as API from './api';
+import * as API from '.';
 
 describe('API (qc)', () => {
     const onSuccess = jasmine.createSpy('onSuccess');
