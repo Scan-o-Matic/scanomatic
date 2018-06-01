@@ -187,15 +187,15 @@ class PlateDisplayArea(object):
 
     def get_qindex(self):
         id = "#qIndexCurrent"
-        return self.elem.find_element(By.CSS_SELECTOR, id).text()
+        return self.elem.find_element(By.CSS_SELECTOR, id).text
 
     def update_qindex(self, operation):
         id = ''
-        if operation == CurveMark.NEXT:
+        if operation == Navigations.NEXT:
             id = '#btnQidxNext'
-        elif operation == CurveMark.PREV:
+        elif operation == Navigations.PREV:
             id = '#btnQidxPrev'
-        elif operation == CurveMark.RESET:
+        elif operation == Navigations.RESET:
             id = '#btnQidxReset'
         self.elem.find_element(By.CSS_SELECTOR, id).click()
 
@@ -322,37 +322,38 @@ class TestQCNormCurveMarking:
         assert position.mark == CurveMark.BAD
 
 
+@pytest.fixture(scope='function')
+def plate_page(browser, scanomatic, experiment_only_analysis):
+    page = QCNormPagePreloadedProject(
+        browser,
+        scanomatic,
+        experiment_only_analysis,
+        experiment_only_analysis[-2],
+    )
+    return page.get_plate_display_area()
+
+
 class TestQCNormNavigateQidx:
 
-    @classmethod
-    @pytest.fixture(scope='function')
-    def plate_page(browser, scanomatic, experiment_only_analysis):
-        page = QCNormPagePreloadedProject(
-            browser,
-            scanomatic,
-            experiment_only_analysis,
-            experiment_only_analysis[-2],
-        )
-        return page
+    def test_qindex_navigation(self, plate_page):
+        # Page starts at first Qindex:
+        assert plate_page.get_qindex() == "1"
 
-    def test_page_starts_on_lowest_qindex(self, plate_page):
-        assert plate_page.get_qindex == "1"
-
-    def test_pressing_btns_changes_qindex(self, plate_page):
+        # Pressing buttons works as expected:
         plate_page.update_qindex(Navigations.NEXT)
-        assert plate_page.get_qindex == "2"
+        assert plate_page.get_qindex() == "2"
         plate_page.update_qindex(Navigations.PREV)
-        assert plate_page.get_qindex == "1"
+        assert plate_page.get_qindex() == "1"
 
-    def test_qindex_overflow_wraps(self, plate_page):
+        # Qindex wraps as expexted:
         plate_page.update_qindex(Navigations.PREV)
-        assert plate_page.get_qindex == "1536"
+        assert plate_page.get_qindex() == "1536"
         plate_page.update_qindex(Navigations.NEXT)
-        assert plate_page.get_qindex == "1"
+        assert plate_page.get_qindex() == "1"
 
-    def test_pressing_reset_goes_to_first_qindex(self, plate_page):
+        # Pressing reset goes back to first index:
         plate_page.update_qindex(Navigations.NEXT)
         plate_page.update_qindex(Navigations.NEXT)
-        assert plate_page.get_qindex == "3"
+        assert plate_page.get_qindex() == "3"
         plate_page.update_qindex(Navigations.RESET)
-        assert plate_page.get_qindex == "1"
+        assert plate_page.get_qindex() == "1"
