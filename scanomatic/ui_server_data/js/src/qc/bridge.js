@@ -8,7 +8,7 @@ import {
 } from './selectors';
 
 import type { Action, ThunkAction } from './actions';
-import type { State, TimeSeries, Pinning } from './state';
+import type { State, TimeSeries, PlatePosition } from './state';
 
 type Store = {
     +dispatch: (Action | ThunkAction) => any,
@@ -38,12 +38,12 @@ class Selectors {
         return getTimes(state, plate);
     }
 
-    getPlate() : number {
+    getPlate() : ?number {
         const state = this.store.getState();
         return getPlate(state);
     }
 
-    getFocus() : number {
+    getFocus() : ?PlatePosition {
         const state = this.store.getState();
         return getFocus(state);
     }

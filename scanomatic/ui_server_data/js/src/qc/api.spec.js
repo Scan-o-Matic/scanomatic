@@ -15,29 +15,24 @@ describe('API (qc)', () => {
         jasmine.Ajax.uninstall();
     });
 
-    describe('getCurveData', () => {
+    describe('getPlateGrowthData', () => {
         const args = [
             'something/somewhere', // Project
             0, // Plate index
-            10, // Row index
-            5, // Col index
         ];
 
         it('should query the correct uri', () => {
-            API.getCurveData(...args);
+            API.getPlateGrowthData(...args);
             expect(mostRecentRequest().url)
-                .toBe('/api/results/curves/0/10/5/something/somewhere');
+                .toBe('/api/results/growthcurves/0/something/somewhere');
         });
 
         it('should return a promise that resolves on success', (done) => {
-            API.getCurveData(...args).then((response) => {
+            // a 1x1 plate with 3 scans in the experiment, because I'm lazy
+            API.getPlateGrowthData(...args).then((response) => {
                 expect(response).toEqual({
-                    project: 'something/somewhere',
-                    plate: 0,
-                    row: 10,
-                    col: 5,
-                    raw: [1, 3, 5],
-                    smooth: [2, 4, 6],
+                    raw: [[[1, 2, 3]]],
+                    smooth: [[[2, 3, 4]]],
                     times: [0, 1, 2],
                 });
                 done();
@@ -45,15 +40,15 @@ describe('API (qc)', () => {
             mostRecentRequest().respondWith({
                 status: 200,
                 responseText: JSON.stringify({
-                    raw_data: [1, 3, 5],
-                    smooth_data: [2, 4, 6],
-                    time_data: [0, 1, 2],
+                    raw_data: [[[1, 2, 3]]],
+                    smooth_data: [[[2, 3, 4]]],
+                    times_data: [0, 1, 2],
                 }),
             });
         });
 
         it('should return a promise that rejects on error', (done) => {
-            API.getCurveData(...args).catch((response) => {
+            API.getPlateGrowthData(...args).catch((response) => {
                 expect(response).toEqual('nooo!');
                 done();
             });

@@ -67,20 +67,6 @@ describe('/qc/bridge', () => {
                 plate: 2,
             });
         });
-
-        it('dispatches a PINNING_SET on retrievePlateCurves if arguments set', () => {
-            bridge.actions.retrievePlateCurves(2, { rows: 5, cols: 3 });
-            expect(store.dispatch).toHaveBeenCalledWith({
-                type: 'PLATE_SET',
-                plate: 2,
-            });
-            expect(store.dispatch).toHaveBeenCalledWith({
-                type: 'PINNING_SET',
-                plate: 2,
-                rows: 5,
-                cols: 3,
-            });
-        });
     });
 
     describe('selectors', () => {
@@ -114,6 +100,14 @@ describe('/qc/bridge', () => {
             expect(store.getState).toHaveBeenCalled();
             expect(getPlate).toHaveBeenCalledWith(state);
             expect(plate).toEqual(52);
+        });
+
+        it('calls getFocus on getFocus', () => {
+            const getFocus = spyOn(selectors, 'getFocus')
+                .and.returnValue({ row: 41, col: 43 });
+            expect(bridge.selectors.getFocus()).toEqual({ row: 41, col: 43 });
+            expect(store.getState).toHaveBeenCalled();
+            expect(getFocus).toHaveBeenCalledWith(state);
         });
     });
 });

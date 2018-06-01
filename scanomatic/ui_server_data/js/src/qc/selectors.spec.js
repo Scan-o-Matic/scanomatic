@@ -32,27 +32,7 @@ describe('/qc/selectors', () => {
 
         it('should return the focused curve', () => {
             const state = new StateBuilder().setFocus(0, 2, 1).build();
-            expect(selectors.getFocus(state)).toEqual(null);
-        });
-    });
-
-    describe('hasStartedLoadingPlate', () => {
-        it('should be false if pinning unknown', () => {
-            const state = new StateBuilder().build();
-            expect(selectors.hasStartedLoadingPlate(state)).toEqual(false);
-        });
-
-        it('should be false if no curve entered', () => {
-            const state = new StateBuilder().setPinning(2, 1).build();
-            expect(selectors.hasStartedLoadingPlate(state)).toEqual(false);
-        });
-
-        it('should be true if curve entered', () => {
-            const state = new StateBuilder()
-                .setPinning(2, 1)
-                .setRawCurveData(0, 0, 0, [1, 2])
-                .build();
-            expect(selectors.hasStartedLoadingPlate(state)).toEqual(true);
+            expect(selectors.getFocus(state)).toEqual({ row: 2, col: 1 });
         });
     });
 
@@ -68,12 +48,16 @@ describe('/qc/selectors', () => {
         });
 
         it('should return the growth data', () => {
-            const data = [1, 2, 3];
             const state = new StateBuilder()
                 .setPlate(1)
-                .setRawCurveData(1, 4, 5, data)
+                .setPlateGrothData(
+                    1,
+                    [1, 2, 3],
+                    [[[2, 3, 4], [4, 2, 1]]],
+                    [[[6, 6, 6], [1, 4, 5]]],
+                )
                 .build();
-            expect(selectors.getRawCurve(state, 1, 4, 5)).toEqual(data);
+            expect(selectors.getRawCurve(state, 1, 0, 1)).toEqual([4, 2, 1]);
         });
     });
 
@@ -89,23 +73,41 @@ describe('/qc/selectors', () => {
         });
 
         it('should return the growth data', () => {
-            const data = [1, 2, 3];
             const state = new StateBuilder()
                 .setPlate(1)
-                .setSmoothCurveData(1, 4, 5, data)
+                .setPlateGrothData(
+                    1,
+                    [1, 2, 3],
+                    [[[2, 3, 4], [4, 2, 1]]],
+                    [[[6, 6, 6], [1, 4, 5]]],
+                )
                 .build();
-            expect(selectors.getSmoothCurve(state, 1, 4, 5)).toEqual(data);
+            expect(selectors.getSmoothCurve(state, 1, 0, 1)).toEqual([1, 4, 5]);
         });
     });
 
     describe('times', () => {
         it('should get the times of the growth curve if plate is right', () => {
-            const state = new StateBuilder().setTimes(0, [1, 2, 3]);
+            const state = new StateBuilder()
+                .setPlateGrothData(
+                    0,
+                    [1, 2, 3],
+                    [[[2, 3, 4]]],
+                    [[[6, 6, 6]]],
+                )
+                .build();
             expect(selectors.getTimes(state, 0)).toEqual([1, 2, 3]);
         });
 
         it('should return null if plate is wrong', () => {
-            const state = new StateBuilder().setTimes(0, [1, 2, 3]);
+            const state = new StateBuilder()
+                .setPlateGrothData(
+                    0,
+                    [1, 2, 3],
+                    [[[2, 3, 4]]],
+                    [[[6, 6, 6]]],
+                )
+                .build();
             expect(selectors.getTimes(state, 1)).toEqual(null);
         });
     });

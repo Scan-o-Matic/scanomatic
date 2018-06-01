@@ -33,15 +33,15 @@ export function setPinning(plate : number, rows: number, cols: number) : Action 
 export function setPlateGrothData(
     plate: number,
     times: TimeSeries,
-    smooth: PlateOfTimeSeries,
     raw: PlateOfTimeSeries,
+    smooth: PlateOfTimeSeries,
 ) : Action {
     return {
         type: 'PLATE_GROWTHDATA_SET',
         plate,
         times,
-        smooth,
         raw,
+        smooth,
     };
 }
 
@@ -64,11 +64,17 @@ export function retrievePlateCurves() : ThunkAction {
         if (project == null) {
             throw new Error('Cannot retrieve curves if project not set');
         }
-
         const plate = getPlate(state);
-        getPlateGrowthData(project, plate).then((r) => {
+        // getPlate can only return null when project is not set, so
+        // this can't really happen, but linter gets upset for type
+        // mismatch for the api call below if this check is not performed.
+        if (plate == null) {
+            throw new Error('Cannot retrieve curves if project not set');
+        }
+
+        return getPlateGrowthData(project, plate).then((r) => {
             const { smooth, raw, times } = r;
-            dispatch(setPlateGrothData(plate, times, smooth, raw));
+            dispatch(setPlateGrothData(plate, times, raw, smooth));
             const rows = raw.length;
             const cols = raw[0].length;
             dispatch(setPinning(plate, rows, cols));

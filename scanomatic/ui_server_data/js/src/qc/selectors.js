@@ -39,6 +39,6 @@ export function getSmoothCurve(state: State, plate: number, row: number, col: nu
 }
 
 export function getFocus(state: State) : ?PlatePosition {
-    if (!state.plate) return null;
+    if (!state.plate || !state.plate.focus) return null;
     return state.plate.focus;
 }

@@ -70,4 +70,41 @@ describe('/qc/reducers/plate', () => {
             });
         });
     });
+
+    describe('PLATE_GROWTHDATA_SET', () => {
+        it('sets the plate growth data', () => {
+            const times = [1, 2, 3];
+            const raw = [[[2, 3, 5]]];
+            const smooth = [[[4, 4, 4]]];
+            const action = {
+                type: 'PLATE_GROWTHDATA_SET',
+                times,
+                raw,
+                smooth,
+                plate: 0,
+            };
+            expect(plate(undefined, action)).toEqual({
+                number: 0,
+                times,
+                raw,
+                smooth,
+            });
+        });
+
+        it('doesnt do a thing on plate missmatch', () => {
+            const times = [1, 2, 3];
+            const raw = [[[2, 3, 5]]];
+            const smooth = [[[4, 4, 4]]];
+            const action = {
+                type: 'PLATE_GROWTHDATA_SET',
+                times,
+                raw,
+                smooth,
+                plate: 0,
+            };
+            expect(plate({ number: 3 }, action)).toEqual({
+                number: 3,
+            });
+        });
+    });
 });
