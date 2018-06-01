@@ -236,16 +236,37 @@ class PlatePosition(object):
         )
 
 
+@pytest.fixture(scope='function')
+def page(scanomatic, browser):
+    return QCNormPage(browser, scanomatic)
+
+
+@pytest.fixture(scope='function')
+def page_no_analysis(browser, scanomatic):
+    return QCNormPagePreloadedProject(
+        browser,
+        scanomatic,
+        'experiments_only_analysis',
+        'has no analysis',
+    )
+
+
+@pytest.fixture(scope='function')
+def page_with_plate(browser, scanomatic, experiment_only_analysis):
+    return QCNormPagePreloadedProject(
+        browser,
+        scanomatic,
+        experiment_only_analysis,
+        experiment_only_analysis[-2],
+    )
+
+
 class TestQCNormPage:
 
-    def test_title(self, scanomatic, browser):
-        page = QCNormPage(browser, scanomatic)
+    def test_title(self, page):
         assert page.title == 'Quality Control'
 
-    def test_clicking_select_a_project_shows_selector(
-        self, scanomatic, browser, experiment_only_analysis
-    ):
-        page = QCNormPage(browser, scanomatic)
+    def test_clicking_select_a_project_shows_selector(self, page):
         assert not page.is_visible_project_selection
         page.toggle_select_project()
         assert page.is_visible_project_selection
@@ -253,107 +274,72 @@ class TestQCNormPage:
 
 class TestQCNormPagePreloadedProject:
 
-    def test_correctly_alerts_to_missing_analysis(self, browser, scanomatic):
-        page = QCNormPagePreloadedProject(
-            browser,
-            scanomatic,
-            'experiments_only_analysis',
-            'has no analysis',
-        )
-        assert page.has_analysis is False
+    def test_correctly_alerts_to_missing_analysis(self, page_no_analysis):
+        assert page_no_analysis.has_analysis is False
 
     def test_can_load_analysis(
-        self, browser, scanomatic, experiment_only_analysis
-    ):
-        page = QCNormPagePreloadedProject(
-            browser,
-            scanomatic,
-            experiment_only_analysis,
-            experiment_only_analysis[-2],
-        )
-        assert page.has_analysis
-        details = page.get_details()
+            self, experiment_only_analysis, page_with_plate):
+        assert page_with_plate.has_analysis
+        details = page_with_plate.get_details()
         assert details.name == experiment_only_analysis[-2]
 
 
 class TestQCNormPagePlates:
 
-    def test_switches_plate(
-        self, browser, scanomatic, experiment_only_analysis
-    ):
-        page = QCNormPagePreloadedProject(
-            browser,
-            scanomatic,
-            experiment_only_analysis,
-            experiment_only_analysis[-2],
-        )
-        plate = page.get_plate_display_area()
-        page.set_plate(3)
+    def test_switches_plate(self, page_with_plate):
+        plate = page_with_plate.get_plate_display_area()
+        page_with_plate.set_plate(3)
         assert plate.number == '3'
 
 
 class TestQCNormCurveMarking:
 
-    def test_marking_ok_this_only_ok_current_phenotype(
-        self, browser, scanomatic, experiment_only_analysis
-    ):
+    def test_marking_ok_this_only_ok_current_phenotype(self, page_with_plate):
         pos = (5, 10)
-        page = QCNormPagePreloadedProject(
-            browser,
-            scanomatic,
-            experiment_only_analysis,
-            experiment_only_analysis[-2],
-        )
-        plate = page.get_plate_display_area()
+        plate = page_with_plate.get_plate_display_area()
         plate.show_mark_experiments()
         position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.OK
+
         position.click()
         plate.mark_selected_curve(CurveMark.BAD)
-        page.set_phenotype('Experiment Growth Yield')
+        page_with_plate.set_phenotype('Experiment Growth Yield')
         position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.BAD
+
         position.click()
         plate.mark_selected_curve(CurveMark.OK_THIS)
         position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.OK
-        page.set_phenotype('Generation Time')
+
+        page_with_plate.set_phenotype('Generation Time')
         position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.BAD
 
 
-@pytest.fixture(scope='function')
-def plate_page(browser, scanomatic, experiment_only_analysis):
-    page = QCNormPagePreloadedProject(
-        browser,
-        scanomatic,
-        experiment_only_analysis,
-        experiment_only_analysis[-2],
-    )
-    return page.get_plate_display_area()
-
-
 class TestQCNormNavigateQidx:
 
-    def test_qindex_navigation(self, plate_page):
+    def test_qindex_navigation(self, page_with_plate):
+        plate = page_with_plate.get_plate_display_area()
+
         # Page starts at first Qindex:
-        assert plate_page.get_qindex() == "1"
+        assert plate.get_qindex() == "1"
 
         # Pressing buttons works as expected:
-        plate_page.update_qindex(Navigations.NEXT)
-        assert plate_page.get_qindex() == "2"
-        plate_page.update_qindex(Navigations.PREV)
-        assert plate_page.get_qindex() == "1"
+        plate.update_qindex(Navigations.NEXT)
+        assert plate.get_qindex() == "2"
+        plate.update_qindex(Navigations.PREV)
+        assert plate.get_qindex() == "1"
 
         # Qindex wraps as expexted:
-        plate_page.update_qindex(Navigations.PREV)
-        assert plate_page.get_qindex() == "1536"
-        plate_page.update_qindex(Navigations.NEXT)
-        assert plate_page.get_qindex() == "1"
+        plate.update_qindex(Navigations.PREV)
+        assert plate.get_qindex() == "1536"
+        plate.update_qindex(Navigations.NEXT)
+        assert plate.get_qindex() == "1"
 
         # Pressing reset goes back to first index:
-        plate_page.update_qindex(Navigations.NEXT)
-        plate_page.update_qindex(Navigations.NEXT)
-        assert plate_page.get_qindex() == "3"
-        plate_page.update_qindex(Navigations.RESET)
-        assert plate_page.get_qindex() == "1"
+        plate.update_qindex(Navigations.NEXT)
+        plate.update_qindex(Navigations.NEXT)
+        assert plate.get_qindex() == "3"
+        plate.update_qindex(Navigations.RESET)
+        assert plate.get_qindex() == "1"
