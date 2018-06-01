@@ -50,7 +50,7 @@ describe('/qc/selectors', () => {
         it('should return the growth data', () => {
             const state = new StateBuilder()
                 .setPlate(1)
-                .setPlateGrothData(
+                .setPlateGrowthData(
                     1,
                     [1, 2, 3],
                     [[[2, 3, 4], [4, 2, 1]]],
@@ -75,7 +75,7 @@ describe('/qc/selectors', () => {
         it('should return the growth data', () => {
             const state = new StateBuilder()
                 .setPlate(1)
-                .setPlateGrothData(
+                .setPlateGrowthData(
                     1,
                     [1, 2, 3],
                     [[[2, 3, 4], [4, 2, 1]]],
@@ -89,7 +89,7 @@ describe('/qc/selectors', () => {
     describe('times', () => {
         it('should get the times of the growth curve if plate is right', () => {
             const state = new StateBuilder()
-                .setPlateGrothData(
+                .setPlateGrowthData(
                     0,
                     [1, 2, 3],
                     [[[2, 3, 4]]],
@@ -101,7 +101,7 @@ describe('/qc/selectors', () => {
 
         it('should return null if plate is wrong', () => {
             const state = new StateBuilder()
-                .setPlateGrothData(
+                .setPlateGrowthData(
                     0,
                     [1, 2, 3],
                     [[[2, 3, 4]]],

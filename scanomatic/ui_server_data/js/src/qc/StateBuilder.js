@@ -31,7 +31,7 @@ export default class StateBuilder {
         return this;
     }
 
-    setPlateGrothData(
+    setPlateGrowthData(
         plate: number,
         times: TimeSeries,
         raw: PlateOfTimeSeries,
