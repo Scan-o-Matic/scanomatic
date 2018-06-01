@@ -1,9 +1,18 @@
+// @flow
+import $ from 'jquery';
+
 export default class DrawCurvesIntegration {
+    handleUpdate: () => void;
+    hasDrawn: boolean;
+    plate: number;
+    row: number;
+    col: number;
+
     constructor() {
         this.handleUpdate = this.handleUpdate.bind(this);
     }
 
-    shouldDraw({ plate, row, col }) {
+    shouldDraw({ plate, row, col } : { plate: number, row: number, col: number }) : boolean {
         if (!this.hasDrawn) return true;
         return this.plate !== plate || this.row !== row || this.col !== col;
     }
@@ -16,10 +25,8 @@ export default class DrawCurvesIntegration {
             $(selector).hide();
             return;
         }
-        const pos = {
-            plate,
-            ...focus,
-        };
+        if (!this.shouldDraw({ plate, ...focus })) return;
+
         const raw = window.qc.selectors.getRawCurve(plate, focus.row, focus.col);
         const smooth = window.qc.selectors.getSmoothCurve(plate, focus.row, focus.col);
         const time = window.qc.selectors.getTimes(plate);
@@ -28,7 +35,6 @@ export default class DrawCurvesIntegration {
             $(selector).hide();
             return;
         }
-        if (!this.shouldDraw(pos)) return;
 
         const well = `#id${focus.row}_${focus.col}`;
         // This is horrible, but seems only way to access all needed data
