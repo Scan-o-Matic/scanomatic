@@ -1,5 +1,5 @@
 import * as actions from './actions';
-import * as API from './api';
+import * as API from '../api';
 import StateBuilder from './StateBuilder';
 import FakePromise from '../helpers/FakePromise';
 
@@ -18,17 +18,6 @@ describe('/qc/actions', () => {
             expect(actions.setProject('test.me')).toEqual({
                 type: 'PROJECT_SET',
                 project: 'test.me',
-            });
-        });
-    });
-
-    describe('setPinning', () => {
-        it('should return a PINNING_SET action', () => {
-            expect(actions.setPinning(1, 2, 3)).toEqual({
-                type: 'PINNING_SET',
-                plate: 1,
-                rows: 2,
-                cols: 3,
             });
         });
     });
@@ -69,6 +58,7 @@ describe('/qc/actions', () => {
 
     describe('retrievePlateCurves ThunkAction', () => {
         const dispatch = jasmine.createSpy('dispatch');
+        let getPlateGrowthData;
         const plateGrowthData = {
             times: [1, 2, 3],
             raw: [[[5, 5, 5]]],
@@ -77,7 +67,7 @@ describe('/qc/actions', () => {
 
         beforeEach(() => {
             dispatch.calls.reset();
-            spyOn(API, 'getPlateGrowthData').and
+            getPlateGrowthData = spyOn(API, 'getPlateGrowthData').and
                 .returnValue(FakePromise.resolve(plateGrowthData));
         });
 
@@ -98,11 +88,11 @@ describe('/qc/actions', () => {
             const getState = () => state;
             const thunk = actions.retrievePlateCurves();
             thunk(dispatch, getState);
-            expect(API.getPlateGrowthData)
+            expect(getPlateGrowthData)
                 .toHaveBeenCalledWith(project, 66);
         });
 
-        it('should dispatch setPlateGrowthData and setPinning on promise resolve', (done) => {
+        it('should dispatch setPlateGrowthData on promise resolve', (done) => {
             const state = new StateBuilder()
                 .setProject('/my/little/experiment')
                 .setPlate(66)
@@ -110,8 +100,6 @@ describe('/qc/actions', () => {
             const getState = () => state;
             const thunk = actions.retrievePlateCurves();
             thunk(dispatch, getState).then(() => {
-                expect(dispatch)
-                    .toHaveBeenCalledWith(actions.setPinning(66, 1, 1));
                 expect(dispatch)
                     .toHaveBeenCalledWith(actions.setPlateGrowthData(
                         66,

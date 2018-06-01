@@ -1,12 +1,11 @@
 // @flow
 import { getProject, getPlate } from './selectors';
 import type { State, TimeSeries, PlateOfTimeSeries } from './state';
-import { getPlateGrowthData } from './api';
+import { getPlateGrowthData } from '../api';
 
 export type Action
     = {| type: 'PLATE_SET', plate: number |}
     | {| type: 'PROJECT_SET', project: string |}
-    | {| type: 'PINNING_SET', plate: number, rows: number, cols: number |}
     | {| type: 'CURVE_FOCUS', plate: number, row: number, col: number |}
     | {|
         type: 'PLATE_GROWTHDATA_SET',
@@ -22,12 +21,6 @@ export function setPlate(plate : number) : Action {
 
 export function setProject(project : string) : Action {
     return { type: 'PROJECT_SET', project };
-}
-
-export function setPinning(plate : number, rows: number, cols: number) : Action {
-    return {
-        type: 'PINNING_SET', plate, rows, cols,
-    };
 }
 
 export function setPlateGrowthData(
@@ -75,9 +68,6 @@ export function retrievePlateCurves() : ThunkAction {
         return getPlateGrowthData(project, plate).then((r) => {
             const { smooth, raw, times } = r;
             dispatch(setPlateGrowthData(plate, times, raw, smooth));
-            const rows = raw.length;
-            const cols = raw[0].length;
-            dispatch(setPinning(plate, rows, cols));
         });
     };
 }

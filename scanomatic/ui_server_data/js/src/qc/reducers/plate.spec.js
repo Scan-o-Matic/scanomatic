@@ -47,30 +47,6 @@ describe('/qc/reducers/plate', () => {
         });
     });
 
-    describe('PINNING_SET', () => {
-        it('sets the pinning', () => {
-            const action = {
-                type: 'PINNING_SET', plate: 0, rows: 4, cols: 31,
-            };
-            expect(plate(undefined, action)).toEqual({
-                number: 0,
-                pinning: {
-                    rows: 4,
-                    cols: 31,
-                },
-            });
-        });
-
-        it('doesnt set if the plate is wrong', () => {
-            const action = {
-                type: 'PINNING_SET', plate: 2, rows: 4, cols: 31,
-            };
-            expect(plate(undefined, action)).toEqual({
-                number: 0,
-            });
-        });
-    });
-
     describe('PLATE_GROWTHDATA_SET', () => {
         it('sets the plate growth data', () => {
             const times = [1, 2, 3];
