@@ -1,6 +1,15 @@
 // @flow
 
-import type { State, TimeSeries, Pinning, PlatePosition } from './state';
+import type {
+    State,
+    TimeSeries as _TimeSeries,
+    Pinning as _Pinning,
+    PlatePosition as _PlatePosition,
+} from './state';
+
+export type TimeSeries = _TimeSeries;
+export type Pinning = _Pinning;
+export type PlatePosition = _PlatePosition;
 
 export function getProject(state: State): ?string {
     if (!state.settings) return null;

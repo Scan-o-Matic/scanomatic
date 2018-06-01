@@ -1,3 +1,5 @@
+// @flow
+
 import type { State, TimeSeries, PlateOfTimeSeries, Plate, Settings } from './state';
 
 export default class StateBuilder {

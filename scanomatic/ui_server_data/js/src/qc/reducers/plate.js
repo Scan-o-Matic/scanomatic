@@ -1,3 +1,4 @@
+// @flow
 import type { Action } from '../actions';
 import type { Plate as State } from '../state';
 
