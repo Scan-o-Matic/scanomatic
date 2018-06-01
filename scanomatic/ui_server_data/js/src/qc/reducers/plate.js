@@ -21,9 +21,6 @@ export default function plate(state: State = initialState, action: Action) {
     case 'CURVE_FOCUS':
         if (action.plate !== state.number) return state;
         return Object.assign({}, state, { focus: { row: action.row, col: action.col } });
-    case 'PINNING_SET':
-        if (action.plate !== state.number) return state;
-        return Object.assign({}, state, { pinning: { rows: action.rows, cols: action.cols } });
     default:
         return state;
     }

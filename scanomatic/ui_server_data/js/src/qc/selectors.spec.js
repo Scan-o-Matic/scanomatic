@@ -12,18 +12,6 @@ describe('/qc/selectors', () => {
         expect(selectors.getPlate(state)).toEqual(2);
     });
 
-    describe('pinning', () => {
-        it('should get the pinning if plate is right', () => {
-            const state = new StateBuilder().setPinning(2, 1).build();
-            expect(selectors.getPinning(state, 0)).toEqual({ rows: 2, cols: 1 });
-        });
-
-        it('should return null if plate is wrong', () => {
-            const state = new StateBuilder().setPinning(2, 1).build();
-            expect(selectors.getPinning(state, 1)).toEqual(null);
-        });
-    });
-
     describe('focus', () => {
         it('should return null if no focus', () => {
             const state = new StateBuilder().build();

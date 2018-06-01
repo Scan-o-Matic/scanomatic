@@ -22,17 +22,6 @@ describe('/qc/actions', () => {
         });
     });
 
-    describe('setPinning', () => {
-        it('should return a PINNING_SET action', () => {
-            expect(actions.setPinning(1, 2, 3)).toEqual({
-                type: 'PINNING_SET',
-                plate: 1,
-                rows: 2,
-                cols: 3,
-            });
-        });
-    });
-
     describe('focusCurve', () => {
         it('should return a CURVE_FOCUS action', () => {
             expect(actions.focusCurve(0, 1, 2)).toEqual({
@@ -103,7 +92,7 @@ describe('/qc/actions', () => {
                 .toHaveBeenCalledWith(project, 66);
         });
 
-        it('should dispatch setPlateGrowthData and setPinning on promise resolve', (done) => {
+        it('should dispatch setPlateGrowthData on promise resolve', (done) => {
             const state = new StateBuilder()
                 .setProject('/my/little/experiment')
                 .setPlate(66)
@@ -111,8 +100,6 @@ describe('/qc/actions', () => {
             const getState = () => state;
             const thunk = actions.retrievePlateCurves();
             thunk(dispatch, getState).then(() => {
-                expect(dispatch)
-                    .toHaveBeenCalledWith(actions.setPinning(66, 1, 1));
                 expect(dispatch)
                     .toHaveBeenCalledWith(actions.setPlateGrowthData(
                         66,

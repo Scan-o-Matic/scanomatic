@@ -22,11 +22,6 @@ export default class StateBuilder {
         return this;
     }
 
-    setPinning(rows: number, cols: number) {
-        this.plate = Object.assign({}, this.plate, { pinning: { rows, cols } });
-        return this;
-    }
-
     setFocus(plate: number, row: number, col: number) {
         if (plate !== this.plate.number) return this;
         this.plate = Object.assign({}, this.plate, { focus: { row, col } });
