@@ -4,6 +4,7 @@ module.exports = {
         scanning: ['./scanomatic/ui_server_data/js/src/scanning.jsx'],
         projects: ['./scanomatic/ui_server_data/js/src/projects'],
         statuspage: ['./scanomatic/ui_server_data/js/src/statuspage'],
+        qc: ['./scanomatic/ui_server_data/js/src/qc'],
     },
     output: {
         filename: 'scanomatic/ui_server_data/js/[name].js',
