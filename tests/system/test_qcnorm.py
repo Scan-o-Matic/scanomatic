@@ -218,7 +218,7 @@ class Graph(object):
     def __init__(self, plate_display_area):
         self.plate_display_area = plate_display_area
         self.elem = plate_display_area.elem
-        pos = tuple(self.position)
+        pos = self.position
         if pos:
             self.state = {
                 'should_have_data': True,
@@ -260,7 +260,7 @@ class Graph(object):
         pos = re.findall(r'\[([0-9]+),([0-9]+)\]', self.title)
         if not len(pos):
             return tuple()
-        return map(int, pos[0])
+        return tuple(map(int, pos[0]))
 
     def wait_until_graph_is_visible(self):
         WebDriverWait(self.elem, UI_DEFAULT_WAIT).until(
