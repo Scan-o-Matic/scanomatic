@@ -1,4 +1,4 @@
-﻿/* Data Selection*/
+/* Data Selection*/
 .SelectedExperiment {
     stroke: black;
     stroke-width:2
@@ -220,4 +220,11 @@ body > .modal {
 }
 .qc_norm_toggle-checkbox:checked + .qc_norm_toggle-label .qc_norm_toggle-switch {
     right: 0px;
+}
+
+#qIndexCurrent {
+    width: 4em;
+    display: inline-block;
+    border: 1px solid;
+    text-align: center;
 }
