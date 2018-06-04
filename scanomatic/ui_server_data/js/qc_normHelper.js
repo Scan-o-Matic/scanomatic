@@ -472,7 +472,6 @@ function renderPlate(phenotypePlates) {
     $('#currentSelection').data('plateIdx', plateIdx);
     $('#currentSelection').data('project', project);
     $('#spnPlateIdx').text((plateIdx + 1));
-    getQIndexCoord(qIdxOperations.Reset);
     wait();
     // e.g. /api/results/phenotype/GenerationTimeWhen/1/by4742_h/analysis
     const isNormalized = $('#ckNormalized').is(':checked');
@@ -491,6 +490,7 @@ function renderPlate(phenotypePlates) {
         const growthMetaData = data.Growth_metaData;
         const phenotypeName = data.plate_phenotype;
         qIndexQueue = data.plate_qIdxSort;
+        setExperimentByQidx(qIdxOperations.Reset);
         const plate = DrawPlate('#plate', plateData, growthMetaData, plateMetaData, phenotypeName, dispatch);
         const row = $('#currentSelection').data('row');
         const col = $('#currentSelection').data('col');
