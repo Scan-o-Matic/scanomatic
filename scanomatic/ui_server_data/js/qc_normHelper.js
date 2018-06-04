@@ -472,7 +472,7 @@ function renderPlate(phenotypePlates) {
     $('#currentSelection').data('plateIdx', plateIdx);
     $('#currentSelection').data('project', project);
     $('#spnPlateIdx').text((plateIdx + 1));
-    updateQIndexLabel(qIndexCurrent);
+    getQIndexCoord(qIdxOperations.Reset);
     wait();
     // e.g. /api/results/phenotype/GenerationTimeWhen/1/by4742_h/analysis
     const isNormalized = $('#ckNormalized').is(':checked');
