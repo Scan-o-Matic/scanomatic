@@ -472,7 +472,6 @@ function renderPlate(phenotypePlates) {
     $('#currentSelection').data('plateIdx', plateIdx);
     $('#currentSelection').data('project', project);
     $('#spnPlateIdx').text((plateIdx + 1));
-    updateQIndexLabel(qIndexCurrent);
     wait();
     // e.g. /api/results/phenotype/GenerationTimeWhen/1/by4742_h/analysis
     const isNormalized = $('#ckNormalized').is(':checked');
@@ -516,5 +515,6 @@ function renderPlate(phenotypePlates) {
                 DrawCurves('#graph', gData, datah.metaDataGt, datah.metaDataGtWhen, datah.metaDataYield);
             });
         });
+        setExperimentByQidx(qIdxOperations.Reset);
     });
 }
