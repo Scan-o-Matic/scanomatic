@@ -165,13 +165,6 @@ function getQIndexFromCoord(row, col) {
     return qIndexQueue.filter(e => e.row == row && e.col == col)[0].idx;
 }
 
-function setExperimentByQidx(operation) {
-    const queueCurrent = updateQIndexCoord(operation);
-    const row = queueCurrent.row;
-    const col = queueCurrent.col;
-    dispatch.setExp(`id${row}_${col}`);
-}
-
 function setExperimentByCoord(row, col) {
     dispatch.setExp(`id${row}_${col}`);
 }
@@ -202,6 +195,13 @@ function updateQIndexCoord(operation, index) {
 
     updateQIndexLabel(qIndexCurrent);
     return qIndexQueue[qIndexCurrent];
+}
+
+function setExperimentByQidx(operation) {
+    const queueCurrent = updateQIndexCoord(operation);
+    const row = queueCurrent.row;
+    const col = queueCurrent.col;
+    dispatch.setExp(`id${row}_${col}`);
 }
 
 function getChar(event) {
