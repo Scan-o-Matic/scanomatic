@@ -349,3 +349,8 @@ class TestQCNormNavigateQidx:
         assert plate.get_qindex() == "2"
         page_with_plate.set_plate(3)
         assert plate.get_qindex() == "1"
+
+        # Setting colony by clicking plate updates index:
+        plate_position = plate.get_plate_position(17, 23)
+        plate_position.click()
+        assert plate.get_qindex() == "42"
