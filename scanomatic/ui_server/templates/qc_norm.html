@@ -135,19 +135,19 @@
                   getLock(function () { });
               });
               $("#btnMarkOKOne").click(function () {
-                  markExperiemnt(plateMetaDataType.OK, false);
+                  markExperiment(plateMetaDataType.OK, false);
               });
               $("#btnMarkOK").click(function () {
-                  markExperiemnt(plateMetaDataType.OK, true);
+                  markExperiment(plateMetaDataType.OK, true);
               });
               $("#btnMarkBad").click(function () {
-                  markExperiemnt(plateMetaDataType.BadData, true);
+                  markExperiment(plateMetaDataType.BadData, true);
               });
               $("#btnMarkEmpty").click(function () {
-                  markExperiemnt(plateMetaDataType.Empty, true);
+                  markExperiment(plateMetaDataType.Empty, true);
               });
               $("#btnMarkNoGrowth").click(function () {
-                  markExperiemnt(plateMetaDataType.NoGrowth, true);
+                  markExperiment(plateMetaDataType.NoGrowth, true);
               });
               $("#btnQidxReset").click(function () {
                   setExperimentByQidx(qIdxOperations.Reset);
@@ -162,19 +162,19 @@
                   var char = getChar(event).toLowerCase();
                   switch (char) {
                       case 'q':
-                          markExperiemnt(plateMetaDataType.OK, true);
+                          markExperiment(plateMetaDataType.OK, true);
                           break;
                       case 'a':
-                          markExperiemnt(plateMetaDataType.OK, false);
+                          markExperiment(plateMetaDataType.OK, false);
                           break;
                       case 'w':
-                          markExperiemnt(plateMetaDataType.BadData, true);
+                          markExperiment(plateMetaDataType.BadData, true);
                           break;
                       case 'e':
-                          markExperiemnt(plateMetaDataType.Empty, true);
+                          markExperiment(plateMetaDataType.Empty, true);
                           break;
                       case 'r':
-                          markExperiemnt(plateMetaDataType.NoGrowth, true);
+                          markExperiment(plateMetaDataType.NoGrowth, true);
                           break;
                       case '1':
                           $("#btnPlate0").focus();
