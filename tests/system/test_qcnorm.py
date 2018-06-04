@@ -142,6 +142,8 @@ class PlateDisplayArea(object):
     def __init__(self, elem, page):
         self.elem = elem
         self.page = page
+        graph = self.get_graph()
+        graph.wait_until_graph_is_visible()
 
     @property
     def number(self):
@@ -260,6 +262,13 @@ class Graph(object):
             return tuple()
         return map(int, pos[0])
 
+    def wait_until_graph_is_visible(self):
+        WebDriverWait(self.elem, UI_DEFAULT_WAIT).until(
+            EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, self.graph_selector),
+            ),
+        )
+
     def wait_until_graph_is_updated(self, *new_position):
 
         def has_right_position(*args):
@@ -277,12 +286,8 @@ class Graph(object):
                 self.state.get('raw') != other.state.get('raw')
                 and self.state.get('smooth') != other.state.get('smooth')
             )
-            
-        WebDriverWait(self.elem, UI_DEFAULT_WAIT).until(
-            EC.visibility_of_element_located(
-                (By.CSS_SELECTOR, self.graph_selector),
-            ),
-        )
+
+        self.wait_until_graph_is_visible()
         if new_position:
             WebDriverWait(None, UI_DEFAULT_WAIT).until(
                 has_right_position,
@@ -449,15 +454,16 @@ class TestQCNormNavigateQidx:
 
         # Page starts at first Qindex:
         assert plate.get_qindex() == "1"
-        no_graph = plate.get_graph()
+        initial_graph = plate.get_graph()
 
         # Pressing buttons works as expected:
         plate.update_qindex(Navigations.NEXT)
         assert plate.get_qindex() == "2"
-        assert plate.get_graph() != no_graph
+        assert plate.get_graph() != initial_graph
         plate.update_qindex(Navigations.PREV)
         assert plate.get_qindex() == "1"
         graph_for_qindex1 = plate.get_graph()
+        assert initial_graph == graph_for_qindex1
 
         # Qindex wraps as expexted:
         plate.update_qindex(Navigations.PREV)
@@ -471,10 +477,4 @@ class TestQCNormNavigateQidx:
         plate.update_qindex(Navigations.NEXT)
         assert plate.get_qindex() == "3"
         plate.update_qindex(Navigations.RESET)
-        assert plate.get_qindex() == "1"
-
-        # Changing plate resets index:
-        plate.update_qindex(Navigations.NEXT)
-        assert plate.get_qindex() == "2"
-        page_with_plate.set_plate(3)
         assert plate.get_qindex() == "1"
