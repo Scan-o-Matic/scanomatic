@@ -490,7 +490,6 @@ function renderPlate(phenotypePlates) {
         const growthMetaData = data.Growth_metaData;
         const phenotypeName = data.plate_phenotype;
         qIndexQueue = data.plate_qIdxSort;
-        setExperimentByQidx(qIdxOperations.Reset);
         const plate = DrawPlate('#plate', plateData, growthMetaData, plateMetaData, phenotypeName, dispatch);
         const row = $('#currentSelection').data('row');
         const col = $('#currentSelection').data('col');
@@ -516,5 +515,6 @@ function renderPlate(phenotypePlates) {
                 DrawCurves('#graph', gData, datah.metaDataGt, datah.metaDataGtWhen, datah.metaDataYield);
             });
         });
+        setExperimentByQidx(qIdxOperations.Reset);
     });
 }
