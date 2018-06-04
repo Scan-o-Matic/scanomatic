@@ -11,6 +11,7 @@ const qIdxOperations = {
     Prev: -1,
     Next: 1,
     Reset: 'reset',
+    Goto: 'goto',
 };
 
 function initSpinner() {
@@ -160,8 +161,12 @@ function fillProjectDetails(projectDetails) {
     });
 }
 
+function getQIndexFromCoord(row, col) {
+    return qIndexQueue.filter(e => e.row == row && e.col == col)[0].idx;
+}
+
 function setExperimentByQidx(operation) {
-    const queueCurrent = getQIndexCoord(operation);
+    const queueCurrent = updateQIndexCoord(operation);
     const row = queueCurrent.row;
     const col = queueCurrent.col;
     dispatch.setExp(`id${row}_${col}`);
@@ -179,9 +184,11 @@ function updateQIndexLabel(qIndex) {
     $('#qIndexCurrent').text(qIndex + 1);
 }
 
-function getQIndexCoord(operation) {
+function updateQIndexCoord(operation, index) {
     if (operation === qIdxOperations.Reset) {
         qIndexCurrent = 0;
+    } else if (operation == qIdxOperations.Goto) {
+        qIndexCurrent = index;
     } else {
         qIndexCurrent += operation;
 
@@ -293,7 +300,7 @@ function markExperiment(mark, all) {
     GetMarkExperiment(path, lockKey, (gData) => {
         if (gData.success === true) {
             dispatch.reDrawExp(`id${row}_${col}`, mark);
-            const queueCurrent = getQIndexCoord(qIdxOperations.Current);
+            const queueCurrent = updateQIndexCoord(qIdxOperations.Current);
             if (queueCurrent.row == row && queueCurrent.col == col) {
                 setExperimentByQidx(qIdxOperations.Next);
             } else {
@@ -506,6 +513,7 @@ function renderPlate(phenotypePlates) {
             $('#currentSelection').data('col', col);
             $('#currentSelection').data('phenotype', datah.phenotype);
             $('#currentSelection').data('project', $('#spProject').text());
+            updateQIndexCoord(qIdxOperations.Goto, getQIndexFromCoord(row, col));
                 // e.g. /api/results/curves/1/31/0/Martin_wt1/analysis
             const expPath = `/api/results/curves/${plateIdx}/${row}/${col}/${project}`;
             console.log(`curve path:${expPath}`);
