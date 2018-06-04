@@ -277,6 +277,7 @@ class Graph(object):
                 self.state.get('raw') != other.state.get('raw')
                 and self.state.get('smooth') != other.state.get('smooth')
             )
+            
         WebDriverWait(self.elem, UI_DEFAULT_WAIT).until(
             EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, self.graph_selector),
