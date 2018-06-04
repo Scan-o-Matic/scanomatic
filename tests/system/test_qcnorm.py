@@ -343,3 +343,9 @@ class TestQCNormNavigateQidx:
         assert plate.get_qindex() == "3"
         plate.update_qindex(Navigations.RESET)
         assert plate.get_qindex() == "1"
+
+        # Changing plate resets index:
+        plate.update_qindex(Navigations.NEXT)
+        assert plate.get_qindex() == "2"
+        page_with_plate.set_plate(3)
+        assert plate.get_qindex() == "1"
