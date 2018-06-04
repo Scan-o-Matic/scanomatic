@@ -279,7 +279,7 @@ function projectSelectionStage(level) {
 }
 
 // Mark Selected Experiment
-function markExperiemnt(mark, all) {
+function markExperiment(mark, all) {
     if (!isQualityControlOn()) return;
     const plateIdx = $('#currentSelection').data('plateIdx');
     const row = $('#currentSelection').data('row');
@@ -473,7 +473,6 @@ function renderPlate(phenotypePlates) {
     $('#currentSelection').data('plateIdx', plateIdx);
     $('#currentSelection').data('project', project);
     $('#spnPlateIdx').text((plateIdx + 1));
-    updateQIndexLabel(qIndexCurrent);
     wait();
     // e.g. /api/results/phenotype/GenerationTimeWhen/1/by4742_h/analysis
     const isNormalized = $('#ckNormalized').is(':checked');
@@ -514,5 +513,6 @@ function renderPlate(phenotypePlates) {
                 parseInt(col, 10),
             );
         });
+        setExperimentByQidx(qIdxOperations.Reset);
     });
 }
