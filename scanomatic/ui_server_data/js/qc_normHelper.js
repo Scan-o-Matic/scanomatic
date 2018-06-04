@@ -278,7 +278,7 @@ function projectSelectionStage(level) {
 }
 
 // Mark Selected Experiment
-function markExperiemnt(mark, all) {
+function markExperiment(mark, all) {
     if (!isQualityControlOn()) return;
     const plateIdx = $('#currentSelection').data('plateIdx');
     const row = $('#currentSelection').data('row');
