@@ -163,7 +163,7 @@ function fillProjectDetails(projectDetails) {
 }
 
 function getQIndexFromCoord(row, col) {
-    return qIndexQueue.filter(e => e.row == row && e.col == col)[0].idx;
+    return qIndexQueue.filter(e => e.row === row && e.col === col)[0].idx;
 }
 
 function setExperimentByCoord(row, col) {
@@ -181,7 +181,7 @@ function updateQIndexLabel(qIndex) {
 function updateQIndexCoord(operation, index) {
     if (operation === qIdxOperations.Reset) {
         qIndexCurrent = 0;
-    } else if (operation == qIdxOperations.Goto) {
+    } else if (operation === qIdxOperations.Goto) {
         qIndexCurrent = index;
     } else {
         qIndexCurrent += operation;
