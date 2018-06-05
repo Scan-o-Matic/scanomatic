@@ -82,9 +82,11 @@ class QCNormPageBase(object):
     def set_phenotype(self, phenotype_name):
         self.wait_until_project_loaded()
         id = '#selRunPhenotypes'
+        graph = self.get_plate_display_area().get_graph()
         select = Select(self.driver.find_element(By.CSS_SELECTOR, id))
         select.select_by_visible_text(phenotype_name)
         self.wait_until_not_talking_to_server()
+        graph.wait_until_graph_got_new_title()
 
 
 class QCNormPage(QCNormPageBase):
@@ -269,16 +271,22 @@ class Graph(object):
             ),
         )
 
+    def wait_until_graph_got_new_title(self):
+        def got_title(*args):
+            other = self.plate_display_area.get_graph()
+            return self.state['title'] != other.state['title']
+        WebDriverWait(None, UI_DEFAULT_WAIT).until(
+            got_title,
+            message='Never updated title {} vs {}'.format(
+                self, self.plate_display_area.get_graph()),
+        )
+
     def wait_until_graph_is_updated(self, *new_position):
 
         def has_right_position(*args):
             other = self.plate_display_area.get_graph()
             return new_position == other.state['position']
             return tuple(other.position) == new_position
-
-        def got_title(*args):
-            other = self.plate_display_area.get_graph()
-            return self.state['title'] != other.state['title']
 
         def different_data(*args):
             other = self.plate_display_area.get_graph()
@@ -300,11 +308,7 @@ class Graph(object):
                         self, self.plate_display_area.get_graph()),
                 )
         else:
-            WebDriverWait(None, UI_DEFAULT_WAIT).until(
-                got_title,
-                message='Never updated title {} vs {}'.format(
-                    self, self.plate_display_area.get_graph()),
-            )
+            self.wait_until_graph_got_new_title()
             WebDriverWait(None, UI_DEFAULT_WAIT).until(
                 different_data,
                 message='Never updated plot {} vs {}'.format(
@@ -349,6 +353,10 @@ class PlatePosition(object):
 
     def click(self):
         previous_graph = self.page.get_plate_display_area().get_graph()
+        self.page.driver.execute_script(
+            "return arguments[0].scrollIntoView(true);",
+            self.elem,
+        )
         ActionChains(
             self.page.driver,
         ).move_to_element(self.elem).click().perform()
@@ -485,11 +493,12 @@ class TestQCNormNavigateQidx:
         graph_plate_1 = plate.get_graph()
         page_with_plate.set_plate(3)
         assert plate.get_qindex() == "1"
-        graph_plate_4 = plate.get_graph()
-        assert graph_plate_1 != graph_plate_4
-        assert initial_graph != graph_plate_4
+        graph_plate_3 = plate.get_graph()
+        assert graph_plate_1 != graph_plate_3
+        assert initial_graph != graph_plate_3
 
         # Setting colony by clicking plate updates index:
         plate_position = plate.get_plate_position(17, 23)
         plate_position.click()
         assert plate.get_qindex() == "42"
+        assert graph_plate_3 != plate.get_graph()
