@@ -163,7 +163,7 @@ function fillProjectDetails(projectDetails) {
 }
 
 function getQIndexFromCoord(row, col) {
-    return qIndexQueue.filter(e => e.row === row && e.col === col)[0].idx;
+    return qIndexQueue.filter(e => e.row == row && e.col == col)[0].idx;
 }
 
 function setExperimentByCoord(row, col) {
