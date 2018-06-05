@@ -1,6 +1,6 @@
 import * as API from '.';
 
-describe('API (qc)', () => {
+describe('API', () => {
     const onSuccess = jasmine.createSpy('onSuccess');
     const onError = jasmine.createSpy('onError');
     const mostRecentRequest = () => jasmine.Ajax.requests.mostRecent();

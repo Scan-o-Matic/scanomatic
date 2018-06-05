@@ -1,5 +1,6 @@
 from urllib.parse import quote_plus
 from enum import Enum
+import re
 
 import pytest
 from selenium.common.exceptions import NoSuchElementException
@@ -7,6 +8,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
+
+UI_DEFAULT_WAIT = 20
 
 CurveMark = Enum('CurveMark', ['OK', 'OK_THIS', 'BAD', 'EMPTY', 'NO_GROWTH'])
 Navigations = Enum('Navigations', ['NEXT', 'PREV', 'RESET'])
@@ -17,8 +20,9 @@ class AnalysisNotFoundError(Exception):
 
 
 class QCNormPageBase(object):
-    TALKING_TO_SERVER_TIMEOUT = 10
+    TALKING_TO_SERVER_TIMEOUT = 30
     PROJECT_LOAD_CHECKS_TIMEOUT = 60
+
     details_selector = (By.CSS_SELECTOR, '#tbProjectDetails')
 
     def __init__(self, driver, base_url, path):
@@ -138,6 +142,8 @@ class PlateDisplayArea(object):
     def __init__(self, elem, page):
         self.elem = elem
         self.page = page
+        graph = self.get_graph()
+        graph.wait_until_graph_is_visible()
 
     @property
     def number(self):
@@ -197,7 +203,129 @@ class PlateDisplayArea(object):
             id = '#btnQidxPrev'
         elif operation == Navigations.RESET:
             id = '#btnQidxReset'
+
+        graph = self.get_graph()
         self.elem.find_element(By.CSS_SELECTOR, id).click()
+        graph.wait_until_graph_is_updated()
+
+    def get_graph(self):
+        return Graph(self)
+
+
+class Graph(object):
+    graph_selector = '#graph'
+
+    def __init__(self, plate_display_area):
+        self.plate_display_area = plate_display_area
+        self.elem = plate_display_area.elem
+        pos = self.position
+        if pos:
+            self.state = {
+                'should_have_data': True,
+                'title': self.title,
+                'position': pos,
+                'raw': self.get_raw_growth_data(),
+                'smooth': self.get_smooth_growth_data(),
+            }
+        else:
+            self.state = {
+                'should_have_data': False,
+                'title': self.title,
+            }
+
+    def __eq__(self, other):
+        if (self.state['should_have_data'] != other.state['should_have_data']):
+            return self.state['title'] == other.state['title']
+        return (
+            self.state['title'] == other.state['title']
+            and self.state.get('raw') == other.state.get('raw')
+            and self.state.get('smooth') == other.state.get('smooth')
+        )
+
+    def __repr__(self):
+        return "<Graph '{}' Pos {} Hopefully {}, RAW {} SMOOTH {}>".format(
+            self.state['title'],
+            self.state.get('position'),
+            'Visible' if self.state['should_have_data'] else 'Hidden',
+            self.state.get('raw'),
+            self.state.get('smooth'),
+        )
+
+    @property
+    def title(self):
+        return self.elem.find_element(By.CSS_SELECTOR, '#sel').text
+
+    @property
+    def position(self):
+        pos = re.findall(r'\[([0-9]+),([0-9]+)\]', self.title)
+        if not len(pos):
+            return tuple()
+        return tuple(map(int, pos[0]))
+
+    def wait_until_graph_is_visible(self):
+        WebDriverWait(self.elem, UI_DEFAULT_WAIT).until(
+            EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, self.graph_selector),
+            ),
+        )
+
+    def wait_until_graph_is_updated(self, *new_position):
+
+        def has_right_position(*args):
+            other = self.plate_display_area.get_graph()
+            return new_position == other.state['position']
+            return tuple(other.position) == new_position
+
+        def got_title(*args):
+            other = self.plate_display_area.get_graph()
+            return self.state['title'] != other.state['title']
+
+        def different_data(*args):
+            other = self.plate_display_area.get_graph()
+            return (
+                self.state.get('raw') != other.state.get('raw')
+                and self.state.get('smooth') != other.state.get('smooth')
+            )
+
+        self.wait_until_graph_is_visible()
+        if new_position:
+            WebDriverWait(None, UI_DEFAULT_WAIT).until(
+                has_right_position,
+                message='Never updated to expected position {}'.format(self),
+            )
+            if (self.state['position'] != new_position):
+                WebDriverWait(None, UI_DEFAULT_WAIT).until(
+                    different_data,
+                    message='Never updated plot {} vs {}'.format(
+                        self, self.plate_display_area.get_graph()),
+                )
+        else:
+            WebDriverWait(None, UI_DEFAULT_WAIT).until(
+                got_title,
+                message='Never updated title {} vs {}'.format(
+                    self, self.plate_display_area.get_graph()),
+            )
+            WebDriverWait(None, UI_DEFAULT_WAIT).until(
+                different_data,
+                message='Never updated plot {} vs {}'.format(
+                    self, self.plate_display_area.get_graph()),
+            )
+
+    def get_raw_growth_data(self):
+        graph = self.elem.find_element(By.CSS_SELECTOR, self.graph_selector)
+        try:
+            return graph.find_element(
+                By.CSS_SELECTOR, '.raw').get_attribute('d')
+        except NoSuchElementException:
+            return None
+
+    def get_smooth_growth_data(self):
+        graph = self.elem.find_element(By.CSS_SELECTOR, self.graph_selector)
+        try:
+            return graph.find_element(
+                By.CSS_SELECTOR, '.smooth').get_attribute('d')
+        except NoSuchElementException:
+            return None
 
 
 class PlatePosition(object):
@@ -220,10 +348,11 @@ class PlatePosition(object):
             return CurveMark.NO_GROWTH
 
     def click(self):
+        previous_graph = self.page.get_plate_display_area().get_graph()
         ActionChains(
             self.page.driver,
         ).move_to_element(self.elem).click().perform()
-        WebDriverWait(self.page.driver, 5).until(
+        WebDriverWait(self.page.driver, UI_DEFAULT_WAIT).until(
             EC.presence_of_element_located(
                 (
                     By.XPATH,
@@ -234,6 +363,7 @@ class PlatePosition(object):
                 )
             )
         )
+        previous_graph.wait_until_graph_is_updated(self.row, self.col)
 
 
 @pytest.fixture(scope='function')
@@ -324,18 +454,23 @@ class TestQCNormNavigateQidx:
 
         # Page starts at first Qindex:
         assert plate.get_qindex() == "1"
+        initial_graph = plate.get_graph()
 
         # Pressing buttons works as expected:
         plate.update_qindex(Navigations.NEXT)
         assert plate.get_qindex() == "2"
+        assert plate.get_graph() != initial_graph
         plate.update_qindex(Navigations.PREV)
         assert plate.get_qindex() == "1"
+        graph_for_qindex1 = plate.get_graph()
+        assert initial_graph == graph_for_qindex1
 
         # Qindex wraps as expexted:
         plate.update_qindex(Navigations.PREV)
         assert plate.get_qindex() == "1536"
         plate.update_qindex(Navigations.NEXT)
         assert plate.get_qindex() == "1"
+        assert plate.get_graph() == graph_for_qindex1
 
         # Pressing reset goes back to first index:
         plate.update_qindex(Navigations.NEXT)
@@ -347,5 +482,9 @@ class TestQCNormNavigateQidx:
         # Changing plate resets index:
         plate.update_qindex(Navigations.NEXT)
         assert plate.get_qindex() == "2"
+        graph_plate_1 = plate.get_graph()
         page_with_plate.set_plate(3)
         assert plate.get_qindex() == "1"
+        graph_plate_4 = plate.get_graph()
+        assert graph_plate_1 != graph_plate_4
+        assert initial_graph != graph_plate_4

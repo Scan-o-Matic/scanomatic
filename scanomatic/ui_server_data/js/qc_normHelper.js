@@ -109,6 +109,7 @@ function getLock(callback) {
 
 function fillProjectDetails(projectDetails) {
     console.log("Project details:" + projectDetails.project);
+    window.qc.actions.setProject(projectDetails.project);
     $("#spProject_name").text(projectDetails.project_name);
     $("#spProject").text(projectDetails.project);
     $("#spExtraction_date").text(projectDetails.extraction_date);
@@ -468,7 +469,7 @@ function renderPlate(phenotypePlates) {
     const path = phenotypePlates.url;
     const plateIdx = phenotypePlates.index;
     const project = $('#spProject').text();
-    console.log(`experiment: ${path}`);
+    console.log(`experiment: ${path}`, phenotypePlates);
     $('#currentSelection').data('plateIdx', plateIdx);
     $('#currentSelection').data('project', project);
     $('#spnPlateIdx').text((plateIdx + 1));
@@ -490,13 +491,13 @@ function renderPlate(phenotypePlates) {
         const growthMetaData = data.Growth_metaData;
         const phenotypeName = data.plate_phenotype;
         qIndexQueue = data.plate_qIdxSort;
+        window.qc.actions.retrievePlateCurves(parseInt(plateIdx, 10));
         const plate = DrawPlate('#plate', plateData, growthMetaData, plateMetaData, phenotypeName, dispatch);
         const row = $('#currentSelection').data('row');
         const col = $('#currentSelection').data('col');
         if (row && col) { setExperimentByCoord(row, col); }
         stopWait();
         plate.on('SelectedExperiment', (datah) => {
-            console.log(`dispatched:${datah.coord}`);
             const arr = datah.coord.split(',');
             const row = arr[0];
             const col = arr[1];
@@ -506,14 +507,11 @@ function renderPlate(phenotypePlates) {
             $('#currentSelection').data('col', col);
             $('#currentSelection').data('phenotype', datah.phenotype);
             $('#currentSelection').data('project', $('#spProject').text());
-                // e.g. /api/results/curves/1/31/0/Martin_wt1/analysis
-            const expPath = `/api/results/curves/${plateIdx}/${row}/${col}/${project}`;
-            console.log(`curve path:${expPath}`);
-            const lockKey = getLock_key();
-            GetExperimentGrowthData(expPath, lockKey, (gData) => {
-                $('#graph').empty();
-                DrawCurves('#graph', gData, datah.metaDataGt, datah.metaDataGtWhen, datah.metaDataYield);
-            });
+            window.qc.actions.setFocus(
+                parseInt(plateIdx, 10),
+                parseInt(row, 10),
+                parseInt(col, 10),
+            );
         });
         setExperimentByQidx(qIdxOperations.Reset);
     });
