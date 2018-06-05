@@ -1,13 +1,12 @@
 ﻿if (!d3.scanomatic) d3.scanomatic = {};
 
-function DrawCurves(container, data, gt, gtWhen, yld) {
-    
+function DrawCurves(container, time, serRaw, serSmooth, gt, gtWhen, yld) {
     //GrowthChart
     var chartMarginAll = 30;
     var chartMargin = { top: chartMarginAll, right: chartMarginAll, bottom: chartMarginAll, left: chartMarginAll };
     var chartwidth = 350;
     var chartheight = 294;
-
+    d3.select(container).select('svg').remove();
     var chart = d3.select(container)
         .append("svg")
         .attr({
@@ -48,8 +47,7 @@ function DrawCurves(container, data, gt, gtWhen, yld) {
                 .attr("class", "arrowHead");
 
     // chart
-    var gChart = d3.scanomatic.growthChart();
-    gChart.data(data);
+    var gChart = d3.scanomatic.growthChart(time, serRaw, serSmooth);
     gChart.width(chartwidth);
     gChart.height(chartheight);
     gChart.margin(chartMargin);
@@ -59,17 +57,16 @@ function DrawCurves(container, data, gt, gtWhen, yld) {
     gChart(chart);
 }
 
-d3.scanomatic.growthChart = function () {
+d3.scanomatic.growthChart = function (time, serRaw, serSmooth) {
 
     //properties
-    var data;
     var margin;
     var height;
     var width;
     var generationTimeWhen;
     var generationTime;
     var growthYield;
-
+    let drawn = false;
 
     //local variables
     var g;
@@ -88,21 +85,24 @@ d3.scanomatic.growthChart = function () {
 
     function update() {
         //data
-        var serRaw = data.raw_data;
-        var serSmooth = data.smooth_data;
-        var time = data.time_data;
+        if (!serSmooth || !serRaw || !time) {
+            drawn = false;
+        } else {
+            if (drawn) return;
+        };
         //chart
         var w = width - margin.left - margin.right;
         var h = height - margin.top - margin.bottom;
 
         if (serRaw.length !== time.length || serSmooth.length !== time.length)
             throw ("GrowthData lenghts do not match!!!");
+        drawn = true;
 
         var odExtend = getExtentFromMultipleArrs(serRaw, serSmooth);
 
         var rawData = getDataObject(time, serRaw);
         var smoothData = getDataObject(time, serSmooth);
-        
+
         var xScale = d3.scale.linear()
             .domain(d3.extent(time))
             .range([0, w]);
@@ -113,7 +113,7 @@ d3.scanomatic.growthChart = function () {
             .range([h, 0]);
 
         addAxis(xScale, yScale, h);
-        
+
         addSeries(rawData, smoothData, xScale, yScale);
 
         addMetaGt(smoothData, xScale, yScale);
@@ -232,7 +232,7 @@ d3.scanomatic.growthChart = function () {
                 y: getYOffset(gtY, 55)
             })
             .text("GT");
-        //Py=m (Px-x) + Py 
+        //Py=m (Px-x) + Py
         console.log("GT:" + generationTime);
         console.log("GTTimeWhen:" + generationTimeWhen);
         console.log("GTTimeWhenValue:" + smoothGtValue);
@@ -319,12 +319,6 @@ d3.scanomatic.growthChart = function () {
 
     function getYOffset(y, offset) {
         return (y > 100) ? y - offset : y + offset;
-    }
-
-    chart.data = function (value) {
-        if (!arguments.length) return data;
-        data = value;
-        return chart;
     }
 
     chart.margin = function (value) {
