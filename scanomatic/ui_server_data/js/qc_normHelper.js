@@ -11,6 +11,7 @@ const qIdxOperations = {
     Prev: -1,
     Next: 1,
     Reset: 'reset',
+    Goto: 'goto',
 };
 
 function initSpinner() {
@@ -161,11 +162,8 @@ function fillProjectDetails(projectDetails) {
     });
 }
 
-function setExperimentByQidx(operation) {
-    const queueCurrent = getQIndexCoord(operation);
-    const row = queueCurrent.row;
-    const col = queueCurrent.col;
-    dispatch.setExp(`id${row}_${col}`);
+function getQIndexFromCoord(row, col) {
+    return qIndexQueue.filter(e => e.row == row && e.col == col)[0].idx;
 }
 
 function setExperimentByCoord(row, col) {
@@ -180,9 +178,11 @@ function updateQIndexLabel(qIndex) {
     $('#qIndexCurrent').text(qIndex + 1);
 }
 
-function getQIndexCoord(operation) {
+function updateQIndexCoord(operation, index) {
     if (operation === qIdxOperations.Reset) {
         qIndexCurrent = 0;
+    } else if (operation === qIdxOperations.Goto) {
+        qIndexCurrent = index;
     } else {
         qIndexCurrent += operation;
 
@@ -196,6 +196,13 @@ function getQIndexCoord(operation) {
 
     updateQIndexLabel(qIndexCurrent);
     return qIndexQueue[qIndexCurrent];
+}
+
+function setExperimentByQidx(operation) {
+    const queueCurrent = updateQIndexCoord(operation);
+    const row = queueCurrent.row;
+    const col = queueCurrent.col;
+    dispatch.setExp(`id${row}_${col}`);
 }
 
 function getChar(event) {
@@ -294,7 +301,7 @@ function markExperiment(mark, all) {
     GetMarkExperiment(path, lockKey, (gData) => {
         if (gData.success === true) {
             dispatch.reDrawExp(`id${row}_${col}`, mark);
-            const queueCurrent = getQIndexCoord(qIdxOperations.Current);
+            const queueCurrent = updateQIndexCoord(qIdxOperations.Current);
             if (queueCurrent.row == row && queueCurrent.col == col) {
                 setExperimentByQidx(qIdxOperations.Next);
             } else {
@@ -507,6 +514,7 @@ function renderPlate(phenotypePlates) {
             $('#currentSelection').data('col', col);
             $('#currentSelection').data('phenotype', datah.phenotype);
             $('#currentSelection').data('project', $('#spProject').text());
+            updateQIndexCoord(qIdxOperations.Goto, getQIndexFromCoord(row, col));
             window.qc.actions.setFocus(
                 parseInt(plateIdx, 10),
                 parseInt(row, 10),
