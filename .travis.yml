@@ -55,17 +55,3 @@ jobs:
             docker-compose push;
             curl "https://jenkins.molflow.com/buildByToken/buildWithParameters?job=INFRA&token=${JENKINS_TOKEN}";
           fi
-    - stage: "Testing with SauceLabs"
-      if: repo=Scan-o-Matic/scanomatic AND branch=master AND type=push
-      python: "2.7"
-      services: ["docker"]
-      addons:
-        apt:
-          packages:
-            - docker-ce
-        sauce_connect: true
-      before_install:
-        - sudo pip install tox
-      script:
-        - docker build --cache-from=phenomique/scanomatic:latest --tag=phenomique/scanomatic:latest .
-        - tox -e system-tests -- --browser saucelabs
