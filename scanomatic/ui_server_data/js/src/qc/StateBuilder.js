@@ -41,14 +41,12 @@ export default class StateBuilder {
         return this;
     }
 
-    setQualityIndexQueue(plate: number, queue: QualityIndexQueue) {
-        if (plate !== this.plate.number) return this;
+    setQualityIndexQueue(queue: QualityIndexQueue) {
         this.plate = Object.assign({}, this.plate, { qIndexQueue: queue });
         return this;
     }
 
-    setQualityIndex(plate: number, index: number) {
-        if (plate !== this.plate.number) return this;
+    setQualityIndex(index: number) {
         if (!this.plate.qIndexQueue) return this;
         this.plate = Object.assign({}, this.plate, { qIndex: index });
         return this;

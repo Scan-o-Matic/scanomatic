@@ -45,7 +45,14 @@ export function getFocus(state: State) : ?PlatePosition {
     return state.plate.focus;
 }
 
-export function getCurrrentQIndexInfo(state: State, plate: number) : ?QualityIndexInfo {
-    if (!state.plate || state.plate.number !== plate || !state.plate.qIndexQueue) return null;
+export function getCurrrentQIndexInfo(state: State) : ?QualityIndexInfo {
+    if (!state.plate || !state.plate.qIndexQueue) return null;
     return state.plate.qIndexQueue[state.plate.qIndex];
+}
+
+export function getQIndexFromPosition(state: State, row: number, col: number) : ?number {
+    if (!state.plate || !state.plate.qIndexQueue) return null;
+    return state.plate.qIndexQueue
+        .filter(item => item.row === row && item.col === col)
+        .map(item => item.idx)[0];
 }

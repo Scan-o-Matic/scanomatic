@@ -59,36 +59,32 @@ describe('/qc/bridge', () => {
         });
 
         it('dispatches a QUALITYINDEX_QUEUE_SET on setQualityIndexQueue', () => {
-            bridge.actions.setQualityIndexQueue(0, [{ idx: 0, row: 0, col: 0 }]);
+            bridge.actions.setQualityIndexQueue([{ idx: 0, row: 0, col: 0 }]);
             expect(store.dispatch).toHaveBeenCalledWith({
                 type: 'QUALITYINDEX_QUEUE_SET',
-                plate: 0,
                 queue: [{ idx: 0, row: 0, col: 0 }],
             });
         });
 
         it('dispatches a QUALITYINDEX_SET on setQualityIndex', () => {
-            bridge.actions.setQualityIndex(0, 10);
+            bridge.actions.setQualityIndex(10);
             expect(store.dispatch).toHaveBeenCalledWith({
                 type: 'QUALITYINDEX_SET',
-                plate: 0,
                 index: 10,
             });
         });
 
         it('dispatches a QUALITYINDEX_NEXT on nextQualityIndex', () => {
-            bridge.actions.nextQualityIndex(0);
+            bridge.actions.nextQualityIndex();
             expect(store.dispatch).toHaveBeenCalledWith({
                 type: 'QUALITYINDEX_NEXT',
-                plate: 0,
             });
         });
 
         it('dispatches a QUALITYINDEX_PREVIOUS on previousQualityIndex', () => {
-            bridge.actions.previousQualityIndex(0);
+            bridge.actions.previousQualityIndex();
             expect(store.dispatch).toHaveBeenCalledWith({
                 type: 'QUALITYINDEX_PREVIOUS',
-                plate: 0,
             });
         });
     });
@@ -132,6 +128,22 @@ describe('/qc/bridge', () => {
             expect(bridge.selectors.getFocus()).toEqual({ row: 41, col: 43 });
             expect(store.getState).toHaveBeenCalled();
             expect(getFocus).toHaveBeenCalledWith(state);
+        });
+
+        it('calls getCurrrentQIndexInfo on getCurrrentQIndexInfo', () => {
+            const getCurrrentQIndexInfo = spyOn(selectors, 'getCurrrentQIndexInfo')
+                .and.returnValue({ idx: 42, row: 7, col: 8 });
+            expect(bridge.selectors.getCurrrentQIndexInfo()).toEqual({ idx: 42, row: 7, col: 8 });
+            expect(store.getState).toHaveBeenCalled();
+            expect(getCurrrentQIndexInfo).toHaveBeenCalledWith(state);
+        });
+
+        it('calls getQIndexFromPosition on getQIndexFromPosition', () => {
+            const getQIndexFromPosition = spyOn(selectors, 'getQIndexFromPosition')
+                .and.returnValue(42);
+            expect(bridge.selectors.getQIndexFromPosition(7, 8)).toEqual(42);
+            expect(store.getState).toHaveBeenCalled();
+            expect(getQIndexFromPosition).toHaveBeenCalledWith(state, 7, 8);
         });
     });
 });
