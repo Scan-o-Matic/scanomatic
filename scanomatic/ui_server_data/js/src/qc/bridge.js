@@ -2,13 +2,16 @@
 
 import {
     retrievePlateCurves, setProject, setPlate, focusCurve,
+    setQualityIndexQueue, nextQualityIndex, previousQualityIndex, setQualityIndex,
 } from './actions';
 import {
-    getRawCurve, getSmoothCurve, getTimes, getPlate, getFocus,
+    getRawCurve, getSmoothCurve, getTimes, getPlate, getFocus, getCurrrentQIndexInfo,
 } from './selectors';
 
 import type { Action, ThunkAction } from './actions';
-import type { State, TimeSeries, PlatePosition } from './state';
+import type {
+    State, TimeSeries, PlatePosition, QualityIndexInfo, QualityIndexQueue,
+} from './state';
 
 type Store = {
     +dispatch: (Action | ThunkAction) => any,
@@ -47,6 +50,11 @@ class Selectors {
         const state = this.store.getState();
         return getFocus(state);
     }
+
+    getCurrrentQIndexInfo() : ?QualityIndexInfo {
+        const state = this.store.getState();
+        return getCurrrentQIndexInfo(state);
+    }
 }
 
 class Actions {
@@ -66,6 +74,22 @@ class Actions {
 
     setFocus(plate: number, row: number, col: number) {
         this.store.dispatch(focusCurve(plate, row, col));
+    }
+
+    setQualityIndexQueue(plate: number, queue: QualityIndexQueue) {
+        this.store.dispatch(setQualityIndexQueue(plate, queue));
+    }
+
+    setQualityIndex(plate: number, index: number) {
+        this.store.dispatch(setQualityIndex(plate, index));
+    }
+
+    nextQualityIndex(plate: number) {
+        this.store.dispatch(nextQualityIndex(plate));
+    }
+
+    previousQualityIndex(plate: number) {
+        this.store.dispatch(previousQualityIndex(plate));
     }
 
     retrievePlateCurves(plate: ?number = null) {

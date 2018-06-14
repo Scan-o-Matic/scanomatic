@@ -57,6 +57,40 @@ describe('/qc/bridge', () => {
                 plate: 2,
             });
         });
+
+        it('dispatches a QUALITYINDEX_QUEUE_SET on setQualityIndexQueue', () => {
+            bridge.actions.setQualityIndexQueue(0, [{ idx: 0, row: 0, col: 0 }]);
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'QUALITYINDEX_QUEUE_SET',
+                plate: 0,
+                queue: [{ idx: 0, row: 0, col: 0 }],
+            });
+        });
+
+        it('dispatches a QUALITYINDEX_SET on setQualityIndex', () => {
+            bridge.actions.setQualityIndex(0, 10);
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'QUALITYINDEX_SET',
+                plate: 0,
+                index: 10,
+            });
+        });
+
+        it('dispatches a QUALITYINDEX_NEXT on nextQualityIndex', () => {
+            bridge.actions.nextQualityIndex(0);
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'QUALITYINDEX_NEXT',
+                plate: 0,
+            });
+        });
+
+        it('dispatches a QUALITYINDEX_PREVIOUS on previousQualityIndex', () => {
+            bridge.actions.previousQualityIndex(0);
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'QUALITYINDEX_PREVIOUS',
+                plate: 0,
+            });
+        });
     });
 
     describe('selectors', () => {
