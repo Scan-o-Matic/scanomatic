@@ -5,7 +5,8 @@ import {
     setQualityIndexQueue, nextQualityIndex, previousQualityIndex, setQualityIndex,
 } from './actions';
 import {
-    getRawCurve, getSmoothCurve, getTimes, getPlate, getFocus, getCurrrentQIndexInfo,
+    getRawCurve, getSmoothCurve, getTimes, getPlate, getFocus,
+    getCurrrentQIndexInfo, getQIndexFromPosition,
 } from './selectors';
 
 import type { Action, ThunkAction } from './actions';
@@ -54,6 +55,11 @@ class Selectors {
     getCurrrentQIndexInfo() : ?QualityIndexInfo {
         const state = this.store.getState();
         return getCurrrentQIndexInfo(state);
+    }
+
+    getQIndexFromPosition(row: number, col: number) : ?number {
+        const state = this.store.getState();
+        return getQIndexFromPosition(state, row, col);
     }
 }
 

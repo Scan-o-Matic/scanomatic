@@ -129,5 +129,21 @@ describe('/qc/bridge', () => {
             expect(store.getState).toHaveBeenCalled();
             expect(getFocus).toHaveBeenCalledWith(state);
         });
+
+        it('calls getCurrrentQIndexInfo on getCurrrentQIndexInfo', () => {
+            const getCurrrentQIndexInfo = spyOn(selectors, 'getCurrrentQIndexInfo')
+                .and.returnValue({ idx: 42, row: 7, col: 8 });
+            expect(bridge.selectors.getCurrrentQIndexInfo()).toEqual({ idx: 42, row: 7, col: 8 });
+            expect(store.getState).toHaveBeenCalled();
+            expect(getCurrrentQIndexInfo).toHaveBeenCalledWith(state);
+        });
+
+        it('calls getQIndexFromPosition on getQIndexFromPosition', () => {
+            const getQIndexFromPosition = spyOn(selectors, 'getQIndexFromPosition')
+                .and.returnValue(42);
+            expect(bridge.selectors.getQIndexFromPosition(7, 8)).toEqual(42);
+            expect(store.getState).toHaveBeenCalled();
+            expect(getQIndexFromPosition).toHaveBeenCalledWith(state, 7, 8);
+        });
     });
 });
