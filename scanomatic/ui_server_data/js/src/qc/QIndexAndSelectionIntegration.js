@@ -26,7 +26,7 @@ export default class QIndexAndSelectionIntegration {
     handleUpdate() {
         const focus = Object.assign(
             {},
-            this.bridge.selectors.getCurrrentQIndexInfo(),
+            this.bridge.selectors.getFocus(),
             { plate: this.bridge.selectos.getPlate() },
         );
         updateQIndexLabel(focus);

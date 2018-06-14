@@ -15,11 +15,6 @@ export type Settings = {
     +project?: string,
 }
 
-export type PlatePosition = {
-    +row: number,
-    +col: number,
-}
-
 export type Plate = {
     +number: number,
     +qIndex: number,
@@ -27,7 +22,6 @@ export type Plate = {
     +raw?: PlateOfTimeSeries,
     +smooth?: PlateOfTimeSeries,
     +times?: TimeSeries,
-    +focus?: PlatePosition,
 }
 
 export type State = {

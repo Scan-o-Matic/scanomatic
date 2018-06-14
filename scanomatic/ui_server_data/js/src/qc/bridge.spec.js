@@ -124,18 +124,18 @@ describe('/qc/bridge', () => {
 
         it('calls getFocus on getFocus', () => {
             const getFocus = spyOn(selectors, 'getFocus')
-                .and.returnValue({ row: 41, col: 43 });
-            expect(bridge.selectors.getFocus()).toEqual({ row: 41, col: 43 });
+                .and.returnValue({ row: 41, col: 43, idx: 0 });
+            expect(bridge.selectors.getFocus()).toEqual({ row: 41, col: 43, idx: 0 });
             expect(store.getState).toHaveBeenCalled();
             expect(getFocus).toHaveBeenCalledWith(state);
         });
 
-        it('calls getCurrrentQIndexInfo on getCurrrentQIndexInfo', () => {
-            const getCurrrentQIndexInfo = spyOn(selectors, 'getCurrrentQIndexInfo')
+        it('calls getFocus on getFocus', () => {
+            const getFocus = spyOn(selectors, 'getFocus')
                 .and.returnValue({ idx: 42, row: 7, col: 8 });
-            expect(bridge.selectors.getCurrrentQIndexInfo()).toEqual({ idx: 42, row: 7, col: 8 });
+            expect(bridge.selectors.getFocus()).toEqual({ idx: 42, row: 7, col: 8 });
             expect(store.getState).toHaveBeenCalled();
-            expect(getCurrrentQIndexInfo).toHaveBeenCalledWith(state);
+            expect(getFocus).toHaveBeenCalledWith(state);
         });
 
         it('calls getQIndexFromPosition on getQIndexFromPosition', () => {

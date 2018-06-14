@@ -4,11 +4,9 @@ import type {
     State,
     QualityIndexInfo,
     TimeSeries as _TimeSeries,
-    PlatePosition as _PlatePosition,
 } from './state';
 
 export type TimeSeries = _TimeSeries;
-export type PlatePosition = _PlatePosition;
 
 export function getProject(state: State): ?string {
     if (!state.settings) return null;
@@ -40,12 +38,7 @@ export function getSmoothCurve(state: State, plate: number, row: number, col: nu
     return smooth[row][col];
 }
 
-export function getFocus(state: State) : ?PlatePosition {
-    if (!state.plate || !state.plate.focus) return null;
-    return state.plate.focus;
-}
-
-export function getCurrrentQIndexInfo(state: State) : ?QualityIndexInfo {
+export function getFocus(state: State) : ?QualityIndexInfo {
     if (!state.plate || !state.plate.qIndexQueue) return null;
     return state.plate.qIndexQueue[state.plate.qIndex];
 }

@@ -24,32 +24,6 @@ describe('/qc/reducers/plate', () => {
         });
     });
 
-    describe('CURVE_FOCUS', () => {
-        it('sets curve focus', () => {
-            const action = {
-                type: 'CURVE_FOCUS', plate: 0, row: 1, col: 2,
-            };
-            expect(plate(undefined, action)).toEqual({
-                number: 0,
-                focus: {
-                    row: 1,
-                    col: 2,
-                },
-                qIndex: 0,
-            });
-        });
-
-        it('doesnt do a thing if wrong plate', () => {
-            const action = {
-                type: 'CURVE_FOCUS', plate: 2, row: 1, col: 2,
-            };
-            expect(plate(undefined, action)).toEqual({
-                number: 0,
-                qIndex: 0,
-            });
-        });
-    });
-
     describe('PLATE_GROWTHDATA_SET', () => {
         it('sets the plate growth data', () => {
             const times = [1, 2, 3];

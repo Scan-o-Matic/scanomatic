@@ -18,9 +18,6 @@ export default function plate(state: State = initialState, action: Action) {
             state,
             { times: action.times, raw: action.raw, smooth: action.smooth },
         );
-    case 'CURVE_FOCUS':
-        if (action.plate !== state.number) return state;
-        return Object.assign({}, state, { focus: { row: action.row, col: action.col } });
     case 'QUALITYINDEX_QUEUE_SET':
         return Object.assign(
             {},

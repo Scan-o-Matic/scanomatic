@@ -12,18 +12,6 @@ describe('/qc/selectors', () => {
         expect(selectors.getPlate(state)).toEqual(2);
     });
 
-    describe('focus', () => {
-        it('should return null if no focus', () => {
-            const state = new StateBuilder().build();
-            expect(selectors.getFocus(state)).toEqual(null);
-        });
-
-        it('should return the focused curve', () => {
-            const state = new StateBuilder().setFocus(0, 2, 1).build();
-            expect(selectors.getFocus(state)).toEqual({ row: 2, col: 1 });
-        });
-    });
-
     describe('raw data', () => {
         it('should return null if curve is on wrong plate', () => {
             const state = new StateBuilder().build();
@@ -100,7 +88,7 @@ describe('/qc/selectors', () => {
         });
     });
 
-    describe('getCurrrentQIndexInfo', () => {
+    describe('getFocus', () => {
         const queue = [
             { idx: 0, col: 1, row: 1 },
             { idx: 1, col: 0, row: 1 },
@@ -110,7 +98,7 @@ describe('/qc/selectors', () => {
 
         it('should return null if no queue', () => {
             const state = new StateBuilder().build();
-            expect(selectors.getCurrrentQIndexInfo(state)).toBe(null);
+            expect(selectors.getFocus(state)).toBe(null);
         });
 
         it('should return current index info', () => {
@@ -118,7 +106,7 @@ describe('/qc/selectors', () => {
                 .setQualityIndexQueue(queue)
                 .setQualityIndex(1)
                 .build();
-            expect(selectors.getCurrrentQIndexInfo(state)).toEqual({
+            expect(selectors.getFocus(state)).toEqual({
                 idx: 1,
                 col: 0,
                 row: 1,
