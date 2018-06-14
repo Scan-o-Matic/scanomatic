@@ -111,4 +111,34 @@ describe('/qc/actions', () => {
             });
         });
     });
+
+    describe('quality index', () => {
+        it('setQualityIndexQueue should return a QUALITYINDEX_QUEUE_SET acation', () => {
+            const queue = [{ idx: 0, col: 4, row: 10 }, { idx: 1, col: 2, row: 55 }];
+            expect(actions.setQualityIndexQueue(queue)).toEqual({
+                type: 'QUALITYINDEX_QUEUE_SET',
+                queue,
+            });
+        });
+
+        it('setQualityIndex should return a QUALITYINDEX_SET action', () => {
+            const index = 42;
+            expect(actions.setQualityIndex(index)).toEqual({
+                type: 'QUALITYINDEX_SET',
+                index,
+            });
+        });
+
+        it('nextQualityIndex should return a QUALITYINDEX_NEXT action', () => {
+            expect(actions.nextQualityIndex()).toEqual({
+                type: 'QUALITYINDEX_NEXT',
+            });
+        });
+
+        it('previousQualityIndex should return a QUALITYINDEX_PREVIOUS action', () => {
+            expect(actions.previousQualityIndex()).toEqual({
+                type: 'QUALITYINDEX_PREVIOUS',
+            });
+        });
+    });
 });
