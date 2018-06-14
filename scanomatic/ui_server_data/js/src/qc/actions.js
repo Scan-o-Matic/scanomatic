@@ -14,7 +14,7 @@ export type Action
         smooth: PlateOfTimeSeries,
         raw: PlateOfTimeSeries,
     |}
-    | {| type: 'QUALITYINDEX_QUEUE_SET', queue: QualityIndexQueue |}
+    | {| type: 'QUALITYINDEX_QUEUE_SET', plate: number, queue: QualityIndexQueue |}
     | {| type: 'QUALITYINDEX_SET', index: number, plate: number |}
     | {| type: 'QUALITYINDEX_NEXT', plate: number |}
     | {| type: 'QUALITYINDEX_PREVIOUS', plate: number |}

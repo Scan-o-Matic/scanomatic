@@ -51,9 +51,9 @@ class Selectors {
         return getFocus(state);
     }
 
-    getCurrrentQIndexInfo() : ?QualityIndexInfo {
+    getCurrrentQIndexInfo(plate: number) : ?QualityIndexInfo {
         const state = this.store.getState();
-        return getCurrrentQIndexInfo(state);
+        return getCurrrentQIndexInfo(state, plate);
     }
 }
 
