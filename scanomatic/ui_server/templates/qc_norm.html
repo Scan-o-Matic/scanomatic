@@ -80,7 +80,7 @@
                   if (this.checked) {
                       $("#divMarkStates").show();
                       $("#qidxHint").show();
-                      setExperimentByQidx(qIdxOperations.Current);
+                      showCurrentQIndex();
                   } else {
                       $("#divMarkStates").hide();
                       $("#qidxHint").hide();
@@ -151,13 +151,13 @@
                   markExperiment(plateMetaDataType.NoGrowth, true);
               });
               $("#btnQidxReset").click(function () {
-                  setExperimentByQidx(qIdxOperations.Reset);
+                  window.qc.actions.setQualityIndex(window.qc.selectors.getPlate(), 0);
               });
               $("#btnQidxNext").click(function () {
-                  setExperimentByQidx(qIdxOperations.Next);
+                  window.qc.actions.nextQualityIndex(window.qc.selectors.getPlate());
               });
               $("#btnQidxPrev").click(function () {
-                  setExperimentByQidx(qIdxOperations.Prev);
+                  window.qc.actions.previousQualityIndex(window.qc.selectors.getPlate());
               });
               $(document).keypress(function (event) {
                   var char = getChar(event).toLowerCase();
@@ -199,15 +199,15 @@
                   if (!isQualityControlOn()) return;
                   switch (e.which) {
                       case 36: // home
-                          setExperimentByQidx(qIdxOperations.Reset);
+                          window.qc.actions.setQualityIndex(window.qc.selectors.getPlate(), 0);
                           break;
                       case 37: // left
                       case 40: // down
-                          setExperimentByQidx(qIdxOperations.Prev);
+                          window.qc.actions.previousQualityIndex(window.qc.selectors.getPlate());
                           break;
                       case 38: // up
                       case 39: // right
-                          setExperimentByQidx(qIdxOperations.Next);
+                          window.qc.actions.nextQualityIndex(window.qc.selectors.getPlate());
                           break;
                       default: return;
                   }

@@ -4,15 +4,6 @@ const selRunNormPhenotypesName = 'selRunNormPhenotypes';
 const selRunPhenotypesName = 'selRunPhenotypes';
 const dispatch = d3.dispatch('setExp', 'reDrawExp');
 const branchSymbol = '¤';
-let qIndexQueue = [];
-let qIndexCurrent = 0;
-const qIdxOperations = {
-    Current: 0,
-    Prev: -1,
-    Next: 1,
-    Reset: 'reset',
-    Goto: 'goto',
-};
 
 function initSpinner() {
     spinTarget = document.getElementById('divLoading');
@@ -198,11 +189,10 @@ function updateQIndexCoord(operation, index) {
     return qIndexQueue[qIndexCurrent];
 }
 
-function setExperimentByQidx(operation) {
-    const queueCurrent = updateQIndexCoord(operation);
-    const row = queueCurrent.row;
-    const col = queueCurrent.col;
-    dispatch.setExp(`id${row}_${col}`);
+function showCurrentQIndex() {
+    const current = window.qc.selectors
+        .getCurrrentQIndexInfo(window.qc.selectors.getPlate());
+    dispatch.setExp(`id${current.row}_${current.col}`);
 }
 
 function getChar(event) {
@@ -301,12 +291,7 @@ function markExperiment(mark, all) {
     GetMarkExperiment(path, lockKey, (gData) => {
         if (gData.success === true) {
             dispatch.reDrawExp(`id${row}_${col}`, mark);
-            const queueCurrent = updateQIndexCoord(qIdxOperations.Current);
-            if (queueCurrent.row == row && queueCurrent.col == col) {
-                setExperimentByQidx(qIdxOperations.Next);
-            } else {
-                setExperimentByQidx(qIdxOperations.Current);
-            }
+            window.qc.actions.nextQualityIndex(window.qc.selectors.getPlate());
         } else { alert(`${gData.success} : ${gData.reason}`); }
         stopWait();
     });
@@ -521,6 +506,6 @@ function renderPlate(phenotypePlates) {
                 parseInt(col, 10),
             );
         });
-        setExperimentByQidx(qIdxOperations.Reset);
+        showCurrentQIndex();
     });
 }
