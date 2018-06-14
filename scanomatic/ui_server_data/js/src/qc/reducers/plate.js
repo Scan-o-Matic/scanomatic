@@ -22,28 +22,31 @@ export default function plate(state: State = initialState, action: Action) {
         if (action.plate !== state.number) return state;
         return Object.assign({}, state, { focus: { row: action.row, col: action.col } });
     case 'QUALITYINDEX_QUEUE_SET':
-        if (action.plate !== state.number) return state;
         return Object.assign(
             {},
             state,
-            { qIndexQueue: action.queue.sort((a, b) => a.idx - b.idx) },
+            {
+                qIndexQueue: action.queue
+                    .sort((a, b) => a.idx - b.idx)
+                    .map((item, idx) => ({ idx, col: item.col, row: item.row })),
+            },
         );
     case 'QUALITYINDEX_SET':
-        if (action.plate !== state.number || !state.qIndexQueue) return state;
+        if (!state.qIndexQueue) return state;
         return Object.assign(
             {},
             state,
             { qIndex: Math.max(Math.min(action.index, state.qIndexQueue.length - 1), 0) },
         );
     case 'QUALITYINDEX_NEXT':
-        if (action.plate !== state.number || !state.qIndexQueue) return state;
+        if (!state.qIndexQueue) return state;
         return Object.assign(
             {},
             state,
             { qIndex: (state.qIndex + 1) % state.qIndexQueue.length },
         );
     case 'QUALITYINDEX_PREVIOUS': {
-        if (action.plate !== state.number || !state.qIndexQueue) return state;
+        if (!state.qIndexQueue) return state;
         let next = state.qIndex - 1;
         if (next < 0) next += state.qIndexQueue.length;
         return Object.assign({}, state, { qIndex: next });

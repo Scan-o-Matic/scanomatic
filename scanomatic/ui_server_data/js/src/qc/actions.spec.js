@@ -115,37 +115,29 @@ describe('/qc/actions', () => {
     describe('quality index', () => {
         it('setQualityIndexQueue should return a QUALITYINDEX_QUEUE_SET acation', () => {
             const queue = [{ idx: 0, col: 4, row: 10 }, { idx: 1, col: 2, row: 55 }];
-            const plate = 1;
-            expect(actions.setQualityIndexQueue(plate, queue)).toEqual({
+            expect(actions.setQualityIndexQueue(queue)).toEqual({
                 type: 'QUALITYINDEX_QUEUE_SET',
                 queue,
-                plate,
             });
         });
 
         it('setQualityIndex should return a QUALITYINDEX_SET action', () => {
             const index = 42;
-            const plate = 1;
-            expect(actions.setQualityIndex(plate, index)).toEqual({
+            expect(actions.setQualityIndex(index)).toEqual({
                 type: 'QUALITYINDEX_SET',
                 index,
-                plate,
             });
         });
 
         it('nextQualityIndex should return a QUALITYINDEX_NEXT action', () => {
-            const plate = 1;
-            expect(actions.nextQualityIndex(plate)).toEqual({
+            expect(actions.nextQualityIndex()).toEqual({
                 type: 'QUALITYINDEX_NEXT',
-                plate,
             });
         });
 
         it('previousQualityIndex should return a QUALITYINDEX_PREVIOUS action', () => {
-            const plate = 1;
-            expect(actions.previousQualityIndex(plate)).toEqual({
+            expect(actions.previousQualityIndex()).toEqual({
                 type: 'QUALITYINDEX_PREVIOUS',
-                plate,
             });
         });
     });

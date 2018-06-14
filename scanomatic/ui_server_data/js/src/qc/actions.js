@@ -14,10 +14,10 @@ export type Action
         smooth: PlateOfTimeSeries,
         raw: PlateOfTimeSeries,
     |}
-    | {| type: 'QUALITYINDEX_QUEUE_SET', plate: number, queue: QualityIndexQueue |}
-    | {| type: 'QUALITYINDEX_SET', index: number, plate: number |}
-    | {| type: 'QUALITYINDEX_NEXT', plate: number |}
-    | {| type: 'QUALITYINDEX_PREVIOUS', plate: number |}
+    | {| type: 'QUALITYINDEX_QUEUE_SET', queue: QualityIndexQueue |}
+    | {| type: 'QUALITYINDEX_SET', index: number |}
+    | {| type: 'QUALITYINDEX_NEXT' |}
+    | {| type: 'QUALITYINDEX_PREVIOUS' |}
 
 export function setPlate(plate : number) : Action {
     return { type: 'PLATE_SET', plate };
@@ -52,28 +52,26 @@ export function focusCurve(
     };
 }
 
-export function setQualityIndexQueue(plate: number, queue: QualityIndexQueue) : Action {
+export function setQualityIndexQueue(queue: QualityIndexQueue) : Action {
     return {
         type: 'QUALITYINDEX_QUEUE_SET',
         queue,
-        plate,
     };
 }
 
-export function setQualityIndex(plate: number, index: number): Action {
+export function setQualityIndex(index: number): Action {
     return {
         type: 'QUALITYINDEX_SET',
         index,
-        plate,
     };
 }
 
-export function nextQualityIndex(plate: number) : Action {
-    return { type: 'QUALITYINDEX_NEXT', plate };
+export function nextQualityIndex() : Action {
+    return { type: 'QUALITYINDEX_NEXT' };
 }
 
-export function previousQualityIndex(plate: number) : Action {
-    return { type: 'QUALITYINDEX_PREVIOUS', plate };
+export function previousQualityIndex() : Action {
+    return { type: 'QUALITYINDEX_PREVIOUS' };
 }
 
 export type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
