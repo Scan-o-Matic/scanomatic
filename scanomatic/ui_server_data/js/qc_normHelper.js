@@ -153,48 +153,6 @@ function fillProjectDetails(projectDetails) {
     });
 }
 
-function getQIndexFromCoord(row, col) {
-    return qIndexQueue.filter(e => e.row == row && e.col == col)[0].idx;
-}
-
-function setExperimentByCoord(row, col) {
-    dispatch.setExp(`id${row}_${col}`);
-}
-
-function isQualityControlOn() {
-    return $('#ckMarkExperiments').is(':checked');
-}
-
-function updateQIndexLabel(qIndex) {
-    $('#qIndexCurrent').text(qIndex + 1);
-}
-
-function updateQIndexCoord(operation, index) {
-    if (operation === qIdxOperations.Reset) {
-        qIndexCurrent = 0;
-    } else if (operation === qIdxOperations.Goto) {
-        qIndexCurrent = index;
-    } else {
-        qIndexCurrent += operation;
-
-        const qIndexMax = qIndexQueue.length - 1;
-        if (qIndexCurrent < 0) {
-            qIndexCurrent = qIndexMax;
-        } else if (qIndexCurrent > qIndexMax) {
-            qIndexCurrent = 0;
-        }
-    }
-
-    updateQIndexLabel(qIndexCurrent);
-    return qIndexQueue[qIndexCurrent];
-}
-
-function showCurrentQIndex() {
-    const current = window.qc.selectors
-        .getCurrrentQIndexInfo(window.qc.selectors.getPlate());
-    dispatch.setExp(`id${current.row}_${current.col}`);
-}
-
 function getChar(event) {
     if (event.which == null) {
         return String.fromCharCode(event.keyCode); // IE
@@ -277,7 +235,6 @@ function projectSelectionStage(level) {
 
 // Mark Selected Experiment
 function markExperiment(mark, all) {
-    if (!isQualityControlOn()) return;
     const plateIdx = $('#currentSelection').data('plateIdx');
     const row = $('#currentSelection').data('row');
     const col = $('#currentSelection').data('col');
@@ -291,7 +248,7 @@ function markExperiment(mark, all) {
     GetMarkExperiment(path, lockKey, (gData) => {
         if (gData.success === true) {
             dispatch.reDrawExp(`id${row}_${col}`, mark);
-            window.qc.actions.nextQualityIndex(window.qc.selectors.getPlate());
+            window.qc.actions.nextQualityIndex();
         } else { alert(`${gData.success} : ${gData.reason}`); }
         stopWait();
     });
@@ -499,13 +456,8 @@ function renderPlate(phenotypePlates) {
             $('#currentSelection').data('col', col);
             $('#currentSelection').data('phenotype', datah.phenotype);
             $('#currentSelection').data('project', $('#spProject').text());
-            updateQIndexCoord(qIdxOperations.Goto, getQIndexFromCoord(row, col));
-            window.qc.actions.setFocus(
-                parseInt(plateIdx, 10),
-                parseInt(row, 10),
-                parseInt(col, 10),
-            );
+            window.qc.actions.setQualityIndex(window.qc.selectors
+                .getQIndexFromCoord(parseInt(row, 10), parseInt(col, 10));
         });
-        showCurrentQIndex();
     });
 }
