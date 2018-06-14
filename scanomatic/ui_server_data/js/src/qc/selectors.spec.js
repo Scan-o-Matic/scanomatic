@@ -99,4 +99,37 @@ describe('/qc/selectors', () => {
             expect(selectors.getTimes(state, 1)).toEqual(null);
         });
     });
+
+    describe('getCurrrentQIndexInfo', () => {
+        const queue = [
+            { idx: 0, col: 1, row: 1 },
+            { idx: 1, col: 0, row: 1 },
+            { idx: 2, col: 1, row: 0 },
+            { idx: 3, col: 0, row: 0 },
+        ];
+
+        it('should return null if no queue', () => {
+            const state = new StateBuilder().build();
+            expect(selectors.getCurrrentQIndexInfo(state, 0)).toBe(null);
+        });
+
+        it('should return null if requesting for wrong plate', () => {
+            const state = new StateBuilder()
+                .setQualityIndexQueue(0, queue)
+                .build();
+            expect(selectors.getCurrrentQIndexInfo(state, 1)).toBe(null);
+        });
+
+        it('should return current index info', () => {
+            const state = new StateBuilder()
+                .setQualityIndexQueue(0, queue)
+                .setQualityIndex(0, 1)
+                .build();
+            expect(selectors.getCurrrentQIndexInfo(state, 0)).toEqual({
+                idx: 1,
+                col: 0,
+                row: 1,
+            });
+        });
+    });
 });

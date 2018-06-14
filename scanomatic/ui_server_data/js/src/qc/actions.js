@@ -1,6 +1,6 @@
 // @flow
 import { getProject, getPlate } from './selectors';
-import type { State, TimeSeries, PlateOfTimeSeries } from './state';
+import type { State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue } from './state';
 import { getPlateGrowthData } from '../api';
 
 export type Action
@@ -14,6 +14,10 @@ export type Action
         smooth: PlateOfTimeSeries,
         raw: PlateOfTimeSeries,
     |}
+    | {| type: 'QUALITYINDEX_QUEUE_SET', queue: QualityIndexQueue |}
+    | {| type: 'QUALITYINDEX_SET', index: number, plate: number |}
+    | {| type: 'QUALITYINDEX_NEXT', plate: number |}
+    | {| type: 'QUALITYINDEX_PREVIOUS', plate: number |}
 
 export function setPlate(plate : number) : Action {
     return { type: 'PLATE_SET', plate };
@@ -46,6 +50,30 @@ export function focusCurve(
     return {
         type: 'CURVE_FOCUS', plate, row, col,
     };
+}
+
+export function setQualityIndexQueue(plate: number, queue: QualityIndexQueue) : Action {
+    return {
+        type: 'QUALITYINDEX_QUEUE_SET',
+        queue,
+        plate,
+    };
+}
+
+export function setQualityIndex(plate: number, index: number): Action {
+    return {
+        type: 'QUALITYINDEX_SET',
+        index,
+        plate,
+    };
+}
+
+export function nextQualityIndex(plate: number) : Action {
+    return { type: 'QUALITYINDEX_NEXT', plate };
+}
+
+export function previousQualityIndex(plate: number) : Action {
+    return { type: 'QUALITYINDEX_PREVIOUS', plate };
 }
 
 export type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
