@@ -97,7 +97,8 @@ class Actions {
     }
 }
 
-export default function Bridge(store: Store) {
+export default function Bridge(store: Store) :
+{actions: Actions, selectors: Selectors, subscribe:(() => void) => void} {
     const actions = new Actions(store);
     const selectors = new Selectors(store);
     const subscribe: (() => void) => void = callback => store.subscribe(callback);
