@@ -457,7 +457,7 @@ function renderPlate(phenotypePlates) {
             $('#currentSelection').data('phenotype', datah.phenotype);
             $('#currentSelection').data('project', $('#spProject').text());
             window.qc.actions.setQualityIndex(window.qc.selectors
-                .getQIndexFromCoord(parseInt(row, 10), parseInt(col, 10)));
+                .getQIndexFromPosition(parseInt(row, 10), parseInt(col, 10)));
         });
     });
 }

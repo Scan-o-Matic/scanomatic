@@ -31,6 +31,9 @@ export default class QIndexAndSelectionIntegration {
         );
         updateQIndexLabel(focus);
         if (!this.shouldSync(focus)) return;
-        window.dispatch.setExp(`id${focus.row}_${focus.col}`);
+        this.plate = focus.plate;
+        this.row = focus.row;
+        this.col = focus.col;
+        dispatch.setExp(`id${focus.row}_${focus.col}`);
     }
 }
