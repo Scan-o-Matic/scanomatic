@@ -66,6 +66,14 @@ describe('/qc/bridge', () => {
             });
         });
 
+        it('dispatches a PLATE_SET on setQualityIndexQueue if plate supplied', () => {
+            bridge.actions.setQualityIndexQueue([{ idx: 0, row: 0, col: 0 }], 2);
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'PLATE_SET',
+                plate: 2,
+            });
+        })
+
         it('dispatches a QUALITYINDEX_SET on setQualityIndex', () => {
             bridge.actions.setQualityIndex(10);
             expect(store.dispatch).toHaveBeenCalledWith({

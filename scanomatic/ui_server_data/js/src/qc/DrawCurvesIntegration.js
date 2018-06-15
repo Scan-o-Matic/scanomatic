@@ -25,6 +25,15 @@ export default class DrawCurvesIntegration {
             $(selector).hide();
             return;
         }
+        // This is horrible, but seems only way to access all needed data
+        // in  the legacy code.
+
+        const well = $(`#id${focus.row}_${focus.col}`)[0]
+        if (!well) return;
+        
+        const data = well.__data__;
+        $('#sel').text(`Experiment [${focus.row},${focus.col}], Value ${data.phenotype.toPrecision(3)}`);
+
         if (!this.shouldDraw({ plate, ...focus })) return;
 
         const raw = window.qc.selectors.getRawCurve(plate, focus.row, focus.col);
@@ -36,10 +45,6 @@ export default class DrawCurvesIntegration {
             return;
         }
 
-        const well = `#id${focus.row}_${focus.col}`;
-        // This is horrible, but seems only way to access all needed data
-        // in  the legacy code.
-        const data = $(well)[0].__data__;
         window.DrawCurves(
             selector,
             time,

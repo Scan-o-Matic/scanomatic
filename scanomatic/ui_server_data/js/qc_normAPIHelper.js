@@ -204,7 +204,8 @@ function GetPlateData(url, isNormalized, metaDataPath, phenotypePlaceholderMetaD
                                     qIdxSort.push({ idx: idx, row: qIdxRows[i], col: qIdxCols[i] });
                                     idx = idx + 1;
                                 }
-                                window.qc.actions.setQualityIndexQueue(qIdxSort);
+                                const plateIdx = $('#currentSelection').data('plateIdx');
+                                window.qc.actions.setQualityIndexQueue(qIdxSort, parseInt(plateIdx, 10));
                             }
                             var plate = {
                                 plate_data: json.data,

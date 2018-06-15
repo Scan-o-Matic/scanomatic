@@ -41,7 +41,7 @@ function DrawPlate(container, data, growthMetaData, plateMetaData, phenotypeName
     //heatmap legend
     var legendWidth = 25;
     var legendMargin = 5;
-    
+
     //SetDebugText(data, cols, rows);
 
     var grid = d3.select(container)
@@ -55,7 +55,7 @@ function DrawPlate(container, data, growthMetaData, plateMetaData, phenotypeName
 
     addSelectionHanddling(grid);
     addSymbolsToSGV(grid);
-   
+
     var plateGroup = grid.append("g").classed("gHeatmap", true);
 
     //heatmap
@@ -303,7 +303,7 @@ d3.scanomatic.plateHeatmap = function () {
     var heatMapCelHeight;
     var dispatch = d3.dispatch(dispatcherSelectedExperiment);
     var numberFormat = "0.3n";
-    
+
     function heatmap(container) {
         g = container;
         update();
@@ -448,8 +448,8 @@ d3.scanomatic.plateHeatmap = function () {
         }
 
         function addShapes(nodes) {
-            
-            //ok metadata 
+
+            //ok metadata
             nodes
             .filter(function (d) { return d.metaType == plateMetaDataType.OK; })
             .append("circle")
@@ -496,7 +496,7 @@ d3.scanomatic.plateHeatmap = function () {
         }
 
         function setShapes(node) {
-            //ok metadata 
+            //ok metadata
             node
             .filter(function(d) {
                      return d.metaType == plateMetaDataType.OK;
@@ -633,8 +633,6 @@ d3.scanomatic.plateHeatmap = function () {
             });
             //trigger click and send coordinate
             toolTipDiv.transition().duration(0).style("opacity", 0);
-            d3.select("#sel").selectAll("*").remove();
-            d3.select("#sel").text("Experiment " + coordinate + ", Value " + phenotype);
             dispatch[dispatcherSelectedExperiment](exp);
         };
 
@@ -666,9 +664,10 @@ d3.scanomatic.plateHeatmap = function () {
             });
             //trigger click and send coordinate
             toolTipDiv.transition().duration(0).style("opacity", 0);
-            d3.select("#sel").selectAll("*").remove();
-            d3.select("#sel").text("Experiment " + coordinate + ", Value " + phenotype);
-            dispatch[dispatcherSelectedExperiment](exp);
+            window.qc.actions.setQualityIndex(window.qc.selectors.getQIndexFromPosition(
+                parseInt(row, 10),
+                parseInt(col, 10),
+            ));
         }
 
         function onMouseOut(node) {
@@ -703,7 +702,7 @@ d3.scanomatic.plateHeatmap = function () {
                 });
 
             addSymbolsToSGV(toolTipIcon);
-            
+
             node.select(".plateWell")
                 .attr("fill", "black")
                 .attr("", function (d) {
@@ -867,7 +866,7 @@ d3.scanomatic.plateHeatmap = function () {
     }
 
     heatmap.setColorScale = function(value) {
-        
+
         if (typeof value === "undefined" || value === null) {
             throw "colorSchema isundefined";
         }
@@ -914,5 +913,3 @@ d3.scanomatic.plateHeatmap = function () {
 
     return d3.rebind(heatmap, dispatch, "on");
 }
-
-

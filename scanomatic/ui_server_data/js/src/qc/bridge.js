@@ -73,7 +73,8 @@ class Actions {
         this.store.dispatch(setPlate(plate));
     }
 
-    setQualityIndexQueue(queue: QualityIndexQueue) {
+    setQualityIndexQueue(queue: QualityIndexQueue, plate: ?number) {
+        if (plate != null) this.setPlate(plate);
         this.store.dispatch(setQualityIndexQueue(queue));
     }
 

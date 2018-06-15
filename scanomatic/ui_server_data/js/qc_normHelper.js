@@ -439,12 +439,14 @@ function renderPlate(phenotypePlates) {
         const plateMetaData = data.Plate_metadata;
         const growthMetaData = data.Growth_metaData;
         const phenotypeName = data.plate_phenotype;
-        qIndexQueue = data.plate_qIdxSort;
         window.qc.actions.retrievePlateCurves(parseInt(plateIdx, 10));
         const plate = DrawPlate('#plate', plateData, growthMetaData, plateMetaData, phenotypeName, dispatch);
         const row = $('#currentSelection').data('row');
         const col = $('#currentSelection').data('col');
-        if (row && col) { setExperimentByCoord(row, col); }
+        if (row && col) {
+            window.qc.actions.setQualityIndex(window.qc.selectors
+                .getQIndexFromPosition(parseInt(row, 10), parseInt(col, 10)));
+        }
         stopWait();
         plate.on('SelectedExperiment', (datah) => {
             const arr = datah.coord.split(',');

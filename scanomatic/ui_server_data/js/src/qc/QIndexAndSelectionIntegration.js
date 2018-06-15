@@ -2,10 +2,6 @@
 import $ from 'jquery';
 import Bridge from './bridge';
 
-function updateQIndexLabel({ idx }) {
-    $('#qIndexCurrent').text(idx + 1);
-}
-
 
 export default class QIndexAndSelectionIntegration {
     bridge: Bridge;
@@ -29,11 +25,15 @@ export default class QIndexAndSelectionIntegration {
             this.bridge.selectors.getFocus(),
             { plate: this.bridge.selectors.getPlate() },
         );
-        updateQIndexLabel(focus);
+        $('#qIndexCurrent').text(focus.idx + 1);
         if (!this.shouldSync(focus)) return;
         this.plate = focus.plate;
         this.row = focus.row;
         this.col = focus.col;
+
+        // I don't know exactly how and where this function ends up in the
+        // global scope, but there it is. It's not a property of window or
+        // document so I don't know how I should deal with the lint error.
         dispatch.setExp(`id${focus.row}_${focus.col}`);
     }
 }
