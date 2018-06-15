@@ -19,6 +19,12 @@ export default class StateBuilder {
         return this;
     }
 
+    setPhenotype(phenotype: string) {
+        if (!this.settings.project) return this;
+        this.settings = Object.assign({}, this.settings, { phenotype });
+        return this;
+    }
+
     setPlate(plate: number) {
         this.plate = { number: plate, qIndex: 0 };
         return this;

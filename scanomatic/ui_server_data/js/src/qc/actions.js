@@ -18,6 +18,7 @@ export type Action
     | {| type: 'QUALITYINDEX_SET', index: number |}
     | {| type: 'QUALITYINDEX_NEXT' |}
     | {| type: 'QUALITYINDEX_PREVIOUS' |}
+    | {| type: 'PHENOTYPE_SET', phenotype: string |}
 
 export function setPlate(plate : number) : Action {
     return { type: 'PLATE_SET', plate };
@@ -25,6 +26,10 @@ export function setPlate(plate : number) : Action {
 
 export function setProject(project : string) : Action {
     return { type: 'PROJECT_SET', project };
+}
+
+export function setPhenotype(phenotype: string) : Action {
+    return { type: 'PHENOTYPE_SET', phenotype };
 }
 
 export function setPlateGrowthData(

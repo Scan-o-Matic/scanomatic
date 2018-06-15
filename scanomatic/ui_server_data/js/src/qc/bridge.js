@@ -1,12 +1,12 @@
 // @flow
 
 import {
-    retrievePlateCurves, setProject, setPlate,
+    retrievePlateCurves, setProject, setPlate, setPhenotype,
     setQualityIndexQueue, nextQualityIndex, previousQualityIndex, setQualityIndex,
 } from './actions';
 import {
-    getRawCurve, getSmoothCurve, getTimes, getPlate,
-    getFocus, getQIndexFromPosition,
+    getRawCurve, getSmoothCurve, getTimes, getPlate, getProject,
+    getFocus, getQIndexFromPosition, getPhenotype,
 } from './selectors';
 
 import type { Action, ThunkAction } from './actions';
@@ -25,6 +25,16 @@ class Selectors {
 
     constructor(store : Store) {
         this.store = store;
+    }
+
+    getProject() : ?string {
+        const state = this.store.getState();
+        return getProject(state);
+    }
+
+    getPhenotype() : ?string {
+        const state = this.store.getState();
+        return getPhenotype(state);
     }
 
     getRawCurve(plate: number, row : number, col : number) : ?TimeSeries {
@@ -67,6 +77,10 @@ class Actions {
 
     setProject(project: string) {
         this.store.dispatch(setProject(project));
+    }
+
+    setPhenotype(phenotype: string) {
+        this.store.dispatch(setPhenotype(phenotype));
     }
 
     setPlate(plate: number) {

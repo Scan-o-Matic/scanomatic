@@ -22,6 +22,15 @@ describe('/qc/actions', () => {
         });
     });
 
+    describe('setPhenotype', () => {
+        it('should return a PHENOTYPE_SET action', () => {
+            expect(actions.setProject('death rate')).toEqual({
+                type: 'PHENOTYPE_SET',
+                project: 'death rate',
+            });
+        });
+    });
+
     describe('focusCurve', () => {
         it('should return a CURVE_FOCUS action', () => {
             expect(actions.focusCurve(0, 1, 2)).toEqual({

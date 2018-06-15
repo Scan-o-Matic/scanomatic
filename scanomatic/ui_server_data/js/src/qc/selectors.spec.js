@@ -7,6 +7,14 @@ describe('/qc/selectors', () => {
         expect(selectors.getProject(state)).toEqual('/my/path');
     });
 
+    it('should get phenotype', () => {
+        const state = new StateBuilder()
+            .setProject('/my/path')
+            .setPhenotype('test')
+            .build();
+        expect(selectors.getPhenotype(state)).toEqual('test');
+    });
+
     it('should get the plate number', () => {
         const state = new StateBuilder().setPlate(2).build();
         expect(selectors.getPlate(state)).toEqual(2);

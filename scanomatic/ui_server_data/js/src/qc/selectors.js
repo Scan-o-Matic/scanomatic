@@ -13,6 +13,11 @@ export function getProject(state: State): ?string {
     return state.settings.project;
 }
 
+export function getPhenotype(state: State): ?string {
+    if (!state.settings) return null;
+    return state.settings.phenotype;
+}
+
 export function getPlate(state: State): ?number {
     if (!state.plate) return null;
     return state.plate.number;

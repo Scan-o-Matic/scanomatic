@@ -10,4 +10,12 @@ describe('/qc/reducers/settings', () => {
         const action = { type: 'PROJECT_SET', project: 'my/path/to/somewhere' };
         expect(settings(undefined, action)).toEqual({ project: action.project });
     });
+
+    it('handles PHENOTYPE_SET', () => {
+        const action = { type: 'PHENOTYPE_SET', phenotype: 'yield' };
+        expect(settings({ project: '/my/proj' }, action)).toEqual({
+            project: '/my/proj',
+            phenotype: 'yield',
+        });
+    });
 });

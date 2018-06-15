@@ -13,7 +13,8 @@ export type QualityIndexQueue = Array<QualityIndexInfo>;
 
 export type Settings = {
     +project?: string,
-}
+    +phenotype?: string,
+};
 
 export type Plate = {
     +number: number,
@@ -22,7 +23,7 @@ export type Plate = {
     +raw?: PlateOfTimeSeries,
     +smooth?: PlateOfTimeSeries,
     +times?: TimeSeries,
-}
+};
 
 export type State = {
     +settings: Settings,

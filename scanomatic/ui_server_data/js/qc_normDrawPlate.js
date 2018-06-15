@@ -1,5 +1,3 @@
-﻿var classExperimentSelected = "ExperimentSelected";
-var dispatcherSelectedExperiment = "SelectedExperiment";
 var markingSelection = false;
 var allowMarking = false;
 var plateMetaDataType = {
@@ -9,6 +7,18 @@ var plateMetaDataType = {
     NoGrowth: "NoGrowth",
     UndecidedProblem: "UndecidedProblem"
 }
+
+
+window.drawPlateExperiment = (id, mark, heatmap) => {
+    var node = d3.select("#" + id);
+    var parent = d3.select(node.node().parentNode);
+    var newData = parent.data();
+    newData[0].metaType = mark;
+    parent.data(newData);
+    parent.selectAll("*").remove();
+    window.heatmap.setShapes(parent);
+    window.heatmap.setSymbols(parent);
+};
 
 if (!d3.scanomatic) d3.scanomatic = {};
 
@@ -23,8 +33,7 @@ function executeFunctionByName(functionName, context /*, args */) {
     return context[func].apply(context, args);
 }
 
-function DrawPlate(container, data, growthMetaData, plateMetaData, phenotypeName, dispatch) {
-
+function DrawPlate(container, data, growthMetaData, plateMetaData, phenotypeName) {
     //plate
     var cols = data[0].length;
     var rows = data.length;
@@ -71,12 +80,8 @@ function DrawPlate(container, data, growthMetaData, plateMetaData, phenotypeName
     heatMap.legendWidth(legendWidth);
     heatMap.legendMargin(legendMargin);
     heatMap.displayLegend(true);
-    heatMap.dispatch2(dispatch);
     heatMap(plateGroup);
-    //heatMap.on(dispatcherSelectedExperiment, function (datah) {
-    //    console.log("dispatched:" + datah);
-    //});
-    return d3.rebind(DrawPlate, heatMap, "on");
+    return heatMap;
 };
 
 function addSelectionHanddling(svgRoot) {
@@ -290,7 +295,6 @@ d3.scanomatic.plateHeatmap = function () {
     var legendMargin;
     var legendWidth;
     var phenotypeName;
-    var dispatch2;
 
     // local variables
     var g;
@@ -301,7 +305,6 @@ d3.scanomatic.plateHeatmap = function () {
     var phenotypeMean;
     var heatMapCelWidth;
     var heatMapCelHeight;
-    var dispatch = d3.dispatch(dispatcherSelectedExperiment);
     var numberFormat = "0.3n";
 
     function heatmap(container) {
@@ -311,8 +314,6 @@ d3.scanomatic.plateHeatmap = function () {
 
     heatmap.update = update;
     function update() {
-        dispatch2.on("setExp", setExperiment);
-        dispatch2.on("reDrawExp", reDrawExperiment);
         var plateData = composeMetadata;
         var toolTipDiv = d3.select("#toolTipDiv");
         if (toolTipDiv.empty()) {
@@ -495,173 +496,14 @@ d3.scanomatic.plateHeatmap = function () {
             return row;
         }
 
-        function setShapes(node) {
-            //ok metadata
-            node
-            .filter(function(d) {
-                     return d.metaType == plateMetaDataType.OK;
-                })
-            .append("circle")
-            .attr({
-                "class": "plateWell OK",
-                "fill": function (d) { return getValidColor(d.phenotype, d.metaType); },
-                "id": function (d) { return "id" + d.row + "_" + d.col; },
-                "fill-opacity": "1",
-                "r": cellRadius,
-                "cy": function (d) { return d.celStartY + cellRadius; },
-                "cx": function (d) { return d.celStartX + cellRadius; },
-                "data-col": function (d) { return d.col; },
-                "data-meta-gt": function (d) { return d.metaGT; },
-                "data-meta-gtWhen": function (d) { return d.metaGtWhen; },
-                "data-meta-yield": function (d) { return d.metaYield; },
-                "data-meta-type": function (d) { return d.metaType; }
-            });
-
-            //bad metadata
-            node
-            .filter(function (d) { return d.metaType != plateMetaDataType.OK; })
-            .append("rect")
-            .attr({
-                "class": "plateWell Marked",
-                "fill": function (d) { return getValidColor(d.phenotype, d.metaType); },
-                "id": function (d) { return "id" + d.row + "_" + d.col; },
-                "fill-opacity": "1",
-                "y": function (d) { return d.celStartY; },
-                "x": function (d) { return d.celStartX; },
-                "width": heatMapCelWidth,
-                "height": heatMapCelHeight,
-                "data-col": function (d) { return d.col; },
-                "data-meta-gt": function (d) { return d.metaGT; },
-                "data-meta-gtWhen": function (d) { return d.metaGtWhen; },
-                "data-meta-yield": function (d) { return d.metaYield; },
-                "data-meta-type": function (d) { return d.metaType; }
-            });
-        }
-
-        function setSymbols(node) {
-            //Empty
-            node
-                .filter(function (d) { return d.metaType == plateMetaDataType.Empty; })
-                .append("use")
-                .attr({
-                    "class": "plateWellSymbol",
-                    "xlink:href": function (d) { return "#" + getValidSymbol(d.metaType); },
-                    "x": function (d) { return d.celStartX - 2; },
-                    "y": function (d) { return d.celStartY - 0.8; },
-                    "width": cellRadius * 3,
-                    "height": cellRadius * 3
-                });
-
-            //UndecidedProblem
-            node
-                .filter(function (d) { return d.metaType == plateMetaDataType.UndecidedProblem; })
-                .append("use")
-                .attr({
-                    "class": "plateWellSymbol",
-                    "xlink:href": function (d) { return "#" + getValidSymbol(d.metaType); },
-                    "x": function (d) { return d.celStartX - 2; },
-                    "y": function (d) { return d.celStartY; },
-                    "width": cellRadius * 3,
-                    "height": cellRadius * 2
-                });
-
-            //BadData
-            node
-                .filter(function (d) { return d.metaType == plateMetaDataType.BadData; })
-                .append("use")
-                .attr({
-                    "class": "plateWellSymbol",
-                    "xlink:href": function (d) { return "#" + getValidSymbol(d.metaType); },
-                    "x": function (d) { return d.celStartX - 2; },
-                    "y": function (d) { return d.celStartY; },
-                    "width": cellRadius * 3,
-                    "height": cellRadius * 2
-                });
-
-            //NoGrowth
-            node
-                .filter(function (d) { return d.metaType == plateMetaDataType.NoGrowth; })
-                .append("use")
-                .attr({
-                    "class": "plateWellSymbol",
-                    "xlink:href": function (d) { return "#" + getValidSymbol(d.metaType); },
-                    "x": function (d) { return d.celStartX - 1; },
-                    "y": function (d) { return d.celStartY; },
-                    "width": cellRadius * 2.5,
-                    "height": cellRadius * 2.5
-                });
-        }
-
-        function reDrawExperiment(id, mark) {
-            var node = d3.select("#" + id);
-            var parent = d3.select(node.node().parentNode);
-            var newData = parent.data();
-            newData[0].metaType = mark;
-            parent.data(newData);
-            parent.selectAll("*").remove();
-            setShapes(parent);
-            setSymbols(parent);
-        }
-
-        function setExperiment(id) {
-            var well = d3.select("#" + id);
-            if (well.empty())
-                return;
-
-            var row = getRowFromId(id);
-            var col = well.attr("data-col");
-            var metaDataGt = well.attr("data-meta-gt");
-            var metaDataGtWhen = well.attr("data-meta-gtWhen");
-            var metaDataYield = well.attr("data-meta-yield");
-            var coord = row + "," + col;
-            var coordinate = "[" + coord + "]";
-            var phenotype = 0;
-            var fmt = d3.format(numberFormat);
-            well.attr("",
-                function (d) { phenotype = fmt(d.phenotype) });
-            var exp = { id: id, coord: coord, metaDataGt: metaDataGt, metaDataGtWhen: metaDataGtWhen, metaDataYield: metaDataYield, phenotype: phenotypeName };
-            //deselect preavius selections
-            var sel = g.selectAll("." + classExperimentSelected);
-            sel.classed(classExperimentSelected, false);
-            sel.attr({ "stroke-width": 0 });
-            //new selection
-            var newSel = well;
-            newSel.classed(classExperimentSelected, true);
-            newSel.attr({
-                "stroke": "black",
-                "stroke-width": 3
-            });
-            //trigger click and send coordinate
-            toolTipDiv.transition().duration(0).style("opacity", 0);
-            dispatch[dispatcherSelectedExperiment](exp);
-        };
-
         function onClick(rowNode, thisNode, element) {
-            var row = rowNode.attr("data-row");
             var well = thisNode.select(".plateWell");
+            var row = rowNode.attr("data-row");
             var col = well.attr("data-col");
-            var id = well.attr("id");
-            var metaDataGt = well.attr("data-meta-gt");
-            var metaDataGtWhen = well.attr("data-meta-gtWhen");
-            var metaDataYield = well.attr("data-meta-yield");
-            var coord = row + "," + col;
-            var coordinate = "[" + coord + "]";
             var phenotype = 0;
             var fmt = d3.format(numberFormat);
             well.attr("",
                 function (d) { phenotype = fmt(d.phenotype) });
-            var exp = { id: id, coord: coord, metaDataGt: metaDataGt, metaDataGtWhen: metaDataGtWhen, metaDataYield: metaDataYield, phenotype: phenotypeName };
-            //deselect preavius selections
-            var sel = g.selectAll("." + classExperimentSelected);
-            sel.classed(classExperimentSelected, false);
-            sel.attr({"stroke-width": 0});
-            //new selection
-            var newSel = well;
-            newSel.classed(classExperimentSelected, true);
-            newSel.attr({
-                "stroke": "black",
-                "stroke-width" :3
-            });
             //trigger click and send coordinate
             toolTipDiv.transition().duration(0).style("opacity", 0);
             window.qc.actions.setQualityIndex(window.qc.selectors.getQIndexFromPosition(
@@ -726,6 +568,103 @@ d3.scanomatic.plateHeatmap = function () {
                 });
         }
     }
+
+    const setShapes = (node) => {
+        //ok metadata
+        node
+        .filter(function(d) {
+                 return d.metaType == plateMetaDataType.OK;
+            })
+        .append("circle")
+        .attr({
+            "class": "plateWell OK",
+            "fill": function (d) { return getValidColor(d.phenotype, d.metaType); },
+            "id": function (d) { return "id" + d.row + "_" + d.col; },
+            "fill-opacity": "1",
+            "r": cellRadius,
+            "cy": function (d) { return d.celStartY + cellRadius; },
+            "cx": function (d) { return d.celStartX + cellRadius; },
+            "data-col": function (d) { return d.col; },
+            "data-meta-gt": function (d) { return d.metaGT; },
+            "data-meta-gtWhen": function (d) { return d.metaGtWhen; },
+            "data-meta-yield": function (d) { return d.metaYield; },
+            "data-meta-type": function (d) { return d.metaType; }
+        });
+
+        //bad metadata
+        node
+        .filter(function (d) { return d.metaType != plateMetaDataType.OK; })
+        .append("rect")
+        .attr({
+            "class": "plateWell Marked",
+            "fill": function (d) { return getValidColor(d.phenotype, d.metaType); },
+            "id": function (d) { return "id" + d.row + "_" + d.col; },
+            "fill-opacity": "1",
+            "y": function (d) { return d.celStartY; },
+            "x": function (d) { return d.celStartX; },
+            "width": heatMapCelWidth,
+            "height": heatMapCelHeight,
+            "data-col": function (d) { return d.col; },
+            "data-meta-gt": function (d) { return d.metaGT; },
+            "data-meta-gtWhen": function (d) { return d.metaGtWhen; },
+            "data-meta-yield": function (d) { return d.metaYield; },
+            "data-meta-type": function (d) { return d.metaType; }
+        });
+    };
+
+    const setSymbols = (node) => {
+        //Empty
+        node
+            .filter(function (d) { return d.metaType == plateMetaDataType.Empty; })
+            .append("use")
+            .attr({
+                "class": "plateWellSymbol",
+                "xlink:href": function (d) { return "#" + getValidSymbol(d.metaType); },
+                "x": function (d) { return d.celStartX - 2; },
+                "y": function (d) { return d.celStartY - 0.8; },
+                "width": cellRadius * 3,
+                "height": cellRadius * 3
+            });
+
+        //UndecidedProblem
+        node
+            .filter(function (d) { return d.metaType == plateMetaDataType.UndecidedProblem; })
+            .append("use")
+            .attr({
+                "class": "plateWellSymbol",
+                "xlink:href": function (d) { return "#" + getValidSymbol(d.metaType); },
+                "x": function (d) { return d.celStartX - 2; },
+                "y": function (d) { return d.celStartY; },
+                "width": cellRadius * 3,
+                "height": cellRadius * 2
+            });
+
+        //BadData
+        node
+            .filter(function (d) { return d.metaType == plateMetaDataType.BadData; })
+            .append("use")
+            .attr({
+                "class": "plateWellSymbol",
+                "xlink:href": function (d) { return "#" + getValidSymbol(d.metaType); },
+                "x": function (d) { return d.celStartX - 2; },
+                "y": function (d) { return d.celStartY; },
+                "width": cellRadius * 3,
+                "height": cellRadius * 2
+            });
+
+        //NoGrowth
+        node
+            .filter(function (d) { return d.metaType == plateMetaDataType.NoGrowth; })
+            .append("use")
+            .attr({
+                "class": "plateWellSymbol",
+                "xlink:href": function (d) { return "#" + getValidSymbol(d.metaType); },
+                "x": function (d) { return d.celStartX - 1; },
+                "y": function (d) { return d.celStartY; },
+                "width": cellRadius * 2.5,
+                "height": cellRadius * 2.5
+            });
+    };
 
     function getValidColor(phenotype, dataType) {
         var color;
@@ -905,11 +844,8 @@ d3.scanomatic.plateHeatmap = function () {
         return heatmap;
     }
 
-    heatmap.dispatch2 = function (value) {
-        if (!arguments.length) return dispatch2;
-        dispatch2 = value;
-        return heatmap;
-    }
+    heatmap.setShapes = setShapes;
+    heatmap.setSymbols = setSymbols;
 
-    return d3.rebind(heatmap, dispatch, "on");
+    return heatmap;
 }

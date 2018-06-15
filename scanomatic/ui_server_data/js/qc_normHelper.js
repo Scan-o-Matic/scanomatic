@@ -2,7 +2,6 @@ let spinner = null;
 let spinTarget = null;
 const selRunNormPhenotypesName = 'selRunNormPhenotypes';
 const selRunPhenotypesName = 'selRunPhenotypes';
-const dispatch = d3.dispatch('setExp', 'reDrawExp');
 const branchSymbol = '¤';
 
 function initSpinner() {
@@ -235,19 +234,21 @@ function projectSelectionStage(level) {
 
 // Mark Selected Experiment
 function markExperiment(mark, all) {
-    const plateIdx = $('#currentSelection').data('plateIdx');
-    const row = $('#currentSelection').data('row');
-    const col = $('#currentSelection').data('col');
-    const phenotype = $('#currentSelection').data('phenotype');
-    const project = $('#currentSelection').data('project');
-    // /api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>"
+    const plateIdx = window.qc.selectors.getPlate();
+    const { row, col } = window.qc.selectors.getFocus();
+    const phenotype = window.qc.selectors.getPhenotype();
+    const project = window.qc.selectors.getProject();
     let path = '';
-    if (all !== true) { path = `/api/results/curve_mark/set/${mark}/${phenotype}/${plateIdx}/${row}/${col}/${project}`; } else { path = `/api/results/curve_mark/set/${mark}/${plateIdx}/${row}/${col}/${project}`; }
+    if (all !== true) {
+        path = `/api/results/curve_mark/set/${mark}/${phenotype}/${plateIdx}/${row}/${col}/${project}`;
+    } else {
+        path = `/api/results/curve_mark/set/${mark}/${plateIdx}/${row}/${col}/${project}`;
+    }
     const lockKey = getLock_key();
     wait();
     GetMarkExperiment(path, lockKey, (gData) => {
         if (gData.success === true) {
-            dispatch.reDrawExp(`id${row}_${col}`, mark);
+            window.drawPlateExperiment(`id${row}_${col}`, mark);
             window.qc.actions.nextQualityIndex();
         } else { alert(`${gData.success} : ${gData.reason}`); }
         stopWait();
@@ -371,6 +372,7 @@ function drawPhenotypePlatesSelection() {
     const selectedPhen = $(`#${selRunPhenotypesName}`).val();
     const selectedNromPhen = $(`#${selRunNormPhenotypesName}`).val();
     const path = isNormalized ? selectedNromPhen : selectedPhen;
+    window.qc.actions.setPhenotype(path);
     if (!path) { return; }
     projectSelectionStage('Plates');
     console.log(`plates: ${path}`);
@@ -397,7 +399,8 @@ function drawPhenotypePlatesSelection() {
             .append("<a type='button' class='btn btn-default btn-xs plateSelectionButton' id='btnShowGrid' href='#' role='button'>Show Grid</a>");
         $('#btnShowGrid').click(showGrid);
         // check for plate index or load plate 0 by default
-        const plateIdx = $('#currentSelection').data('plateIdx');
+
+        const plateIdx = window.qc.selectors.getPlate()
         let plateId = 'btnPlate0';
         if (plateIdx) plateId = `btnPlate${plateIdx}`;
         document.getElementById(plateId).click();
@@ -405,8 +408,8 @@ function drawPhenotypePlatesSelection() {
 }
 
 function showGrid() {
-    const plateIdx = $('#currentSelection').data('plateIdx');
-    const project = $('#currentSelection').data('project');
+    const plateIdx = window.qc.selectors.getPlate();
+    const project = window.qc.selectors.getProject();
     const path = `/api/results/gridding/${plateIdx}/${project}`;
     $('#imgGridding').attr('src', baseUrl + path);
     $('#dialogGrid').show();
@@ -417,10 +420,9 @@ function showGrid() {
 function renderPlate(phenotypePlates) {
     const path = phenotypePlates.url;
     const plateIdx = phenotypePlates.index;
+    window.qc.actions.setPlate(parseInt(plateIdx, 10));
     const project = $('#spProject').text();
     console.log(`experiment: ${path}`, phenotypePlates);
-    $('#currentSelection').data('plateIdx', plateIdx);
-    $('#currentSelection').data('project', project);
     $('#spnPlateIdx').text((plateIdx + 1));
     wait();
     // e.g. /api/results/phenotype/GenerationTimeWhen/1/by4742_h/analysis
@@ -440,26 +442,7 @@ function renderPlate(phenotypePlates) {
         const growthMetaData = data.Growth_metaData;
         const phenotypeName = data.plate_phenotype;
         window.qc.actions.retrievePlateCurves(parseInt(plateIdx, 10));
-        const plate = DrawPlate('#plate', plateData, growthMetaData, plateMetaData, phenotypeName, dispatch);
-        const row = $('#currentSelection').data('row');
-        const col = $('#currentSelection').data('col');
-        if (row && col) {
-            window.qc.actions.setQualityIndex(window.qc.selectors
-                .getQIndexFromPosition(parseInt(row, 10), parseInt(col, 10)));
-        }
+        window.heatmap = DrawPlate('#plate', plateData, growthMetaData, plateMetaData, phenotypeName);
         stopWait();
-        plate.on('SelectedExperiment', (datah) => {
-            const arr = datah.coord.split(',');
-            const row = arr[0];
-            const col = arr[1];
-            $('#currentSelection').data('expId', datah.id);
-            $('#currentSelection').data('plateIdx', plateIdx);
-            $('#currentSelection').data('row', row);
-            $('#currentSelection').data('col', col);
-            $('#currentSelection').data('phenotype', datah.phenotype);
-            $('#currentSelection').data('project', $('#spProject').text());
-            window.qc.actions.setQualityIndex(window.qc.selectors
-                .getQIndexFromPosition(parseInt(row, 10), parseInt(col, 10)));
-        });
     });
 }

@@ -1,7 +1,7 @@
 /* Data Selection*/
-.SelectedExperiment {
+.selected-experiment {
     stroke: black;
-    stroke-width:2
+    stroke-width: 3;
 }
 
 .loProjectSelection,
