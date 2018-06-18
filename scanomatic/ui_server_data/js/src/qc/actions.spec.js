@@ -24,9 +24,9 @@ describe('/qc/actions', () => {
 
     describe('setPhenotype', () => {
         it('should return a PHENOTYPE_SET action', () => {
-            expect(actions.setProject('death rate')).toEqual({
+            expect(actions.setPhenotype('death rate')).toEqual({
                 type: 'PHENOTYPE_SET',
-                project: 'death rate',
+                phenotype: 'death rate',
             });
         });
     });

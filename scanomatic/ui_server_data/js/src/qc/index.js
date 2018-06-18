@@ -13,6 +13,6 @@ const store = createStore(
     applyMiddleware(thunk),
 );
 
-window.qc = Bridge(store);
+window.qc = new Bridge(store);
 window.qc.subscribe(new DrawCurvesIntegration().handleUpdate);
 window.qc.subscribe(new QIndexAndSelectionIntegration(window.qc).handleUpdate);

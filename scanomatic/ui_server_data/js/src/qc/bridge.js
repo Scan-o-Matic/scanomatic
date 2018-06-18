@@ -112,14 +112,18 @@ class Actions {
     }
 }
 
-export default function Bridge(store: Store) :
-{actions: Actions, selectors: Selectors, subscribe:(() => void) => void} {
-    const actions = new Actions(store);
-    const selectors = new Selectors(store);
-    const subscribe: (() => void) => void = callback => store.subscribe(callback);
-    return {
-        actions,
-        selectors,
-        subscribe,
-    };
+export default class Bridge {
+    actions: Actions;
+    selectors: Selectors;
+    store: Store;
+
+    constructor(store: Store) {
+        this.store = store;
+        this.actions = new Actions(store);
+        this.selectors = new Selectors(store);
+    }
+
+    subscribe(callback: () => void) {
+        this.store.subscribe(callback);
+    }
 }

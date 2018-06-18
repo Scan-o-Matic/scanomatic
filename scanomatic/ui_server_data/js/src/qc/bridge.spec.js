@@ -11,7 +11,7 @@ describe('/qc/bridge', () => {
         getState: jasmine.createSpy('getState').and.returnValue(state),
     };
 
-    const bridge = Bridge(store);
+    const bridge = new Bridge(store);
     let retrievePlateCurves;
 
     beforeEach(() => {
@@ -44,6 +44,14 @@ describe('/qc/bridge', () => {
             });
         });
 
+        it('dispatches a PHENOTYPE_SET on setPhenotype', () => {
+            bridge.actions.setPhenotype('test');
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'PHENOTYPE_SET',
+                phenotype: 'test',
+            });
+        });
+
         it('dispatches a retrievePlateCurves ThunkAction on retrievePlateCurves', () => {
             bridge.actions.retrievePlateCurves();
             expect(store.dispatch).toHaveBeenCalled();
@@ -72,7 +80,7 @@ describe('/qc/bridge', () => {
                 type: 'PLATE_SET',
                 plate: 2,
             });
-        })
+        });
 
         it('dispatches a QUALITYINDEX_SET on setQualityIndex', () => {
             bridge.actions.setQualityIndex(10);
