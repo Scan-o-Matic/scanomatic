@@ -25,12 +25,12 @@ export default class DrawCurvesIntegration {
             $(selector).hide();
             return;
         }
-        // This is horrible, but seems only way to access all needed data
-        // in  the legacy code.
 
         const well = $(`#id${focus.row}_${focus.col}`)[0];
         if (!well) return;
 
+        // This is horrible, but seems only way to access all needed data
+        // in the legacy code.
         const data = well.__data__;
         $('#sel').text(`Experiment [${focus.row},${focus.col}], Value ${data.phenotype.toPrecision(3)}`);
 
