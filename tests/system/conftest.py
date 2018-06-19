@@ -43,7 +43,7 @@ def _scanomatic(docker_ip, docker_services):
         docker_services.port_for('scanomatic-frontend', 5000),
     )
     docker_services.wait_until_responsive(
-        timeout=360, pause=0.1,
+        timeout=30, pause=0.1,
         check=lambda: is_responsive(url + '/api/status/jobs')
     )
     return url
