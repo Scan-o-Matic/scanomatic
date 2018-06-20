@@ -1,6 +1,6 @@
 // @flow
 import { getProject, getPlate } from './selectors';
-import type { State, TimeSeries, PlateOfTimeSeries } from './state';
+import type { State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue } from './state';
 import { getPlateGrowthData } from '../api';
 
 export type Action
@@ -14,6 +14,11 @@ export type Action
         smooth: PlateOfTimeSeries,
         raw: PlateOfTimeSeries,
     |}
+    | {| type: 'QUALITYINDEX_QUEUE_SET', queue: QualityIndexQueue |}
+    | {| type: 'QUALITYINDEX_SET', index: number |}
+    | {| type: 'QUALITYINDEX_NEXT' |}
+    | {| type: 'QUALITYINDEX_PREVIOUS' |}
+    | {| type: 'PHENOTYPE_SET', phenotype: string |}
 
 export function setPlate(plate : number) : Action {
     return { type: 'PLATE_SET', plate };
@@ -21,6 +26,10 @@ export function setPlate(plate : number) : Action {
 
 export function setProject(project : string) : Action {
     return { type: 'PROJECT_SET', project };
+}
+
+export function setPhenotype(phenotype: string) : Action {
+    return { type: 'PHENOTYPE_SET', phenotype };
 }
 
 export function setPlateGrowthData(
@@ -46,6 +55,28 @@ export function focusCurve(
     return {
         type: 'CURVE_FOCUS', plate, row, col,
     };
+}
+
+export function setQualityIndexQueue(queue: QualityIndexQueue) : Action {
+    return {
+        type: 'QUALITYINDEX_QUEUE_SET',
+        queue,
+    };
+}
+
+export function setQualityIndex(index: number): Action {
+    return {
+        type: 'QUALITYINDEX_SET',
+        index,
+    };
+}
+
+export function nextQualityIndex() : Action {
+    return { type: 'QUALITYINDEX_NEXT' };
+}
+
+export function previousQualityIndex() : Action {
+    return { type: 'QUALITYINDEX_PREVIOUS' };
 }
 
 export type ThunkAction = (dispatch: Action => any, getState: () => State) => any;

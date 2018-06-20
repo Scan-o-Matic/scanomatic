@@ -233,9 +233,6 @@ d3.scanomatic.growthChart = function (time, serRaw, serSmooth) {
             })
             .text("GT");
         //Py=m (Px-x) + Py
-        console.log("GT:" + generationTime);
-        console.log("GTTimeWhen:" + generationTimeWhen);
-        console.log("GTTimeWhenValue:" + smoothGtValue);
         var windowSize = 4;
         var gtSlope = 1 / generationTime;
         var l = parseFloat(smoothGtTime) - windowSize;
@@ -289,8 +286,6 @@ d3.scanomatic.growthChart = function (time, serRaw, serSmooth) {
         var gtY = yScale(smoothYieldValue);
         var baseX = gtX;
         var baseY = yScale(smoothData[0].value);
-        console.log("Yield time:" + smoothYieldTime);
-        console.log("Yield value:" + smoothYieldValue);
 
         var gMetaYeild = g.append("g")
           .classed("meta yield", true);

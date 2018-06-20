@@ -76,16 +76,6 @@
                 });
 
               $("#divLockRemoving").hide();
-              $("#ckMarkExperiments").change(function () {
-                  if (this.checked) {
-                      $("#divMarkStates").show();
-                      $("#qidxHint").show();
-                      setExperimentByQidx(qIdxOperations.Current);
-                  } else {
-                      $("#divMarkStates").hide();
-                      $("#qidxHint").hide();
-                  }
-              });
               $("#ckNormalized").change(function () {
                   $("#" + selRunNormPhenotypesName).toggle();
                   $("#" + selRunPhenotypesName).toggle();
@@ -151,13 +141,13 @@
                   markExperiment(plateMetaDataType.NoGrowth, true);
               });
               $("#btnQidxReset").click(function () {
-                  setExperimentByQidx(qIdxOperations.Reset);
+                  window.qc.actions.setQualityIndex(0);
               });
               $("#btnQidxNext").click(function () {
-                  setExperimentByQidx(qIdxOperations.Next);
+                  window.qc.actions.nextQualityIndex();
               });
               $("#btnQidxPrev").click(function () {
-                  setExperimentByQidx(qIdxOperations.Prev);
+                  window.qc.actions.previousQualityIndex();
               });
               $(document).keypress(function (event) {
                   var char = getChar(event).toLowerCase();
@@ -196,18 +186,17 @@
                   }
               });
               $(document).keydown(function (e) {
-                  if (!isQualityControlOn()) return;
                   switch (e.which) {
                       case 36: // home
-                          setExperimentByQidx(qIdxOperations.Reset);
+                          window.qc.actions.setQualityIndex(0);
                           break;
                       case 37: // left
                       case 40: // down
-                          setExperimentByQidx(qIdxOperations.Prev);
+                          window.qc.actions.previousQualityIndex();
                           break;
                       case 38: // up
                       case 39: // right
-                          setExperimentByQidx(qIdxOperations.Next);
+                          window.qc.actions.nextQualityIndex();
                           break;
                       default: return;
                   }
@@ -340,12 +329,7 @@
                   </div>
                   <div class="row">
                       <div class="col-md-12">
-                        <span class="mark-experiments-toggle">
-                          Mark experiments
-                          <input id="ckMarkExperiments" type="checkbox" data-toggle="toggle" data-size="mini"/>
-                        </span>
                         <span id="divMarkStates" class="mark-experiments-action-group">
-                          <div id="currentSelection"></div>
                           <button id="btnMarkOK" class="markButton vcenter" title="Mark all phenotypes as OK [hotkey: q]"></button>
                           <button id="btnMarkOKOne" class="markButton vcenter" title="Mark this phenotype as OK [hotkey: a]"></button>
                           <button id="btnMarkBad" class="markButton vcenter" title="Mark all phenotypes as Bad [hotkey: w]"></button>

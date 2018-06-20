@@ -7,21 +7,17 @@ describe('/qc/selectors', () => {
         expect(selectors.getProject(state)).toEqual('/my/path');
     });
 
+    it('should get phenotype', () => {
+        const state = new StateBuilder()
+            .setProject('/my/path')
+            .setPhenotype('test')
+            .build();
+        expect(selectors.getPhenotype(state)).toEqual('test');
+    });
+
     it('should get the plate number', () => {
         const state = new StateBuilder().setPlate(2).build();
         expect(selectors.getPlate(state)).toEqual(2);
-    });
-
-    describe('focus', () => {
-        it('should return null if no focus', () => {
-            const state = new StateBuilder().build();
-            expect(selectors.getFocus(state)).toEqual(null);
-        });
-
-        it('should return the focused curve', () => {
-            const state = new StateBuilder().setFocus(0, 2, 1).build();
-            expect(selectors.getFocus(state)).toEqual({ row: 2, col: 1 });
-        });
     });
 
     describe('raw data', () => {
@@ -97,6 +93,62 @@ describe('/qc/selectors', () => {
                 )
                 .build();
             expect(selectors.getTimes(state, 1)).toEqual(null);
+        });
+    });
+
+    describe('getFocus', () => {
+        const queue = [
+            { idx: 0, col: 1, row: 1 },
+            { idx: 1, col: 0, row: 1 },
+            { idx: 2, col: 1, row: 0 },
+            { idx: 3, col: 0, row: 0 },
+        ];
+
+        it('should return null if no queue', () => {
+            const state = new StateBuilder().build();
+            expect(selectors.getFocus(state)).toBe(null);
+        });
+
+        it('should return current index info', () => {
+            const state = new StateBuilder()
+                .setQualityIndexQueue(queue)
+                .setQualityIndex(1)
+                .build();
+            expect(selectors.getFocus(state)).toEqual({
+                idx: 1,
+                col: 0,
+                row: 1,
+            });
+        });
+    });
+
+    describe('getQIndexFromPosition', () => {
+        const queue = [
+            { idx: 0, col: 1, row: 1 },
+            { idx: 1, col: 0, row: 1 },
+            { idx: 2, col: 1, row: 0 },
+            { idx: 3, col: 0, row: 0 },
+        ];
+
+        it('should return null if no queue', () => {
+            const state = new StateBuilder().build();
+            expect(selectors.getQIndexFromPosition(state, 1, 0)).toBe(null);
+        });
+
+        it('should return index for position', () => {
+            const state = new StateBuilder()
+                .setQualityIndexQueue(queue)
+                .setQualityIndex(1)
+                .build();
+            expect(selectors.getQIndexFromPosition(state, 1, 0)).toEqual(1);
+        });
+
+        it('should return undefined for unknown position', () => {
+            const state = new StateBuilder()
+                .setQualityIndexQueue(queue)
+                .setQualityIndex(1)
+                .build();
+            expect(selectors.getQIndexFromPosition(state, 10, 0)).toBe(undefined);
         });
     });
 });

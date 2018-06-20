@@ -1,14 +1,18 @@
 // @flow
 
 import {
-    retrievePlateCurves, setProject, setPlate, focusCurve,
+    retrievePlateCurves, setProject, setPlate, setPhenotype,
+    setQualityIndexQueue, nextQualityIndex, previousQualityIndex, setQualityIndex,
 } from './actions';
 import {
-    getRawCurve, getSmoothCurve, getTimes, getPlate, getFocus,
+    getRawCurve, getSmoothCurve, getTimes, getPlate, getProject,
+    getFocus, getQIndexFromPosition, getPhenotype,
 } from './selectors';
 
 import type { Action, ThunkAction } from './actions';
-import type { State, TimeSeries, PlatePosition } from './state';
+import type {
+    State, TimeSeries, QualityIndexInfo, QualityIndexQueue,
+} from './state';
 
 type Store = {
     +dispatch: (Action | ThunkAction) => any,
@@ -21,6 +25,16 @@ class Selectors {
 
     constructor(store : Store) {
         this.store = store;
+    }
+
+    getProject() : ?string {
+        const state = this.store.getState();
+        return getProject(state);
+    }
+
+    getPhenotype() : ?string {
+        const state = this.store.getState();
+        return getPhenotype(state);
     }
 
     getRawCurve(plate: number, row : number, col : number) : ?TimeSeries {
@@ -43,9 +57,14 @@ class Selectors {
         return getPlate(state);
     }
 
-    getFocus() : ?PlatePosition {
+    getFocus() : ?QualityIndexInfo {
         const state = this.store.getState();
         return getFocus(state);
+    }
+
+    getQIndexFromPosition(row: number, col: number) : ?number {
+        const state = this.store.getState();
+        return getQIndexFromPosition(state, row, col);
     }
 }
 
@@ -60,12 +79,29 @@ class Actions {
         this.store.dispatch(setProject(project));
     }
 
+    setPhenotype(phenotype: string) {
+        this.store.dispatch(setPhenotype(phenotype));
+    }
+
     setPlate(plate: number) {
         this.store.dispatch(setPlate(plate));
     }
 
-    setFocus(plate: number, row: number, col: number) {
-        this.store.dispatch(focusCurve(plate, row, col));
+    setQualityIndexQueue(queue: QualityIndexQueue, plate: ?number) {
+        if (plate != null) this.setPlate(plate);
+        this.store.dispatch(setQualityIndexQueue(queue));
+    }
+
+    setQualityIndex(index: number) {
+        this.store.dispatch(setQualityIndex(index));
+    }
+
+    nextQualityIndex() {
+        this.store.dispatch(nextQualityIndex());
+    }
+
+    previousQualityIndex() {
+        this.store.dispatch(previousQualityIndex());
     }
 
     retrievePlateCurves(plate: ?number = null) {
@@ -76,13 +112,18 @@ class Actions {
     }
 }
 
-export default function Bridge(store: Store) {
-    const actions = new Actions(store);
-    const selectors = new Selectors(store);
-    const subscribe: (() => void) => void = callback => store.subscribe(callback);
-    return {
-        actions,
-        selectors,
-        subscribe,
-    };
+export default class Bridge {
+    actions: Actions;
+    selectors: Selectors;
+    store: Store;
+
+    constructor(store: Store) {
+        this.store = store;
+        this.actions = new Actions(store);
+        this.selectors = new Selectors(store);
+    }
+
+    subscribe(callback: () => void) {
+        this.store.subscribe(callback);
+    }
 }

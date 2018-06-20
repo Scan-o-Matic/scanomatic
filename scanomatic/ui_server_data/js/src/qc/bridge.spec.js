@@ -11,7 +11,7 @@ describe('/qc/bridge', () => {
         getState: jasmine.createSpy('getState').and.returnValue(state),
     };
 
-    const bridge = Bridge(store);
+    const bridge = new Bridge(store);
     let retrievePlateCurves;
 
     beforeEach(() => {
@@ -44,6 +44,14 @@ describe('/qc/bridge', () => {
             });
         });
 
+        it('dispatches a PHENOTYPE_SET on setPhenotype', () => {
+            bridge.actions.setPhenotype('test');
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'PHENOTYPE_SET',
+                phenotype: 'test',
+            });
+        });
+
         it('dispatches a retrievePlateCurves ThunkAction on retrievePlateCurves', () => {
             bridge.actions.retrievePlateCurves();
             expect(store.dispatch).toHaveBeenCalled();
@@ -55,6 +63,44 @@ describe('/qc/bridge', () => {
             expect(store.dispatch).toHaveBeenCalledWith({
                 type: 'PLATE_SET',
                 plate: 2,
+            });
+        });
+
+        it('dispatches a QUALITYINDEX_QUEUE_SET on setQualityIndexQueue', () => {
+            bridge.actions.setQualityIndexQueue([{ idx: 0, row: 0, col: 0 }]);
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'QUALITYINDEX_QUEUE_SET',
+                queue: [{ idx: 0, row: 0, col: 0 }],
+            });
+        });
+
+        it('dispatches a PLATE_SET on setQualityIndexQueue if plate supplied', () => {
+            bridge.actions.setQualityIndexQueue([{ idx: 0, row: 0, col: 0 }], 2);
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'PLATE_SET',
+                plate: 2,
+            });
+        });
+
+        it('dispatches a QUALITYINDEX_SET on setQualityIndex', () => {
+            bridge.actions.setQualityIndex(10);
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'QUALITYINDEX_SET',
+                index: 10,
+            });
+        });
+
+        it('dispatches a QUALITYINDEX_NEXT on nextQualityIndex', () => {
+            bridge.actions.nextQualityIndex();
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'QUALITYINDEX_NEXT',
+            });
+        });
+
+        it('dispatches a QUALITYINDEX_PREVIOUS on previousQualityIndex', () => {
+            bridge.actions.previousQualityIndex();
+            expect(store.dispatch).toHaveBeenCalledWith({
+                type: 'QUALITYINDEX_PREVIOUS',
             });
         });
     });
@@ -94,10 +140,26 @@ describe('/qc/bridge', () => {
 
         it('calls getFocus on getFocus', () => {
             const getFocus = spyOn(selectors, 'getFocus')
-                .and.returnValue({ row: 41, col: 43 });
-            expect(bridge.selectors.getFocus()).toEqual({ row: 41, col: 43 });
+                .and.returnValue({ row: 41, col: 43, idx: 0 });
+            expect(bridge.selectors.getFocus()).toEqual({ row: 41, col: 43, idx: 0 });
             expect(store.getState).toHaveBeenCalled();
             expect(getFocus).toHaveBeenCalledWith(state);
+        });
+
+        it('calls getFocus on getFocus', () => {
+            const getFocus = spyOn(selectors, 'getFocus')
+                .and.returnValue({ idx: 42, row: 7, col: 8 });
+            expect(bridge.selectors.getFocus()).toEqual({ idx: 42, row: 7, col: 8 });
+            expect(store.getState).toHaveBeenCalled();
+            expect(getFocus).toHaveBeenCalledWith(state);
+        });
+
+        it('calls getQIndexFromPosition on getQIndexFromPosition', () => {
+            const getQIndexFromPosition = spyOn(selectors, 'getQIndexFromPosition')
+                .and.returnValue(42);
+            expect(bridge.selectors.getQIndexFromPosition(7, 8)).toEqual(42);
+            expect(store.getState).toHaveBeenCalled();
+            expect(getQIndexFromPosition).toHaveBeenCalledWith(state, 7, 8);
         });
     });
 });

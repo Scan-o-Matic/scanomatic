@@ -134,9 +134,6 @@ class ProjectDetails(object):
 
 
 class PlateDisplayArea(object):
-    mark_experiments_toggle_selector = (
-        By.CSS_SELECTOR, '.mark-experiments-toggle',
-    )
     mark_states_action_group_selector = (
         By.CSS_SELECTOR, '.mark-experiments-action-group',
     )
@@ -155,15 +152,6 @@ class PlateDisplayArea(object):
     def has_marking_enabled(self):
         return self.elem.find_element(
             *self.mark_states_action_group_selector).is_displayed()
-
-    def toggle_mark_experiments(self):
-        span = self.elem.find_element(*self.mark_experiments_toggle_selector)
-        span.find_element(By.CSS_SELECTOR, '.toggle').click()
-
-    def show_mark_experiments(self):
-        self.toggle_mark_experiments()
-        while not self.has_marking_enabled:
-            self.toggle_mark_experiments()
 
     def mark_selected_curve(self, mark):
         id = ''
@@ -435,7 +423,6 @@ class TestQCNormCurveMarking:
     def test_marking_ok_this_only_ok_current_phenotype(self, page_with_plate):
         pos = (5, 10)
         plate = page_with_plate.get_plate_display_area()
-        plate.show_mark_experiments()
         position = plate.get_plate_position(*pos)
         assert position.mark == CurveMark.OK
 

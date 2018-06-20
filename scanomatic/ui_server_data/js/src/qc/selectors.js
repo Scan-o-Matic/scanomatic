@@ -2,16 +2,20 @@
 
 import type {
     State,
+    QualityIndexInfo,
     TimeSeries as _TimeSeries,
-    PlatePosition as _PlatePosition,
 } from './state';
 
 export type TimeSeries = _TimeSeries;
-export type PlatePosition = _PlatePosition;
 
 export function getProject(state: State): ?string {
     if (!state.settings) return null;
     return state.settings.project;
+}
+
+export function getPhenotype(state: State): ?string {
+    if (!state.settings) return null;
+    return state.settings.phenotype;
 }
 
 export function getPlate(state: State): ?number {
@@ -39,7 +43,14 @@ export function getSmoothCurve(state: State, plate: number, row: number, col: nu
     return smooth[row][col];
 }
 
-export function getFocus(state: State) : ?PlatePosition {
-    if (!state.plate || !state.plate.focus) return null;
-    return state.plate.focus;
+export function getFocus(state: State) : ?QualityIndexInfo {
+    if (!state.plate || !state.plate.qIndexQueue) return null;
+    return state.plate.qIndexQueue[state.plate.qIndex];
+}
+
+export function getQIndexFromPosition(state: State, row: number, col: number) : ?number {
+    if (!state.plate || !state.plate.qIndexQueue) return null;
+    return state.plate.qIndexQueue
+        .filter(item => item.row === row && item.col === col)
+        .map(item => item.idx)[0];
 }
