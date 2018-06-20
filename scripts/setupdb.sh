@@ -3,13 +3,15 @@
 user=scanomatic
 db=scanomatic
 
-echo "[$BASH_SOURCE] ⚠ THIS SCRIPT CREATES A POSTGRES USER WITHOUT A PASSWORD. DO NOT USE IN PRODUCTION ⚠" >&2
-echo "[$BASH_SOURCE] Creating database user $user"
+name=$0
+
+echo "[$name] ⚠ THIS SCRIPT CREATES A POSTGRES USER WITHOUT A PASSWORD. DO NOT USE IN PRODUCTION ⚠" >&2
+echo "[$name] Creating database user $user"
 createuser $user
 
-echo "[$BASH_SOURCE] Creating database $db"
+echo "[$name] Creating database $db"
 createdb $db
 
-echo "[$BASH_SOURCE] Configuring databse $db"
+echo "[$name] Configuring databse $db"
 psql -c "grant all privileges on database $db to $user ;"
 psql --dbname $db -c "CREATE EXTENSION btree_gist;"
