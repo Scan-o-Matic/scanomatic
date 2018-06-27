@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/Scan-o-Matic/scanomatic.svg?branch=master)](https://travis-ci.org/Scan-o-Matic/scanomatic)
+[![Requirements Status](https://requires.io/github/Scan-o-Matic/scanomatic/requirements.svg?branch=master)](https://requires.io/github/Scan-o-Matic/scanomatic/requirements/?branch=master)
 
 # Scan-o-matic (program) and scanomatic (python module)
 
