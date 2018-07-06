@@ -22,7 +22,7 @@ markupsafe==1.0           # via jinja2, mako
 matplotlib==2.0.1
 networkx==1.11            # via scikit-image
 numpy==1.14.2
-olefile==0.44             # via pillow
+olefile==0.45.1           # via pillow
 pandas==0.20.1
 pillow==4.1.1
 prometheus-client==0.1.1
