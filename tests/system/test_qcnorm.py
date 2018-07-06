@@ -506,3 +506,8 @@ class TestQCNormNavigateQidx:
         plate.set_qindex_input("1764")
         plate.update_qindex(Navigations.SET)
         assert plate.get_qindex() == "1536"
+
+        # Trying to set to non-number defaults to first index:
+        plate.set_qindex_input("foo")
+        plate.update_qindex(Navigations.SET)
+        assert plate.get_qindex() == "1"
