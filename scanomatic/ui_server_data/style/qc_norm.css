@@ -223,9 +223,9 @@ body > .modal {
 }
 
 .no-spin, .no-spin:hover, no-spin:focus {
-    -webkit-appearance: none !important;
-    margin: 0 !important;
-    -moz-appearance:textfield !important;
+    -webkit-appearance: none;
+    margin: 0;
+    -moz-appearance:textfield;
 }
 
 #qIndexCurrent {
