@@ -202,7 +202,6 @@ class PlateDisplayArea(object):
 
     def set_qindex_input(self, keystrokes):
         id = '#qIndexCurrent'
-        graph = self.get_graph()
         elem = self.elem.find_element(By.CSS_SELECTOR, id)
         elem.clear()
         elem.send_keys(keystrokes)
