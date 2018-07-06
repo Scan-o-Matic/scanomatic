@@ -140,7 +140,7 @@
               $("#btnMarkNoGrowth").click(function () {
                   markExperiment(plateMetaDataType.NoGrowth, true);
               });
-              $("#btnQidxReset").click(function () {
+              $("#btnQidxSet").click(function () {
                   window.qc.actions.setQualityIndex($("#qIndexCurrent").val() - 1);
               });
               $("#btnQidxNext").click(function () {
@@ -323,8 +323,8 @@
                               <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
                           </button>
                           <input type="number" id="qIndexCurrent" name="qIndexCurrent" value=1 />
-                          <button id="btnQidxReset" class="btn btn-default btn-xs" title="Go to specified Qidx [hotkey: <enter>]">
-                              Go
+                          <button id="btnQidxSet" class="btn btn-default btn-xs" title="Go to specified Qidx [hotkey: <enter>]">
+                              Set
                           </button>
                           <button id="btnQidxNext" class="btn btn-default btn-xs" title="Next in Qidx position [hotkey: <right>/<up>]">
                               <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
