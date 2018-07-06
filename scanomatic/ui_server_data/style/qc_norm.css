@@ -222,6 +222,12 @@ body > .modal {
     right: 0px;
 }
 
+.no-spin, .no-spin:hover, no-spin:focus {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+    -moz-appearance:textfield !important;
+}
+
 #qIndexCurrent {
     width: 5em;
     display: inline-block;
