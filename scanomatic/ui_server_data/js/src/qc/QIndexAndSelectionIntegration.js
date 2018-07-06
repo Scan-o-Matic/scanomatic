@@ -24,6 +24,6 @@ export default class QIndexAndSelectionIntegration {
 
         $('.selected-experiment').removeClass('selected-experiment');
         $(`#id${focus.row}_${focus.col}`).addClass('selected-experiment');
-        $('#qIndexCurrent').text(focus.idx + 1);
+        $('#qIndexCurrent').val(focus.idx + 1);
     }
 }

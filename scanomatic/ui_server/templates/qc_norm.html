@@ -141,7 +141,7 @@
                   markExperiment(plateMetaDataType.NoGrowth, true);
               });
               $("#btnQidxReset").click(function () {
-                  window.qc.actions.setQualityIndex(0);
+                  window.qc.actions.setQualityIndex($("#qIndexCurrent").val() - 1);
               });
               $("#btnQidxNext").click(function () {
                   window.qc.actions.nextQualityIndex();
@@ -167,28 +167,12 @@
                       case 'r':
                           markExperiment(plateMetaDataType.NoGrowth, true);
                           break;
-                      case '1':
-                          $("#btnPlate0").focus();
-                          document.getElementById("btnPlate0").click();
-                          break;
-                      case '2':
-                          $("#btnPlate1").focus();
-                          document.getElementById("btnPlate1").click();
-                          break;
-                      case '3':
-                          $("#btnPlate2").focus();
-                          document.getElementById("btnPlate2").click();
-                          break;
-                      case '4':
-                          $("#btnPlate3").focus();
-                          document.getElementById("btnPlate3").click();
-                          break;
                   }
               });
               $(document).keydown(function (e) {
                   switch (e.which) {
-                      case 36: // home
-                          window.qc.actions.setQualityIndex(0);
+                      case 13: // enter
+                          window.qc.actions.setQualityIndex($("#qIndexCurrent").val() - 1);
                           break;
                       case 37: // left
                       case 40: // down
@@ -335,13 +319,13 @@
                           <button id="btnMarkBad" class="markButton vcenter" title="Mark all phenotypes as Bad [hotkey: w]"></button>
                           <button id="btnMarkEmpty" class="markButton vcenter" title="Mark all phenotypes as Empty [hotkey: e]"></button>
                           <button id="btnMarkNoGrowth" class="markButton vcenter" title="Mark all phenotypes as NoGrowth [hotkey: r]"></button>
-                          <button id="btnQidxReset" style="margin-left:10px" class="btn btn-default btn-xs" title="Go to first Qidx [hotkey: <home>]">
-                              <span class="glyphicon glyphicon-asterisk" aria-hidden="true"></span>
-                          </button>
                           <button id="btnQidxPrev" class="btn btn-default btn-xs" title="Back in Qidx position [hotkey: <left>/<down>]">
                               <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
                           </button>
-                          <span id="qIndexCurrent"></span>
+                          <input type="number" id="qIndexCurrent" name="qIndexCurrent" value=1 />
+                          <button id="btnQidxReset" class="btn btn-default btn-xs" title="Go to specified Qidx [hotkey: <enter>]">
+                              Go
+                          </button>
                           <button id="btnQidxNext" class="btn btn-default btn-xs" title="Next in Qidx position [hotkey: <right>/<up>]">
                               <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
                           </button>

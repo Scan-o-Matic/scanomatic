@@ -223,8 +223,10 @@ body > .modal {
 }
 
 #qIndexCurrent {
-    width: 4em;
+    width: 5em;
     display: inline-block;
-    border: 1px solid;
+    border: 0px;
     text-align: center;
+    font-size: 12px;
+    color: #000;
 }
