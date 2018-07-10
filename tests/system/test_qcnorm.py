@@ -12,7 +12,7 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 UI_DEFAULT_WAIT = 20
 
 CurveMark = Enum('CurveMark', ['OK', 'OK_THIS', 'BAD', 'EMPTY', 'NO_GROWTH'])
-Navigations = Enum('Navigations', ['NEXT', 'PREV', 'RESET'])
+Navigations = Enum('Navigations', ['NEXT', 'PREV', 'SET'])
 
 
 class AnalysisNotFoundError(Exception):
@@ -183,7 +183,9 @@ class PlateDisplayArea(object):
 
     def get_qindex(self):
         id = "#qIndexCurrent"
-        return self.elem.find_element(By.CSS_SELECTOR, id).text
+        return (
+            self.elem.find_element(By.CSS_SELECTOR, id).get_attribute("value")
+        )
 
     def update_qindex(self, operation):
         id = ''
@@ -191,12 +193,18 @@ class PlateDisplayArea(object):
             id = '#btnQidxNext'
         elif operation == Navigations.PREV:
             id = '#btnQidxPrev'
-        elif operation == Navigations.RESET:
-            id = '#btnQidxReset'
+        elif operation == Navigations.SET:
+            id = '#btnQidxSet'
 
         graph = self.get_graph()
         self.elem.find_element(By.CSS_SELECTOR, id).click()
         graph.wait_until_graph_is_updated()
+
+    def set_qindex_input(self, keystrokes):
+        id = '#qIndexCurrent'
+        elem = self.elem.find_element(By.CSS_SELECTOR, id)
+        elem.clear()
+        elem.send_keys(keystrokes)
 
     def get_graph(self):
         return Graph(self)
@@ -467,13 +475,6 @@ class TestQCNormNavigateQidx:
         assert plate.get_qindex() == "1"
         assert plate.get_graph() == graph_for_qindex1
 
-        # Pressing reset goes back to first index:
-        plate.update_qindex(Navigations.NEXT)
-        plate.update_qindex(Navigations.NEXT)
-        assert plate.get_qindex() == "3"
-        plate.update_qindex(Navigations.RESET)
-        assert plate.get_qindex() == "1"
-
         # Changing plate resets index:
         plate.update_qindex(Navigations.NEXT)
         assert plate.get_qindex() == "2"
@@ -489,3 +490,24 @@ class TestQCNormNavigateQidx:
         plate_position.click()
         assert plate.get_qindex() == "42"
         assert graph_plate_3 != plate.get_graph()
+
+        # Pressing set goes back to specified index:
+        plate.set_qindex_input("1")
+        plate.update_qindex(Navigations.SET)
+        assert plate.get_qindex() == "1"
+        plate.update_qindex(Navigations.NEXT)
+        assert plate.get_qindex() == "2"
+
+        # Pressing set outside bounds goes to max or min:
+        plate.set_qindex_input("-42")
+        plate.update_qindex(Navigations.SET)
+        assert plate.get_qindex() == "1"
+
+        plate.set_qindex_input("1764")
+        plate.update_qindex(Navigations.SET)
+        assert plate.get_qindex() == "1536"
+
+        # Trying to set to non-number defaults to first index:
+        plate.set_qindex_input("foo")
+        plate.update_qindex(Navigations.SET)
+        assert plate.get_qindex() == "1"
