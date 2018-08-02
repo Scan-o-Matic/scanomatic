@@ -159,7 +159,11 @@ function GetRunPhenotypes(url, key, callback) {
         else {
             var phenotypes = [];
             for (var i = 0; i < json.phenotypes.length; i++) {
-                phenotypes.push({ name: json.names[i], url: json.phenotype_urls[i] });
+                phenotypes.push({
+                    name: json.names[i],
+                    phenotype: json.phenotypes[i],
+                    url: json.phenotype_urls[i],
+                });
             }
             callback(phenotypes);
         }
