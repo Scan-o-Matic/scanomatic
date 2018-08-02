@@ -348,10 +348,10 @@ d3.scanomatic.plateHeatmap = function () {
 
             //compose from plate metadata
             var plateMetaDataComp = [];
-            plateMetaDataComp.push(addmetaDataType(plateMetaData.plate_BadData, plateMetaDataType.BadData));
-            plateMetaDataComp.push(addmetaDataType(plateMetaData.plate_Empty, plateMetaDataType.Empty));
-            plateMetaDataComp.push(addmetaDataType(plateMetaData.plate_NoGrowth, plateMetaDataType.NoGrowth));
-            plateMetaDataComp.push(addmetaDataType(plateMetaData.plate_UndecidedProblem, plateMetaDataType.UndecidedProblem));
+            plateMetaDataComp.push(addmetaDataType(plateMetaData.badData, plateMetaDataType.BadData));
+            plateMetaDataComp.push(addmetaDataType(plateMetaData.empty, plateMetaDataType.Empty));
+            plateMetaDataComp.push(addmetaDataType(plateMetaData.noGrowth, plateMetaDataType.NoGrowth));
+            plateMetaDataComp.push(addmetaDataType(plateMetaData.undecidedProblem, plateMetaDataType.UndecidedProblem));
 
             //compose from plate data and growth metadata
             var plate = [];
