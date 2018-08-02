@@ -2,6 +2,7 @@
 
 import type {
     State, TimeSeries, PlateOfTimeSeries, Plate, Settings, QualityIndexQueue,
+    PlateValueArray, PlateCoordinatesArray,
 } from './state';
 
 export default class StateBuilder {
@@ -22,6 +23,23 @@ export default class StateBuilder {
     setPhenotype(phenotype: string) {
         if (!this.settings.project) return this;
         this.settings = Object.assign({}, this.settings, { phenotype });
+        return this;
+    }
+
+    setPlatePhenotypeData(
+        phenotypes: PlateValueArray,
+        badData: PlateCoordinatesArray,
+        empty: PlateCoordinatesArray,
+        noGrowth: PlateCoordinatesArray,
+        undecidedProblem: PlateCoordinatesArray,
+    ) {
+        this.plate = Object.assign({}, this.plate, {
+            phenotypes,
+            badData,
+            empty,
+            noGrowth,
+            undecidedProblem,
+        });
         return this;
     }
 

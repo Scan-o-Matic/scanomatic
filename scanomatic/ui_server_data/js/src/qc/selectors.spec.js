@@ -15,6 +15,25 @@ describe('/qc/selectors', () => {
         expect(selectors.getPhenotype(state)).toEqual('test');
     });
 
+    it('should get phenotype data', () => {
+        const state = new StateBuilder()
+            .setProject('/my/path')
+            .setPhenotype('test')
+            .setPlatePhenotypeData(
+                [[5, 4, 3], [5, 5, 1]],
+                [[], []],
+                [[], []],
+                [[], []],
+                [[], []],
+            )
+            .build();
+        expect(selectors.getPhenotypeData(state))
+            .toEqual([
+                [5, 4, 3],
+                [5, 5, 1],
+            ]);
+    });
+
     it('should get the plate number', () => {
         const state = new StateBuilder().setPlate(2).build();
         expect(selectors.getPlate(state)).toEqual(2);

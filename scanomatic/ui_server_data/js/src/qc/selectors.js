@@ -4,9 +4,11 @@ import type {
     State,
     QualityIndexInfo,
     TimeSeries as _TimeSeries,
+    PlateValueArray as _PlateValueArray,
 } from './state';
 
 export type TimeSeries = _TimeSeries;
+export type PlateValueArray = _PlateValueArray;
 
 export function getProject(state: State): ?string {
     if (!state.settings) return null;
@@ -53,4 +55,9 @@ export function getQIndexFromPosition(state: State, row: number, col: number) : 
     return state.plate.qIndexQueue
         .filter(item => item.row === row && item.col === col)
         .map(item => item.idx)[0];
+}
+
+export function getPhenotypeData(state: State): ?PlateValueArray {
+    if (!state.plate) return null;
+    return state.plate.phenotypes;
 }

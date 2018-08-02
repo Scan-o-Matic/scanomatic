@@ -11,6 +11,9 @@ export type QualityIndexInfo = {
 
 export type QualityIndexQueue = Array<QualityIndexInfo>;
 
+export type PlateValueArray = Array<Array<number>>;
+export type PlateCoordinatesArray = Array<Array<number>>; // [[y1, y2, ...], [x1, x2, ...]]
+
 export type Settings = {
     +project?: string,
     +phenotype?: string,
@@ -23,6 +26,11 @@ export type Plate = {
     +raw?: PlateOfTimeSeries,
     +smooth?: PlateOfTimeSeries,
     +times?: TimeSeries,
+    +phenotypes?: PlateValueArray,
+    +badData?: PlateCoordinatesArray,
+    +empty?: PlateCoordinatesArray,
+    +noGrowth?: PlateCoordinatesArray,
+    +undecidedProblem?: PlateCoordinatesArray,
 };
 
 export type State = {
