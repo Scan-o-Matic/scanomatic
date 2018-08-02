@@ -1,12 +1,15 @@
 // @flow
 import API from './API';
 
+export type PlateValueArray = Array<Array<number>>;
+export type PlateCoordinatesArray = Array<Array<number>>; // [[y1, y2, ...], [x1, x2, ...]]
+
 export type PlatePhenotypeData = {
-    phenotypes: Array<Array<number>>, // 2d array of values
-    badData: Array<Array<number>>, // [[y1, y2, ...], [x1, x2, ...]]
-    empty: Array<Array<number>>, // [[y1, y2, ...], [x1, x2, ...]]
-    noGrowth: Array<Array<number>>, // [[y1, y2, ...], [x1, x2, ...]]
-    undecidedProblem: Array<Array<number>>, // [[y1, y2, ...], [x1, x2, ...]]
+    phenotypes: PlateValueArray,
+    badData: PlateCoordinatesArray,
+    empty: PlateCoordinatesArray,
+    noGrowth: PlateCoordinatesArray,
+    undecidedProblem: PlateCoordinatesArray,
 }
 
 export default function getPhenotypeData(
