@@ -22,5 +22,6 @@ export default function getPhenotypeData(
             empty: r.Empty,
             noGrowth: r.NoGrowth,
             undecidedProblem: r.UndecidedProblem,
+            qIndexQueue: r.qindex_rows.map((row, idx) => ({ idx, row, col: r.qindex_cols[idx] })),
         }));
 }

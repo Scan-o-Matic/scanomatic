@@ -31,6 +31,14 @@ describe('API', () => {
                     empty: [[0, 0], [1, 2]],
                     noGrowth: [[1], [2]],
                     undecidedProblem: [[], []],
+                    qIndexQueue: [
+                        { idx: 0, col: 0, row: 1 },
+                        { idx: 1, col: 1, row: 0 },
+                        { idx: 2, col: 0, row: 0 },
+                        { idx: 3, col: 2, row: 1 },
+                        { idx: 4, col: 2, row: 0 },
+                        { idx: 5, col: 1, row: 1 },
+                    ],
                 });
                 done();
             });
@@ -42,6 +50,8 @@ describe('API', () => {
                     Empty: [[0, 0], [1, 2]],
                     NoGrowth: [[1], [2]],
                     UndecidedProblem: [[], []],
+                    qindex_cols: [0, 1, 0, 2, 2, 1],
+                    qindex_rows: [1, 0, 0, 1, 0, 1],
                 }),
             });
         });
