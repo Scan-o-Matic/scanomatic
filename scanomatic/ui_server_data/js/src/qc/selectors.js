@@ -5,10 +5,18 @@ import type {
     QualityIndexInfo,
     TimeSeries as _TimeSeries,
     PlateValueArray as _PlateValueArray,
+    PlateCoordinatesArray as _PlateCoordinatesArray,
 } from './state';
 
 export type TimeSeries = _TimeSeries;
 export type PlateValueArray = _PlateValueArray;
+export type PlateCoordinatesArray = _PlateCoordinatesArray;
+export type QCMarks =  {
+    badData: PlateCoordinatesArray,
+    noGrowth: PlateCoordinatesArray,
+    empty: PlateCoordinatesArray,
+    undecidedProblem: PlateCoordinatesArray,
+};
 
 export function getProject(state: State): ?string {
     if (!state.settings) return null;
@@ -60,4 +68,14 @@ export function getQIndexFromPosition(state: State, row: number, col: number) : 
 export function getPhenotypeData(state: State): ?PlateValueArray {
     if (!state.plate) return null;
     return state.plate.phenotypes;
+}
+
+export function getPhenotypeQCMarks(state: State): ?QCMarks {
+    if (!state.plate) return null;
+    return {
+        badData: state.plate.badData,
+        empty: state.plate.empty,
+        noGrowth: state.plate.noGrowth,
+        undecidedProblem: state.plate.undecidedProblem,
+    };
 }
