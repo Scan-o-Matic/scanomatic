@@ -159,7 +159,11 @@ function GetRunPhenotypes(url, key, callback) {
         else {
             var phenotypes = [];
             for (var i = 0; i < json.phenotypes.length; i++) {
-                phenotypes.push({ name: json.names[i], url: json.phenotype_urls[i] });
+                phenotypes.push({
+                    name: json.names[i],
+                    phenotype: json.phenotypes[i],
+                    url: json.phenotype_urls[i],
+                });
             }
             callback(phenotypes);
         }
@@ -209,12 +213,11 @@ function GetPlateData(url, isNormalized, metaDataPath, phenotypePlaceholderMetaD
                             var plate = {
                                 plate_data: json.data,
                                 plate_phenotype: json.phenotype,
-                                plate_qIdxSort: qIdxSort,
                                 Plate_metadata : {
-                                    plate_BadData: json.BadData,
-                                    plate_Empty: json.Empty,
-                                    plate_NoGrowth: json.NoGrowth,
-                                    plate_UndecidedProblem: json.UndecidedProblem
+                                    badData: json.BadData,
+                                    empty: json.Empty,
+                                    noGrowth: json.NoGrowth,
+                                    undecidedProblem: json.UndecidedProblem
                                 },
                                 Growth_metaData: {
                                     gt: isNormalized === true ? null : gtData,
