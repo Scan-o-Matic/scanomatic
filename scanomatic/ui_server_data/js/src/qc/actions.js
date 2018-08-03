@@ -1,8 +1,10 @@
 // @flow
-import { getProject, getPlate, getPhenotype } from './selectors';
-import type { State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue } from './state';
+import { getProject, getPlate, getPhenotype, getPhenotypeData as hasPhenotypeData } from './selectors';
+import type {
+    State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue,
+    PlateValueArray, PlateCoordinatesArray, Phenotype,
+} from './state';
 import { getPlateGrowthData, getPhenotypeData } from '../api';
-import type { PlateValueArray, PlateCoordinatesArray } from '../api/getPhenotypeData';
 
 export type Action
     = {| type: 'PLATE_SET', plate: number |}
@@ -19,11 +21,17 @@ export type Action
     | {| type: 'QUALITYINDEX_SET', index: number |}
     | {| type: 'QUALITYINDEX_NEXT' |}
     | {| type: 'QUALITYINDEX_PREVIOUS' |}
-    | {| type: 'PHENOTYPE_SET', phenotype: string |}
+    | {| type: 'PHENOTYPE_SET', phenotype: Phenotype |}
     | {|
-        type: 'PLATE_PHENOTYPDATA_SET',
+        type: 'PLATE_PHENOTYPEDATA_SET',
         plate: number,
+        phenotype: Phenotype,
         phenotypes: PlateValueArray,
+    |}
+    | {|
+        type: 'PLATE_PHENOTYPEQC_SET',
+        plate: number,
+        phenotype: Phenotype,
         badData: PlateCoordinatesArray,
         empty: PlateCoordinatesArray,
         noGrowth: PlateCoordinatesArray,
@@ -38,7 +46,7 @@ export function setProject(project : string) : Action {
     return { type: 'PROJECT_SET', project };
 }
 
-export function setPhenotype(phenotype: string) : Action {
+export function setPhenotype(phenotype: Phenotype) : Action {
     return { type: 'PHENOTYPE_SET', phenotype };
 }
 
@@ -59,16 +67,29 @@ export function setPlateGrowthData(
 
 export function setPlatePhenotypeData(
     plate: number,
+    phenotype: Phenotype,
     phenotypes: PlateValueArray,
+) : Action {
+    return {
+        type: 'PLATE_PHENOTYPEDATA_SET',
+        plate,
+        phenotype,
+        phenotypes,
+    };
+}
+
+export function setPhenotypeQCMarks(
+    plate: number,
+    phenotype: Phenotype,
     badData: PlateCoordinatesArray,
     empty: PlateCoordinatesArray,
     noGrowth: PlateCoordinatesArray,
     undecidedProblem: PlateCoordinatesArray,
 ) : Action {
     return {
-        type: 'PLATE_PHENOTYPDATA_SET',
+        type: 'PLATE_PHENOTYPEQC_SET',
         plate,
-        phenotypes,
+        phenotype,
         badData,
         empty,
         noGrowth,
@@ -132,21 +153,51 @@ export function retrievePlateCurves() : ThunkAction {
     };
 }
 
-export function retrievePlatePhenotype() : ThunkAction {
+export function retrieveGraphPhenotypes(plate: number) : ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
         const project = getProject(state);
         if (project == null) {
             throw new Error('Cannot retrieve phenotype if project not set');
         }
-        const plate = getPlate(state);
-        if (plate == null) {
+        const currentPlate = getPlate(state);
+        if (plate == null || currentPlate !== plate) {
             throw new Error('Cannot retrieve phenotype if plate not set');
+        }
+        const promises = ['GenerationTime', 'GenerationTimeWhen', 'ExperimentGrowthYield']
+            .filter(phenotype => !hasPhenotypeData(state, phenotype))
+            .map(phenotype => getPhenotypeData(project, plate, phenotype).then((data) => {
+                dispatch(setPlatePhenotypeData(plate, phenotype, data.phenotypes));
+                dispatch(setPhenotypeQCMarks(
+                    plate,
+                    phenotype,
+                    data.badData,
+                    data.empty,
+                    data.noGrowth,
+                    data.undecidedProblem,
+                ));
+            }));
+        return Promise.all(promises);
+    };
+}
+
+export function retrievePlatePhenotype(plate: number) : ThunkAction {
+    return (dispatch, getState) => {
+        const state = getState();
+        const project = getProject(state);
+        if (project == null) {
+            throw new Error('Cannot retrieve phenotype if project not set');
         }
         const phenotype = getPhenotype(state);
         if (phenotype == null) {
             throw new Error('Cannot retrieve phenotype if phenotype not set');
         }
+        const currentPlate = getPlate(state);
+        if (currentPlate === plate) return Promise.resolve();
+        if (plate == null) {
+            throw new Error('Cannot retrieve phenotype if plate not set');
+        }
+        dispatch(setPlate(plate));
         return getPhenotypeData(project, plate, phenotype).then((data) => {
             const {
                 phenotypes,
@@ -156,15 +207,17 @@ export function retrievePlatePhenotype() : ThunkAction {
                 undecidedProblem,
                 qIndexQueue,
             } = data;
-            dispatch(setPlatePhenotypeData(
+            dispatch(setPlatePhenotypeData(plate, phenotype, phenotypes));
+            dispatch(setPhenotypeQCMarks(
                 plate,
-                phenotypes,
+                phenotype,
                 badData,
                 empty,
                 noGrowth,
                 undecidedProblem,
             ));
             dispatch(setQualityIndexQueue(qIndexQueue));
+            retrieveGraphPhenotypes(plate);
         });
     };
 }

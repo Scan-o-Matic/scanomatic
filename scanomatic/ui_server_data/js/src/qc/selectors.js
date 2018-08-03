@@ -6,24 +6,20 @@ import type {
     TimeSeries as _TimeSeries,
     PlateValueArray as _PlateValueArray,
     PlateCoordinatesArray as _PlateCoordinatesArray,
+    Phenotype,
+    QCMarks,
 } from './state';
 
 export type TimeSeries = _TimeSeries;
 export type PlateValueArray = _PlateValueArray;
 export type PlateCoordinatesArray = _PlateCoordinatesArray;
-export type QCMarks =  {
-    badData: PlateCoordinatesArray,
-    noGrowth: PlateCoordinatesArray,
-    empty: PlateCoordinatesArray,
-    undecidedProblem: PlateCoordinatesArray,
-};
 
 export function getProject(state: State): ?string {
     if (!state.settings) return null;
     return state.settings.project;
 }
 
-export function getPhenotype(state: State): ?string {
+export function getPhenotype(state: State): ?Phenotype {
     if (!state.settings) return null;
     return state.settings.phenotype;
 }
@@ -65,17 +61,19 @@ export function getQIndexFromPosition(state: State, row: number, col: number) : 
         .map(item => item.idx)[0];
 }
 
-export function getPhenotypeData(state: State): ?PlateValueArray {
-    if (!state.plate) return null;
-    return state.plate.phenotypes;
+export function getPhenotypeData(state: State, phenotype: Phenotype): ?PlateValueArray {
+    if (!state.plate || !state.plate.phenotypes) return null;
+    return state.plate.phenotypes[phenotype];
 }
 
-export function getPhenotypeQCMarks(state: State): ?QCMarks {
-    if (!state.plate) return null;
-    return {
-        badData: state.plate.badData,
-        empty: state.plate.empty,
-        noGrowth: state.plate.noGrowth,
-        undecidedProblem: state.plate.undecidedProblem,
-    };
+export function getCurrentPhenotypeData(state: State): ?PlateValueArray {
+    const phenotype = getPhenotype(state);
+    if (!state.plate || !state.plate.phenotypes || !phenotype) return null;
+    return state.plate.phenotypes[phenotype];
+}
+
+export function getCurrentPhenotypeQCMarks(state: State): ?QCMarks {
+    const phenotype = getPhenotype(state);
+    if (!state.plate || !state.plate.qcmarks || !phenotype) return null;
+    return state.plate.qcmarks[phenotype];
 }

@@ -18,17 +18,33 @@ export default function plate(state: State = initialState, action: Action) {
             state,
             { times: action.times, raw: action.raw, smooth: action.smooth },
         );
-    case 'PLATE_PHENOTYPDATA_SET':
+    case 'PLATE_PHENOTYPEDATA_SET':
         if (action.plate !== state.number) return state;
         return Object.assign(
             {},
             state,
             {
-                phenotypes: action.phenotypes,
-                badData: action.badData,
-                empty: action.empty,
-                noGrowth: action.noGrowth,
-                undecidedProblem: action.undecidedProblem,
+                phenotypes: Object.assign(
+                    {},
+                    state.phenotypes,
+                    { [action.phenotype]: action.phenotypes },
+                ),
+            },
+        );
+    case 'PLATE_PHENOTYPEQC_SET':
+        if (action.plate !== state.number) return state;
+        return Object.assign(
+            {},
+            state,
+            {
+                qcmarks: Object.assign({}, state.qcmarks, {
+                    [action.phenotype]: {
+                        badData: action.badData,
+                        empty: action.empty,
+                        noGrowth: action.noGrowth,
+                        undecidedProblem: action.undecidedProblem,
+                    },
+                }),
             },
         );
     case 'QUALITYINDEX_QUEUE_SET':

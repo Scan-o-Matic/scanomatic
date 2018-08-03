@@ -18,35 +18,48 @@ describe('/qc/selectors', () => {
     it('should get phenotype data', () => {
         const state = new StateBuilder()
             .setProject('/my/path')
-            .setPhenotype('test')
+            .setPhenotype('test2')
             .setPlatePhenotypeData(
+                'test',
                 [[5, 4, 3], [5, 5, 1]],
-                [[], []],
-                [[], []],
-                [[], []],
-                [[], []],
             )
             .build();
-        expect(selectors.getPhenotypeData(state))
+        expect(selectors.getPhenotypeData(state, 'test'))
             .toEqual([
                 [5, 4, 3],
                 [5, 5, 1],
             ]);
     });
 
-    it('should get the QC Marks', () => {
+    it('should get current phenotype data', () => {
         const state = new StateBuilder()
             .setProject('/my/path')
             .setPhenotype('test')
             .setPlatePhenotypeData(
+                'test',
                 [[5, 4, 3], [5, 5, 1]],
+            )
+            .build();
+        expect(selectors.getCurrentPhenotypeData(state))
+            .toEqual([
+                [5, 4, 3],
+                [5, 5, 1],
+            ]);
+    });
+
+    it('should get the QC Marks for current phenotype', () => {
+        const state = new StateBuilder()
+            .setProject('/my/path')
+            .setPhenotype('test')
+            .setPhenotypeQCMarks(
+                'test',
                 [[0], [0]],
                 [[0], [1]],
                 [[1, 1], [0, 1]],
                 [[1, 0], [2, 2]],
             )
             .build();
-        expect(selectors.getPhenotypeQCMarks(state))
+        expect(selectors.getCurrentPhenotypeQCMarks(state))
             .toEqual({
                 badData: [[0], [0]],
                 empty: [[0], [1]],
