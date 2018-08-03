@@ -4,9 +4,12 @@ import API from './API';
 
 import _getPlateGrowthData from './getPlateGrowthData';
 import _getPhentypeData from './getPhenotypeData';
+import { setCurveQCMark as _setCurveQCMark, setCurveQCMarkAll as _setCurveQCMarkAll } from './setCurveQCMark';
 
 export const getPlateGrowthData = _getPlateGrowthData;
 export const getPhenotypeData = _getPhentypeData;
+export const setCurveQCMark = _setCurveQCMark;
+export const setCurveQCMarkAll = _setCurveQCMarkAll;
 
 const GetSliceImagePath = '/api/calibration/#0#/image/#1#/slice/get/#2#';
 const GetTranposedMarkerPath = '/api/data/fixture/calculate/';
