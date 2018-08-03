@@ -11,7 +11,7 @@ import {
 
 import type { Action, ThunkAction } from './actions';
 import type {
-    State, TimeSeries, QualityIndexInfo, QualityIndexQueue,
+    State, TimeSeries, QualityIndexInfo, QualityIndexQueue, Phenotype,
 } from './state';
 
 type Store = {
@@ -32,7 +32,7 @@ class Selectors {
         return getProject(state);
     }
 
-    getPhenotype() : ?string {
+    getPhenotype() : ?Phenotype {
         const state = this.store.getState();
         return getPhenotype(state);
     }
@@ -79,7 +79,7 @@ class Actions {
         this.store.dispatch(setProject(project));
     }
 
-    setPhenotype(phenotype: string) {
+    setPhenotype(phenotype: Phenotype) {
         this.store.dispatch(setPhenotype(phenotype));
     }
 

@@ -31,6 +31,44 @@ describe('/qc/actions', () => {
         });
     });
 
+    describe('setPlatePhenotypeData', () => {
+        it('should return a PLATE_PHENOTYPEDATA_SET action', () => {
+            expect(actions.setPlatePhenotypeData(
+                1,
+                'GenerationTimeWhen',
+                [[0]],
+            ))
+                .toEqual({
+                    type: 'PLATE_PHENOTYPEDATA_SET',
+                    plate: 1,
+                    phenotype: 'GenerationTimeWhen',
+                    phenotypes: [[0]],
+                });
+        });
+    });
+
+    describe('setPhenotypeQCMarks', () => {
+        it('should return a PLATE_PHENOTYPEQC_SET action', () => {
+            expect(actions.setPhenotypeQCMarks(
+                1,
+                'GenerationTime',
+                [[0], [0]],
+                [[1], [1]],
+                [[2], [2]],
+                [[3], [3]],
+            ))
+                .toEqual({
+                    type: 'PLATE_PHENOTYPEQC_SET',
+                    plate: 1,
+                    phenotype: 'GenerationTime',
+                    badData: [[0], [0]],
+                    empty: [[1], [1]],
+                    noGrowth: [[2], [2]],
+                    undecidedProblem: [[3], [3]],
+                });
+        });
+    });
+
     describe('focusCurve', () => {
         it('should return a CURVE_FOCUS action', () => {
             expect(actions.focusCurve(0, 1, 2)).toEqual({
@@ -118,6 +156,233 @@ describe('/qc/actions', () => {
                     ));
                 done();
             });
+        });
+    });
+
+    describe('retrievePhenotypesNeededInGraph', () => {
+        const dispatch = jasmine.createSpy('dispatch');
+        const gtData = {
+            phenotypes: [[0]],
+            badData: [[], []],
+            empty: [[0], [1]],
+            noGrowth: [[1], [0]],
+            undecidedProblem: [[1, 1], [0, 1]],
+        };
+        const gtWhenData = {
+            phenotypes: [[5]],
+            badData: [[1], [1]],
+            empty: [[2], [1]],
+            noGrowth: [[1], [2]],
+            undecidedProblem: [[2, 1], [0, 1]],
+        };
+        const expYeildData = {
+            phenotypes: [[4]],
+            badData: [[1], [4]],
+            empty: [[2], [4]],
+            noGrowth: [[1], [4]],
+            undecidedProblem: [[2, 1], [0, 4]],
+        };
+        let getPhenotypeData;
+
+        beforeEach(() => {
+            dispatch.calls.reset();
+            getPhenotypeData = spyOn(API, 'getPhenotypeData')
+                .and.callFake((project, plate, phenotype) => FakePromise.resolve({
+                    GenerationTime: gtData,
+                    GenerationTimeWhen: gtWhenData,
+                    ExperimentGrowthYield: expYeildData,
+                }[phenotype]));
+        });
+
+        it('returns a function that throws error if no project', () => {
+            const state = new StateBuilder()
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePhenotypesNeededInGraph(0);
+            expect(() => thunk(dispatch, getState))
+                .toThrow(new Error('Cannot retrieve phenotype if project not set'));
+        });
+
+        it('returns a function that returns resolved promise without calling the api if plate missmatch', (done) => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePhenotypesNeededInGraph(1);
+            thunk(dispatch, getState)
+                .then(() => {
+                    expect(dispatch).not.toHaveBeenCalled();
+                    expect(getPhenotypeData).not.toHaveBeenCalled();
+                    done();
+                });
+        });
+
+        it('fetches GenerationTime, GenerationTimeWhen & ExperimentGrowthYield', (done) => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePhenotypesNeededInGraph(0);
+            thunk(dispatch, getState)
+                .then(() => {
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTime');
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTimeWhen');
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'ExperimentGrowthYield');
+                    done();
+                });
+        });
+
+        it('skips those phenoypes it already has', (done) => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .setPlatePhenotypeData('GenerationTime', gtData.phenotypes)
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePhenotypesNeededInGraph(0);
+            thunk(dispatch, getState)
+                .then(() => {
+                    expect(getPhenotypeData).not.toHaveBeenCalledWith('my/project', 0, 'GenerationTime');
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTimeWhen');
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'ExperimentGrowthYield');
+                    done();
+                });
+        });
+
+        it('dispatches updates of phenotypes and qcmarks for all fetched phenotypes', (done) => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .setPlatePhenotypeData('ExperimentGrowthYield', expYeildData.phenotypes)
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePhenotypesNeededInGraph(0);
+            thunk(dispatch, getState)
+                .then(() => {
+                    expect(dispatch).toHaveBeenCalledWith(actions.setPlatePhenotypeData(0, 'GenerationTime', gtData.phenotypes));
+                    expect(dispatch).toHaveBeenCalledWith(actions.setPhenotypeQCMarks(
+                        0,
+                        'GenerationTime',
+                        gtData.badData,
+                        gtData.empty,
+                        gtData.noGrowth,
+                        gtData.undecidedProblem,
+                    ));
+                    expect(dispatch).toHaveBeenCalledWith(actions.setPlatePhenotypeData(0, 'GenerationTimeWhen', gtWhenData.phenotypes));
+                    expect(dispatch).toHaveBeenCalledWith(actions.setPhenotypeQCMarks(
+                        0,
+                        'GenerationTimeWhen',
+                        gtWhenData.badData,
+                        gtWhenData.empty,
+                        gtWhenData.noGrowth,
+                        gtWhenData.undecidedProblem,
+                    ));
+                    expect(dispatch.calls.count()).toEqual(4);
+                    done();
+                });
+        });
+    });
+
+    describe('retrievePlatePhenotype', () => {
+        const dispatch = jasmine.createSpy('dispatch');
+        const gtData = {
+            phenotypes: [[0]],
+            badData: [[], []],
+            empty: [[0], [1]],
+            noGrowth: [[1], [0]],
+            undecidedProblem: [[1, 1], [0, 1]],
+        };
+        let getPhenotypeData;
+
+        beforeEach(() => {
+            dispatch.calls.reset();
+            getPhenotypeData = spyOn(API, 'getPhenotypeData')
+                .and.returnValue(FakePromise.resolve(gtData));
+        });
+
+        it('returns a function that throws error if no project', () => {
+            const state = new StateBuilder()
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePlatePhenotype(0);
+            expect(() => thunk(dispatch, getState))
+                .toThrow(new Error('Cannot retrieve phenotype if project not set'));
+        });
+
+        it('returns a function that throws if no phenotype set', () => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePlatePhenotype(0);
+            expect(() => thunk(dispatch, getState))
+                .toThrow(new Error('Cannot retrieve phenotype if phenotype not set'));
+        });
+
+        it('returns a resolved promise without calling the api if already has the data', (done) => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .setPhenotype('GenerationTime')
+                .setPlatePhenotypeData('GenerationTime', gtData.phenotypes)
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePlatePhenotype(0);
+            thunk(dispatch, getState)
+                .then(() => {
+                    expect(dispatch).not.toHaveBeenCalled();
+                    expect(getPhenotypeData).not.toHaveBeenCalled();
+                    done();
+                });
+        });
+
+        it('changes plate if requesting to retrieve for other than current plate', (done) => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .setPhenotype('GenerationTime')
+                .setPlatePhenotypeData('GenerationTime', gtData.phenotypes)
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePlatePhenotype(1);
+            thunk(dispatch, getState)
+                .then(() => {
+                    expect(dispatch).toHaveBeenCalledWith(actions.setPlate(1));
+                    done();
+                });
+        });
+
+        it('doesnt change plate if not needed', (done) => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .setPhenotype('GenerationTime')
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePlatePhenotype(0);
+            thunk(dispatch, getState)
+                .then(() => {
+                    expect(dispatch).not.toHaveBeenCalledWith(actions.setPlate(0));
+                    done();
+                });
+        });
+
+        it('retrieves the phenotype data and dispatches updates', (done) => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .setPhenotype('GenerationTime')
+                .build();
+            const getState = () => state;
+            const thunk = actions.retrievePlatePhenotype(0);
+            thunk(dispatch, getState)
+                .then(() => {
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTime');
+                    expect(dispatch).toHaveBeenCalledWith(actions.setPlatePhenotypeData(0, 'GenerationTime', gtData.phenotypes));
+                    expect(dispatch).toHaveBeenCalledWith(actions.setPhenotypeQCMarks(
+                        0,
+                        'GenerationTime',
+                        gtData.badData,
+                        gtData.empty,
+                        gtData.noGrowth,
+                        gtData.undecidedProblem,
+                    ));
+                    done();
+                });
         });
     });
 

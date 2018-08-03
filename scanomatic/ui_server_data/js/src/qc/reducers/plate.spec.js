@@ -63,6 +63,112 @@ describe('/qc/reducers/plate', () => {
         });
     });
 
+    describe('PLATE_PHENOTYPEDATA_SET', () => {
+        const phenotype = 'GenerationTime';
+        const phenotypes = [[1, 1], [2, 1]];
+
+        it('sets the plate phenotype data', () => {
+            const action = {
+                type: 'PLATE_PHENOTYPEDATA_SET',
+                plate: 0,
+                phenotype,
+                phenotypes,
+            };
+            expect(plate(undefined, action)).toEqual({
+                number: 0,
+                qIndex: 0,
+                phenotypes: {
+                    [phenotype]: phenotypes,
+                },
+            });
+        });
+
+        it('keeps previous phenotypes for same plate', () => {
+            const action = {
+                type: 'PLATE_PHENOTYPEDATA_SET',
+                plate: 0,
+                phenotype,
+                phenotypes,
+            };
+            expect(plate(
+                {
+                    number: 0,
+                    qIndex: 0,
+                    phenotypes: { InitialValue: [[]] },
+                },
+                action,
+            )).toEqual({
+                number: 0,
+                qIndex: 0,
+                phenotypes: {
+                    InitialValue: [[]],
+                    [phenotype]: phenotypes,
+                },
+            });
+        });
+
+        it('doesnt do a thing on plate missmatch', () => {
+            const action = {
+                type: 'PLATE_PHENOTYPEDATA_SET',
+                plate: 1,
+                phenotype,
+                phenotypes,
+            };
+            expect(plate(undefined, action)).toEqual({
+                number: 0,
+                qIndex: 0,
+            });
+        });
+    });
+
+    describe('PLATE_PHENOTYPEQC_SET', () => {
+        const phenotype = 'GenerationTime';
+        const badData = [[], []];
+        const empty = [[0], [1]];
+        const noGrowth = [[1, 1], [0, 1]];
+        const undecidedProblem = [[0], [0]];
+
+        it('sets the plate phenotype data', () => {
+            const action = {
+                type: 'PLATE_PHENOTYPEQC_SET',
+                plate: 0,
+                phenotype,
+                badData,
+                empty,
+                noGrowth,
+                undecidedProblem,
+            };
+            expect(plate(undefined, action)).toEqual({
+                number: 0,
+                qIndex: 0,
+                qcmarks: {
+                    [phenotype]: {
+                        badData,
+                        empty,
+                        noGrowth,
+                        undecidedProblem,
+                    },
+                },
+            });
+        });
+
+        it('doesnt do a thing on plate missmatch', () => {
+            const action = {
+                type: 'PLATE_PHENOTYPEQC_SET',
+                plate: 1,
+                phenotype,
+                badData,
+                empty,
+                noGrowth,
+                undecidedProblem,
+            };
+            expect(plate(undefined, action)).toEqual({
+                number: 0,
+                qIndex: 0,
+            });
+        });
+    });
+
     describe('QUALITYINDEX_QUEUE_SET', () => {
         const queue = [{ idx: 5, col: 4, row: 10 }, { idx: 0, col: 2, row: 55 }];
 
