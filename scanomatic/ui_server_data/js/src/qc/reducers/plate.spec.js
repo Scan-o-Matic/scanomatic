@@ -63,7 +63,7 @@ describe('/qc/reducers/plate', () => {
         });
     });
 
-    describe('PLATE_PHENOTYPDATA_SET', () => {
+    describe('PLATE_PHENOTYPEDATA_SET', () => {
         const phenotype = 'GenerationTime';
         const phenotypes = [[1, 1], [2, 1]];
 

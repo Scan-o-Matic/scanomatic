@@ -31,6 +31,44 @@ describe('/qc/actions', () => {
         });
     });
 
+    describe('setPlatePhenotypeData', () => {
+        it('should return a PLATE_PHENOTYPEDATA_SET action', () => {
+            expect(actions.setPlatePhenotypeData(
+                1,
+                'GenerationTimeWhen',
+                [[0]],
+            ))
+                .toEqual({
+                    type: 'PLATE_PHENOTYPEDATA_SET',
+                    plate: 1,
+                    phenotype: 'GenerationTimeWhen',
+                    phenotypes: [[0]],
+                });
+        });
+    });
+
+    describe('setPhenotypeQCMarks', () => {
+        it('should return a PLATE_PHENOTYPEQC_SET action', () => {
+            expect(actions.setPhenotypeQCMarks(
+                1,
+                'GenerationTime',
+                [[0], [0]],
+                [[1], [1]],
+                [[2], [2]],
+                [[3], [3]],
+            ))
+                .toEqual({
+                    type: 'PLATE_PHENOTYPEQC_SET',
+                    plate: 1,
+                    phenotype: 'GenerationTime',
+                    badData: [[0], [0]],
+                    empty: [[1], [1]],
+                    noGrowth: [[2], [2]],
+                    undecidedProblem: [[3], [3]],
+                });
+        });
+    });
+
     describe('focusCurve', () => {
         it('should return a CURVE_FOCUS action', () => {
             expect(actions.focusCurve(0, 1, 2)).toEqual({
