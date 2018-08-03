@@ -28,6 +28,8 @@ export type Phenotype = "GenerationTime"
     | "GenerationTimeWhen"
     | "InitialValue";
 
+export type QCMarkType = 'OK' | 'NoGrowth' | 'BadData' | 'Empty' | 'UndecidedProblem';
+
 export type Settings = {
     +project?: string,
     +phenotype?: Phenotype,

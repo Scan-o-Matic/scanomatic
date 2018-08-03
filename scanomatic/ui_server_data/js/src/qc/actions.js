@@ -1,10 +1,13 @@
 // @flow
-import { getProject, getPlate, getPhenotype, getPhenotypeData as hasPhenotypeData } from './selectors';
+import {
+    getProject, getPlate, getPhenotype, getPhenotypeData as hasPhenotypeData,
+    getFocusCurveQCMark, getFocus, getFocusCurveQCMarkAllPhenotypes,
+} from './selectors';
 import type {
     State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue,
-    PlateValueArray, PlateCoordinatesArray, Phenotype,
+    PlateValueArray, PlateCoordinatesArray, Phenotype, QCMarkType,
 } from './state';
-import { getPlateGrowthData, getPhenotypeData } from '../api';
+import { getPlateGrowthData, getPhenotypeData, setCurveQCMark, setCurveQCMarkAll } from '../api';
 
 export type Action
     = {| type: 'PLATE_SET', plate: number |}
@@ -36,6 +39,11 @@ export type Action
         empty: PlateCoordinatesArray,
         noGrowth: PlateCoordinatesArray,
         undecidedProblem: PlateCoordinatesArray
+    |}
+    | {|
+        type: 'CURVE_QCMARK_SET',
+        phenotype: ?Phenotype,
+        mark: QCMarkType,
     |}
 
 export function setPlate(plate : number) : Action {
@@ -129,7 +137,50 @@ export function previousQualityIndex() : Action {
     return { type: 'QUALITYINDEX_PREVIOUS' };
 }
 
+export function setStoreCurveQCMark(
+    plate: number,
+    row: number,
+    col: number,
+    mark: QCMarkType,
+    phenotype: ?Phenotype,
+) : Action {
+    return { type: 'CURVE_QCMARK_SET', phenotype, mark, plate, col, row };
+}
+
 export type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
+
+export function updateFocusCurveQCMark(mark: QCMarkType, phenotype: ?Phenotype, key: string) : ThunkAction {
+    return (dispatch, getState) => {
+        let promise;
+        const state = getState();
+        const project = getProject(state);
+        if (!project) throw new Error('Cant set QC Mark if no project');
+        const plate = getPlate(state);
+        if (!plate) throw new Error('Cant set QC Mark if no plate');
+        const focus = getFocus(state);
+        if (!focus) throw new Error('Cant set QC Mark if no focus');
+        let previousMark;
+        if (phenotype) {
+            previousMark = { [phenotype]: getFocusCurveQCMark(state) };
+            promise = setCurveQCMark(project, plate, focus.row, focus.col, mark, phenotype, key);
+        } else {
+            previousMark = getFocusCurveQCMarkAllPhenotypes(state);
+            promise = setCurveQCMarkAll(project, plate, focus.row, focus.col, mark, key);
+        }
+        return promise.catch(() => {
+            // undo_preemtive curve_mark
+            Object.entries(previousMark)
+                .forEach(([pheno, prevMark]) => dispatch(setStoreCurveQCMark(
+                    plate,
+                    focus.row,
+                    focus.col,
+                    prevMark,
+                    pheno,
+                )));
+            return Promise.resolve();
+        });
+    };
+}
 
 export function retrievePlateCurves() : ThunkAction {
     return (dispatch, getState) => {
