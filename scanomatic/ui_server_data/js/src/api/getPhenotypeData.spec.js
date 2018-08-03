@@ -1,0 +1,70 @@
+import * as API from '.';
+
+describe('API', () => {
+    const mostRecentRequest = () => jasmine.Ajax.requests.mostRecent();
+
+    beforeEach(() => {
+        jasmine.Ajax.install();
+    });
+
+    afterEach(() => {
+        jasmine.Ajax.uninstall();
+    });
+
+    describe('getPhenotypeData', () => {
+        const project = 'something/somewhere';
+        const plate = 1;
+        const phenotype = 'GenerationTime';
+        const args = [project, plate, phenotype];
+
+        it('should query the correct uri', () => {
+            API.getPhenotypeData(...args);
+            expect(mostRecentRequest().url)
+                .toBe(`/api/results/phenotype/${phenotype}/${plate}/${project}`);
+        });
+
+        it('should return a promise that resolves on success', (done) => {
+            API.getPhenotypeData(...args).then((response) => {
+                expect(response).toEqual({
+                    phenotypes: [[1, 2, 3], [4, 5, 6]],
+                    badData: [[0], [0]],
+                    empty: [[0, 0], [1, 2]],
+                    noGrowth: [[1], [2]],
+                    undecidedProblem: [[], []],
+                    qIndexQueue: [
+                        { idx: 0, col: 0, row: 1 },
+                        { idx: 1, col: 1, row: 0 },
+                        { idx: 2, col: 0, row: 0 },
+                        { idx: 3, col: 2, row: 1 },
+                        { idx: 4, col: 2, row: 0 },
+                        { idx: 5, col: 1, row: 1 },
+                    ],
+                });
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 200,
+                responseText: JSON.stringify({
+                    data: [[1, 2, 3], [4, 5, 6]],
+                    BadData: [[0], [0]],
+                    Empty: [[0, 0], [1, 2]],
+                    NoGrowth: [[1], [2]],
+                    UndecidedProblem: [[], []],
+                    qindex_cols: [0, 1, 0, 2, 2, 1],
+                    qindex_rows: [1, 0, 0, 1, 0, 1],
+                }),
+            });
+        });
+
+        it('should return a promise that rejects on error', (done) => {
+            API.getPhenotypeData(...args).catch((response) => {
+                expect(response).toEqual('yesyesno');
+                done();
+            });
+            mostRecentRequest().respondWith({
+                status: 400,
+                responseText: JSON.stringify({ reason: 'yesyesno' }),
+            });
+        });
+    });
+});
