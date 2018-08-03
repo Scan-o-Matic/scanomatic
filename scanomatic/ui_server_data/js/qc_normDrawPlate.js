@@ -345,26 +345,25 @@ d3.scanomatic.plateHeatmap = function () {
         if (displayLegend) { createLegend(g); }
 
         function composeMetadata() {
-
-            //compose from plate metadata
-            var plateMetaDataComp = [];
+            // compose from plate metadata
+            const plateMetaDataComp = [];
             plateMetaDataComp.push(addmetaDataType(plateMetaData.badData, plateMetaDataType.BadData));
             plateMetaDataComp.push(addmetaDataType(plateMetaData.empty, plateMetaDataType.Empty));
             plateMetaDataComp.push(addmetaDataType(plateMetaData.noGrowth, plateMetaDataType.NoGrowth));
             plateMetaDataComp.push(addmetaDataType(plateMetaData.undecidedProblem, plateMetaDataType.UndecidedProblem));
 
-            //compose from plate data and growth metadata
-            var plate = [];
-            for (var i = 0; i < rows; i++) {
-                var row = [];
-                for (var j = 0; j < cols; j++) {
-                    var metaData = findPlateMetaData(i, j, plateMetaDataComp);
-                    var x = margin + (j * cellSize);
-                    var y = margin + (i * cellSize);
-                    var metaGt = growthMetaData.gt == undefined ? null : growthMetaData.gt[i][j];
-                    var metaGtWhen = growthMetaData.gtWhen == undefined ? null : growthMetaData.gtWhen[i][j];
-                    var metaYiled = growthMetaData.yld == undefined ? null : growthMetaData.yld[i][j];
-                    var col = { col: j, row: i, celStartX: x, celStartY: y, celEndX: x + heatMapCelWidth, celEndY: y + heatMapCelHeight, phenotype: data[i][j], metaGT: metaGt, metaGtWhen: metaGtWhen, metaYield: metaYiled, metaType: metaData.type }
+            // compose from plate data and growth metadata
+            const plate = [];
+            for (let i = 0; i < rows; i++) {
+                const row = [];
+                for (let j = 0; j < cols; j++) {
+                    const metaData = findPlateMetaData(i, j, plateMetaDataComp);
+                    const x = margin + (j * cellSize);
+                    const y = margin + (i * cellSize);
+                    const metaGt = growthMetaData.gt == undefined ? null : growthMetaData.gt[i][j];
+                    const metaGtWhen = growthMetaData.gtWhen == undefined ? null : growthMetaData.gtWhen[i][j];
+                    const metaYiled = growthMetaData.yld == undefined ? null : growthMetaData.yld[i][j];
+                    const col = { col: j, row: i, celStartX: x, celStartY: y, celEndX: x + heatMapCelWidth, celEndY: y + heatMapCelHeight, phenotype: data[i][j], metaGT: metaGt, metaGtWhen, metaYield: metaYiled, metaType: metaData.type };
                     row.push(col);
                 }
                 plate.push(row);
