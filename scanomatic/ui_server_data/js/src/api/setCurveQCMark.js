@@ -1,7 +1,22 @@
 // @flow
 import API from './API';
 
+
 export type QCMarkType = 'OK' | 'NoGrowth' | 'BadData' | 'Empty' | 'UndecidedProblem';
+
+export type Phenotype = "GenerationTime"
+    | "ExperimentGrowthYield"
+    | "ChapmanRichardsParam1"
+    | "ChapmanRichardsParam2"
+    | "ChapmanRichardsParam3"
+    | "ChapmanRichardsParam4"
+    | "ChapmanRichardsParamXtra"
+    | "ColonySize48h"
+    | "ExperimentBaseLine"
+    | "ExperimentPopulationDoublings"
+    | "GenerationTimeStErrOfEstimate"
+    | "GenerationTimeWhen"
+    | "InitialValue";
 
 export function setCurveQCMarkAll(
     project: string,
