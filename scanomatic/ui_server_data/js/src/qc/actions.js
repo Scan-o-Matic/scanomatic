@@ -153,7 +153,7 @@ export function retrievePlateCurves() : ThunkAction {
     };
 }
 
-export function retrieveGraphPhenotypes(plate: number) : ThunkAction {
+export function retrievePhenotypesNeededInGraph(plate: number) : ThunkAction {
     return (dispatch, getState) => {
         const state = getState();
         const project = getProject(state);
@@ -161,9 +161,8 @@ export function retrieveGraphPhenotypes(plate: number) : ThunkAction {
             throw new Error('Cannot retrieve phenotype if project not set');
         }
         const currentPlate = getPlate(state);
-        if (plate == null || currentPlate !== plate) {
-            throw new Error('Cannot retrieve phenotype if plate not set');
-        }
+        if (plate !== currentPlate) return Promise.resolve();
+
         const promises = ['GenerationTime', 'GenerationTimeWhen', 'ExperimentGrowthYield']
             .filter(phenotype => !hasPhenotypeData(state, phenotype))
             .map(phenotype => getPhenotypeData(project, plate, phenotype).then((data) => {
@@ -193,11 +192,8 @@ export function retrievePlatePhenotype(plate: number) : ThunkAction {
             throw new Error('Cannot retrieve phenotype if phenotype not set');
         }
         const currentPlate = getPlate(state);
-        if (currentPlate === plate) return Promise.resolve();
-        if (plate == null) {
-            throw new Error('Cannot retrieve phenotype if plate not set');
-        }
-        dispatch(setPlate(plate));
+        if (currentPlate === plate && hasPhenotypeData(state, phenotype)) return Promise.resolve();
+        if (currentPlate !== plate) dispatch(setPlate(plate));
         return getPhenotypeData(project, plate, phenotype).then((data) => {
             const {
                 phenotypes,
@@ -217,7 +213,6 @@ export function retrievePlatePhenotype(plate: number) : ThunkAction {
                 undecidedProblem,
             ));
             dispatch(setQualityIndexQueue(qIndexQueue));
-            retrieveGraphPhenotypes(plate);
         });
     };
 }
