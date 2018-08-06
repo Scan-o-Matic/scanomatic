@@ -112,13 +112,91 @@ describe('/qc/actions', () => {
             dispatch.calls.reset();
             setCurveQCMark = spyOn(API, 'setCurveQCMark')
                 .and.callFake((project) => {
-                    if (project === 'fail/me') throw new Error('bad!');
-                    return Promise.resolve();
+                    if (project === 'fail/me') return FakePromise.reject();
+                    return FakePromise.resolve();
                 });
             setCurveQCMarkAll = spyOn(API, 'setCurveQCMarkAll')
                 .and.callFake((project) => {
-                    if (project === 'fail/me') throw new Error('bad!');
-                    return Promise.resolve();
+                    if (project === 'fail/me') return FakePromise.reject();
+                    return FakePromise.resolve();
+                });
+        });
+
+        it('returns a function that throws error if no project', () => {
+            const state = new StateBuilder().build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            expect(() => thunk(dispatch, () => state))
+                .toThrow(new Error('Cant set QC Mark if no project'));
+        });
+
+        it('returns a function that throws if no focus curve', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPlate(0)
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            expect(() => thunk(dispatch, () => state))
+                .toThrow(new Error('Cant set QC Mark if no focus'));
+        });
+
+        it('dispatches a store update immidiately', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPlate(0)
+                .setQualityIndexQueue([{ idx: 0, col: 0, row: 10 }])
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            thunk(dispatch, () => state);
+            expect(dispatch)
+                .toHaveBeenCalledWith(actions.setStoreCurveQCMark(0, 10, 0, 'OK', 'GenerationTime'));
+            expect(dispatch.calls.count()).toBe(1);
+        });
+
+        it('calls API.setCurveQCMark if phenotype supplied', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPlate(0)
+                .setQualityIndexQueue([{ idx: 0, col: 0, row: 10 }])
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            thunk(dispatch, () => state);
+            expect(setCurveQCMark)
+                .toHaveBeenCalledWith('my/experiment', 0, 10, 0, 'OK', 'GenerationTime', 'letmedothis');
+        });
+
+        it('calls API.setCurveQCMarkAll if no phenotype specified', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPlate(0)
+                .setQualityIndexQueue([{ idx: 0, col: 0, row: 10 }])
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', null, 'letmedothis');
+            thunk(dispatch, () => state);
+            expect(setCurveQCMarkAll)
+                .toHaveBeenCalledWith('my/experiment', 0, 10, 0, 'OK', 'letmedothis');
+        });
+
+        it('dispatches a reverting of mark if API request fails when setting', (done) => {
+            const state = new StateBuilder()
+                .setProject('fail/me')
+                .setPlate(2)
+                .setQualityIndexQueue([{ idx: 0, row: 0, col: 1 }])
+                .setPhenotypeQCMarks(
+                    'GenerationTime',
+                    [[0], [1]],
+                    null,
+                    null,
+                    null,
+                )
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            thunk(dispatch, () => state)
+                .then(() => {
+                    expect(dispatch.calls.argsFor(0))
+                        .toHaveBeenCalledWith(actions.setStoreCurveQCMark(2, 0, 1, 'OK', 'GenerationTime'));
+                    expect(dispatch.calls.argsFor(1))
+                        .toHaveBeenCalledWith(actions.setStoreCurveQCMark(2, 0, 1, 'BadData', 'GenerationTime'));
+                    done();
                 });
         });
     });
@@ -471,5 +549,5 @@ describe('/qc/actions', () => {
                     col: 2,
                 });
         });
-    })
+    });
 });

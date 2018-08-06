@@ -168,25 +168,32 @@ export function updateFocusCurveQCMark(
         const project = getProject(state);
         if (!project) throw new Error('Cant set QC Mark if no project');
         const plate = getPlate(state);
-        if (!plate) throw new Error('Cant set QC Mark if no plate');
+        if (plate == null) throw new Error('Cant set QC Mark if no plate');
         const focus = getFocus(state);
         if (!focus) throw new Error('Cant set QC Mark if no focus');
-        let previousMark;
+
+        dispatch(setStoreCurveQCMark(plate, focus.row, focus.col, mark, phenotype));
+
         if (phenotype) {
-            previousMark = { [phenotype]: getFocusCurveQCMark(state) };
             promise = setCurveQCMark(project, plate, focus.row, focus.col, mark, phenotype, key);
         } else {
-            previousMark = getFocusCurveQCMarkAllPhenotypes(state);
             promise = setCurveQCMarkAll(project, plate, focus.row, focus.col, mark, key);
         }
+
         return promise.catch(() => {
             // undo_preemtive curve_mark
+            let previousMark;
+            if (phenotype) {
+                previousMark = { [phenotype]: getFocusCurveQCMark(state) };
+            } else {
+                previousMark = getFocusCurveQCMarkAllPhenotypes(state);
+            }
             Object.entries(previousMark)
                 .forEach(([pheno, prevMark]) => dispatch(setStoreCurveQCMark(
                     plate,
                     focus.row,
                     focus.col,
-                    prevMark,
+                    prevMark || 'OK',
                     pheno,
                 )));
             return Promise.resolve();
