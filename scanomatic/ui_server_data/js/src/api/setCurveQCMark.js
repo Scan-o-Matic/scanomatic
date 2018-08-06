@@ -29,7 +29,7 @@ export function setCurveQCMarkAll(
     const uri = `/api/results/curve_mark/set/${mark}/${plate}/${row}/${col}/${project}?lock_key=${key}`;
     return API.postJSON(uri, {})
         .then((r) => {
-            if (!r || !r.success) throw new Error('Setting QC Mark was refused');
+            if (!r || !r.success) return Promise.reject(new Error('Setting QC Mark was refused'));
             return Promise.resolve();
         });
 }
@@ -46,7 +46,7 @@ export function setCurveQCMark(
     const uri = `/api/results/curve_mark/set/${mark}/${phenotype}/${plate}/${row}/${col}/${project}?lock_key=${key}`;
     return API.postJSON(uri, {})
         .then((r) => {
-            if (!r || !r.success) throw new Error('Setting QC Mark was refused');
+            if (!r || !r.success) return Promise.reject(new Error('Setting QC Mark was refused'));
             return Promise.resolve();
         });
 }
