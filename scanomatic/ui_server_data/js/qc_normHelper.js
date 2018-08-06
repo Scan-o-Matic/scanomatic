@@ -338,7 +338,7 @@ function drawRunPhenotypeSelection(path) {
             .data(runPhenotypes)
             .enter()
             .append('option');
-        options.attr('value', d => d.url);
+        options.attr('value', d => d.phenotype);
         options.text(d => d.name);
         selPhen.on('change', drawPhenotypePlatesSelection);
         $(`#${selRunPhenotypesName}`).selectedIndex = 0;
@@ -358,7 +358,7 @@ function drawRunNormalizedPhenotypeSelection(path) {
             .data(runPhenotypes)
             .enter()
             .append('option');
-        options.attr('value', d => d.url);
+        options.attr('value', d => d.phenotype);
         options.text(d => d.name);
         selPhen.on('change', drawPhenotypePlatesSelection);
         $(`#${selRunNormPhenotypesName}`).toggle();
@@ -371,8 +371,11 @@ function drawPhenotypePlatesSelection() {
     const isNormalized = $('#ckNormalized').is(':checked');
     const selectedPhen = $(`#${selRunPhenotypesName}`).val();
     const selectedNromPhen = $(`#${selRunNormPhenotypesName}`).val();
-    const path = isNormalized ? selectedNromPhen : selectedPhen;
-    window.qc.actions.setPhenotype(path);
+    const phenotype = isNormalized ? selectedNromPhen : selectedPhen;
+    if (!phenotype) return;
+    const project = window.qc.selectors.getProject();
+    const path = `/api/results/${isNormalized ? 'normalized_phenotype' : 'phenotype'}/${phenotype}/${project}`;
+    window.qc.actions.setPhenotype(phenotype);
     if (!path) { return; }
     projectSelectionStage('Plates');
     console.log(`plates: ${path}`);
