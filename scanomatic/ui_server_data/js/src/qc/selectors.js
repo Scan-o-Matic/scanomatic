@@ -87,7 +87,10 @@ function isMarked(data: ?PlateCoordinatesArray, row: number, col: number) : bool
     return false;
 }
 
-function getCurveQCMark(state: State, row: number, col: number, phenotype: Phenotype): ?QCMarkType {
+function getCurveQCMark(state: State, phenotype: Phenotype): ?QCMarkType {
+    const focus = getFocus(state);
+    if (!focus) return null;
+    const { row, col } = focus;
     if (!state.plate || !state.plate.qcmarks) return null;
     const marks = state.plate.qcmarks[phenotype];
     if (isMarked(marks.badData, row, col)) return 'BadData';
@@ -99,20 +102,17 @@ function getCurveQCMark(state: State, row: number, col: number, phenotype: Pheno
 
 export function getFocusCurveQCMark(state: State): ?QCMarkType {
     const phenotype = getPhenotype(state);
-    const focus = getFocus(state);
-    if (!state.plate || !state.plate.qcmarks || !phenotype || !focus) return null;
-    const { row, col } = focus;
-    return getCurveQCMark(state, row, col, phenotype);
+    if (!phenotype) return null;
+    return getCurveQCMark(state, phenotype);
 }
 
 export function getFocusCurveQCMarkAllPhenotypes(state: State): ?Object<Phenotype, QCMarkType> {
-    const focus = getFocus(state);
-    if (!state.plate || !state.plate.qcmarks || !focus) return null;
+    if (!state.plate || !state.plate.qcmarks) return null;
     return Object.assign(
         {},
         ...Object.keys(state.plate.qcmarks)
             .map(phenotype => ({
-                [phenotype]: getCurveQCMark(state, focus.row, focus.col, phenotype),
+                [phenotype]: getCurveQCMark(state, phenotype),
             })),
     );
 }

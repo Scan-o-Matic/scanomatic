@@ -256,4 +256,154 @@ describe('/qc/reducers/plate', () => {
             });
         });
     });
+
+    describe('CURVE_QCMARK_SET', () => {
+        it('doesnt do a thing if plates missmatch', () => {
+            const state = { number: 0, qIndex: 0 };
+            const action = {
+                type: 'CURVE_QCMARK_SET',
+                mark: 'BadData',
+                plate: 5,
+                row: 0,
+                col: 0,
+            };
+            expect(plate(state, action)).toEqual(state);
+        });
+
+        describe('with phenotype in action', () => {
+            const action = {
+                type: 'CURVE_QCMARK_SET',
+                phenotype: 'GenerationTime',
+                mark: 'BadData',
+                plate: 0,
+                row: 0,
+                col: 0,
+            };
+
+            it('adds a mark even if no existing phenotype marks loaded', () => {
+                const state = { number: 0, qIndex: 0 };
+                expect(plate(state, action))
+                    .toEqual(Object.assign({}, state, {
+                        qcmarks: {
+                            GenerationTime: {
+                                badData: [[0], [0]],
+                                noGrowth: null,
+                                empty: null,
+                                undecidedProblem: null,
+                            },
+                        },
+                    }));
+            });
+
+            it('adds mark along-side other', () => {
+                const state = {
+                    number: 0,
+                    qIndex: 0,
+                    qcmarks: {
+                        GenerationTime: {
+                            badData: [[0], [1]],
+                            empty: [[1], [1]],
+                        },
+                        GenerationTimeWhen: {
+                            badData: [[], []],
+                        },
+                    },
+                };
+                expect(plate(state, action)).toEqual({
+                    number: 0,
+                    qIndex: 0,
+                    qcmarks: {
+                        GenerationTime: {
+                            badData: [[0, 0], [1, 0]],
+                            empty: [[1], [1]],
+                            noGrowth: null,
+                            undecidedProblem: null,
+                        },
+                        GenerationTimeWhen: {
+                            badData: [[], []],
+                        },
+                    },
+                });
+            });
+
+            it('removes previous mark for new mark', () => {
+                const state = {
+                    number: 0,
+                    qIndex: 0,
+                    qcmarks: {
+                        GenerationTime: {
+                            empty: [[0], [0]],
+                        },
+                    },
+                };
+                expect(plate(state, action)).toEqual({
+                    number: 0,
+                    qIndex: 0,
+                    qcmarks: {
+                        GenerationTime: {
+                            badData: [[0], [0]],
+                            empty: [[], []],
+                            noGrowth: null,
+                            undecidedProblem: null,
+                        },
+                    },
+                });
+            });
+        });
+
+        describe('without phenotype in action / settings for all loaded phenotypes', () => {
+            it('adds no mark if no existing phenotype marks loaded', () => {
+                const state = { number: 0, qIndex: 0 };
+                const action = {
+                    type: 'CURVE_QCMARK_SET',
+                    mark: 'BadData',
+                    plate: 0,
+                    row: 0,
+                    col: 0,
+                };
+                expect(plate(state, action))
+                    .toEqual(Object.assign({}, state, { qcmarks: {} }));
+            });
+
+            it('updats mark for all phenotypes', () => {
+                const state = {
+                    number: 0,
+                    qIndex: 0,
+                    qcmarks: {
+                        GenerationTime: {
+                            badData: [[1], [1]],
+                            empty: [[0], [0]],
+                        },
+                        GenerationTimeWhen: {},
+                    },
+                };
+                const action = {
+                    type: 'CURVE_QCMARK_SET',
+                    mark: 'BadData',
+                    plate: 0,
+                    row: 0,
+                    col: 0,
+                };
+                expect(plate(state, action))
+                    .toEqual({
+                        number: 0,
+                        qIndex: 0,
+                        qcmarks: {
+                            GenerationTime: {
+                                badData: [[1, 0], [1, 0]],
+                                empty: [[], []],
+                                noGrowth: null,
+                                undecidedProblem: null,
+                            },
+                            GenerationTimeWhen: {
+                                badData: [[0], [0]],
+                                empty: null,
+                                noGrowth: null,
+                                undecidedProblem: null,
+                            },
+                        },
+                    });
+            });
+        });
+    });
 });

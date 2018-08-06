@@ -95,7 +95,7 @@ export default function plate(state: State = initialState, action: Action) {
                 {
                     qcmarks: Object.assign({}, state.qcmarks, {
                         [action.phenotype]: updateQCMarks(
-                            state.qcmarks[action.phenotype],
+                            state.qcmarks ? state.qcmarks[action.phenotype] : {},
                             action.row,
                             action.col,
                             action.mark,

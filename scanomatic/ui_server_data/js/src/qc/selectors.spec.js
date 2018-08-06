@@ -204,4 +204,137 @@ describe('/qc/selectors', () => {
             expect(selectors.getQIndexFromPosition(state, 10, 0)).toBe(undefined);
         });
     });
+
+    describe('getFocusCurveQCMark', () => {
+        const queue = [
+            { idx: 0, row: 1, col: 1 },
+            { idx: 1, row: 1, col: 0 },
+            { idx: 2, row: 0, col: 1 },
+            { idx: 3, row: 0, col: 0 },
+        ];
+
+        it('should return null if no qcmarks gotten', () => {
+            const state = new StateBuilder().build();
+            expect(selectors.getFocusCurveQCMark(state)).toBe(null);
+        });
+
+        it('should return null if no focus curve', () => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .setPhenotype('GenerationTime')
+                .build();
+            expect(selectors.getFocusCurveQCMark(state)).toBe(null);
+        });
+
+        it('returns OK if no mark', () => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .setPlate(0)
+                .setPhenotype('GenerationTime')
+                .setQualityIndexQueue(queue)
+                .setPhenotypeQCMarks(
+                    'GenerationTime',
+                    [[], []],
+                    [[], []],
+                    [[], []],
+                    [[], []],
+                )
+                .build();
+            expect(selectors.getFocusCurveQCMark(state)).toBe('OK');
+        });
+
+        describe('marks', () => {
+            const builder = new StateBuilder()
+                .setProject('my/project')
+                .setPlate(0)
+                .setPhenotype('GenerationTime')
+                .setQualityIndexQueue(queue)
+                .setPhenotypeQCMarks(
+                    'GenerationTime',
+                    [[0], [0]],
+                    [[0], [1]],
+                    [[1], [0]],
+                    [[1], [1]],
+                );
+
+            it('returns BadData if badData', () => {
+                const state = builder
+                    .setQualityIndex(3)
+                    .build();
+                expect(selectors.getFocusCurveQCMark(state)).toBe('BadData');
+            });
+
+            it('returns NoGrowth if noGrowth', () => {
+                const state = builder
+                    .setQualityIndex(1)
+                    .build();
+                expect(selectors.getFocusCurveQCMark(state)).toBe('NoGrowth');
+            });
+
+            it('returns Empty if empty', () => {
+                const state = builder
+                    .setQualityIndex(2)
+                    .build();
+                expect(selectors.getFocusCurveQCMark(state)).toBe('Empty');
+            });
+
+            it('returns UndecidedProblem if undecidedProblem', () => {
+                const state = builder
+                    .setQualityIndex(0)
+                    .build();
+                expect(selectors.getFocusCurveQCMark(state)).toBe('UndecidedProblem');
+            });
+        });
+    });
+
+    describe('getFocusCurveQCMarkAllPhenotypes', () => {
+        it('returns null if no qcmarks', () => {
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .setPlate(0)
+                .setPhenotype('GenerationTime')
+                .build();
+            expect(selectors.getFocusCurveQCMark(state)).toBe(null);
+        });
+
+        it('returns an object that maps phenotypes to marks', () => {
+            const queue = [
+                { idx: 0, row: 0, col: 0 },
+            ];
+            const state = new StateBuilder()
+                .setProject('my/project')
+                .setPlate(0)
+                .setPhenotype('GenerationTime')
+                .setQualityIndexQueue(queue)
+                .setPhenotypeQCMarks(
+                    'GenerationTime',
+                    [[0], [0]],
+                    [[], []],
+                    [[], []],
+                    [[], []],
+                )
+                .setPhenotypeQCMarks(
+                    'GenerationTimeWhen',
+                    [[], []],
+                    [[], []],
+                    [[0], [0]],
+                    [[], []],
+                )
+                .setPhenotypeQCMarks(
+                    'ExperimentGrowthYield',
+                    [[], []],
+                    [[], []],
+                    [[], []],
+                    [[], []],
+                )
+                .setQualityIndex(0)
+                .build();
+            expect(selectors.getFocusCurveQCMarkAllPhenotypes(state))
+                .toEqual({
+                    GenerationTime: 'BadData',
+                    GenerationTimeWhen: 'NoGrowth',
+                    ExperimentGrowthYield: 'OK',
+                });
+        });
+    });
 });

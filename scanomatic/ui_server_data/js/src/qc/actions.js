@@ -13,6 +13,7 @@ export type Action
     = {| type: 'PLATE_SET', plate: number |}
     | {| type: 'PROJECT_SET', project: string |}
     | {| type: 'CURVE_FOCUS', plate: number, row: number, col: number |}
+    | {| type: 'CURVE_QCMARK_SET', plate: number, row: number, col: number, mark: QCMarkType, phenotype: ?Phenotype |}
     | {|
         type: 'PLATE_GROWTHDATA_SET',
         plate: number,
@@ -144,12 +145,23 @@ export function setStoreCurveQCMark(
     mark: QCMarkType,
     phenotype: ?Phenotype,
 ) : Action {
-    return { type: 'CURVE_QCMARK_SET', phenotype, mark, plate, col, row };
+    return {
+        type: 'CURVE_QCMARK_SET',
+        phenotype,
+        mark,
+        plate,
+        col,
+        row,
+    };
 }
 
 export type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
 
-export function updateFocusCurveQCMark(mark: QCMarkType, phenotype: ?Phenotype, key: string) : ThunkAction {
+export function updateFocusCurveQCMark(
+    mark: QCMarkType,
+    phenotype: ?Phenotype,
+    key: string,
+) : ThunkAction {
     return (dispatch, getState) => {
         let promise;
         const state = getState();

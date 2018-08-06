@@ -103,6 +103,26 @@ describe('/qc/actions', () => {
         });
     });
 
+    describe('updateFocusCurveQCMark', () => {
+        const dispatch = jasmine.createSpy('dispatch');
+        let setCurveQCMark;
+        let setCurveQCMarkAll;
+
+        beforeEach(() => {
+            dispatch.calls.reset();
+            setCurveQCMark = spyOn(API, 'setCurveQCMark')
+                .and.callFake((project) => {
+                    if (project === 'fail/me') throw new Error('bad!');
+                    return Promise.resolve();
+                });
+            setCurveQCMarkAll = spyOn(API, 'setCurveQCMarkAll')
+                .and.callFake((project) => {
+                    if (project === 'fail/me') throw new Error('bad!');
+                    return Promise.resolve();
+                });
+        });
+    });
+
     describe('retrievePlateCurves ThunkAction', () => {
         const dispatch = jasmine.createSpy('dispatch');
         let getPlateGrowthData;
@@ -415,4 +435,41 @@ describe('/qc/actions', () => {
             });
         });
     });
+
+    describe('setStoreCurveQCMark', () => {
+        it('should create a CURVE_QCMARK_SET action for all phenotypes', () => {
+            expect(actions.setStoreCurveQCMark(
+                0,
+                1,
+                2,
+                'OK',
+            ))
+                .toEqual({
+                    type: 'CURVE_QCMARK_SET',
+                    phenotype: undefined,
+                    mark: 'OK',
+                    plate: 0,
+                    row: 1,
+                    col: 2,
+                });
+        });
+
+        it('should create a CURVE_QCMARK_SET action for GenerationTime', () => {
+            expect(actions.setStoreCurveQCMark(
+                0,
+                1,
+                2,
+                'OK',
+                'GenerationTime',
+            ))
+                .toEqual({
+                    type: 'CURVE_QCMARK_SET',
+                    phenotype: 'GenerationTime',
+                    mark: 'OK',
+                    plate: 0,
+                    row: 1,
+                    col: 2,
+                });
+        });
+    })
 });
