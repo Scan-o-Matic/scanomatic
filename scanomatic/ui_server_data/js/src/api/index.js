@@ -3,8 +3,10 @@ import Duration from '../Duration';
 import API from './API';
 
 import _getPlateGrowthData from './getPlateGrowthData';
+import _getPhentypeData from './getPhenotypeData';
 
 export const getPlateGrowthData = _getPlateGrowthData;
+export const getPhenotypeData = _getPhentypeData;
 
 const GetSliceImagePath = '/api/calibration/#0#/image/#1#/slice/get/#2#';
 const GetTranposedMarkerPath = '/api/data/fixture/calculate/';
