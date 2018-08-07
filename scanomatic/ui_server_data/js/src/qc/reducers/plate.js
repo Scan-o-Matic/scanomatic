@@ -1,6 +1,6 @@
 // @flow
 import type { Action } from '../actions';
-import type { Plate as State, QCMarkType, QCMarks, PlateCoordinatesArray } from '../state';
+import type { Plate as State, QCMarkType, QCMarksMap, PlateCoordinatesArray } from '../state';
 
 const initialState : State = { number: 0, qIndex: 0 };
 
@@ -34,13 +34,13 @@ function removeMark(previous: ?PlateCoordinatesArray, row: number, col: number)
     return next;
 }
 
-function updateQCMarks(marks: QCMarks, row: number, col: number, mark: QCMarkType) : QCMarks {
-    return {
-        noGrowth: mark === 'NoGrowth' ? addMark(marks.noGrowth, row, col) : removeMark(marks.noGrowth, row, col),
-        empty: mark === 'Empty' ? addMark(marks.empty, row, col) : removeMark(marks.empty, row, col),
-        badData: mark === 'BadData' ? addMark(marks.badData, row, col) : removeMark(marks.badData, row, col),
-        undecidedProblem: mark === 'UndecidedProblem' ? addMark(marks.undecidedProblem, row, col) : removeMark(marks.undecidedProblem, row, col),
-    };
+function updateQCMarks(marks: QCMarksMap, row: number, col: number, mark: QCMarkType) : QCMarksMap {
+    return new Map([
+        ['noGrowth', mark === 'NoGrowth' ? addMark(marks.get('noGrowth'), row, col) : removeMark(marks.get('noGrowth'), row, col)],
+        ['empty', mark === 'Empty' ? addMark(marks.get('empty'), row, col) : removeMark(marks.get('empty'), row, col)],
+        ['badData', mark === 'BadData' ? addMark(marks.get('badData'), row, col) : removeMark(marks.get('badData'), row, col)],
+        ['undecidedProblem', mark === 'UndecidedProblem' ? addMark(marks.get('undecidedProblem'), row, col) : removeMark(marks.get('undecidedProblem'), row, col)],
+    ]);
 }
 
 export default function plate(state: State = initialState, action: Action) {
@@ -72,39 +72,30 @@ export default function plate(state: State = initialState, action: Action) {
             },
         );
     }
-    case 'CURVE_QCMARK_SET':
+    case 'CURVE_QCMARK_SET': {
         if (action.plate !== state.number) return state;
+        const nextQC = new Map(state.qcmarks);
+
         if (action.phenotype) {
-            return Object.assign(
-                {},
-                state,
-                {
-                    qcmarks: Object.assign({}, state.qcmarks, {
-                        [action.phenotype]: updateQCMarks(
-                            state.qcmarks ? state.qcmarks[action.phenotype] : {},
-                            action.row,
-                            action.col,
-                            action.mark,
-                        ),
-                    }),
-                },
+            nextQC.set(
+                action.phenotype,
+                updateQCMarks(
+                    nextQC.get(action.phenotype),
+                    action.row,
+                    action.col,
+                    action.mark,
+                ),
             );
+        } else {
+            nextQC.forEach((marks, phenotype) => nextQC.set(phenotype, updateQCMarks(
+                marks,
+                action.row,
+                action.col,
+                action.mark,
+            )));
         }
-        return Object.assign(
-            {},
-            state,
-            {
-                qcmarks: Object.assign({}, ...Object.entries(state.qcmarks || {})
-                    .map(([phenotype, marks]) => ({
-                        [phenotype]: updateQCMarks(
-                            marks,
-                            action.row,
-                            action.col,
-                            action.mark,
-                        ),
-                    }))),
-            },
-        );
+        return Object.assign({}, state, { qcmarks: nextQC });
+    }
     case 'QUALITYINDEX_QUEUE_SET':
         return Object.assign(
             {},

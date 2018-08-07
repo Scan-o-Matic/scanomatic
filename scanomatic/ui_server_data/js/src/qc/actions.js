@@ -5,7 +5,7 @@ import {
 } from './selectors';
 import type {
     State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue,
-    PlateValueArray, PlateCoordinatesArray, Phenotype, QCMarkType, QCMarksMap,
+    PlateValueArray, Phenotype, QCMarkType, QCMarksMap,
 } from './state';
 import { getPlateGrowthData, getPhenotypeData, setCurveQCMark, setCurveQCMarkAll } from '../api';
 

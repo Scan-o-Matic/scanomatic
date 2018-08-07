@@ -7,12 +7,8 @@ import type {
     PlateValueArray as _PlateValueArray,
     PlateCoordinatesArray as _PlateCoordinatesArray,
     Phenotype,
-<<<<<<< HEAD
-    QCMarks,
     QCMarkType,
-=======
     QCMarksMap,
->>>>>>> qc-phenotypes-store-extension
 } from './state';
 
 export type TimeSeries = _TimeSeries;
@@ -77,7 +73,7 @@ export function getCurrentPhenotypeData(state: State): ?PlateValueArray {
     return state.plate.phenotypes.get(phenotype);
 }
 
-export function getCurrentPhenotypeQCMarks(state: State): ?QCMarks {
+export function getCurrentPhenotypeQCMarks(state: State): ?QCMarksMap {
     const phenotype = getPhenotype(state);
     if (!state.plate || !state.plate.qcmarks || !phenotype) return null;
     return state.plate.qcmarks.get(phenotype);
