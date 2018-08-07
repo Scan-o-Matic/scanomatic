@@ -38,6 +38,12 @@ describe('/qc/selectors', () => {
             .setPlatePhenotypeData(
                 'test',
                 [[5, 4, 3], [5, 5, 1]],
+                new Map([
+                    ['badData', [[0], [0]]],
+                    ['empty', [[0], [1]]],
+                    ['noGrowth', [[1, 1], [0, 1]]],
+                    ['undecidedProblem', [[1, 0], [2, 2]]],
+                ]),
             )
             .build();
         expect(selectors.getCurrentPhenotypeData(state))
@@ -51,21 +57,24 @@ describe('/qc/selectors', () => {
         const state = new StateBuilder()
             .setProject('/my/path')
             .setPhenotype('test')
-            .setPhenotypeQCMarks(
+            .setPlatePhenotypeData(
                 'test',
-                [[0], [0]],
-                [[0], [1]],
-                [[1, 1], [0, 1]],
-                [[1, 0], [2, 2]],
+                [[5, 4, 3], [5, 5, 1]],
+                new Map([
+                    ['badData', [[0], [0]]],
+                    ['empty', [[0], [1]]],
+                    ['noGrowth', [[1, 1], [0, 1]]],
+                    ['undecidedProblem', [[1, 0], [2, 2]]],
+                ]),
             )
             .build();
         expect(selectors.getCurrentPhenotypeQCMarks(state))
-            .toEqual({
-                badData: [[0], [0]],
-                empty: [[0], [1]],
-                noGrowth: [[1, 1], [0, 1]],
-                undecidedProblem: [[1, 0], [2, 2]],
-            });
+            .toEqual(new Map([
+                ['badData', [[0], [0]]],
+                ['empty', [[0], [1]]],
+                ['noGrowth', [[1, 1], [0, 1]]],
+                ['undecidedProblem', [[1, 0], [2, 2]]],
+            ]));
     });
 
     it('should get the plate number', () => {

@@ -7,7 +7,7 @@ import type {
     PlateValueArray as _PlateValueArray,
     PlateCoordinatesArray as _PlateCoordinatesArray,
     Phenotype,
-    QCMarks,
+    QCMarksMap,
 } from './state';
 
 export type TimeSeries = _TimeSeries;
@@ -63,17 +63,17 @@ export function getQIndexFromPosition(state: State, row: number, col: number) : 
 
 export function getPhenotypeData(state: State, phenotype: Phenotype): ?PlateValueArray {
     if (!state.plate || !state.plate.phenotypes) return null;
-    return state.plate.phenotypes[phenotype];
+    return state.plate.phenotypes.get(phenotype);
 }
 
 export function getCurrentPhenotypeData(state: State): ?PlateValueArray {
     const phenotype = getPhenotype(state);
     if (!state.plate || !state.plate.phenotypes || !phenotype) return null;
-    return state.plate.phenotypes[phenotype];
+    return state.plate.phenotypes.get(phenotype);
 }
 
-export function getCurrentPhenotypeQCMarks(state: State): ?QCMarks {
+export function getCurrentPhenotypeQCMarks(state: State): ?QCMarksMap {
     const phenotype = getPhenotype(state);
     if (!state.plate || !state.plate.qcmarks || !phenotype) return null;
-    return state.plate.qcmarks[phenotype];
+    return state.plate.qcmarks.get(phenotype);
 }

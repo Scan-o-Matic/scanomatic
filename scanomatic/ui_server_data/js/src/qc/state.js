@@ -33,44 +33,12 @@ export type Settings = {
     +phenotype?: Phenotype,
 };
 
-export type PhenotypeDataCollection = {
-    +GenerationTime?: PlateValueArray,
-    +ExperimentGrowthYield?: PlateValueArray,
-    +ChapmanRichardsParam1?: PlateValueArray,
-    +ChapmanRichardsParam2?: PlateValueArray,
-    +ChapmanRichardsParam3?: PlateValueArray,
-    +ChapmanRichardsParam4?: PlateValueArray,
-    +ChapmanRichardsParamXtra?: PlateValueArray,
-    +ColonySize48h?: PlateValueArray,
-    +ExperimentBaseLine?: PlateValueArray,
-    +ExperimentPopulationDoublings?: PlateValueArray,
-    +GenerationTimeStErrOfEstimate?: PlateValueArray,
-    +GenerationTimeWhen?: PlateValueArray,
-    +InitialValue?: PlateValueArray,
-};
+export type PhenotypeDataMap = Map<Phenotype, PlateValueArray>;
 
-export type QCMarks = {
-    +badData?: PlateCoordinatesArray,
-    +empty?: PlateCoordinatesArray,
-    +noGrowth?: PlateCoordinatesArray,
-    +undecidedProblem?: PlateCoordinatesArray,
-};
+export type Mark = 'badData' | 'empty' | 'noGrowth' | 'undecidedProblem';
+export type QCMarksMap = Map<Mark, PlateCoordinatesArray>;
 
-export type QCMarksCollection = {
-    +GenerationTime?: QCMarks,
-    +ExperimentGrowthYield?: QCMarks,
-    +ChapmanRichardsParam1?: QCMarks,
-    +ChapmanRichardsParam2?: QCMarks,
-    +ChapmanRichardsParam3?: QCMarks,
-    +ChapmanRichardsParam4?: QCMarks,
-    +ChapmanRichardsParamXtra?: QCMarks,
-    +ColonySize48h?: QCMarks,
-    +ExperimentBaseLine?: QCMarks,
-    +ExperimentPopulationDoublings?: QCMarks,
-    +GenerationTimeStErrOfEstimate?: QCMarks,
-    +GenerationTimeWhen?: QCMarks,
-    +InitialValue?: QCMarks,
-};
+export type PhenotypeQCMarksMap = Map<Phenotype, QCMarksMap>;
 
 export type Plate = {
     +number: number,
@@ -79,8 +47,8 @@ export type Plate = {
     +raw?: PlateOfTimeSeries,
     +smooth?: PlateOfTimeSeries,
     +times?: TimeSeries,
-    +phenotypes?: PhenotypeDataCollection,
-    +qcmarks?: QCMarksCollection,
+    +phenotypes?: PhenotypeDataMap,
+    +qcmarks?: PhenotypeQCMarksMap,
 };
 
 export type State = {
