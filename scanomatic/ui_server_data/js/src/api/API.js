@@ -1,12 +1,37 @@
 import $ from 'jquery';
 
 export default class API {
+    static handleSuccess(callbackSuccess, callbackFail) {
+        return (data) => {
+            let response;
+            try {
+                response = JSON.parse(data);
+            } catch (err) {
+                return callbackSuccess(data);
+            }
+            if (response && response.success === false) return callbackFail(data.reason);
+            return callbackSuccess(data);
+        };
+    }
+
+    static handleFail(callbackFail) {
+        return (jqXHR) => {
+            let response;
+            try {
+                response = JSON.parse(jqXHR.responseText);
+            } catch (err) {
+                return callbackFail('Unexpected server error');
+            }
+            return callbackFail(response.reason);
+        };
+    }
+
     static get(url) {
         return new Promise((resolve, reject) => $.ajax({
             url,
             type: 'GET',
-            success: resolve,
-            error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
+            success: API.handleSuccess(resolve, reject),
+            error: API.handleFail(reject),
         }));
     }
 
@@ -14,8 +39,8 @@ export default class API {
         return new Promise((resolve, reject) => $.ajax({
             url,
             type: 'DELETE',
-            success: resolve,
-            error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
+            success: API.handleSuccess(resolve, reject),
+            error: API.handleFail(reject),
         }));
     }
 
@@ -27,8 +52,8 @@ export default class API {
             enctype: 'multipart/form-data',
             data: formData,
             processData: false,
-            success: resolve,
-            error: jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
+            success: API.handleSuccess(resolve, reject),
+            error: API.handleFail(reject),
         }));
     }
 
@@ -40,8 +65,8 @@ export default class API {
             contentType: 'application/json',
         })
             .then(
-                resolve,
-                jqXHR => reject(JSON.parse(jqXHR.responseText).reason),
+                API.handleSuccess(resolve, reject),
+                API.handleFail(reject),
             ));
     }
 }
