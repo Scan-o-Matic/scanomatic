@@ -87,32 +87,35 @@ function isMarked(data: ?PlateCoordinatesArray, row: number, col: number) : bool
     return false;
 }
 
-function getCurveQCMark(state: State, phenotype: Phenotype): ?QCMarkType {
+function parseFocusCurveQCMark(state: State, phenotype: Phenotype): ?QCMarkType {
     const focus = getFocus(state);
     if (!focus) return null;
     const { row, col } = focus;
     if (!state.plate || !state.plate.qcmarks) return null;
-    const marks = state.plate.qcmarks[phenotype];
-    if (isMarked(marks.badData, row, col)) return 'BadData';
-    if (isMarked(marks.noGrowth, row, col)) return 'NoGrowth';
-    if (isMarked(marks.empty, row, col)) return 'Empty';
-    if (isMarked(marks.undecidedProblem, row, col)) return 'UndecidedProblem';
+    const marks = state.plate.qcmarks.get(phenotype);
+    if (isMarked(marks.get('badData'), row, col)) return 'BadData';
+    if (isMarked(marks.get('noGrowth'), row, col)) return 'NoGrowth';
+    if (isMarked(marks.get('empty'), row, col)) return 'Empty';
+    if (isMarked(marks.get('undecidedProblem'), row, col)) return 'UndecidedProblem';
     return 'OK';
 }
 
 export function getFocusCurveQCMark(state: State): ?QCMarkType {
     const phenotype = getPhenotype(state);
     if (!phenotype) return null;
-    return getCurveQCMark(state, phenotype);
+    return parseFocusCurveQCMark(state, phenotype);
 }
 
-export function getFocusCurveQCMarkAllPhenotypes(state: State): ?Object<Phenotype, QCMarkType> {
+export function getFocusCurveQCMarkAllPhenotypes(state: State): ?Map<Phenotype, QCMarkType> {
     if (!state.plate || !state.plate.qcmarks) return null;
-    return Object.assign(
-        {},
-        ...Object.keys(state.plate.qcmarks)
-            .map(phenotype => ({
-                [phenotype]: getCurveQCMark(state, phenotype),
-            })),
-    );
+    const marks = new Map();
+    (state.plate.qcmarks || new Map())
+        .forEach((_, phenotype) => marks.set(phenotype, parseFocusCurveQCMark(state, phenotype)));
+    return marks;
+}
+
+export function isDirty(state: State, plate: number, row: number, col: number) : bool {
+    if (!state.plate || !state.plate.dirty || getPlate(state) !== plate) return false;
+    return state.plate.dirty
+        .some(([dirtyRow, dirtyCol]) => dirtyRow === row && dirtyCol === col);
 }

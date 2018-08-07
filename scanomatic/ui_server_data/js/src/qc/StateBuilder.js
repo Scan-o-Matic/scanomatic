@@ -66,6 +66,16 @@ export default class StateBuilder {
         return this;
     }
 
+    setDirty(
+        row: number,
+        col: number,
+    ) {
+        this.plate = Object.assign({}, this.plate, {
+            dirty: (this.plate.dirty || []).concat([[row, col]]),
+        });
+        return this;
+    }
+
     build() : State {
         return {
             plate: this.plate,

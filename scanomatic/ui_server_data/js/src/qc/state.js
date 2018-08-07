@@ -51,6 +51,7 @@ export type Plate = {
     +times?: TimeSeries,
     +phenotypes?: PhenotypeDataMap,
     +qcmarks?: PhenotypeQCMarksMap,
+    +dirty?: Array<Array<number>>,
 };
 
 export type State = {

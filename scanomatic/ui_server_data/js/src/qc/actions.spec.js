@@ -102,12 +102,12 @@ describe('/qc/actions', () => {
             dispatch.calls.reset();
             setCurveQCMark = spyOn(API, 'setCurveQCMark')
                 .and.callFake((project) => {
-                    if (project === 'fail/me') return FakePromise.reject();
+                    if (project === 'fail/me') return Promise.reject(new Error('bad idea'));
                     return FakePromise.resolve();
                 });
             setCurveQCMarkAll = spyOn(API, 'setCurveQCMarkAll')
                 .and.callFake((project) => {
-                    if (project === 'fail/me') return FakePromise.reject();
+                    if (project === 'fail/me') return Promise.reject(new Error('bad idea'));
                     return FakePromise.resolve();
                 });
         });
@@ -129,6 +129,18 @@ describe('/qc/actions', () => {
                 .toThrow(new Error('Cant set QC Mark if no focus'));
         });
 
+        it('returns a function that throws if focus position is dirty', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPhenotype('GenerationTime')
+                .setQualityIndexQueue([{ idx: 0, col: 0, row: 10 }])
+                .setDirty(10, 0)
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            expect(() => thunk(dispatch, () => state))
+                .toThrow(new Error('Cannot set mark while previous mark is still processing for this position'));
+        });
+
         it('dispatches a store update immidiately', () => {
             const state = new StateBuilder()
                 .setProject('my/experiment')
@@ -138,8 +150,7 @@ describe('/qc/actions', () => {
             const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
             thunk(dispatch, () => state);
             expect(dispatch)
-                .toHaveBeenCalledWith(actions.setStoreCurveQCMark(0, 10, 0, 'OK', 'GenerationTime'));
-            expect(dispatch.calls.count()).toBe(1);
+                .toHaveBeenCalledWith(actions.setStoreCurveQCMarkDirty(0, 10, 0, 'OK', 'GenerationTime'));
         });
 
         it('calls API.setCurveQCMark if phenotype supplied', () => {
@@ -170,22 +181,52 @@ describe('/qc/actions', () => {
             const state = new StateBuilder()
                 .setProject('fail/me')
                 .setPlate(2)
+                .setPhenotype('GenerationTime')
                 .setQualityIndexQueue([{ idx: 0, row: 0, col: 1 }])
-                .setPhenotypeQCMarks(
+                .setPlatePhenotypeData(
                     'GenerationTime',
-                    [[0], [1]],
-                    null,
-                    null,
-                    null,
+                    [[10, 154]],
+                    new Map([
+                        ['badData', [[0], [1]]],
+                        ['empty', null],
+                    ]),
+                )
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            thunk(dispatch, () => state)
+                .then(() => {
+                    expect(dispatch.calls.count()).toBe(2);
+                    expect(dispatch.calls.argsFor(0))
+                        .toEqual([actions.setStoreCurveQCMarkDirty(2, 0, 1, 'OK', 'GenerationTime')]);
+                    expect(dispatch.calls.argsFor(1))
+                        .toEqual([actions.setStoreCurveQCMark(2, 0, 1, 'BadData', 'GenerationTime')]);
+                    done();
+                });
+        });
+
+        it('dispatches a remove dirty if API request goes through', (done) => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPlate(2)
+                .setPhenotype('GenerationTime')
+                .setQualityIndexQueue([{ idx: 0, row: 0, col: 1 }])
+                .setPlatePhenotypeData(
+                    'GenerationTime',
+                    [[10, 154]],
+                    new Map([
+                        ['badData', [[0], [1]]],
+                        ['empty', null],
+                    ]),
                 )
                 .build();
             const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
             thunk(dispatch, () => state)
                 .then(() => {
                     expect(dispatch.calls.argsFor(0))
-                        .toHaveBeenCalledWith(actions.setStoreCurveQCMark(2, 0, 1, 'OK', 'GenerationTime'));
+                        .toEqual([actions.setStoreCurveQCMarkDirty(2, 0, 1, 'OK', 'GenerationTime')]);
                     expect(dispatch.calls.argsFor(1))
-                        .toHaveBeenCalledWith(actions.setStoreCurveQCMark(2, 0, 1, 'BadData', 'GenerationTime'));
+                        .toEqual([actions.setQCMarkNotDirty(2, 0, 1)]);
+                    expect(dispatch.calls.count()).toBe(2);
                     done();
                 });
         });
@@ -533,6 +574,38 @@ describe('/qc/actions', () => {
                     type: 'CURVE_QCMARK_SET',
                     phenotype: 'GenerationTime',
                     mark: 'OK',
+                    plate: 0,
+                    row: 1,
+                    col: 2,
+                });
+        });
+    });
+
+    describe('setStoreCurveQCMarkDirty', () => {
+        it('should create a CURVE_QCMARK_SETDIRTY action for GenerationTime', () => {
+            expect(actions.setStoreCurveQCMarkDirty(
+                0,
+                1,
+                2,
+                'OK',
+                'GenerationTime',
+            ))
+                .toEqual({
+                    type: 'CURVE_QCMARK_SETDIRTY',
+                    phenotype: 'GenerationTime',
+                    mark: 'OK',
+                    plate: 0,
+                    row: 1,
+                    col: 2,
+                });
+        });
+    });
+
+    describe('setQCMarkNotDirty', () => {
+        it('should create a CURVE_QCMARK_REMOVEDIRTY action', () => {
+            expect(actions.setQCMarkNotDirty(0, 1, 2))
+                .toEqual({
+                    type: 'CURVE_QCMARK_REMOVEDIRTY',
                     plate: 0,
                     row: 1,
                     col: 2,

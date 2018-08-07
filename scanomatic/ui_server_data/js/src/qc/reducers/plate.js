@@ -72,6 +72,7 @@ export default function plate(state: State = initialState, action: Action) {
             },
         );
     }
+    case 'CURVE_QCMARK_SETDIRTY':
     case 'CURVE_QCMARK_SET': {
         if (action.plate !== state.number) return state;
         const nextQC = new Map(state.qcmarks);
@@ -80,7 +81,7 @@ export default function plate(state: State = initialState, action: Action) {
             nextQC.set(
                 action.phenotype,
                 updateQCMarks(
-                    nextQC.get(action.phenotype),
+                    nextQC.get(action.phenotype) || new Map(),
                     action.row,
                     action.col,
                     action.mark,
@@ -88,14 +89,26 @@ export default function plate(state: State = initialState, action: Action) {
             );
         } else {
             nextQC.forEach((marks, phenotype) => nextQC.set(phenotype, updateQCMarks(
-                marks,
+                marks || new Map(),
                 action.row,
                 action.col,
                 action.mark,
             )));
         }
-        return Object.assign({}, state, { qcmarks: nextQC });
+        return Object.assign({}, state, {
+            qcmarks: nextQC,
+            dirty: action.type === 'CURVE_QCMARK_SETDIRTY' ?
+                (state.dirty || []).concat([[action.row, action.col]]) :
+                (state.dirty || [])
+                    .filter(([row, col]) => action.row !== row || action.col !== col),
+        });
     }
+    case 'CURVE_QCMARK_REMOVEDIRTY':
+        if (action.plate !== state.number) return state;
+        return Object.assign({}, state, {
+            dirty: (state.dirty || [])
+                .filter(([row, col]) => action.row !== row || action.col !== col),
+        });
     case 'QUALITYINDEX_QUEUE_SET':
         return Object.assign(
             {},

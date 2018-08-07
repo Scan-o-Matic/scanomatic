@@ -249,14 +249,15 @@ describe('/qc/reducers/plate', () => {
                 const state = { number: 0, qIndex: 0 };
                 expect(plate(state, action))
                     .toEqual(Object.assign({}, state, {
-                        qcmarks: {
-                            GenerationTime: {
-                                badData: [[0], [0]],
-                                noGrowth: null,
-                                empty: null,
-                                undecidedProblem: null,
-                            },
-                        },
+                        qcmarks: new Map([
+                            ['GenerationTime', new Map([
+                                ['badData', [[0], [0]]],
+                                ['noGrowth', null],
+                                ['empty', null],
+                                ['undecidedProblem', null],
+                            ])],
+                        ]),
+                        dirty: [],
                     }));
             });
 
@@ -264,30 +265,31 @@ describe('/qc/reducers/plate', () => {
                 const state = {
                     number: 0,
                     qIndex: 0,
-                    qcmarks: {
-                        GenerationTime: {
-                            badData: [[0], [1]],
-                            empty: [[1], [1]],
-                        },
-                        GenerationTimeWhen: {
-                            badData: [[], []],
-                        },
-                    },
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['badData', [[0], [1]]],
+                            ['empty', [[1], [1]]],
+                        ])],
+                        ['GenerationTimeWhen', new Map([
+                            ['badData', [[], []]],
+                        ])],
+                    ]),
                 };
                 expect(plate(state, action)).toEqual({
                     number: 0,
                     qIndex: 0,
-                    qcmarks: {
-                        GenerationTime: {
-                            badData: [[0, 0], [1, 0]],
-                            empty: [[1], [1]],
-                            noGrowth: null,
-                            undecidedProblem: null,
-                        },
-                        GenerationTimeWhen: {
-                            badData: [[], []],
-                        },
-                    },
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['badData', [[0, 0], [1, 0]]],
+                            ['empty', [[1], [1]]],
+                            ['noGrowth', null],
+                            ['undecidedProblem', null],
+                        ])],
+                        ['GenerationTimeWhen', new Map([
+                            ['badData', [[], []]],
+                        ])],
+                    ]),
+                    dirty: [],
                 });
             });
 
@@ -295,24 +297,45 @@ describe('/qc/reducers/plate', () => {
                 const state = {
                     number: 0,
                     qIndex: 0,
-                    qcmarks: {
-                        GenerationTime: {
-                            empty: [[0], [0]],
-                        },
-                    },
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['empty', [[0], [0]]],
+                        ])],
+                    ]),
                 };
                 expect(plate(state, action)).toEqual({
                     number: 0,
                     qIndex: 0,
-                    qcmarks: {
-                        GenerationTime: {
-                            badData: [[0], [0]],
-                            empty: [[], []],
-                            noGrowth: null,
-                            undecidedProblem: null,
-                        },
-                    },
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['badData', [[0], [0]]],
+                            ['empty', [[], []]],
+                            ['noGrowth', null],
+                            ['undecidedProblem', null],
+                        ])],
+                    ]),
+                    dirty: [],
                 });
+            });
+
+            it('removes dirty position flag', () => {
+                const state = {
+                    number: 0,
+                    qIndex: 0,
+                    dirty: [[0, 0], [1, 1]],
+                };
+                expect(plate(state, action))
+                    .toEqual(Object.assign({}, state, {
+                        qcmarks: new Map([
+                            ['GenerationTime', new Map([
+                                ['badData', [[0], [0]]],
+                                ['noGrowth', null],
+                                ['empty', null],
+                                ['undecidedProblem', null],
+                            ])],
+                        ]),
+                        dirty: [[1, 1]],
+                    }));
             });
         });
 
@@ -327,20 +350,20 @@ describe('/qc/reducers/plate', () => {
                     col: 0,
                 };
                 expect(plate(state, action))
-                    .toEqual(Object.assign({}, state, { qcmarks: {} }));
+                    .toEqual(Object.assign({}, state, { qcmarks: new Map(), dirty: [] }));
             });
 
             it('updats mark for all phenotypes', () => {
                 const state = {
                     number: 0,
                     qIndex: 0,
-                    qcmarks: {
-                        GenerationTime: {
-                            badData: [[1], [1]],
-                            empty: [[0], [0]],
-                        },
-                        GenerationTimeWhen: {},
-                    },
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['badData', [[1], [1]]],
+                            ['empty', [[0], [0]]],
+                        ])],
+                        ['GenerationTimeWhen', new Map()],
+                    ]),
                 };
                 const action = {
                     type: 'CURVE_QCMARK_SET',
@@ -353,22 +376,73 @@ describe('/qc/reducers/plate', () => {
                     .toEqual({
                         number: 0,
                         qIndex: 0,
-                        qcmarks: {
-                            GenerationTime: {
-                                badData: [[1, 0], [1, 0]],
-                                empty: [[], []],
-                                noGrowth: null,
-                                undecidedProblem: null,
-                            },
-                            GenerationTimeWhen: {
-                                badData: [[0], [0]],
-                                empty: null,
-                                noGrowth: null,
-                                undecidedProblem: null,
-                            },
-                        },
+                        qcmarks: new Map([
+                            ['GenerationTime', new Map([
+                                ['badData', [[1, 0], [1, 0]]],
+                                ['empty', [[], []]],
+                                ['noGrowth', null],
+                                ['undecidedProblem', null],
+                            ])],
+                            ['GenerationTimeWhen', new Map([
+                                ['badData', [[0], [0]]],
+                                ['empty', null],
+                                ['noGrowth', null],
+                                ['undecidedProblem', null],
+                            ])],
+                        ]),
+                        dirty: [],
                     });
             });
+        });
+    });
+
+    describe('CURVE_QCMARK_SETDIRTY', () => {
+        // Other aspects are tested in CURVE_QCMARK_SET
+        it('adds a dirty flag', () => {
+            const state = {
+                number: 0,
+                qIndex: 0,
+            };
+            const action = {
+                type: 'CURVE_QCMARK_SETDIRTY',
+                mark: 'BadData',
+                phenotype: 'GenerationTime',
+                plate: 0,
+                row: 5,
+                col: 0,
+            };
+            expect(plate(state, action))
+                .toEqual(Object.assign({}, state, {
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['badData', [[5], [0]]],
+                            ['noGrowth', null],
+                            ['empty', null],
+                            ['undecidedProblem', null],
+                        ])],
+                    ]),
+                    dirty: [[5, 0]],
+                }));
+        });
+    });
+
+    describe('CURVE_QCMARK_REMOVEDIRTY', () => {
+        it('removes dirty flag', () => {
+            const state = {
+                number: 0,
+                qIndex: 0,
+                dirty: [[0, 0], [5, 0], [1, 1]],
+            };
+            const action = {
+                type: 'CURVE_QCMARK_REMOVEDIRTY',
+                plate: 0,
+                row: 5,
+                col: 0,
+            };
+            expect(plate(state, action))
+                .toEqual(Object.assign({}, state, {
+                    dirty: [[0, 0], [1, 1]],
+                }));
         });
     });
 });

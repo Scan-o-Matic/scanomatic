@@ -241,12 +241,10 @@ describe('/qc/selectors', () => {
                 .setPlate(0)
                 .setPhenotype('GenerationTime')
                 .setQualityIndexQueue(queue)
-                .setPhenotypeQCMarks(
+                .setPlatePhenotypeData(
                     'GenerationTime',
-                    [[], []],
-                    [[], []],
-                    [[], []],
-                    [[], []],
+                    [[]],
+                    new Map(),
                 )
                 .build();
             expect(selectors.getFocusCurveQCMark(state)).toBe('OK');
@@ -258,12 +256,15 @@ describe('/qc/selectors', () => {
                 .setPlate(0)
                 .setPhenotype('GenerationTime')
                 .setQualityIndexQueue(queue)
-                .setPhenotypeQCMarks(
+                .setPlatePhenotypeData(
                     'GenerationTime',
-                    [[0], [0]],
-                    [[0], [1]],
-                    [[1], [0]],
-                    [[1], [1]],
+                    [[]],
+                    new Map([
+                        ['badData', [[0], [0]]],
+                        ['empty', [[0], [1]]],
+                        ['noGrowth', [[1], [0]]],
+                        ['undecidedProblem', [[1], [1]]],
+                    ]),
                 );
 
             it('returns BadData if badData', () => {
@@ -315,35 +316,66 @@ describe('/qc/selectors', () => {
                 .setPlate(0)
                 .setPhenotype('GenerationTime')
                 .setQualityIndexQueue(queue)
-                .setPhenotypeQCMarks(
+                .setPlatePhenotypeData(
                     'GenerationTime',
-                    [[0], [0]],
-                    [[], []],
-                    [[], []],
-                    [[], []],
+                    [[]],
+                    new Map([['badData', [[0], [0]]]]),
                 )
-                .setPhenotypeQCMarks(
+                .setPlatePhenotypeData(
                     'GenerationTimeWhen',
-                    [[], []],
-                    [[], []],
-                    [[0], [0]],
-                    [[], []],
+                    [[]],
+                    new Map([['noGrowth', [[0], [0]]]]),
                 )
-                .setPhenotypeQCMarks(
+                .setPlatePhenotypeData(
                     'ExperimentGrowthYield',
-                    [[], []],
-                    [[], []],
-                    [[], []],
-                    [[], []],
+                    [[]],
+                    new Map([['empty', [[1], [1]]]]),
                 )
                 .setQualityIndex(0)
                 .build();
             expect(selectors.getFocusCurveQCMarkAllPhenotypes(state))
-                .toEqual({
-                    GenerationTime: 'BadData',
-                    GenerationTimeWhen: 'NoGrowth',
-                    ExperimentGrowthYield: 'OK',
-                });
+                .toEqual(new Map([
+                    ['GenerationTime', 'BadData'],
+                    ['GenerationTimeWhen', 'NoGrowth'],
+                    ['ExperimentGrowthYield', 'OK'],
+                ]));
+        });
+    });
+
+    describe('isDirty', () => {
+        it('returns false if nothing set', () => {
+            const state = new StateBuilder()
+                .build();
+            expect(selectors.isDirty(state, 0, 0, 0)).toBe(false);
+        });
+
+        it('returns false if nothing has yet been dirty', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPhenotype('GenerationTime')
+                .build();
+            expect(selectors.isDirty(state, 0, 0, 0)).toBe(false);
+        });
+
+        it('returns true if position is dirty', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPhenotype('GenerationTime')
+                .setDirty(0, 0)
+                .setDirty(1, 2)
+                .build();
+            expect(selectors.isDirty(state, 0, 0, 0)).toBe(true);
+            expect(selectors.isDirty(state, 0, 1, 2)).toBe(true);
+        });
+
+        it('returns failse if position is not dirty', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPhenotype('GenerationTime')
+                .setDirty(0, 0)
+                .setDirty(1, 2)
+                .build();
+            expect(selectors.isDirty(state, 0, 0, 10)).toBe(false);
         });
     });
 });

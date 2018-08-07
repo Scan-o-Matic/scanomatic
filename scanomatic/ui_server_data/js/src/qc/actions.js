@@ -1,7 +1,7 @@
 // @flow
 import {
     getProject, getPlate, getPhenotype, getPhenotypeData as hasPhenotypeData,
-    getFocusCurveQCMark, getFocus, getFocusCurveQCMarkAllPhenotypes,
+    getFocusCurveQCMark, getFocus, getFocusCurveQCMarkAllPhenotypes, isDirty,
 } from './selectors';
 import type {
     State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue,
@@ -35,8 +35,25 @@ export type Action
     |}
     | {|
         type: 'CURVE_QCMARK_SET',
+        plate: number,
+        row: number,
+        col: number,
         phenotype: ?Phenotype,
         mark: QCMarkType,
+    |}
+    | {|
+        type: 'CURVE_QCMARK_SETDIRTY',
+        plate: number,
+        row: number,
+        col: number,
+        phenotype: ?Phenotype,
+        mark: QCMarkType,
+    |}
+    | {|
+        type: 'CURVE_QCMARK_REMOVEDIRTY',
+        plate: number,
+        row: number,
+        col: number,
     |}
 
 export function setPlate(plate : number) : Action {
@@ -130,6 +147,37 @@ export function setStoreCurveQCMark(
     };
 }
 
+export function setStoreCurveQCMarkDirty(
+    plate: number,
+    row: number,
+    col: number,
+    mark: QCMarkType,
+    phenotype: ?Phenotype,
+) : Action {
+    return {
+        type: 'CURVE_QCMARK_SETDIRTY',
+        phenotype,
+        mark,
+        plate,
+        col,
+        row,
+    };
+}
+
+export function setQCMarkNotDirty(
+    plate: number,
+    row: number,
+    col: number,
+) : Action {
+    return {
+        type: 'CURVE_QCMARK_REMOVEDIRTY',
+        plate,
+        row,
+        col,
+    };
+}
+
+
 export type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
 
 export function updateFocusCurveQCMark(
@@ -138,7 +186,6 @@ export function updateFocusCurveQCMark(
     key: string,
 ) : ThunkAction {
     return (dispatch, getState) => {
-        let promise;
         const state = getState();
         const project = getProject(state);
         if (!project) throw new Error('Cant set QC Mark if no project');
@@ -146,33 +193,42 @@ export function updateFocusCurveQCMark(
         if (plate == null) throw new Error('Cant set QC Mark if no plate');
         const focus = getFocus(state);
         if (!focus) throw new Error('Cant set QC Mark if no focus');
+        if (isDirty(state, plate, focus.row, focus.col)) {
+            throw new Error('Cannot set mark while previous mark is still processing for this position');
+        }
 
-        dispatch(setStoreCurveQCMark(plate, focus.row, focus.col, mark, phenotype));
+        dispatch(setStoreCurveQCMarkDirty(plate, focus.row, focus.col, mark, phenotype));
 
+        let promise;
         if (phenotype) {
             promise = setCurveQCMark(project, plate, focus.row, focus.col, mark, phenotype, key);
         } else {
             promise = setCurveQCMarkAll(project, plate, focus.row, focus.col, mark, key);
         }
 
-        return promise.catch(() => {
-            // undo_preemtive curve_mark
-            let previousMark;
-            if (phenotype) {
-                previousMark = { [phenotype]: getFocusCurveQCMark(state) };
-            } else {
-                previousMark = getFocusCurveQCMarkAllPhenotypes(state);
-            }
-            Object.entries(previousMark)
-                .forEach(([pheno, prevMark]) => dispatch(setStoreCurveQCMark(
-                    plate,
-                    focus.row,
-                    focus.col,
-                    prevMark || 'OK',
-                    pheno,
-                )));
-            return Promise.resolve();
-        });
+        return promise
+            .then(() => {
+                dispatch(setQCMarkNotDirty(plate, focus.row, focus.col));
+                return Promise.resolve();
+            })
+            .catch(() => {
+                // undo_preemtive curve_mark
+                let previousMark;
+                if (phenotype) {
+                    previousMark = new Map([[phenotype, getFocusCurveQCMark(state)]]);
+                } else {
+                    previousMark = getFocusCurveQCMarkAllPhenotypes(state);
+                }
+                previousMark
+                    .forEach((prevMark, pheno) => dispatch(setStoreCurveQCMark(
+                        plate,
+                        focus.row,
+                        focus.col,
+                        prevMark || 'OK',
+                        pheno,
+                    )));
+                return Promise.resolve();
+            });
     };
 }
 
