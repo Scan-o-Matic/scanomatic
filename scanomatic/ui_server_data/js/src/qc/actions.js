@@ -5,7 +5,7 @@ import {
 } from './selectors';
 import type {
     State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue,
-    PlateValueArray, PlateCoordinatesArray, Phenotype, QCMarkType,
+    PlateValueArray, PlateCoordinatesArray, Phenotype, QCMarkType, QCMarksMap,
 } from './state';
 import { getPlateGrowthData, getPhenotypeData, setCurveQCMark, setCurveQCMarkAll } from '../api';
 
@@ -31,15 +31,7 @@ export type Action
         plate: number,
         phenotype: Phenotype,
         phenotypes: PlateValueArray,
-    |}
-    | {|
-        type: 'PLATE_PHENOTYPEQC_SET',
-        plate: number,
-        phenotype: Phenotype,
-        badData: PlateCoordinatesArray,
-        empty: PlateCoordinatesArray,
-        noGrowth: PlateCoordinatesArray,
-        undecidedProblem: PlateCoordinatesArray
+        qcmarks: QCMarksMap,
     |}
     | {|
         type: 'CURVE_QCMARK_SET',
@@ -78,31 +70,14 @@ export function setPlatePhenotypeData(
     plate: number,
     phenotype: Phenotype,
     phenotypes: PlateValueArray,
+    qcmarks: QCMarksMap,
 ) : Action {
     return {
         type: 'PLATE_PHENOTYPEDATA_SET',
         plate,
         phenotype,
         phenotypes,
-    };
-}
-
-export function setPhenotypeQCMarks(
-    plate: number,
-    phenotype: Phenotype,
-    badData: PlateCoordinatesArray,
-    empty: PlateCoordinatesArray,
-    noGrowth: PlateCoordinatesArray,
-    undecidedProblem: PlateCoordinatesArray,
-) : Action {
-    return {
-        type: 'PLATE_PHENOTYPEQC_SET',
-        plate,
-        phenotype,
-        badData,
-        empty,
-        noGrowth,
-        undecidedProblem,
+        qcmarks,
     };
 }
 
@@ -235,17 +210,8 @@ export function retrievePhenotypesNeededInGraph(plate: number) : ThunkAction {
 
         const promises = ['GenerationTime', 'GenerationTimeWhen', 'ExperimentGrowthYield']
             .filter(phenotype => !hasPhenotypeData(state, phenotype))
-            .map(phenotype => getPhenotypeData(project, plate, phenotype).then((data) => {
-                dispatch(setPlatePhenotypeData(plate, phenotype, data.phenotypes));
-                dispatch(setPhenotypeQCMarks(
-                    plate,
-                    phenotype,
-                    data.badData,
-                    data.empty,
-                    data.noGrowth,
-                    data.undecidedProblem,
-                ));
-            }));
+            .map(phenotype => getPhenotypeData(project, plate, phenotype).then(data =>
+                dispatch(setPlatePhenotypeData(plate, phenotype, data.phenotypes, data.qcmarks))));
         return Promise.all(promises);
     };
 }
@@ -267,21 +233,10 @@ export function retrievePlatePhenotype(plate: number) : ThunkAction {
         return getPhenotypeData(project, plate, phenotype).then((data) => {
             const {
                 phenotypes,
-                badData,
-                empty,
-                noGrowth,
-                undecidedProblem,
+                qcmarks,
                 qIndexQueue,
             } = data;
-            dispatch(setPlatePhenotypeData(plate, phenotype, phenotypes));
-            dispatch(setPhenotypeQCMarks(
-                plate,
-                phenotype,
-                badData,
-                empty,
-                noGrowth,
-                undecidedProblem,
-            ));
+            dispatch(setPlatePhenotypeData(plate, phenotype, phenotypes, qcmarks));
             dispatch(setQualityIndexQueue(qIndexQueue));
         });
     };

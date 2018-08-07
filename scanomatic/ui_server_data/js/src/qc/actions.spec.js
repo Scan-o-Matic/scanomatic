@@ -37,34 +37,24 @@ describe('/qc/actions', () => {
                 1,
                 'GenerationTimeWhen',
                 [[0]],
+                new Map([
+                    ['badData', [[0], [0]]],
+                    ['empty', [[1], [1]]],
+                    ['noGrowth', [[2], [2]]],
+                    ['undecidedProblem', [[3], [3]]],
+                ]),
             ))
                 .toEqual({
                     type: 'PLATE_PHENOTYPEDATA_SET',
                     plate: 1,
                     phenotype: 'GenerationTimeWhen',
                     phenotypes: [[0]],
-                });
-        });
-    });
-
-    describe('setPhenotypeQCMarks', () => {
-        it('should return a PLATE_PHENOTYPEQC_SET action', () => {
-            expect(actions.setPhenotypeQCMarks(
-                1,
-                'GenerationTime',
-                [[0], [0]],
-                [[1], [1]],
-                [[2], [2]],
-                [[3], [3]],
-            ))
-                .toEqual({
-                    type: 'PLATE_PHENOTYPEQC_SET',
-                    plate: 1,
-                    phenotype: 'GenerationTime',
-                    badData: [[0], [0]],
-                    empty: [[1], [1]],
-                    noGrowth: [[2], [2]],
-                    undecidedProblem: [[3], [3]],
+                    qcmarks: new Map([
+                        ['badData', [[0], [0]]],
+                        ['empty', [[1], [1]]],
+                        ['noGrowth', [[2], [2]]],
+                        ['undecidedProblem', [[3], [3]]],
+                    ]),
                 });
         });
     });
@@ -261,24 +251,30 @@ describe('/qc/actions', () => {
         const dispatch = jasmine.createSpy('dispatch');
         const gtData = {
             phenotypes: [[0]],
-            badData: [[], []],
-            empty: [[0], [1]],
-            noGrowth: [[1], [0]],
-            undecidedProblem: [[1, 1], [0, 1]],
+            qcmarks: new Map([
+                ['badData', [[], []]],
+                ['empty', [[0], [1]]],
+                ['noGrowth', [[1], [0]]],
+                ['undecidedProblem', [[1, 1], [0, 1]]],
+            ]),
         };
         const gtWhenData = {
             phenotypes: [[5]],
-            badData: [[1], [1]],
-            empty: [[2], [1]],
-            noGrowth: [[1], [2]],
-            undecidedProblem: [[2, 1], [0, 1]],
+            qcmarks: new Map([
+                ['badData', [[1], [1]]],
+                ['empty', [[2], [1]]],
+                ['noGrowth', [[1], [2]]],
+                ['undecidedProblem', [[2, 1], [0, 1]]],
+            ]),
         };
         const expYeildData = {
             phenotypes: [[4]],
-            badData: [[1], [4]],
-            empty: [[2], [4]],
-            noGrowth: [[1], [4]],
-            undecidedProblem: [[2, 1], [0, 4]],
+            qcmarks: new Map([
+                ['badData', [[1], [4]]],
+                ['empty', [[2], [4]]],
+                ['noGrowth', [[1], [4]]],
+                ['undecidedProblem', [[2, 1], [0, 4]]],
+            ]),
         };
         let getPhenotypeData;
 
@@ -333,7 +329,7 @@ describe('/qc/actions', () => {
         it('skips those phenoypes it already has', (done) => {
             const state = new StateBuilder()
                 .setProject('my/project')
-                .setPlatePhenotypeData('GenerationTime', gtData.phenotypes)
+                .setPlatePhenotypeData('GenerationTime', gtData.phenotypes, gtData.qcmarks)
                 .build();
             const getState = () => state;
             const thunk = actions.retrievePhenotypesNeededInGraph(0);
@@ -349,31 +345,25 @@ describe('/qc/actions', () => {
         it('dispatches updates of phenotypes and qcmarks for all fetched phenotypes', (done) => {
             const state = new StateBuilder()
                 .setProject('my/project')
-                .setPlatePhenotypeData('ExperimentGrowthYield', expYeildData.phenotypes)
+                .setPlatePhenotypeData('ExperimentGrowthYield', expYeildData.phenotypes, expYeildData.qcmarks)
                 .build();
             const getState = () => state;
             const thunk = actions.retrievePhenotypesNeededInGraph(0);
             thunk(dispatch, getState)
                 .then(() => {
-                    expect(dispatch).toHaveBeenCalledWith(actions.setPlatePhenotypeData(0, 'GenerationTime', gtData.phenotypes));
-                    expect(dispatch).toHaveBeenCalledWith(actions.setPhenotypeQCMarks(
+                    expect(dispatch).toHaveBeenCalledWith(actions.setPlatePhenotypeData(
                         0,
                         'GenerationTime',
-                        gtData.badData,
-                        gtData.empty,
-                        gtData.noGrowth,
-                        gtData.undecidedProblem,
+                        gtData.phenotypes,
+                        gtData.qcmarks,
                     ));
-                    expect(dispatch).toHaveBeenCalledWith(actions.setPlatePhenotypeData(0, 'GenerationTimeWhen', gtWhenData.phenotypes));
-                    expect(dispatch).toHaveBeenCalledWith(actions.setPhenotypeQCMarks(
+                    expect(dispatch).toHaveBeenCalledWith(actions.setPlatePhenotypeData(
                         0,
                         'GenerationTimeWhen',
-                        gtWhenData.badData,
-                        gtWhenData.empty,
-                        gtWhenData.noGrowth,
-                        gtWhenData.undecidedProblem,
+                        gtWhenData.phenotypes,
+                        gtWhenData.qcmarks,
                     ));
-                    expect(dispatch.calls.count()).toEqual(4);
+                    expect(dispatch.calls.count()).toEqual(2);
                     done();
                 });
         });
@@ -383,10 +373,12 @@ describe('/qc/actions', () => {
         const dispatch = jasmine.createSpy('dispatch');
         const gtData = {
             phenotypes: [[0]],
-            badData: [[], []],
-            empty: [[0], [1]],
-            noGrowth: [[1], [0]],
-            undecidedProblem: [[1, 1], [0, 1]],
+            qcmarks: new Map([
+                ['badData', [[], []]],
+                ['empty', [[0], [1]]],
+                ['noGrowth', [[1], [0]]],
+                ['undecidedProblem', [[1, 1], [0, 1]]],
+            ]),
         };
         let getPhenotypeData;
 
@@ -435,7 +427,7 @@ describe('/qc/actions', () => {
             const state = new StateBuilder()
                 .setProject('my/project')
                 .setPhenotype('GenerationTime')
-                .setPlatePhenotypeData('GenerationTime', gtData.phenotypes)
+                .setPlatePhenotypeData('GenerationTime', gtData.phenotypes, gtData.qcmarks)
                 .build();
             const getState = () => state;
             const thunk = actions.retrievePlatePhenotype(1);
@@ -470,14 +462,11 @@ describe('/qc/actions', () => {
             thunk(dispatch, getState)
                 .then(() => {
                     expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTime');
-                    expect(dispatch).toHaveBeenCalledWith(actions.setPlatePhenotypeData(0, 'GenerationTime', gtData.phenotypes));
-                    expect(dispatch).toHaveBeenCalledWith(actions.setPhenotypeQCMarks(
+                    expect(dispatch).toHaveBeenCalledWith(actions.setPlatePhenotypeData(
                         0,
                         'GenerationTime',
-                        gtData.badData,
-                        gtData.empty,
-                        gtData.noGrowth,
-                        gtData.undecidedProblem,
+                        gtData.phenotypes,
+                        gtData.qcmarks,
                     ));
                     done();
                 });
