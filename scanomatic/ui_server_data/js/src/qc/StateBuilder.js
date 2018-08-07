@@ -39,26 +39,6 @@ export default class StateBuilder {
         return this;
     }
 
-    setPhenotypeQCMarks(
-        phenotype: Phenotype,
-        badData: PlateCoordinatesArray,
-        empty: PlateCoordinatesArray,
-        noGrowth: PlateCoordinatesArray,
-        undecidedProblem: PlateCoordinatesArray,
-    ) {
-        this.plate = Object.assign({}, this.plate, {
-            qcmarks: Object.assign({}, this.plate.qcmarks, {
-                [phenotype]: {
-                    badData,
-                    empty,
-                    noGrowth,
-                    undecidedProblem,
-                },
-            }),
-        });
-        return this;
-    }
-
     setPlate(plate: number) {
         this.plate = { number: plate, qIndex: 0 };
         return this;
