@@ -231,6 +231,7 @@ describe('/qc/reducers/plate', () => {
                 plate: 5,
                 row: 0,
                 col: 0,
+                dirty: false,
             };
             expect(plate(state, action)).toEqual(state);
         });
@@ -243,6 +244,7 @@ describe('/qc/reducers/plate', () => {
                 plate: 0,
                 row: 0,
                 col: 0,
+                dirty: false,
             };
 
             it('adds a mark even if no existing phenotype marks loaded', () => {
@@ -252,9 +254,9 @@ describe('/qc/reducers/plate', () => {
                         qcmarks: new Map([
                             ['GenerationTime', new Map([
                                 ['BadData', [[0], [0]]],
-                                ['NoGrowth', null],
-                                ['Empty', null],
-                                ['UndecidedProblem', null],
+                                ['NoGrowth', [[], []]],
+                                ['Empty', [[], []]],
+                                ['UndecidedProblem', [[], []]],
                             ])],
                         ]),
                         dirty: [],
@@ -282,8 +284,8 @@ describe('/qc/reducers/plate', () => {
                         ['GenerationTime', new Map([
                             ['BadData', [[0, 0], [1, 0]]],
                             ['Empty', [[1], [1]]],
-                            ['NoGrowth', null],
-                            ['UndecidedProblem', null],
+                            ['NoGrowth', [[], []]],
+                            ['UndecidedProblem', [[], []]],
                         ])],
                         ['GenerationTimeWhen', new Map([
                             ['BadData', [[], []]],
@@ -310,8 +312,8 @@ describe('/qc/reducers/plate', () => {
                         ['GenerationTime', new Map([
                             ['BadData', [[0], [0]]],
                             ['Empty', [[], []]],
-                            ['NoGrowth', null],
-                            ['UndecidedProblem', null],
+                            ['NoGrowth', [[], []]],
+                            ['UndecidedProblem', [[], []]],
                         ])],
                     ]),
                     dirty: [],
@@ -329,12 +331,40 @@ describe('/qc/reducers/plate', () => {
                         qcmarks: new Map([
                             ['GenerationTime', new Map([
                                 ['BadData', [[0], [0]]],
-                                ['NoGrowth', null],
-                                ['Empty', null],
-                                ['UndecidedProblem', null],
+                                ['NoGrowth', [[], []]],
+                                ['Empty', [[], []]],
+                                ['UndecidedProblem', [[], []]],
                             ])],
                         ]),
                         dirty: [[1, 1]],
+                    }));
+            });
+
+            it('adds a dirty flag', () => {
+                const state = {
+                    number: 0,
+                    qIndex: 0,
+                };
+                const dirtyAction = {
+                    type: 'CURVE_QCMARK_SET',
+                    mark: 'BadData',
+                    phenotype: 'GenerationTime',
+                    plate: 0,
+                    row: 5,
+                    col: 0,
+                    dirty: true,
+                };
+                expect(plate(state, dirtyAction))
+                    .toEqual(Object.assign({}, state, {
+                        qcmarks: new Map([
+                            ['GenerationTime', new Map([
+                                ['BadData', [[5], [0]]],
+                                ['NoGrowth', [[], []]],
+                                ['Empty', [[], []]],
+                                ['UndecidedProblem', [[], []]],
+                            ])],
+                        ]),
+                        dirty: [[5, 0]],
                     }));
             });
         });
@@ -348,6 +378,7 @@ describe('/qc/reducers/plate', () => {
                     plate: 0,
                     row: 0,
                     col: 0,
+                    dirty: false,
                 };
                 expect(plate(state, action))
                     .toEqual(Object.assign({}, state, { qcmarks: new Map(), dirty: [] }));
@@ -371,6 +402,7 @@ describe('/qc/reducers/plate', () => {
                     plate: 0,
                     row: 0,
                     col: 0,
+                    dirty: false,
                 };
                 expect(plate(state, action))
                     .toEqual({
@@ -380,49 +412,19 @@ describe('/qc/reducers/plate', () => {
                             ['GenerationTime', new Map([
                                 ['BadData', [[1, 0], [1, 0]]],
                                 ['Empty', [[], []]],
-                                ['NoGrowth', null],
-                                ['UndecidedProblem', null],
+                                ['NoGrowth', [[], []]],
+                                ['UndecidedProblem', [[], []]],
                             ])],
                             ['GenerationTimeWhen', new Map([
                                 ['BadData', [[0], [0]]],
-                                ['Empty', null],
-                                ['NoGrowth', null],
-                                ['UndecidedProblem', null],
+                                ['Empty', [[], []]],
+                                ['NoGrowth', [[], []]],
+                                ['UndecidedProblem', [[], []]],
                             ])],
                         ]),
                         dirty: [],
                     });
             });
-        });
-    });
-
-    describe('CURVE_QCMARK_SETDIRTY', () => {
-        // Other aspects are tested in CURVE_QCMARK_SET
-        it('adds a dirty flag', () => {
-            const state = {
-                number: 0,
-                qIndex: 0,
-            };
-            const action = {
-                type: 'CURVE_QCMARK_SETDIRTY',
-                mark: 'BadData',
-                phenotype: 'GenerationTime',
-                plate: 0,
-                row: 5,
-                col: 0,
-            };
-            expect(plate(state, action))
-                .toEqual(Object.assign({}, state, {
-                    qcmarks: new Map([
-                        ['GenerationTime', new Map([
-                            ['BadData', [[5], [0]]],
-                            ['NoGrowth', null],
-                            ['Empty', null],
-                            ['UndecidedProblem', null],
-                        ])],
-                    ]),
-                    dirty: [[5, 0]],
-                }));
         });
     });
 

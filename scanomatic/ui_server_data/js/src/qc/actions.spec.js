@@ -559,6 +559,7 @@ describe('/qc/actions', () => {
                     plate: 0,
                     row: 1,
                     col: 2,
+                    dirty: false,
                 });
         });
 
@@ -577,6 +578,7 @@ describe('/qc/actions', () => {
                     plate: 0,
                     row: 1,
                     col: 2,
+                    dirty: false,
                 });
         });
     });
@@ -591,12 +593,13 @@ describe('/qc/actions', () => {
                 'GenerationTime',
             ))
                 .toEqual({
-                    type: 'CURVE_QCMARK_SETDIRTY',
+                    type: 'CURVE_QCMARK_SET',
                     phenotype: 'GenerationTime',
                     mark: 'OK',
                     plate: 0,
                     row: 1,
                     col: 2,
+                    dirty: true,
                 });
         });
     });

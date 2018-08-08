@@ -76,38 +76,41 @@ export default function plate(state: State = initialState, action: Action) {
     case 'CURVE_QCMARK_SET': {
         if (action.plate !== state.number) return state;
         const nextQC = new Map(state.qcmarks);
-
+        const {
+            row: actionRow, col: actionCol, mark, dirty,
+        } = action;
         if (action.phenotype) {
             nextQC.set(
                 action.phenotype,
                 updateQCMarks(
                     nextQC.get(action.phenotype) || new Map(),
-                    action.row,
-                    action.col,
-                    action.mark,
+                    actionRow,
+                    actionCol,
+                    mark,
                 ),
             );
         } else {
             nextQC.forEach((marks, phenotype) => nextQC.set(phenotype, updateQCMarks(
                 marks || new Map(),
-                action.row,
-                action.col,
-                action.mark,
+                actionRow,
+                actionCol,
+                mark,
             )));
         }
         return Object.assign({}, state, {
             qcmarks: nextQC,
-            dirty: action.dirty ?
-                (state.dirty || []).concat([[action.row, action.col]]) :
+            dirty: dirty ?
+                (state.dirty || []).concat([[actionRow, actionCol]]) :
                 (state.dirty || [])
-                    .filter(([row, col]) => action.row !== row || action.col !== col),
+                    .filter(([row, col]) => actionRow !== row || actionCol !== col),
         });
     }
     case 'CURVE_QCMARK_REMOVEDIRTY':
+        const { row: actionRow, col: actionCol } = action;
         if (action.plate !== state.number) return state;
         return Object.assign({}, state, {
             dirty: (state.dirty || [])
-                .filter(([row, col]) => action.row !== row || action.col !== col),
+                .filter(([row, col]) => actionRow !== row || actionCol !== col),
         });
     case 'QUALITYINDEX_QUEUE_SET':
         return Object.assign(
