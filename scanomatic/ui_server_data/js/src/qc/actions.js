@@ -5,52 +5,45 @@ import {
 } from './selectors';
 import type {
     State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue,
-    PlateValueArray, Phenotype, QCMarkType, QCMarksMap,
+    PlateValueArray, Phenotype, Mark, QCMarksMap,
 } from './state';
 import { getPlateGrowthData, getPhenotypeData, setCurveQCMark, setCurveQCMarkAll } from '../api';
 
 export type Action
-    = {| type: 'PLATE_SET', plate: number |}
-    | {| type: 'PROJECT_SET', project: string |}
-    | {| type: 'CURVE_FOCUS', plate: number, row: number, col: number |}
-    | {| type: 'CURVE_QCMARK_SET', plate: number, row: number, col: number, mark: QCMarkType, phenotype: ?Phenotype |}
+    = {| +type: 'PLATE_SET', plate: number |}
+    | {| +type: 'PROJECT_SET', project: string |}
+    | {| +type: 'CURVE_FOCUS', plate: number, row: number, col: number |}
+    | {| +type: 'CURVE_QCMARK_SET', plate: number, row: number, col: number, mark: Mark, phenotype: ?Phenotype |}
     | {|
-        type: 'PLATE_GROWTHDATA_SET',
+        +type: 'PLATE_GROWTHDATA_SET',
         plate: number,
         times: TimeSeries,
         smooth: PlateOfTimeSeries,
         raw: PlateOfTimeSeries,
     |}
-    | {| type: 'QUALITYINDEX_QUEUE_SET', queue: QualityIndexQueue |}
-    | {| type: 'QUALITYINDEX_SET', index: number |}
-    | {| type: 'QUALITYINDEX_NEXT' |}
-    | {| type: 'QUALITYINDEX_PREVIOUS' |}
-    | {| type: 'PHENOTYPE_SET', phenotype: Phenotype |}
+    | {| +type: 'QUALITYINDEX_QUEUE_SET', queue: QualityIndexQueue |}
+    | {| +type: 'QUALITYINDEX_SET', index: number |}
+    | {| +type: 'QUALITYINDEX_NEXT' |}
+    | {| +type: 'QUALITYINDEX_PREVIOUS' |}
+    | {| +type: 'PHENOTYPE_SET', phenotype: Phenotype |}
     | {|
-        type: 'PLATE_PHENOTYPEDATA_SET',
+        +type: 'PLATE_PHENOTYPEDATA_SET',
         plate: number,
         phenotype: Phenotype,
         phenotypes: PlateValueArray,
         qcmarks: QCMarksMap,
     |}
     | {|
-        type: 'CURVE_QCMARK_SET',
-        plate: number,
-        row: number,
-        col: number,
-        phenotype: ?Phenotype,
-        mark: QCMarkType,
+        +type: 'CURVE_QCMARK_SET',
+        +plate: number,
+        +row: number,
+        +col: number,
+        +phenotype: ?Phenotype,
+        +mark: Mark,
+        +dirty: bool,
     |}
     | {|
-        type: 'CURVE_QCMARK_SETDIRTY',
-        plate: number,
-        row: number,
-        col: number,
-        phenotype: ?Phenotype,
-        mark: QCMarkType,
-    |}
-    | {|
-        type: 'CURVE_QCMARK_REMOVEDIRTY',
+        +type: 'CURVE_QCMARK_REMOVEDIRTY',
         plate: number,
         row: number,
         col: number,
@@ -134,7 +127,7 @@ export function setStoreCurveQCMark(
     plate: number,
     row: number,
     col: number,
-    mark: QCMarkType,
+    mark: Mark,
     phenotype: ?Phenotype,
 ) : Action {
     return {
@@ -144,6 +137,7 @@ export function setStoreCurveQCMark(
         plate,
         col,
         row,
+        dirty: false,
     };
 }
 
@@ -151,16 +145,17 @@ export function setStoreCurveQCMarkDirty(
     plate: number,
     row: number,
     col: number,
-    mark: QCMarkType,
+    mark: Mark,
     phenotype: ?Phenotype,
 ) : Action {
     return {
-        type: 'CURVE_QCMARK_SETDIRTY',
+        type: 'CURVE_QCMARK_SET',
         phenotype,
         mark,
         plate,
         col,
         row,
+        dirty: true,
     };
 }
 
@@ -181,7 +176,7 @@ export function setQCMarkNotDirty(
 export type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
 
 export function updateFocusCurveQCMark(
-    mark: QCMarkType,
+    mark: Mark,
     phenotype: ?Phenotype,
     key: string,
 ) : ThunkAction {
@@ -219,14 +214,16 @@ export function updateFocusCurveQCMark(
                 } else {
                     previousMark = getFocusCurveQCMarkAllPhenotypes(state);
                 }
-                previousMark
-                    .forEach((prevMark, pheno) => dispatch(setStoreCurveQCMark(
-                        plate,
-                        focus.row,
-                        focus.col,
-                        prevMark || 'OK',
-                        pheno,
-                    )));
+                if (previousMark) {
+                    previousMark
+                        .forEach((prevMark, pheno) => dispatch(setStoreCurveQCMark(
+                            plate,
+                            focus.row,
+                            focus.col,
+                            prevMark || 'OK',
+                            pheno,
+                        )));
+                }
                 return Promise.resolve();
             });
     };

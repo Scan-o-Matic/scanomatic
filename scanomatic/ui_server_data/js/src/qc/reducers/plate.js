@@ -1,6 +1,6 @@
 // @flow
 import type { Action } from '../actions';
-import type { Plate as State, QCMarkType, QCMarksMap, PlateCoordinatesArray } from '../state';
+import type { Plate as State, Mark, QCMarksMap, PlateCoordinatesArray } from '../state';
 
 const initialState : State = { number: 0, qIndex: 0 };
 
@@ -22,8 +22,8 @@ function addMark(previous: ?PlateCoordinatesArray, row: number, col: number)
 }
 
 function removeMark(previous: ?PlateCoordinatesArray, row: number, col: number)
-: ?PlateCoordinatesArray {
-    if (!previous) return null;
+: PlateCoordinatesArray {
+    if (!previous) return [[], []];
     const next = [[], []];
     for (let i = 0; i < previous[0].length; i += 1) {
         if (previous[0][i] !== row && previous[1][i] !== col) {
@@ -34,13 +34,14 @@ function removeMark(previous: ?PlateCoordinatesArray, row: number, col: number)
     return next;
 }
 
-function updateQCMarks(marks: QCMarksMap, row: number, col: number, mark: QCMarkType) : QCMarksMap {
-    return new Map([
-        ['noGrowth', mark === 'NoGrowth' ? addMark(marks.get('noGrowth'), row, col) : removeMark(marks.get('noGrowth'), row, col)],
-        ['empty', mark === 'Empty' ? addMark(marks.get('empty'), row, col) : removeMark(marks.get('empty'), row, col)],
-        ['badData', mark === 'BadData' ? addMark(marks.get('badData'), row, col) : removeMark(marks.get('badData'), row, col)],
-        ['undecidedProblem', mark === 'UndecidedProblem' ? addMark(marks.get('undecidedProblem'), row, col) : removeMark(marks.get('undecidedProblem'), row, col)],
-    ]);
+function updateQCMarks(marks: QCMarksMap, row: number, col: number, mark: Mark) : QCMarksMap {
+    return new Map(['NoGrowth', 'Empty', 'BadData', 'UndecidedProblem']
+        .map(markType => [
+            markType,
+            mark === markType ?
+                addMark(marks.get(markType), row, col) :
+                removeMark(marks.get(markType), row, col),
+        ]));
 }
 
 export default function plate(state: State = initialState, action: Action) {
@@ -72,7 +73,6 @@ export default function plate(state: State = initialState, action: Action) {
             },
         );
     }
-    case 'CURVE_QCMARK_SETDIRTY':
     case 'CURVE_QCMARK_SET': {
         if (action.plate !== state.number) return state;
         const nextQC = new Map(state.qcmarks);
@@ -97,7 +97,7 @@ export default function plate(state: State = initialState, action: Action) {
         }
         return Object.assign({}, state, {
             qcmarks: nextQC,
-            dirty: action.type === 'CURVE_QCMARK_SETDIRTY' ?
+            dirty: action.dirty ?
                 (state.dirty || []).concat([[action.row, action.col]]) :
                 (state.dirty || [])
                     .filter(([row, col]) => action.row !== row || action.col !== col),

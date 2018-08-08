@@ -67,10 +67,10 @@ describe('/qc/reducers/plate', () => {
         const phenotype = 'GenerationTime';
         const phenotypes = [[1, 1], [2, 1]];
         const qcmarks = new Map([
-            ['badData', [[], []]],
-            ['empty', [[0], [1]]],
-            ['noGrowth', [[1, 1], [0, 1]]],
-            ['undecidedProblem', [[0], [0]]],
+            ['BadData', [[], []]],
+            ['Empty', [[0], [1]]],
+            ['NoGrowth', [[1, 1], [0, 1]]],
+            ['UndecidedProblem', [[0], [0]]],
         ]);
 
         it('sets the plate phenotype data', () => {
@@ -251,10 +251,10 @@ describe('/qc/reducers/plate', () => {
                     .toEqual(Object.assign({}, state, {
                         qcmarks: new Map([
                             ['GenerationTime', new Map([
-                                ['badData', [[0], [0]]],
-                                ['noGrowth', null],
-                                ['empty', null],
-                                ['undecidedProblem', null],
+                                ['BadData', [[0], [0]]],
+                                ['NoGrowth', null],
+                                ['Empty', null],
+                                ['UndecidedProblem', null],
                             ])],
                         ]),
                         dirty: [],
@@ -267,11 +267,11 @@ describe('/qc/reducers/plate', () => {
                     qIndex: 0,
                     qcmarks: new Map([
                         ['GenerationTime', new Map([
-                            ['badData', [[0], [1]]],
-                            ['empty', [[1], [1]]],
+                            ['BadData', [[0], [1]]],
+                            ['Empty', [[1], [1]]],
                         ])],
                         ['GenerationTimeWhen', new Map([
-                            ['badData', [[], []]],
+                            ['BadData', [[], []]],
                         ])],
                     ]),
                 };
@@ -280,13 +280,13 @@ describe('/qc/reducers/plate', () => {
                     qIndex: 0,
                     qcmarks: new Map([
                         ['GenerationTime', new Map([
-                            ['badData', [[0, 0], [1, 0]]],
-                            ['empty', [[1], [1]]],
-                            ['noGrowth', null],
-                            ['undecidedProblem', null],
+                            ['BadData', [[0, 0], [1, 0]]],
+                            ['Empty', [[1], [1]]],
+                            ['NoGrowth', null],
+                            ['UndecidedProblem', null],
                         ])],
                         ['GenerationTimeWhen', new Map([
-                            ['badData', [[], []]],
+                            ['BadData', [[], []]],
                         ])],
                     ]),
                     dirty: [],
@@ -299,7 +299,7 @@ describe('/qc/reducers/plate', () => {
                     qIndex: 0,
                     qcmarks: new Map([
                         ['GenerationTime', new Map([
-                            ['empty', [[0], [0]]],
+                            ['Empty', [[0], [0]]],
                         ])],
                     ]),
                 };
@@ -308,10 +308,10 @@ describe('/qc/reducers/plate', () => {
                     qIndex: 0,
                     qcmarks: new Map([
                         ['GenerationTime', new Map([
-                            ['badData', [[0], [0]]],
-                            ['empty', [[], []]],
-                            ['noGrowth', null],
-                            ['undecidedProblem', null],
+                            ['BadData', [[0], [0]]],
+                            ['Empty', [[], []]],
+                            ['NoGrowth', null],
+                            ['UndecidedProblem', null],
                         ])],
                     ]),
                     dirty: [],
@@ -328,10 +328,10 @@ describe('/qc/reducers/plate', () => {
                     .toEqual(Object.assign({}, state, {
                         qcmarks: new Map([
                             ['GenerationTime', new Map([
-                                ['badData', [[0], [0]]],
-                                ['noGrowth', null],
-                                ['empty', null],
-                                ['undecidedProblem', null],
+                                ['BadData', [[0], [0]]],
+                                ['NoGrowth', null],
+                                ['Empty', null],
+                                ['UndecidedProblem', null],
                             ])],
                         ]),
                         dirty: [[1, 1]],
@@ -359,8 +359,8 @@ describe('/qc/reducers/plate', () => {
                     qIndex: 0,
                     qcmarks: new Map([
                         ['GenerationTime', new Map([
-                            ['badData', [[1], [1]]],
-                            ['empty', [[0], [0]]],
+                            ['BadData', [[1], [1]]],
+                            ['Empty', [[0], [0]]],
                         ])],
                         ['GenerationTimeWhen', new Map()],
                     ]),
@@ -378,16 +378,16 @@ describe('/qc/reducers/plate', () => {
                         qIndex: 0,
                         qcmarks: new Map([
                             ['GenerationTime', new Map([
-                                ['badData', [[1, 0], [1, 0]]],
-                                ['empty', [[], []]],
-                                ['noGrowth', null],
-                                ['undecidedProblem', null],
+                                ['BadData', [[1, 0], [1, 0]]],
+                                ['Empty', [[], []]],
+                                ['NoGrowth', null],
+                                ['UndecidedProblem', null],
                             ])],
                             ['GenerationTimeWhen', new Map([
-                                ['badData', [[0], [0]]],
-                                ['empty', null],
-                                ['noGrowth', null],
-                                ['undecidedProblem', null],
+                                ['BadData', [[0], [0]]],
+                                ['Empty', null],
+                                ['NoGrowth', null],
+                                ['UndecidedProblem', null],
                             ])],
                         ]),
                         dirty: [],
@@ -415,10 +415,10 @@ describe('/qc/reducers/plate', () => {
                 .toEqual(Object.assign({}, state, {
                     qcmarks: new Map([
                         ['GenerationTime', new Map([
-                            ['badData', [[5], [0]]],
-                            ['noGrowth', null],
-                            ['empty', null],
-                            ['undecidedProblem', null],
+                            ['BadData', [[5], [0]]],
+                            ['NoGrowth', null],
+                            ['Empty', null],
+                            ['UndecidedProblem', null],
                         ])],
                     ]),
                     dirty: [[5, 0]],

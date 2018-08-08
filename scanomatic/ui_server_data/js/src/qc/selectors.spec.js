@@ -39,10 +39,10 @@ describe('/qc/selectors', () => {
                 'test',
                 [[5, 4, 3], [5, 5, 1]],
                 new Map([
-                    ['badData', [[0], [0]]],
-                    ['empty', [[0], [1]]],
-                    ['noGrowth', [[1, 1], [0, 1]]],
-                    ['undecidedProblem', [[1, 0], [2, 2]]],
+                    ['BadData', [[0], [0]]],
+                    ['Empty', [[0], [1]]],
+                    ['NoGrowth', [[1, 1], [0, 1]]],
+                    ['UndecidedProblem', [[1, 0], [2, 2]]],
                 ]),
             )
             .build();
@@ -61,19 +61,19 @@ describe('/qc/selectors', () => {
                 'test',
                 [[5, 4, 3], [5, 5, 1]],
                 new Map([
-                    ['badData', [[0], [0]]],
-                    ['empty', [[0], [1]]],
-                    ['noGrowth', [[1, 1], [0, 1]]],
-                    ['undecidedProblem', [[1, 0], [2, 2]]],
+                    ['BadData', [[0], [0]]],
+                    ['Empty', [[0], [1]]],
+                    ['NoGrowth', [[1, 1], [0, 1]]],
+                    ['UndecidedProblem', [[1, 0], [2, 2]]],
                 ]),
             )
             .build();
         expect(selectors.getCurrentPhenotypeQCMarks(state))
             .toEqual(new Map([
-                ['badData', [[0], [0]]],
-                ['empty', [[0], [1]]],
-                ['noGrowth', [[1, 1], [0, 1]]],
-                ['undecidedProblem', [[1, 0], [2, 2]]],
+                ['BadData', [[0], [0]]],
+                ['Empty', [[0], [1]]],
+                ['NoGrowth', [[1, 1], [0, 1]]],
+                ['UndecidedProblem', [[1, 0], [2, 2]]],
             ]));
     });
 
@@ -260,35 +260,35 @@ describe('/qc/selectors', () => {
                     'GenerationTime',
                     [[]],
                     new Map([
-                        ['badData', [[0], [0]]],
-                        ['empty', [[0], [1]]],
-                        ['noGrowth', [[1], [0]]],
-                        ['undecidedProblem', [[1], [1]]],
+                        ['BadData', [[0], [0]]],
+                        ['Empty', [[0], [1]]],
+                        ['NoGrowth', [[1], [0]]],
+                        ['UndecidedProblem', [[1], [1]]],
                     ]),
                 );
 
-            it('returns BadData if badData', () => {
+            it('returns BadData if BadData', () => {
                 const state = builder
                     .setQualityIndex(3)
                     .build();
                 expect(selectors.getFocusCurveQCMark(state)).toBe('BadData');
             });
 
-            it('returns NoGrowth if noGrowth', () => {
+            it('returns NoGrowth if NoGrowth', () => {
                 const state = builder
                     .setQualityIndex(1)
                     .build();
                 expect(selectors.getFocusCurveQCMark(state)).toBe('NoGrowth');
             });
 
-            it('returns Empty if empty', () => {
+            it('returns Empty if Empty', () => {
                 const state = builder
                     .setQualityIndex(2)
                     .build();
                 expect(selectors.getFocusCurveQCMark(state)).toBe('Empty');
             });
 
-            it('returns UndecidedProblem if undecidedProblem', () => {
+            it('returns UndecidedProblem if UndecidedProblem', () => {
                 const state = builder
                     .setQualityIndex(0)
                     .build();
@@ -319,17 +319,17 @@ describe('/qc/selectors', () => {
                 .setPlatePhenotypeData(
                     'GenerationTime',
                     [[]],
-                    new Map([['badData', [[0], [0]]]]),
+                    new Map([['BadData', [[0], [0]]]]),
                 )
                 .setPlatePhenotypeData(
                     'GenerationTimeWhen',
                     [[]],
-                    new Map([['noGrowth', [[0], [0]]]]),
+                    new Map([['NoGrowth', [[0], [0]]]]),
                 )
                 .setPlatePhenotypeData(
                     'ExperimentGrowthYield',
                     [[]],
-                    new Map([['empty', [[1], [1]]]]),
+                    new Map([['Empty', [[1], [1]]]]),
                 )
                 .setQualityIndex(0)
                 .build();

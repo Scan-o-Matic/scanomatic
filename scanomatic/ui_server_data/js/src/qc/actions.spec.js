@@ -38,10 +38,10 @@ describe('/qc/actions', () => {
                 'GenerationTimeWhen',
                 [[0]],
                 new Map([
-                    ['badData', [[0], [0]]],
-                    ['empty', [[1], [1]]],
-                    ['noGrowth', [[2], [2]]],
-                    ['undecidedProblem', [[3], [3]]],
+                    ['BadData', [[0], [0]]],
+                    ['Empty', [[1], [1]]],
+                    ['NoGrowth', [[2], [2]]],
+                    ['UndecidedProblem', [[3], [3]]],
                 ]),
             ))
                 .toEqual({
@@ -50,10 +50,10 @@ describe('/qc/actions', () => {
                     phenotype: 'GenerationTimeWhen',
                     phenotypes: [[0]],
                     qcmarks: new Map([
-                        ['badData', [[0], [0]]],
-                        ['empty', [[1], [1]]],
-                        ['noGrowth', [[2], [2]]],
-                        ['undecidedProblem', [[3], [3]]],
+                        ['BadData', [[0], [0]]],
+                        ['Empty', [[1], [1]]],
+                        ['NoGrowth', [[2], [2]]],
+                        ['UndecidedProblem', [[3], [3]]],
                     ]),
                 });
         });
@@ -187,8 +187,8 @@ describe('/qc/actions', () => {
                     'GenerationTime',
                     [[10, 154]],
                     new Map([
-                        ['badData', [[0], [1]]],
-                        ['empty', null],
+                        ['BadData', [[0], [1]]],
+                        ['Empty', null],
                     ]),
                 )
                 .build();
@@ -214,8 +214,8 @@ describe('/qc/actions', () => {
                     'GenerationTime',
                     [[10, 154]],
                     new Map([
-                        ['badData', [[0], [1]]],
-                        ['empty', null],
+                        ['BadData', [[0], [1]]],
+                        ['Empty', null],
                     ]),
                 )
                 .build();
@@ -293,28 +293,28 @@ describe('/qc/actions', () => {
         const gtData = {
             phenotypes: [[0]],
             qcmarks: new Map([
-                ['badData', [[], []]],
-                ['empty', [[0], [1]]],
-                ['noGrowth', [[1], [0]]],
-                ['undecidedProblem', [[1, 1], [0, 1]]],
+                ['BadData', [[], []]],
+                ['Empty', [[0], [1]]],
+                ['NoGrowth', [[1], [0]]],
+                ['UndecidedProblem', [[1, 1], [0, 1]]],
             ]),
         };
         const gtWhenData = {
             phenotypes: [[5]],
             qcmarks: new Map([
-                ['badData', [[1], [1]]],
-                ['empty', [[2], [1]]],
-                ['noGrowth', [[1], [2]]],
-                ['undecidedProblem', [[2, 1], [0, 1]]],
+                ['BadData', [[1], [1]]],
+                ['Empty', [[2], [1]]],
+                ['NoGrowth', [[1], [2]]],
+                ['UndecidedProblem', [[2, 1], [0, 1]]],
             ]),
         };
         const expYeildData = {
             phenotypes: [[4]],
             qcmarks: new Map([
-                ['badData', [[1], [4]]],
-                ['empty', [[2], [4]]],
-                ['noGrowth', [[1], [4]]],
-                ['undecidedProblem', [[2, 1], [0, 4]]],
+                ['BadData', [[1], [4]]],
+                ['Empty', [[2], [4]]],
+                ['NoGrowth', [[1], [4]]],
+                ['UndecidedProblem', [[2, 1], [0, 4]]],
             ]),
         };
         let getPhenotypeData;
@@ -415,10 +415,10 @@ describe('/qc/actions', () => {
         const gtData = {
             phenotypes: [[0]],
             qcmarks: new Map([
-                ['badData', [[], []]],
-                ['empty', [[0], [1]]],
-                ['noGrowth', [[1], [0]]],
-                ['undecidedProblem', [[1, 1], [0, 1]]],
+                ['BadData', [[], []]],
+                ['Empty', [[0], [1]]],
+                ['NoGrowth', [[1], [0]]],
+                ['UndecidedProblem', [[1, 1], [0, 1]]],
             ]),
         };
         let getPhenotypeData;

@@ -7,7 +7,7 @@ import type {
     PlateValueArray as _PlateValueArray,
     PlateCoordinatesArray as _PlateCoordinatesArray,
     Phenotype,
-    QCMarkType,
+    Mark,
     QCMarksMap,
 } from './state';
 
@@ -87,30 +87,31 @@ function isMarked(data: ?PlateCoordinatesArray, row: number, col: number) : bool
     return false;
 }
 
-function parseFocusCurveQCMark(state: State, phenotype: Phenotype): ?QCMarkType {
+function parseFocusCurveQCMark(state: State, phenotype: Phenotype): ?Mark {
     const focus = getFocus(state);
     if (!focus) return null;
     const { row, col } = focus;
     if (!state.plate || !state.plate.qcmarks) return null;
     const marks = state.plate.qcmarks.get(phenotype);
-    if (isMarked(marks.get('badData'), row, col)) return 'BadData';
-    if (isMarked(marks.get('noGrowth'), row, col)) return 'NoGrowth';
-    if (isMarked(marks.get('empty'), row, col)) return 'Empty';
-    if (isMarked(marks.get('undecidedProblem'), row, col)) return 'UndecidedProblem';
+    if (!marks) return 'OK';
+    if (isMarked(marks.get('BadData'), row, col)) return 'BadData';
+    if (isMarked(marks.get('NoGrowth'), row, col)) return 'NoGrowth';
+    if (isMarked(marks.get('Empty'), row, col)) return 'Empty';
+    if (isMarked(marks.get('UndecidedProblem'), row, col)) return 'UndecidedProblem';
     return 'OK';
 }
 
-export function getFocusCurveQCMark(state: State): ?QCMarkType {
+export function getFocusCurveQCMark(state: State): ?Mark {
     const phenotype = getPhenotype(state);
     if (!phenotype) return null;
     return parseFocusCurveQCMark(state, phenotype);
 }
 
-export function getFocusCurveQCMarkAllPhenotypes(state: State): ?Map<Phenotype, QCMarkType> {
+export function getFocusCurveQCMarkAllPhenotypes(state: State): ?Map<Phenotype, Mark> {
     if (!state.plate || !state.plate.qcmarks) return null;
     const marks = new Map();
     (state.plate.qcmarks || new Map())
-        .forEach((_, phenotype) => marks.set(phenotype, parseFocusCurveQCMark(state, phenotype)));
+        .forEach((_, phenotype) => marks.set(phenotype, parseFocusCurveQCMark(state, phenotype) || 'OK'));
     return marks;
 }
 
