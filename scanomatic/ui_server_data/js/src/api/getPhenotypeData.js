@@ -4,7 +4,7 @@ import API from './API';
 export type PlateValueArray = Array<Array<number>>;
 export type PlateCoordinatesArray = Array<Array<number>>; // [[y1, y2, ...], [x1, x2, ...]]
 
-export type Mark = 'badData' | 'empty' | 'noGrowth' | 'undecidedProblem';
+export type Mark = 'BadData' | 'Empty' | 'NoGrowth' | 'UndecidedProblem';
 export type QCMarksMap = Map<Mark, PlateCoordinatesArray>;
 
 export type PlatePhenotypeData = {
@@ -23,10 +23,10 @@ export default function getPhenotypeData(
         .then(r => ({
             phenotypes: r.data,
             qcmarks: new Map([
-                ['badData', r.BadData],
-                ['empty', r.Empty],
-                ['noGrowth', r.NoGrowth],
-                ['undecidedProblem', r.UndecidedProblem],
+                ['BadData', r.BadData],
+                ['Empty', r.Empty],
+                ['NoGrowth', r.NoGrowth],
+                ['UndecidedProblem', r.UndecidedProblem],
             ]),
             qIndexQueue: r.qindex_rows.map((row, idx) => ({ idx, row, col: r.qindex_cols[idx] })),
         }));

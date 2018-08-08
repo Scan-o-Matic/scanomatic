@@ -28,10 +28,10 @@ describe('API', () => {
                 expect(response).toEqual({
                     phenotypes: [[1, 2, 3], [4, 5, 6]],
                     qcmarks: new Map([
-                        ['badData', [[0], [0]]],
-                        ['empty', [[0, 0], [1, 2]]],
-                        ['noGrowth', [[1], [2]]],
-                        ['undecidedProblem', [[], []]],
+                        ['BadData', [[0], [0]]],
+                        ['Empty', [[0, 0], [1, 2]]],
+                        ['NoGrowth', [[1], [2]]],
+                        ['UndecidedProblem', [[], []]],
                     ]),
                     qIndexQueue: [
                         { idx: 0, col: 0, row: 1 },
