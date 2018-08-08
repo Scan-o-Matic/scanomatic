@@ -10,47 +10,46 @@ import type {
 import { getPlateGrowthData, getPhenotypeData, setCurveQCMark, setCurveQCMarkAll } from '../api';
 
 export type Action
-    = {| +type: 'PLATE_SET', plate: number |}
-    | {| +type: 'PROJECT_SET', project: string |}
-    | {| +type: 'CURVE_FOCUS', plate: number, row: number, col: number |}
-    | {| +type: 'CURVE_QCMARK_SET', plate: number, row: number, col: number, mark: Mark, phenotype: ?Phenotype |}
+    = {| type: 'PLATE_SET', plate: number |}
+    | {| type: 'PROJECT_SET', project: string |}
+    | {| type: 'CURVE_FOCUS', plate: number, row: number, col: number |}
     | {|
-        +type: 'PLATE_GROWTHDATA_SET',
+        type: 'CURVE_QCMARK_SET',
         plate: number,
-        times: TimeSeries,
-        smooth: PlateOfTimeSeries,
-        raw: PlateOfTimeSeries,
-    |}
-    | {| +type: 'QUALITYINDEX_QUEUE_SET', queue: QualityIndexQueue |}
-    | {| +type: 'QUALITYINDEX_SET', index: number |}
-    | {| +type: 'QUALITYINDEX_NEXT' |}
-    | {| +type: 'QUALITYINDEX_PREVIOUS' |}
-    | {| +type: 'PHENOTYPE_SET', phenotype: Phenotype |}
-    | {|
-        +type: 'PLATE_PHENOTYPEDATA_SET',
-        plate: number,
-        phenotype: Phenotype,
-        phenotypes: PlateValueArray,
-        qcmarks: QCMarksMap,
+        row: number,
+        col: number,
+        phenotype: ?Phenotype,
+        mark: Mark,
+        dirty: bool,
     |}
     | {|
-        +type: 'CURVE_QCMARK_SET',
-        +plate: number,
-        +row: number,
-        +col: number,
-        +phenotype: ?Phenotype,
-        +mark: Mark,
-        +dirty: bool,
-    |}
-    | {|
-        +type: 'CURVE_QCMARK_REMOVEDIRTY',
+        type: 'CURVE_QCMARK_REMOVEDIRTY',
         plate: number,
         row: number,
         col: number,
     |}
     | {|
-        +type: 'SHOWNORMALIZED_SET',
-        +value: bool,
+        type: 'PLATE_GROWTHDATA_SET',
+        plate: number,
+        times: TimeSeries,
+        smooth: PlateOfTimeSeries,
+        raw: PlateOfTimeSeries,
+    |}
+    | {|
+        type: 'PLATE_PHENOTYPEDATA_SET',
+        plate: number,
+        phenotype: Phenotype,
+        phenotypes: PlateValueArray,
+        qcmarks: QCMarksMap,
+    |}
+    | {| type: 'PHENOTYPE_SET', phenotype: Phenotype |}
+    | {| type: 'QUALITYINDEX_QUEUE_SET', queue: QualityIndexQueue |}
+    | {| type: 'QUALITYINDEX_SET', index: number |}
+    | {| type: 'QUALITYINDEX_NEXT' |}
+    | {| type: 'QUALITYINDEX_PREVIOUS' |}
+    | {|
+        type: 'SHOWNORMALIZED_SET',
+        value: bool,
     |}
 
 export function setPlate(plate : number) : Action {
