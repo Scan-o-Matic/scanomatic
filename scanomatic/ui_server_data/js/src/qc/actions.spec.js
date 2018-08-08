@@ -31,6 +31,10 @@ describe('/qc/actions', () => {
         });
     });
 
+    describe('setShowNormalized', () => {
+
+    });
+
     describe('setPlatePhenotypeData', () => {
         it('should return a PLATE_PHENOTYPEDATA_SET action', () => {
             expect(actions.setPlatePhenotypeData(

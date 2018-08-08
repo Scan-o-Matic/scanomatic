@@ -120,3 +120,8 @@ export function isDirty(state: State, plate: number, row: number, col: number) :
     return state.plate.dirty
         .some(([dirtyRow, dirtyCol]) => dirtyRow === row && dirtyCol === col);
 }
+
+export function getShowNormalized(state: State) : bool {
+    if (!state.settings) return false;
+    return state.settings.showNormalized;
+}
