@@ -48,6 +48,10 @@ export type Action
         row: number,
         col: number,
     |}
+    | {|
+        +type: 'SHOWNORMALIZED_SET',
+        +value: bool,
+    |}
 
 export function setPlate(plate : number) : Action {
     return { type: 'PLATE_SET', plate };
@@ -59,6 +63,10 @@ export function setProject(project : string) : Action {
 
 export function setPhenotype(phenotype: Phenotype) : Action {
     return { type: 'PHENOTYPE_SET', phenotype };
+}
+
+export function setShowNormalized(value: bool) : Action {
+    return { type: 'SHOWNORMALIZED_SET', value };
 }
 
 export function setPlateGrowthData(

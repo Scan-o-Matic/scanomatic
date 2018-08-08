@@ -2,7 +2,7 @@
 import type { Action } from '../actions';
 import type { Settings as State } from '../state';
 
-const initialState : State = {};
+const initialState : State = { showNormalized: false };
 
 export default function settings(state: State = initialState, action: Action) {
     switch (action.type) {
@@ -10,6 +10,8 @@ export default function settings(state: State = initialState, action: Action) {
         return { project: action.project };
     case 'PHENOTYPE_SET':
         return Object.assign({}, state, { phenotype: action.phenotype });
+    case 'SHOWNORMALIZED_SET':
+        return Object.assign({}, state, { showNormalized: action.value });
     default:
         return state;
     }

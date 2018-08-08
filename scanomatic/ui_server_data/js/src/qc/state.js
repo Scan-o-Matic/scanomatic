@@ -30,6 +30,7 @@ export type Phenotype = "GenerationTime"
 
 
 export type Settings = {
+    +showNormalized: bool,
     +project?: string,
     +phenotype?: Phenotype,
 };
