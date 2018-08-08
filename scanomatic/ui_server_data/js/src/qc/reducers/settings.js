@@ -7,7 +7,7 @@ const initialState : State = { showNormalized: false };
 export default function settings(state: State = initialState, action: Action) {
     switch (action.type) {
     case 'PROJECT_SET':
-        return { project: action.project };
+        return { project: action.project, showNormalized: false };
     case 'PHENOTYPE_SET':
         return Object.assign({}, state, { phenotype: action.phenotype });
     case 'SHOWNORMALIZED_SET':

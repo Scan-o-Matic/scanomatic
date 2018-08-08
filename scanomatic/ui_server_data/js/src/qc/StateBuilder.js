@@ -11,12 +11,17 @@ export default class StateBuilder {
 
     constructor() {
         this.plate = { number: 0, qIndex: 0 };
-        this.settings = {};
+        this.settings = { showNormalized: false };
     }
 
     setProject(project: string) {
-        this.settings = { project };
+        this.settings = { project, showNormalized: false };
         this.plate = { number: 0, qIndex: 0 };
+        return this;
+    }
+
+    setShowNormalized(value: bool) {
+        this.settings = Object.assign({}, this.settings, { showNormalized: value });
         return this;
     }
 

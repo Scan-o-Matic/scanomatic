@@ -378,4 +378,20 @@ describe('/qc/selectors', () => {
             expect(selectors.isDirty(state, 0, 0, 10)).toBe(false);
         });
     });
+
+    describe('getShowNormalized', () => {
+        it('returns default status false', () => {
+            const state = new StateBuilder()
+                .build();
+            expect(selectors.getShowNormalized(state)).toBe(false);
+        });
+
+        it('returns current value', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setShowNormalized(true)
+                .build();
+            expect(selectors.getShowNormalized(state)).toBe(true);
+        });
+    });
 });
