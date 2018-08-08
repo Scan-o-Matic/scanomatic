@@ -364,9 +364,9 @@ describe('/qc/actions', () => {
             const thunk = actions.retrievePhenotypesNeededInGraph(0);
             thunk(dispatch, getState)
                 .then(() => {
-                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTime');
-                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTimeWhen');
-                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'ExperimentGrowthYield');
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTime', false);
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTimeWhen', false);
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'ExperimentGrowthYield', false);
                     done();
                 });
         });
@@ -380,9 +380,9 @@ describe('/qc/actions', () => {
             const thunk = actions.retrievePhenotypesNeededInGraph(0);
             thunk(dispatch, getState)
                 .then(() => {
-                    expect(getPhenotypeData).not.toHaveBeenCalledWith('my/project', 0, 'GenerationTime');
-                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTimeWhen');
-                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'ExperimentGrowthYield');
+                    expect(getPhenotypeData).not.toHaveBeenCalledWith('my/project', 0, 'GenerationTime', false);
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTimeWhen', false);
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'ExperimentGrowthYield', false);
                     done();
                 });
         });
@@ -506,7 +506,7 @@ describe('/qc/actions', () => {
             const thunk = actions.retrievePlatePhenotype(0);
             thunk(dispatch, getState)
                 .then(() => {
-                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTime');
+                    expect(getPhenotypeData).toHaveBeenCalledWith('my/project', 0, 'GenerationTime', false);
                     expect(dispatch).toHaveBeenCalledWith(actions.setPlatePhenotypeData(
                         0,
                         'GenerationTime',

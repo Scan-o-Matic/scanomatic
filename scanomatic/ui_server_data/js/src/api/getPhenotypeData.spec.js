@@ -17,14 +17,20 @@ describe('API', () => {
         const phenotype = 'GenerationTime';
         const args = [project, plate, phenotype];
 
-        it('should query the correct uri', () => {
-            API.getPhenotypeData(...args);
+        it('should query the default phenotype uri if not normalized', () => {
+            API.getPhenotypeData(...args, false);
             expect(mostRecentRequest().url)
                 .toBe(`/api/results/phenotype/${phenotype}/${plate}/${project}`);
         });
 
+        it('should query the nomalized phenotype uri if normalized', () => {
+            API.getPhenotypeData(...args, true);
+            expect(mostRecentRequest().url)
+                .toBe(`/api/results/normalized_phenotype/${phenotype}/${plate}/${project}`);
+        });
+
         it('should return a promise that resolves on success', (done) => {
-            API.getPhenotypeData(...args).then((response) => {
+            API.getPhenotypeData(...args, false).then((response) => {
                 expect(response).toEqual({
                     phenotypes: [[1, 2, 3], [4, 5, 6]],
                     qcmarks: new Map([
@@ -41,6 +47,7 @@ describe('API', () => {
                         { idx: 4, col: 2, row: 0 },
                         { idx: 5, col: 1, row: 1 },
                     ],
+                    normalized: false,
                 });
                 done();
             });

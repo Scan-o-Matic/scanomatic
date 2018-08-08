@@ -2,6 +2,7 @@
 import {
     getProject, getPlate, getPhenotype, getPhenotypeData as hasPhenotypeData,
     getFocusCurveQCMark, getFocus, getFocusCurveQCMarkAllPhenotypes, isDirty,
+    getShowNormalized,
 } from './selectors';
 import type {
     State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue,
@@ -270,7 +271,7 @@ export function retrievePhenotypesNeededInGraph(plate: number) : ThunkAction {
 
         const promises = ['GenerationTime', 'GenerationTimeWhen', 'ExperimentGrowthYield']
             .filter(phenotype => !hasPhenotypeData(state, phenotype))
-            .map(phenotype => getPhenotypeData(project, plate, phenotype).then(data =>
+            .map(phenotype => getPhenotypeData(project, plate, phenotype, false).then(data =>
                 dispatch(setPlatePhenotypeData(plate, phenotype, data.phenotypes, data.qcmarks))));
         return Promise.all(promises);
     };
@@ -290,7 +291,9 @@ export function retrievePlatePhenotype(plate: number) : ThunkAction {
         const currentPlate = getPlate(state);
         if (currentPlate === plate && hasPhenotypeData(state, phenotype)) return Promise.resolve();
         if (currentPlate !== plate) dispatch(setPlate(plate));
-        return getPhenotypeData(project, plate, phenotype).then((data) => {
+        const normalized = getShowNormalized(state);
+        if (normalized) throw new Error('Not supported yet');
+        return getPhenotypeData(project, plate, phenotype, normalized).then((data) => {
             const {
                 phenotypes,
                 qcmarks,

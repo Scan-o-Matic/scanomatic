@@ -11,14 +11,16 @@ export type PlatePhenotypeData = {
     phenotypes: PlateValueArray,
     qcmarks: QCMarksMap,
     qIndexQueue: Array<{ idx: number, row: number, col: number}>,
+    normalized: bool,
 };
 
 export default function getPhenotypeData(
     project: string,
     plate: number,
     phenotype: string,
+    normalized: bool,
 ) : Promise<PlatePhenotypeData> {
-    const uri = `/api/results/phenotype/${phenotype}/${plate}/${project}`;
+    const uri = `/api/results/${normalized ? 'normalized_phenotype' : 'phenotype'}/${phenotype}/${plate}/${project}`;
     return API.get(uri)
         .then(r => ({
             phenotypes: r.data,
@@ -29,5 +31,6 @@ export default function getPhenotypeData(
                 ['UndecidedProblem', r.UndecidedProblem],
             ]),
             qIndexQueue: r.qindex_rows.map((row, idx) => ({ idx, row, col: r.qindex_cols[idx] })),
+            normalized,
         }));
 }
