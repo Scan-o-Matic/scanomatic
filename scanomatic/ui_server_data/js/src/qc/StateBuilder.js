@@ -2,7 +2,7 @@
 
 import type {
     State, TimeSeries, PlateOfTimeSeries, Plate, Settings, QualityIndexQueue,
-    PlateValueArray, PlateCoordinatesArray, Phenotype, QCMarksMap,
+    PlateValueArray, Phenotype, QCMarksMap,
 } from './state';
 
 export default class StateBuilder {
