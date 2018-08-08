@@ -2,6 +2,7 @@
 
 import type {
     State, TimeSeries, PlateOfTimeSeries, Plate, Settings, QualityIndexQueue,
+    PlateValueArray, Phenotype, QCMarksMap,
 } from './state';
 
 export default class StateBuilder {
@@ -19,9 +20,22 @@ export default class StateBuilder {
         return this;
     }
 
-    setPhenotype(phenotype: string) {
+    setPhenotype(phenotype: Phenotype) {
         if (!this.settings.project) return this;
         this.settings = Object.assign({}, this.settings, { phenotype });
+        return this;
+    }
+
+    setPlatePhenotypeData(
+        phenotype: Phenotype,
+        phenotypes: PlateValueArray,
+        qc: QCMarksMap,
+    ) {
+        const nextPhenotypes = new Map(this.plate.phenotypes);
+        const nextQC = new Map(this.plate.qcmarks);
+        nextPhenotypes.set(phenotype, phenotypes);
+        nextQC.set(phenotype, qc);
+        this.plate = Object.assign({}, this.plate, { phenotypes: nextPhenotypes, qcmarks: nextQC });
         return this;
     }
 

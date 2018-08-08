@@ -63,6 +63,77 @@ describe('/qc/reducers/plate', () => {
         });
     });
 
+    describe('PLATE_PHENOTYPEDATA_SET', () => {
+        const phenotype = 'GenerationTime';
+        const phenotypes = [[1, 1], [2, 1]];
+        const qcmarks = new Map([
+            ['badData', [[], []]],
+            ['empty', [[0], [1]]],
+            ['noGrowth', [[1, 1], [0, 1]]],
+            ['undecidedProblem', [[0], [0]]],
+        ]);
+
+        it('sets the plate phenotype data', () => {
+            const action = {
+                type: 'PLATE_PHENOTYPEDATA_SET',
+                plate: 0,
+                phenotype,
+                phenotypes,
+                qcmarks,
+            };
+            expect(plate(undefined, action)).toEqual({
+                number: 0,
+                qIndex: 0,
+                phenotypes: new Map([[phenotype, phenotypes]]),
+                qcmarks: new Map([[phenotype, qcmarks]]),
+            });
+        });
+
+        it('keeps previous phenotypes for same plate', () => {
+            const action = {
+                type: 'PLATE_PHENOTYPEDATA_SET',
+                plate: 0,
+                phenotype,
+                phenotypes,
+                qcmarks,
+            };
+            expect(plate(
+                {
+                    number: 0,
+                    qIndex: 0,
+                    phenotypes: new Map([['InitialValue', [[]]]]),
+                    qcmarks: new Map([['InitialValue', new Map()]]),
+                },
+                action,
+            )).toEqual({
+                number: 0,
+                qIndex: 0,
+                phenotypes: new Map([
+                    ['InitialValue', [[]]],
+                    [phenotype, phenotypes],
+                ]),
+                qcmarks: new Map([
+                    ['InitialValue', new Map()],
+                    [phenotype, qcmarks],
+                ]),
+            });
+        });
+
+        it('doesnt do a thing on plate missmatch', () => {
+            const action = {
+                type: 'PLATE_PHENOTYPEDATA_SET',
+                plate: 1,
+                phenotype,
+                phenotypes,
+                qcmarks,
+            };
+            expect(plate(undefined, action)).toEqual({
+                number: 0,
+                qIndex: 0,
+            });
+        });
+    });
+
     describe('QUALITYINDEX_QUEUE_SET', () => {
         const queue = [{ idx: 5, col: 4, row: 10 }, { idx: 0, col: 2, row: 55 }];
 

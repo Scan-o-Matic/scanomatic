@@ -18,6 +18,21 @@ export default function plate(state: State = initialState, action: Action) {
             state,
             { times: action.times, raw: action.raw, smooth: action.smooth },
         );
+    case 'PLATE_PHENOTYPEDATA_SET': {
+        if (action.plate !== state.number) return state;
+        const nextPhenotypes = new Map(state.phenotypes);
+        nextPhenotypes.set(action.phenotype, action.phenotypes);
+        const nextQC = new Map(state.qcmarks);
+        nextQC.set(action.phenotype, action.qcmarks);
+        return Object.assign(
+            {},
+            state,
+            {
+                phenotypes: nextPhenotypes,
+                qcmarks: nextQC,
+            },
+        );
+    }
     case 'QUALITYINDEX_QUEUE_SET':
         return Object.assign(
             {},

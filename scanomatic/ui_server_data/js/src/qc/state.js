@@ -11,10 +11,34 @@ export type QualityIndexInfo = {
 
 export type QualityIndexQueue = Array<QualityIndexInfo>;
 
+export type PlateValueArray = Array<Array<number>>;
+export type PlateCoordinatesArray = Array<Array<number>>; // [[y1, y2, ...], [x1, x2, ...]]
+
+export type Phenotype = "GenerationTime"
+    | "ExperimentGrowthYield"
+    | "ChapmanRichardsParam1"
+    | "ChapmanRichardsParam2"
+    | "ChapmanRichardsParam3"
+    | "ChapmanRichardsParam4"
+    | "ChapmanRichardsParamXtra"
+    | "ColonySize48h"
+    | "ExperimentBaseLine"
+    | "ExperimentPopulationDoublings"
+    | "GenerationTimeStErrOfEstimate"
+    | "GenerationTimeWhen"
+    | "InitialValue";
+
 export type Settings = {
     +project?: string,
-    +phenotype?: string,
+    +phenotype?: Phenotype,
 };
+
+export type PhenotypeDataMap = Map<Phenotype, PlateValueArray>;
+
+export type Mark = 'badData' | 'empty' | 'noGrowth' | 'undecidedProblem';
+export type QCMarksMap = Map<Mark, PlateCoordinatesArray>;
+
+export type PhenotypeQCMarksMap = Map<Phenotype, QCMarksMap>;
 
 export type Plate = {
     +number: number,
@@ -23,6 +47,8 @@ export type Plate = {
     +raw?: PlateOfTimeSeries,
     +smooth?: PlateOfTimeSeries,
     +times?: TimeSeries,
+    +phenotypes?: PhenotypeDataMap,
+    +qcmarks?: PhenotypeQCMarksMap,
 };
 
 export type State = {

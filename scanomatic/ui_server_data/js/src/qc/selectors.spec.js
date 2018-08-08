@@ -15,6 +15,68 @@ describe('/qc/selectors', () => {
         expect(selectors.getPhenotype(state)).toEqual('test');
     });
 
+    it('should get phenotype data', () => {
+        const state = new StateBuilder()
+            .setProject('/my/path')
+            .setPhenotype('test2')
+            .setPlatePhenotypeData(
+                'test',
+                [[5, 4, 3], [5, 5, 1]],
+            )
+            .build();
+        expect(selectors.getPhenotypeData(state, 'test'))
+            .toEqual([
+                [5, 4, 3],
+                [5, 5, 1],
+            ]);
+    });
+
+    it('should get current phenotype data', () => {
+        const state = new StateBuilder()
+            .setProject('/my/path')
+            .setPhenotype('test')
+            .setPlatePhenotypeData(
+                'test',
+                [[5, 4, 3], [5, 5, 1]],
+                new Map([
+                    ['badData', [[0], [0]]],
+                    ['empty', [[0], [1]]],
+                    ['noGrowth', [[1, 1], [0, 1]]],
+                    ['undecidedProblem', [[1, 0], [2, 2]]],
+                ]),
+            )
+            .build();
+        expect(selectors.getCurrentPhenotypeData(state))
+            .toEqual([
+                [5, 4, 3],
+                [5, 5, 1],
+            ]);
+    });
+
+    it('should get the QC Marks for current phenotype', () => {
+        const state = new StateBuilder()
+            .setProject('/my/path')
+            .setPhenotype('test')
+            .setPlatePhenotypeData(
+                'test',
+                [[5, 4, 3], [5, 5, 1]],
+                new Map([
+                    ['badData', [[0], [0]]],
+                    ['empty', [[0], [1]]],
+                    ['noGrowth', [[1, 1], [0, 1]]],
+                    ['undecidedProblem', [[1, 0], [2, 2]]],
+                ]),
+            )
+            .build();
+        expect(selectors.getCurrentPhenotypeQCMarks(state))
+            .toEqual(new Map([
+                ['badData', [[0], [0]]],
+                ['empty', [[0], [1]]],
+                ['noGrowth', [[1, 1], [0, 1]]],
+                ['undecidedProblem', [[1, 0], [2, 2]]],
+            ]));
+    });
+
     it('should get the plate number', () => {
         const state = new StateBuilder().setPlate(2).build();
         expect(selectors.getPlate(state)).toEqual(2);

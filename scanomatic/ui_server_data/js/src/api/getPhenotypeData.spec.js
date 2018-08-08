@@ -27,10 +27,12 @@ describe('API', () => {
             API.getPhenotypeData(...args).then((response) => {
                 expect(response).toEqual({
                     phenotypes: [[1, 2, 3], [4, 5, 6]],
-                    badData: [[0], [0]],
-                    empty: [[0, 0], [1, 2]],
-                    noGrowth: [[1], [2]],
-                    undecidedProblem: [[], []],
+                    qcmarks: new Map([
+                        ['badData', [[0], [0]]],
+                        ['empty', [[0, 0], [1, 2]]],
+                        ['noGrowth', [[1], [2]]],
+                        ['undecidedProblem', [[], []]],
+                    ]),
                     qIndexQueue: [
                         { idx: 0, col: 0, row: 1 },
                         { idx: 1, col: 1, row: 0 },
@@ -44,6 +46,7 @@ describe('API', () => {
             });
             mostRecentRequest().respondWith({
                 status: 200,
+
                 responseText: JSON.stringify({
                     data: [[1, 2, 3], [4, 5, 6]],
                     BadData: [[0], [0]],
