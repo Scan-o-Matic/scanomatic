@@ -7,6 +7,7 @@ import type {
     PlateValueArray as _PlateValueArray,
     PlateCoordinatesArray as _PlateCoordinatesArray,
     Phenotype,
+    Mark,
     QCMarksMap,
 } from './state';
 
@@ -76,4 +77,46 @@ export function getCurrentPhenotypeQCMarks(state: State): ?QCMarksMap {
     const phenotype = getPhenotype(state);
     if (!state.plate || !state.plate.qcmarks || !phenotype) return null;
     return state.plate.qcmarks.get(phenotype);
+}
+
+function isMarked(data: ?PlateCoordinatesArray, row: number, col: number) : bool {
+    if (!data) return false;
+    for (let i = 0; i < data[0].length; i += 1) {
+        if (data[0][i] === row && data[1][i] === col) return true;
+    }
+    return false;
+}
+
+function parseFocusCurveQCMark(state: State, phenotype: Phenotype): ?Mark {
+    const focus = getFocus(state);
+    if (!focus) return null;
+    const { row, col } = focus;
+    if (!state.plate || !state.plate.qcmarks) return null;
+    const marks = state.plate.qcmarks.get(phenotype);
+    if (!marks) return 'OK';
+    if (isMarked(marks.get('BadData'), row, col)) return 'BadData';
+    if (isMarked(marks.get('NoGrowth'), row, col)) return 'NoGrowth';
+    if (isMarked(marks.get('Empty'), row, col)) return 'Empty';
+    if (isMarked(marks.get('UndecidedProblem'), row, col)) return 'UndecidedProblem';
+    return 'OK';
+}
+
+export function getFocusCurveQCMark(state: State): ?Mark {
+    const phenotype = getPhenotype(state);
+    if (!phenotype) return null;
+    return parseFocusCurveQCMark(state, phenotype);
+}
+
+export function getFocusCurveQCMarkAllPhenotypes(state: State): ?Map<Phenotype, Mark> {
+    if (!state.plate || !state.plate.qcmarks) return null;
+    const marks = new Map();
+    (state.plate.qcmarks || new Map())
+        .forEach((_, phenotype) => marks.set(phenotype, parseFocusCurveQCMark(state, phenotype) || 'OK'));
+    return marks;
+}
+
+export function isDirty(state: State, plate: number, row: number, col: number) : bool {
+    if (!state.plate || !state.plate.dirty || getPlate(state) !== plate) return false;
+    return state.plate.dirty
+        .some(([dirtyRow, dirtyCol]) => dirtyRow === row && dirtyCol === col);
 }

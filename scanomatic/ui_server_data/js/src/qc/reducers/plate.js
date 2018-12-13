@@ -1,8 +1,48 @@
 // @flow
 import type { Action } from '../actions';
-import type { Plate as State } from '../state';
+import type { Plate as State, Mark, QCMarksMap, PlateCoordinatesArray } from '../state';
 
 const initialState : State = { number: 0, qIndex: 0 };
+
+function addMark(previous: ?PlateCoordinatesArray, row: number, col: number)
+: PlateCoordinatesArray {
+    if (!previous) return [[row], [col]];
+    const next = [[], []];
+    let found = false;
+    for (let i = 0; i < previous[0].length; i += 1) {
+        if (previous[0][i] === row && previous[1][i] === col) found = true;
+        next[0].push(previous[0][i]);
+        next[1].push(previous[1][i]);
+    }
+    if (!found) {
+        next[0].push(row);
+        next[1].push(col);
+    }
+    return next;
+}
+
+function removeMark(previous: ?PlateCoordinatesArray, row: number, col: number)
+: PlateCoordinatesArray {
+    if (!previous) return [[], []];
+    const next = [[], []];
+    for (let i = 0; i < previous[0].length; i += 1) {
+        if (previous[0][i] !== row && previous[1][i] !== col) {
+            next[0].push(previous[0][i]);
+            next[1].push(previous[1][i]);
+        }
+    }
+    return next;
+}
+
+function updateQCMarks(marks: QCMarksMap, row: number, col: number, mark: Mark) : QCMarksMap {
+    return new Map(['NoGrowth', 'Empty', 'BadData', 'UndecidedProblem']
+        .map(markType => [
+            markType,
+            mark === markType ?
+                addMark(marks.get(markType), row, col) :
+                removeMark(marks.get(markType), row, col),
+        ]));
+}
 
 export default function plate(state: State = initialState, action: Action) {
     switch (action.type) {
@@ -33,6 +73,45 @@ export default function plate(state: State = initialState, action: Action) {
             },
         );
     }
+    case 'CURVE_QCMARK_SET': {
+        if (action.plate !== state.number) return state;
+        const nextQC = new Map(state.qcmarks);
+        const {
+            row: actionRow, col: actionCol, mark, dirty,
+        } = action;
+        if (action.phenotype) {
+            nextQC.set(
+                action.phenotype,
+                updateQCMarks(
+                    nextQC.get(action.phenotype) || new Map(),
+                    actionRow,
+                    actionCol,
+                    mark,
+                ),
+            );
+        } else {
+            nextQC.forEach((marks, phenotype) => nextQC.set(phenotype, updateQCMarks(
+                marks || new Map(),
+                actionRow,
+                actionCol,
+                mark,
+            )));
+        }
+        return Object.assign({}, state, {
+            qcmarks: nextQC,
+            dirty: dirty ?
+                (state.dirty || []).concat([[actionRow, actionCol]]) :
+                (state.dirty || [])
+                    .filter(([row, col]) => actionRow !== row || actionCol !== col),
+        });
+    }
+    case 'CURVE_QCMARK_REMOVEDIRTY':
+        const { row: actionRow, col: actionCol } = action;
+        if (action.plate !== state.number) return state;
+        return Object.assign({}, state, {
+            dirty: (state.dirty || [])
+                .filter(([row, col]) => actionRow !== row || actionCol !== col),
+        });
     case 'QUALITYINDEX_QUEUE_SET':
         return Object.assign(
             {},

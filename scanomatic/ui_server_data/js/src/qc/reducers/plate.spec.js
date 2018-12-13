@@ -67,10 +67,10 @@ describe('/qc/reducers/plate', () => {
         const phenotype = 'GenerationTime';
         const phenotypes = [[1, 1], [2, 1]];
         const qcmarks = new Map([
-            ['badData', [[], []]],
-            ['empty', [[0], [1]]],
-            ['noGrowth', [[1, 1], [0, 1]]],
-            ['undecidedProblem', [[0], [0]]],
+            ['BadData', [[], []]],
+            ['Empty', [[0], [1]]],
+            ['NoGrowth', [[1, 1], [0, 1]]],
+            ['UndecidedProblem', [[0], [0]]],
         ]);
 
         it('sets the plate phenotype data', () => {
@@ -219,6 +219,232 @@ describe('/qc/reducers/plate', () => {
                 const action = { type: 'QUALITYINDEX_PREVIOUS' };
                 expect(plate(Object.assign({}, state, { qIndex: 0 }), action).qIndex).toEqual(3);
             });
+        });
+    });
+
+    describe('CURVE_QCMARK_SET', () => {
+        it('doesnt do a thing if plates missmatch', () => {
+            const state = { number: 0, qIndex: 0 };
+            const action = {
+                type: 'CURVE_QCMARK_SET',
+                mark: 'BadData',
+                plate: 5,
+                row: 0,
+                col: 0,
+                dirty: false,
+            };
+            expect(plate(state, action)).toEqual(state);
+        });
+
+        describe('with phenotype in action', () => {
+            const action = {
+                type: 'CURVE_QCMARK_SET',
+                phenotype: 'GenerationTime',
+                mark: 'BadData',
+                plate: 0,
+                row: 0,
+                col: 0,
+                dirty: false,
+            };
+
+            it('adds a mark even if no existing phenotype marks loaded', () => {
+                const state = { number: 0, qIndex: 0 };
+                expect(plate(state, action))
+                    .toEqual(Object.assign({}, state, {
+                        qcmarks: new Map([
+                            ['GenerationTime', new Map([
+                                ['BadData', [[0], [0]]],
+                                ['NoGrowth', [[], []]],
+                                ['Empty', [[], []]],
+                                ['UndecidedProblem', [[], []]],
+                            ])],
+                        ]),
+                        dirty: [],
+                    }));
+            });
+
+            it('adds mark along-side other', () => {
+                const state = {
+                    number: 0,
+                    qIndex: 0,
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['BadData', [[0], [1]]],
+                            ['Empty', [[1], [1]]],
+                        ])],
+                        ['GenerationTimeWhen', new Map([
+                            ['BadData', [[], []]],
+                        ])],
+                    ]),
+                };
+                expect(plate(state, action)).toEqual({
+                    number: 0,
+                    qIndex: 0,
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['BadData', [[0, 0], [1, 0]]],
+                            ['Empty', [[1], [1]]],
+                            ['NoGrowth', [[], []]],
+                            ['UndecidedProblem', [[], []]],
+                        ])],
+                        ['GenerationTimeWhen', new Map([
+                            ['BadData', [[], []]],
+                        ])],
+                    ]),
+                    dirty: [],
+                });
+            });
+
+            it('removes previous mark for new mark', () => {
+                const state = {
+                    number: 0,
+                    qIndex: 0,
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['Empty', [[0], [0]]],
+                        ])],
+                    ]),
+                };
+                expect(plate(state, action)).toEqual({
+                    number: 0,
+                    qIndex: 0,
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['BadData', [[0], [0]]],
+                            ['Empty', [[], []]],
+                            ['NoGrowth', [[], []]],
+                            ['UndecidedProblem', [[], []]],
+                        ])],
+                    ]),
+                    dirty: [],
+                });
+            });
+
+            it('removes dirty position flag', () => {
+                const state = {
+                    number: 0,
+                    qIndex: 0,
+                    dirty: [[0, 0], [1, 1]],
+                };
+                expect(plate(state, action))
+                    .toEqual(Object.assign({}, state, {
+                        qcmarks: new Map([
+                            ['GenerationTime', new Map([
+                                ['BadData', [[0], [0]]],
+                                ['NoGrowth', [[], []]],
+                                ['Empty', [[], []]],
+                                ['UndecidedProblem', [[], []]],
+                            ])],
+                        ]),
+                        dirty: [[1, 1]],
+                    }));
+            });
+
+            it('adds a dirty flag', () => {
+                const state = {
+                    number: 0,
+                    qIndex: 0,
+                };
+                const dirtyAction = {
+                    type: 'CURVE_QCMARK_SET',
+                    mark: 'BadData',
+                    phenotype: 'GenerationTime',
+                    plate: 0,
+                    row: 5,
+                    col: 0,
+                    dirty: true,
+                };
+                expect(plate(state, dirtyAction))
+                    .toEqual(Object.assign({}, state, {
+                        qcmarks: new Map([
+                            ['GenerationTime', new Map([
+                                ['BadData', [[5], [0]]],
+                                ['NoGrowth', [[], []]],
+                                ['Empty', [[], []]],
+                                ['UndecidedProblem', [[], []]],
+                            ])],
+                        ]),
+                        dirty: [[5, 0]],
+                    }));
+            });
+        });
+
+        describe('without phenotype in action / settings for all loaded phenotypes', () => {
+            it('adds no mark if no existing phenotype marks loaded', () => {
+                const state = { number: 0, qIndex: 0 };
+                const action = {
+                    type: 'CURVE_QCMARK_SET',
+                    mark: 'BadData',
+                    plate: 0,
+                    row: 0,
+                    col: 0,
+                    dirty: false,
+                };
+                expect(plate(state, action))
+                    .toEqual(Object.assign({}, state, { qcmarks: new Map(), dirty: [] }));
+            });
+
+            it('updats mark for all phenotypes', () => {
+                const state = {
+                    number: 0,
+                    qIndex: 0,
+                    qcmarks: new Map([
+                        ['GenerationTime', new Map([
+                            ['BadData', [[1], [1]]],
+                            ['Empty', [[0], [0]]],
+                        ])],
+                        ['GenerationTimeWhen', new Map()],
+                    ]),
+                };
+                const action = {
+                    type: 'CURVE_QCMARK_SET',
+                    mark: 'BadData',
+                    plate: 0,
+                    row: 0,
+                    col: 0,
+                    dirty: false,
+                };
+                expect(plate(state, action))
+                    .toEqual({
+                        number: 0,
+                        qIndex: 0,
+                        qcmarks: new Map([
+                            ['GenerationTime', new Map([
+                                ['BadData', [[1, 0], [1, 0]]],
+                                ['Empty', [[], []]],
+                                ['NoGrowth', [[], []]],
+                                ['UndecidedProblem', [[], []]],
+                            ])],
+                            ['GenerationTimeWhen', new Map([
+                                ['BadData', [[0], [0]]],
+                                ['Empty', [[], []]],
+                                ['NoGrowth', [[], []]],
+                                ['UndecidedProblem', [[], []]],
+                            ])],
+                        ]),
+                        dirty: [],
+                    });
+            });
+        });
+    });
+
+    describe('CURVE_QCMARK_REMOVEDIRTY', () => {
+        it('removes dirty flag', () => {
+            const state = {
+                number: 0,
+                qIndex: 0,
+                dirty: [[0, 0], [5, 0], [1, 1]],
+            };
+            const action = {
+                type: 'CURVE_QCMARK_REMOVEDIRTY',
+                plate: 0,
+                row: 5,
+                col: 0,
+            };
+            expect(plate(state, action))
+                .toEqual(Object.assign({}, state, {
+                    dirty: [[0, 0], [1, 1]],
+                }));
         });
     });
 });

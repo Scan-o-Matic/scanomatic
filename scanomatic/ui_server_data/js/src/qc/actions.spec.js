@@ -38,10 +38,10 @@ describe('/qc/actions', () => {
                 'GenerationTimeWhen',
                 [[0]],
                 new Map([
-                    ['badData', [[0], [0]]],
-                    ['empty', [[1], [1]]],
-                    ['noGrowth', [[2], [2]]],
-                    ['undecidedProblem', [[3], [3]]],
+                    ['BadData', [[0], [0]]],
+                    ['Empty', [[1], [1]]],
+                    ['NoGrowth', [[2], [2]]],
+                    ['UndecidedProblem', [[3], [3]]],
                 ]),
             ))
                 .toEqual({
@@ -50,10 +50,10 @@ describe('/qc/actions', () => {
                     phenotype: 'GenerationTimeWhen',
                     phenotypes: [[0]],
                     qcmarks: new Map([
-                        ['badData', [[0], [0]]],
-                        ['empty', [[1], [1]]],
-                        ['noGrowth', [[2], [2]]],
-                        ['undecidedProblem', [[3], [3]]],
+                        ['BadData', [[0], [0]]],
+                        ['Empty', [[1], [1]]],
+                        ['NoGrowth', [[2], [2]]],
+                        ['UndecidedProblem', [[3], [3]]],
                     ]),
                 });
         });
@@ -89,6 +89,145 @@ describe('/qc/actions', () => {
                     times,
                     raw,
                     smooth,
+                });
+        });
+    });
+
+    describe('updateFocusCurveQCMark', () => {
+        const dispatch = jasmine.createSpy('dispatch');
+        let setCurveQCMark;
+        let setCurveQCMarkAll;
+
+        beforeEach(() => {
+            dispatch.calls.reset();
+            setCurveQCMark = spyOn(API, 'setCurveQCMark')
+                .and.callFake((project) => {
+                    if (project === 'fail/me') return Promise.reject(new Error('bad idea'));
+                    return FakePromise.resolve();
+                });
+            setCurveQCMarkAll = spyOn(API, 'setCurveQCMarkAll')
+                .and.callFake((project) => {
+                    if (project === 'fail/me') return Promise.reject(new Error('bad idea'));
+                    return FakePromise.resolve();
+                });
+        });
+
+        it('returns a function that throws error if no project', () => {
+            const state = new StateBuilder().build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            expect(() => thunk(dispatch, () => state))
+                .toThrow(new Error('Cant set QC Mark if no project'));
+        });
+
+        it('returns a function that throws if no focus curve', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPlate(0)
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            expect(() => thunk(dispatch, () => state))
+                .toThrow(new Error('Cant set QC Mark if no focus'));
+        });
+
+        it('returns a function that throws if focus position is dirty', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPhenotype('GenerationTime')
+                .setQualityIndexQueue([{ idx: 0, col: 0, row: 10 }])
+                .setDirty(10, 0)
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            expect(() => thunk(dispatch, () => state))
+                .toThrow(new Error('Cannot set mark while previous mark is still processing for this position'));
+        });
+
+        it('dispatches a store update immidiately', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPlate(0)
+                .setQualityIndexQueue([{ idx: 0, col: 0, row: 10 }])
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            thunk(dispatch, () => state);
+            expect(dispatch)
+                .toHaveBeenCalledWith(actions.setStoreCurveQCMarkDirty(0, 10, 0, 'OK', 'GenerationTime'));
+        });
+
+        it('calls API.setCurveQCMark if phenotype supplied', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPlate(0)
+                .setQualityIndexQueue([{ idx: 0, col: 0, row: 10 }])
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            thunk(dispatch, () => state);
+            expect(setCurveQCMark)
+                .toHaveBeenCalledWith('my/experiment', 0, 10, 0, 'OK', 'GenerationTime', 'letmedothis');
+        });
+
+        it('calls API.setCurveQCMarkAll if no phenotype specified', () => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPlate(0)
+                .setQualityIndexQueue([{ idx: 0, col: 0, row: 10 }])
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', null, 'letmedothis');
+            thunk(dispatch, () => state);
+            expect(setCurveQCMarkAll)
+                .toHaveBeenCalledWith('my/experiment', 0, 10, 0, 'OK', 'letmedothis');
+        });
+
+        it('dispatches a reverting of mark if API request fails when setting', (done) => {
+            const state = new StateBuilder()
+                .setProject('fail/me')
+                .setPlate(2)
+                .setPhenotype('GenerationTime')
+                .setQualityIndexQueue([{ idx: 0, row: 0, col: 1 }])
+                .setPlatePhenotypeData(
+                    'GenerationTime',
+                    [[10, 154]],
+                    new Map([
+                        ['BadData', [[0], [1]]],
+                        ['Empty', null],
+                    ]),
+                )
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            thunk(dispatch, () => state)
+                .then(() => {
+                    expect(dispatch.calls.count()).toBe(2);
+                    expect(dispatch.calls.argsFor(0))
+                        .toEqual([actions.setStoreCurveQCMarkDirty(2, 0, 1, 'OK', 'GenerationTime')]);
+                    expect(dispatch.calls.argsFor(1))
+                        .toEqual([actions.setStoreCurveQCMark(2, 0, 1, 'BadData', 'GenerationTime')]);
+                    done();
+                });
+        });
+
+        it('dispatches a remove dirty if API request goes through', (done) => {
+            const state = new StateBuilder()
+                .setProject('my/experiment')
+                .setPlate(2)
+                .setPhenotype('GenerationTime')
+                .setQualityIndexQueue([{ idx: 0, row: 0, col: 1 }])
+                .setPlatePhenotypeData(
+                    'GenerationTime',
+                    [[10, 154]],
+                    new Map([
+                        ['BadData', [[0], [1]]],
+                        ['Empty', null],
+                    ]),
+                )
+                .build();
+            const thunk = actions.updateFocusCurveQCMark('OK', 'GenerationTime', 'letmedothis');
+            thunk(dispatch, () => state)
+                .then(() => {
+                    expect(dispatch.calls.argsFor(0))
+                        .toEqual([actions.setStoreCurveQCMarkDirty(2, 0, 1, 'OK', 'GenerationTime')]);
+                    expect(dispatch.calls.argsFor(1))
+                        .toEqual([actions.setQCMarkNotDirty(2, 0, 1)]);
+                    expect(dispatch.calls.count()).toBe(2);
+                    done();
                 });
         });
     });
@@ -154,28 +293,28 @@ describe('/qc/actions', () => {
         const gtData = {
             phenotypes: [[0]],
             qcmarks: new Map([
-                ['badData', [[], []]],
-                ['empty', [[0], [1]]],
-                ['noGrowth', [[1], [0]]],
-                ['undecidedProblem', [[1, 1], [0, 1]]],
+                ['BadData', [[], []]],
+                ['Empty', [[0], [1]]],
+                ['NoGrowth', [[1], [0]]],
+                ['UndecidedProblem', [[1, 1], [0, 1]]],
             ]),
         };
         const gtWhenData = {
             phenotypes: [[5]],
             qcmarks: new Map([
-                ['badData', [[1], [1]]],
-                ['empty', [[2], [1]]],
-                ['noGrowth', [[1], [2]]],
-                ['undecidedProblem', [[2, 1], [0, 1]]],
+                ['BadData', [[1], [1]]],
+                ['Empty', [[2], [1]]],
+                ['NoGrowth', [[1], [2]]],
+                ['UndecidedProblem', [[2, 1], [0, 1]]],
             ]),
         };
         const expYeildData = {
             phenotypes: [[4]],
             qcmarks: new Map([
-                ['badData', [[1], [4]]],
-                ['empty', [[2], [4]]],
-                ['noGrowth', [[1], [4]]],
-                ['undecidedProblem', [[2, 1], [0, 4]]],
+                ['BadData', [[1], [4]]],
+                ['Empty', [[2], [4]]],
+                ['NoGrowth', [[1], [4]]],
+                ['UndecidedProblem', [[2, 1], [0, 4]]],
             ]),
         };
         let getPhenotypeData;
@@ -276,10 +415,10 @@ describe('/qc/actions', () => {
         const gtData = {
             phenotypes: [[0]],
             qcmarks: new Map([
-                ['badData', [[], []]],
-                ['empty', [[0], [1]]],
-                ['noGrowth', [[1], [0]]],
-                ['undecidedProblem', [[1, 1], [0, 1]]],
+                ['BadData', [[], []]],
+                ['Empty', [[0], [1]]],
+                ['NoGrowth', [[1], [0]]],
+                ['UndecidedProblem', [[1, 1], [0, 1]]],
             ]),
         };
         let getPhenotypeData;
@@ -402,6 +541,78 @@ describe('/qc/actions', () => {
             expect(actions.previousQualityIndex()).toEqual({
                 type: 'QUALITYINDEX_PREVIOUS',
             });
+        });
+    });
+
+    describe('setStoreCurveQCMark', () => {
+        it('should create a CURVE_QCMARK_SET action for all phenotypes', () => {
+            expect(actions.setStoreCurveQCMark(
+                0,
+                1,
+                2,
+                'OK',
+            ))
+                .toEqual({
+                    type: 'CURVE_QCMARK_SET',
+                    phenotype: undefined,
+                    mark: 'OK',
+                    plate: 0,
+                    row: 1,
+                    col: 2,
+                    dirty: false,
+                });
+        });
+
+        it('should create a CURVE_QCMARK_SET action for GenerationTime', () => {
+            expect(actions.setStoreCurveQCMark(
+                0,
+                1,
+                2,
+                'OK',
+                'GenerationTime',
+            ))
+                .toEqual({
+                    type: 'CURVE_QCMARK_SET',
+                    phenotype: 'GenerationTime',
+                    mark: 'OK',
+                    plate: 0,
+                    row: 1,
+                    col: 2,
+                    dirty: false,
+                });
+        });
+    });
+
+    describe('setStoreCurveQCMarkDirty', () => {
+        it('should create a CURVE_QCMARK_SETDIRTY action for GenerationTime', () => {
+            expect(actions.setStoreCurveQCMarkDirty(
+                0,
+                1,
+                2,
+                'OK',
+                'GenerationTime',
+            ))
+                .toEqual({
+                    type: 'CURVE_QCMARK_SET',
+                    phenotype: 'GenerationTime',
+                    mark: 'OK',
+                    plate: 0,
+                    row: 1,
+                    col: 2,
+                    dirty: true,
+                });
+        });
+    });
+
+    describe('setQCMarkNotDirty', () => {
+        it('should create a CURVE_QCMARK_REMOVEDIRTY action', () => {
+            expect(actions.setQCMarkNotDirty(0, 1, 2))
+                .toEqual({
+                    type: 'CURVE_QCMARK_REMOVEDIRTY',
+                    plate: 0,
+                    row: 1,
+                    col: 2,
+                });
         });
     });
 });

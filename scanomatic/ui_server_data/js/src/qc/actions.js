@@ -1,15 +1,33 @@
 // @flow
-import { getProject, getPlate, getPhenotype, getPhenotypeData as hasPhenotypeData } from './selectors';
+import {
+    getProject, getPlate, getPhenotype, getPhenotypeData as hasPhenotypeData,
+    getFocusCurveQCMark, getFocus, getFocusCurveQCMarkAllPhenotypes, isDirty,
+} from './selectors';
 import type {
     State, TimeSeries, PlateOfTimeSeries, QualityIndexQueue,
-    PlateValueArray, Phenotype, QCMarksMap,
+    PlateValueArray, Phenotype, Mark, QCMarksMap,
 } from './state';
-import { getPlateGrowthData, getPhenotypeData } from '../api';
+import { getPlateGrowthData, getPhenotypeData, setCurveQCMark, setCurveQCMarkAll } from '../api';
 
 export type Action
     = {| type: 'PLATE_SET', plate: number |}
     | {| type: 'PROJECT_SET', project: string |}
     | {| type: 'CURVE_FOCUS', plate: number, row: number, col: number |}
+    | {|
+        type: 'CURVE_QCMARK_SET',
+        plate: number,
+        row: number,
+        col: number,
+        phenotype: ?Phenotype,
+        mark: Mark,
+        dirty: bool,
+    |}
+    | {|
+        type: 'CURVE_QCMARK_REMOVEDIRTY',
+        plate: number,
+        row: number,
+        col: number,
+    |}
     | {|
         type: 'PLATE_GROWTHDATA_SET',
         plate: number,
@@ -17,11 +35,6 @@ export type Action
         smooth: PlateOfTimeSeries,
         raw: PlateOfTimeSeries,
     |}
-    | {| type: 'QUALITYINDEX_QUEUE_SET', queue: QualityIndexQueue |}
-    | {| type: 'QUALITYINDEX_SET', index: number |}
-    | {| type: 'QUALITYINDEX_NEXT' |}
-    | {| type: 'QUALITYINDEX_PREVIOUS' |}
-    | {| type: 'PHENOTYPE_SET', phenotype: Phenotype |}
     | {|
         type: 'PLATE_PHENOTYPEDATA_SET',
         plate: number,
@@ -29,6 +42,11 @@ export type Action
         phenotypes: PlateValueArray,
         qcmarks: QCMarksMap,
     |}
+    | {| type: 'PHENOTYPE_SET', phenotype: Phenotype |}
+    | {| type: 'QUALITYINDEX_QUEUE_SET', queue: QualityIndexQueue |}
+    | {| type: 'QUALITYINDEX_SET', index: number |}
+    | {| type: 'QUALITYINDEX_NEXT' |}
+    | {| type: 'QUALITYINDEX_PREVIOUS' |}
 
 export function setPlate(plate : number) : Action {
     return { type: 'PLATE_SET', plate };
@@ -104,7 +122,111 @@ export function previousQualityIndex() : Action {
     return { type: 'QUALITYINDEX_PREVIOUS' };
 }
 
+export function setStoreCurveQCMark(
+    plate: number,
+    row: number,
+    col: number,
+    mark: Mark,
+    phenotype: ?Phenotype,
+) : Action {
+    return {
+        type: 'CURVE_QCMARK_SET',
+        phenotype,
+        mark,
+        plate,
+        col,
+        row,
+        dirty: false,
+    };
+}
+
+export function setStoreCurveQCMarkDirty(
+    plate: number,
+    row: number,
+    col: number,
+    mark: Mark,
+    phenotype: ?Phenotype,
+) : Action {
+    return {
+        type: 'CURVE_QCMARK_SET',
+        phenotype,
+        mark,
+        plate,
+        col,
+        row,
+        dirty: true,
+    };
+}
+
+export function setQCMarkNotDirty(
+    plate: number,
+    row: number,
+    col: number,
+) : Action {
+    return {
+        type: 'CURVE_QCMARK_REMOVEDIRTY',
+        plate,
+        row,
+        col,
+    };
+}
+
+
 export type ThunkAction = (dispatch: Action => any, getState: () => State) => any;
+
+export function updateFocusCurveQCMark(
+    mark: Mark,
+    phenotype: ?Phenotype,
+    key: string,
+) : ThunkAction {
+    return (dispatch, getState) => {
+        const state = getState();
+        const project = getProject(state);
+        if (!project) throw new Error('Cant set QC Mark if no project');
+        const plate = getPlate(state);
+        if (plate == null) throw new Error('Cant set QC Mark if no plate');
+        const focus = getFocus(state);
+        if (!focus) throw new Error('Cant set QC Mark if no focus');
+        if (isDirty(state, plate, focus.row, focus.col)) {
+            throw new Error('Cannot set mark while previous mark is still processing for this position');
+        }
+
+        dispatch(setStoreCurveQCMarkDirty(plate, focus.row, focus.col, mark, phenotype));
+
+        let promise;
+        if (phenotype) {
+            promise = setCurveQCMark(project, plate, focus.row, focus.col, mark, phenotype, key);
+        } else {
+            promise = setCurveQCMarkAll(project, plate, focus.row, focus.col, mark, key);
+        }
+
+        return promise
+            .then(() => {
+                dispatch(setQCMarkNotDirty(plate, focus.row, focus.col));
+                return Promise.resolve();
+            })
+            .catch(() => {
+                // undo_preemtive curve_mark
+                let previousMark;
+                if (phenotype) {
+                    previousMark = new Map([[phenotype, getFocusCurveQCMark(state)]]);
+                } else {
+                    previousMark = getFocusCurveQCMarkAllPhenotypes(state);
+                }
+                if (previousMark) {
+                    previousMark
+                        .forEach((prevMark, pheno) => dispatch(setStoreCurveQCMark(
+                            plate,
+                            focus.row,
+                            focus.col,
+                            prevMark || 'OK',
+                            pheno,
+                        )));
+                }
+                return Promise.resolve();
+            });
+    };
+}
 
 export function retrievePlateCurves() : ThunkAction {
     return (dispatch, getState) => {

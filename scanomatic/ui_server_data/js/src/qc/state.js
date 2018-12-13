@@ -28,6 +28,7 @@ export type Phenotype = "GenerationTime"
     | "GenerationTimeWhen"
     | "InitialValue";
 
+
 export type Settings = {
     +project?: string,
     +phenotype?: Phenotype,
@@ -35,7 +36,7 @@ export type Settings = {
 
 export type PhenotypeDataMap = Map<Phenotype, PlateValueArray>;
 
-export type Mark = 'badData' | 'empty' | 'noGrowth' | 'undecidedProblem';
+export type Mark = 'OK' | 'NoGrowth' | 'BadData' | 'Empty' | 'UndecidedProblem';
 export type QCMarksMap = Map<Mark, PlateCoordinatesArray>;
 
 export type PhenotypeQCMarksMap = Map<Phenotype, QCMarksMap>;
@@ -49,6 +50,7 @@ export type Plate = {
     +times?: TimeSeries,
     +phenotypes?: PhenotypeDataMap,
     +qcmarks?: PhenotypeQCMarksMap,
+    +dirty?: Array<Array<number>>,
 };
 
 export type State = {
