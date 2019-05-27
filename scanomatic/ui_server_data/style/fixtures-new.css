@@ -1,0 +1,38 @@
+.fixture-editor-flowrow {
+  display: flex;
+}
+
+.fixture-editor-main {
+  width: 490px;
+}
+
+.image-detail {
+  border: 1px solid #000;
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.fixture-editor-sidebar {
+  display: flex;
+  flex-direction: column;
+  padding-left: 1rem;
+}
+
+.flex-spacer {
+  flex: 100 100 auto;
+}
+
+.sidebar-btn {
+  align-self: flex-end;
+  margin: 0.25rem 0;
+}
+
+.custom-inline-group {
+  display: inline-block;
+  margin-left: 2rem;
+  width: 25rem;
+}
+
+.fixture-grayscale {
+  margin-top: 1rem;
+}
