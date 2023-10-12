@@ -10,7 +10,10 @@ from scanomatic import get_version
 
 setup(
     name="Scan-o-Matic",
-    version=get_version(),
+    version=get_versionfe80::e846:a9ff:feb4:499d
+192.168.1.250
+2600:1700:10f0:ff60:e846:a9ff:feb4:499d
+2600:1700:10f0:ff60:f450:e097:a30d:ba59,
     description="High Throughput Solid Media Image Phenotyping Platform",
     long_description="""Scan-o-Matic is a high precision phenotyping platform
     that uses scanners to obtain images of yeast colonies growing on solid
